@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,6 +14,10 @@
 		ADE549362C0A9CCD007AE172 /* Manga_ReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE549352C0A9CCD007AE172 /* Manga_ReaderTests.swift */; };
 		ADE549402C0A9CCD007AE172 /* Manga_ReaderUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE5493F2C0A9CCD007AE172 /* Manga_ReaderUITests.swift */; };
 		ADE549422C0A9CCD007AE172 /* Manga_ReaderUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE549412C0A9CCD007AE172 /* Manga_ReaderUITestsLaunchTests.swift */; };
+		ADEF83CE2E8F323700CF2434 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83CD2E8F323700CF2434 /* HomeView.swift */; };
+		ADEF83D02E8F329200CF2434 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83CF2E8F329200CF2434 /* BookmarksView.swift */; };
+		ADEF83D22E8F32A500CF2434 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83D12E8F32A500CF2434 /* SearchView.swift */; };
+		ADEF83D42E8F32B300CF2434 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83D32E8F32B300CF2434 /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,7 +48,17 @@
 		ADE5493B2C0A9CCD007AE172 /* Manga-ReaderUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Manga-ReaderUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADE5493F2C0A9CCD007AE172 /* Manga_ReaderUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Manga_ReaderUITests.swift; sourceTree = "<group>"; };
 		ADE549412C0A9CCD007AE172 /* Manga_ReaderUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Manga_ReaderUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		ADEF83CD2E8F323700CF2434 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		ADEF83CF2E8F329200CF2434 /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
+		ADEF83D12E8F32A500CF2434 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
+		ADEF83D32E8F32B300CF2434 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		AD2219972E98A7D600F0EC25 /* Components */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Components; sourceTree = "<group>"; };
+		ADEF83D62E96ED2E00CF2434 /* Services */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Services; sourceTree = "<group>"; };
+		ADEF83D82E96ED5800CF2434 /* Models */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Models; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		ADE5491E2C0A9CCA007AE172 /* Frameworks */ = {
@@ -94,8 +108,11 @@
 		ADE549232C0A9CCA007AE172 /* Manga-Reader */ = {
 			isa = PBXGroup;
 			children = (
+				ADEF83D82E96ED5800CF2434 /* Models */,
+				ADEF83D62E96ED2E00CF2434 /* Services */,
 				ADE549242C0A9CCA007AE172 /* Manga_ReaderApp.swift */,
 				ADE549262C0A9CCA007AE172 /* ContentView.swift */,
+				ADEF83D52E8F375100CF2434 /* Views */,
 				ADE549282C0A9CCC007AE172 /* Assets.xcassets */,
 				ADE5492A2C0A9CCC007AE172 /* Preview Content */,
 			);
@@ -127,6 +144,18 @@
 			path = "Manga-ReaderUITests";
 			sourceTree = "<group>";
 		};
+		ADEF83D52E8F375100CF2434 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AD2219972E98A7D600F0EC25 /* Components */,
+				ADEF83D12E8F32A500CF2434 /* SearchView.swift */,
+				ADEF83D32E8F32B300CF2434 /* SettingsView.swift */,
+				ADEF83CF2E8F329200CF2434 /* BookmarksView.swift */,
+				ADEF83CD2E8F323700CF2434 /* HomeView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -141,6 +170,11 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AD2219972E98A7D600F0EC25 /* Components */,
+				ADEF83D62E96ED2E00CF2434 /* Services */,
+				ADEF83D82E96ED5800CF2434 /* Models */,
 			);
 			name = "Manga-Reader";
 			productName = "Manga-Reader";
@@ -191,7 +225,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1540;
-				LastUpgradeCheck = 1540;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					ADE549202C0A9CCA007AE172 = {
 						CreatedOnToolsVersion = 15.4;
@@ -257,7 +291,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ADEF83D22E8F32A500CF2434 /* SearchView.swift in Sources */,
+				ADEF83CE2E8F323700CF2434 /* HomeView.swift in Sources */,
 				ADE549272C0A9CCA007AE172 /* ContentView.swift in Sources */,
+				ADEF83D42E8F32B300CF2434 /* SettingsView.swift in Sources */,
+				ADEF83D02E8F329200CF2434 /* BookmarksView.swift in Sources */,
 				ADE549252C0A9CCA007AE172 /* Manga_ReaderApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -353,6 +391,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -409,6 +448,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -473,7 +513,6 @@
 		ADE549492C0A9CCD007AE172 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -492,7 +531,6 @@
 		ADE5494A2C0A9CCD007AE172 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -511,7 +549,6 @@
 		ADE5494C2C0A9CCD007AE172 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -528,7 +565,6 @@
 		ADE5494D2C0A9CCD007AE172 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
