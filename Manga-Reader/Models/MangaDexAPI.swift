@@ -228,33 +228,76 @@ struct MDAuthorAttributes: Decodable {              // Decoded when includes[]=a
 
 // MARK: - Core API Client
 
+/// Errors surfaced by the MangaDex client. `LocalizedError` so `errorMessage`
+/// bindings show something meaningful instead of a generic URLError string.
+enum MangaDexError: LocalizedError {
+    case invalidURL                                 // Could not build a request URL.
+    case invalidResponse                            // Response was not an HTTPURLResponse.
+    case httpStatus(Int)                            // Non-2xx status (carries the code).
+    case rateLimited                                // Still 429 after retrying.
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:            return "Could not build a valid request URL."
+        case .invalidResponse:       return "The server returned an unexpected response."
+        case .httpStatus(let code):  return "Request failed with HTTP status \(code)."
+        case .rateLimited:           return "Too many requests. Please try again in a moment."
+        }
+    }
+}
+
 struct MangaDexAPI {                                // Namespace-style struct for static helpers.
     static let baseURL = "https://api.mangadex.org" // Base REST API URL.
+
+    /// Shared decoder (snake_case → camelCase). Reused across requests so we don't
+    /// re-allocate a decoder and re-set its strategy on every call.
+    private static let decoder: JSONDecoder = {
+        let d = JSONDecoder()
+        d.keyDecodingStrategy = .convertFromSnakeCase
+        return d
+    }()
 
     /// Generic GET + JSON decode helper for MangaDex endpoints.
     /// - Parameters:
     ///   - endpoint: Path beginning with '/', e.g., "/manga".
     ///   - queryItems: Optional query parameters.
     /// - Returns: Decoded value of type T.
+    /// - Note: MangaDex rate-limits aggressively (HTTP 429). On a 429 we retry once,
+    ///         honoring the `Retry-After` header, before giving up.
     static func request<T: Decodable>(endpoint: String,
                                       queryItems: [URLQueryItem]? = nil) async throws -> T {
-        var comps = URLComponents(string: baseURL + endpoint)! // Build URL components with base + path.
+        guard var comps = URLComponents(string: baseURL + endpoint) else {
+            throw MangaDexError.invalidURL                       // Malformed base + path.
+        }
         comps.queryItems = queryItems                           // Attach query parameters if provided.
         guard let url = comps.url else {                        // Ensure we produced a valid URL.
-            throw URLError(.badURL)                             // Throw if URL is malformed.
+            throw MangaDexError.invalidURL                      // Throw if URL is malformed.
         }
         var req = URLRequest(url: url)                          // Create a URLRequest for custom headers.
-        req.setValue("MangaReader-iOS/1.0 (contact: you@example.com)", forHTTPHeaderField: "User-Agent") // Friendly UA.
+        req.setValue("MangaReader-iOS/1.0 (https://github.com/eliasmagdaleno/Manga-Reader)",
+                     forHTTPHeaderField: "User-Agent")          // Identify the client to the API.
 
-        let (data, resp) = try await URLSession.shared.data(for: req) // Perform async GET request.
-        guard let http = resp as? HTTPURLResponse,
-              (200...299).contains(http.statusCode) else {      // Validate we got a 2xx response.
-            throw URLError(.badServerResponse)                   // Throw on non-success status.
+        for attempt in 0..<2 {                                   // Initial try + one retry on 429.
+            let (data, resp) = try await URLSession.shared.data(for: req) // Perform async GET request.
+            guard let http = resp as? HTTPURLResponse else {    // Expect an HTTP response.
+                throw MangaDexError.invalidResponse
+            }
+            if http.statusCode == 429, attempt == 0 {           // Rate limited: back off and retry once.
+                let retryAfter = http.value(forHTTPHeaderField: "Retry-After").flatMap(Double.init) ?? 1
+                try await Task.sleep(nanoseconds: UInt64(retryAfter * 1_000_000_000))
+                continue
+            }
+            guard (200...299).contains(http.statusCode) else {  // Validate we got a 2xx response.
+                throw MangaDexError.httpStatus(http.statusCode) // Surface the actual status code.
+            }
+            return try decoder.decode(T.self, from: data)       // Decode into the requested generic type.
         }
+        throw MangaDexError.rateLimited                          // Both attempts hit the rate limit.
+    }
 
-        let decoder = JSONDecoder()                              // JSON decoder for API payloads.
-        decoder.keyDecodingStrategy = .convertFromSnakeCase      // Convert snake_case → camelCase automatically.
-        return try decoder.decode(T.self, from: data)            // Decode into the requested generic type.
+    /// Maps a `/manga` list response into domain `Manga` values (cover URL attached).
+    private static func mangaList(from res: MangaListResponse) -> [Manga] {
+        res.data.map { $0.attributes.toManga(id: $0.id, relationships: $0.relationships) }
     }
 
     // MARK: - High-level API: Manga Lists (ALWAYS with covers)
@@ -274,7 +317,7 @@ struct MangaDexAPI {                                // Namespace-style struct fo
         // Call /manga and decode the list response.
         let res: MangaListResponse = try await MangaDexAPI.request(endpoint: "/manga", queryItems: items)
         // Map raw entries → our `Manga` model with coverURL already attached.
-        return res.data.map { $0.attributes.toManga(id: $0.id, relationships: $0.relationships) }
+        return mangaList(from: res)
     }
 
     /// Fetches newly created manga (Newest first) with cover URLs.
@@ -286,7 +329,7 @@ struct MangaDexAPI {                                // Namespace-style struct fo
             URLQueryItem(name: "offset", value: String(offset))     // Pagination offset.
         ]
         let res: MangaListResponse = try await MangaDexAPI.request(endpoint: "/manga", queryItems: items)
-        return res.data.map { $0.attributes.toManga(id: $0.id, relationships: $0.relationships) }
+        return mangaList(from: res)
     }
 
     /// Fetches highly-rated manga (Popular approximation) with cover URLs.
@@ -298,7 +341,7 @@ struct MangaDexAPI {                                // Namespace-style struct fo
             URLQueryItem(name: "offset", value: String(offset))     // Pagination offset.
         ]
         let res: MangaListResponse = try await MangaDexAPI.request(endpoint: "/manga", queryItems: items)
-        return res.data.map { $0.attributes.toManga(id: $0.id, relationships: $0.relationships) }
+        return mangaList(from: res)
     }
 
     // MARK: - Latest Updates (chapters → enriched manga with covers)
@@ -358,7 +401,7 @@ struct MangaDexAPI {                                // Namespace-style struct fo
         // Call /manga with our multi-id query.
         let res: MangaListResponse = try await MangaDexAPI.request(endpoint: "/manga", queryItems: items)
         // Convert to `Manga` with coverURL attached via toManga(...).
-        return res.data.map { $0.attributes.toManga(id: $0.id, relationships: $0.relationships) }
+        return mangaList(from: res)
     }
     
     static func fetchMangaDetails(id: String) async throws -> MangaDetail {
@@ -380,7 +423,12 @@ struct MangaDexAPI {                                // Namespace-style struct fo
             URLQueryItem(name: "limit", value: "500")
             ]
                                                          )
-        return res.data.map { $0.attributes.toChapter(id: $0.id)}
+        // Multiple scanlation groups often upload the same chapter number. Keep the
+        // first occurrence of each number (unknown-numbered chapters are never merged).
+        var seenNumbers = Set<String>()
+        return res.data
+            .map { $0.attributes.toChapter(id: $0.id) }
+            .filter { $0.number == "?" || seenNumbers.insert($0.number).inserted }
     }
         
 
