@@ -16,10 +16,12 @@ struct MangaRail: View {     // Define the reusable rail component
         ScrollView(.horizontal, showsIndicators: false) { // Enable horizontal scrolling, hide scrollbar
             HStack(spacing: 12) { // Place cards in a row with spacing between them
                 ForEach(items, id: \.id) { manga in // Iterate using each manga's stable id
-                    MangaCoverCard(                 // Reuse the card for each manga
-                        title: manga.title,         // Pass the display title
-                        coverURL: manga.coverURL    // Pass the prebuilt cover URL from the model
-                    )
+                    NavigationLink(destination: MangaDetailView(manga: manga)) {
+                        MangaCoverCard(                 // Reuse the card for each manga
+                            title: manga.title,         // Pass the display title
+                            coverURL: manga.coverURL    // Pass the prebuilt cover URL from the model
+                        )
+                    }
                 }
             }
             .padding(.horizontal, 16) // Add side padding so cards aren't glued to the edges

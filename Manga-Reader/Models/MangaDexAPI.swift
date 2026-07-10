@@ -144,6 +144,88 @@ struct ChapterPagesData: Decodable {                // The per-chapter arrays of
     let dataSaver: [String]                         // Reduced-size image files.
 }
 
+// MARK: - Detail + Chapter domain types (used by MangaDetailView / MangaDetailViewModel)
+
+/// A single readable chapter for the detail screen's chapter list.
+struct Chapter: Identifiable {                      // Identifiable so SwiftUI ForEach works directly.
+    let id: String                                  // Chapter UUID (used to open the reader).
+    let number: String                              // Chapter number as displayed (e.g., "12").
+    let title: String?                              // Optional chapter title.
+}
+
+extension ChapterAttributes {                       // Convert raw chapter attributes → domain `Chapter`.
+    /// Builds a `Chapter` from decoded attributes plus the chapter id from its container.
+    func toChapter(id: String) -> Chapter {
+        Chapter(id: id, number: chapter ?? "?", title: title)
+    }
+}
+
+/// Enriched manga metadata shown on the detail screen.
+struct MangaDetail {                                // Plain value type consumed by the detail view model.
+    let description: String                         // English description (falls back to any locale).
+    let authors: [String]                           // Author + artist names (deduped, order preserved).
+    let tags: [String]                              // Genre/theme tag names (English preferred).
+}
+
+// MARK: - Detail wire types (/manga/{id})
+
+/// Top-level response for the single-manga endpoint `/manga/{id}`.
+struct MangaDetailResponse: Decodable {             // Object (not array) response wrapper.
+    let data: MangaDetailData                       // The single manga payload.
+
+    /// Converts the raw API payload into our `MangaDetail` domain value.
+    func toDomain() -> MangaDetail {
+        let attrs = data.attributes
+        // Prefer English description; fall back to any locale; else empty.
+        let description = attrs.description?["en"] ?? attrs.description?.values.first ?? ""
+        // Collect author + artist names from relationships, dedupe while preserving order.
+        var seen = Set<String>()
+        let authors = (data.relationships ?? [])
+            .filter { $0.type == "author" || $0.type == "artist" }
+            .compactMap { $0.attributes?.name }
+            .filter { seen.insert($0).inserted }
+        // Resolve each tag's name (English preferred, else first available locale).
+        let tags = (attrs.tags ?? []).compactMap { $0.attributes.name["en"] ?? $0.attributes.name.values.first }
+        return MangaDetail(description: description, authors: authors, tags: tags)
+    }
+}
+
+/// The single manga object inside a detail response.
+struct MangaDetailData: Decodable {                 // Mirrors `MangaData` but with tags + author names.
+    let id: String                                  // Manga ID.
+    let attributes: MangaDetailAttributes           // Title/description/tags.
+    let relationships: [MDDetailRelationship]?      // author/artist relations (names) when included.
+}
+
+/// Attributes for the detail endpoint (adds `tags` on top of the basic fields).
+struct MangaDetailAttributes: Decodable {           // Detail-specific attribute payload.
+    let title: [String: String]                     // Localized titles.
+    let description: [String: String]?              // Localized descriptions.
+    let tags: [MDTag]?                              // Genre/theme tags.
+}
+
+/// A MangaDex tag entry with a localized name.
+struct MDTag: Decodable {                            // Wraps a tag's attributes.
+    let attributes: MDTagAttributes                 // Holds the localized name dictionary.
+}
+
+/// Localized name payload for a tag.
+struct MDTagAttributes: Decodable {                 // e.g., name == ["en": "Action"].
+    let name: [String: String]                      // Tag name per locale.
+}
+
+/// Relationship on the detail endpoint that can carry an author/artist name.
+struct MDDetailRelationship: Decodable {            // Separate from `MDRelationship` (which carries cover attrs).
+    let id: String                                  // Related object ID.
+    let type: String                                // e.g., "author", "artist".
+    let attributes: MDAuthorAttributes?             // Author/artist attributes (name).
+}
+
+/// Attributes carrying an author/artist display name.
+struct MDAuthorAttributes: Decodable {              // Decoded when includes[]=author/artist is requested.
+    let name: String?                               // Person's display name.
+}
+
 // MARK: - Core API Client
 
 struct MangaDexAPI {                                // Namespace-style struct for static helpers.
@@ -211,7 +293,7 @@ struct MangaDexAPI {                                // Namespace-style struct fo
     static func fetchPopular(limit: Int = 20, offset: Int = 0) async throws -> [Manga] {
         let items = [
             URLQueryItem(name: "order[rating]", value: "desc"),     // Sort by rating, highest first.
-            URLQueryItem(name: "includes[]", value: "cover_art"),   // ✅ Include cover data.
+            URLQueryItem(name: "includes[]", value: "cover_art"),   // Include cover data.
             URLQueryItem(name: "limit", value: String(limit)),      // Page size.
             URLQueryItem(name: "offset", value: String(offset))     // Pagination offset.
         ]
@@ -278,6 +360,29 @@ struct MangaDexAPI {                                // Namespace-style struct fo
         // Convert to `Manga` with coverURL attached via toManga(...).
         return res.data.map { $0.attributes.toManga(id: $0.id, relationships: $0.relationships) }
     }
+    
+    static func fetchMangaDetails(id: String) async throws -> MangaDetail {
+        let res: MangaDetailResponse = try await request(endpoint: "/manga/\(id)",queryItems: [
+            URLQueryItem(name: "includes[]", value: "author"),
+            URLQueryItem(name: "includes[]", value: "artist")
+            ]
+                                                         )
+        return res.toDomain()
+                                                         
+            
+    }
+    
+    static func fetchChapters(mangaId: String) async throws -> [Chapter] {
+        let res: ChapterListResponse = try await request(endpoint: "/chapter", queryItems: [
+            URLQueryItem(name: "manga", value: mangaId),
+            URLQueryItem(name: "translatedLanguage[]", value: "en"),
+            URLQueryItem(name: "order[chapter]", value: "asc"),
+            URLQueryItem(name: "limit", value: "500")
+            ]
+                                                         )
+        return res.data.map { $0.attributes.toChapter(id: $0.id)}
+    }
+        
 
     // MARK: - Reading: build page URLs for a chapter
 
@@ -298,6 +403,8 @@ struct MangaDexAPI {                                // Namespace-style struct fo
         // 4) Map file names → URL objects, dropping any malformed ones with compactMap.
         return files.compactMap { URL(string: "\(base)/\(mode)/\(hash)/\($0)") }
     }
+    
+    
 }
 
 // MARK: - Image URL helpers
