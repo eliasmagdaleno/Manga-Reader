@@ -29,7 +29,7 @@ struct ContentView: View {
                     .tag(Tabs.home)
                 BookmarksView()
                     .tabItem {
-                        Label("Bookmarks", systemImage: "bookmark")
+                        Label("Library", systemImage: "books.vertical")
                     }
                     .tag(Tabs.bookmarks)
                 SearchView()
@@ -53,7 +53,7 @@ struct ContentView: View {
                     .tag(Tabs.home)
                 BookmarksView()
                     .tabItem {
-                        Label("Bookmarks", systemImage: "bookmark")
+                        Label("Library", systemImage: "books.vertical")
                     }
                     .tag(Tabs.bookmarks)
                 SearchView()
