@@ -2,30 +2,35 @@
 //  MangaRail.swift
 //  Manga-Reader
 //
-//  Created by Elias Magdaleno on 10/8/25.
+//  A horizontal, scrollable rail of cover cards. Expects `Manga` to already
+//  carry `coverURL`. Generous gutters keep it breathing like a printed spread.
 //
 
-import SwiftUI // Import SwiftUI to build views
+import SwiftUI
 
-// A horizontal, scrollable rail that renders a list of manga as cards.
-// It expects `Manga` to already include `coverURL`.
-struct MangaRail: View {     // Define the reusable rail component
-    let items: [Manga]       // Store the list of manga to display
+struct MangaRail: View {
+    let items: [Manga]
+    /// Optional per-item stamp text, e.g. chapter labels keyed by manga id.
+    var stampFor: ((Manga) -> String?)? = nil
+    var stampTinted = false
 
-    var body: some View {    // Describe the rail UI
-        ScrollView(.horizontal, showsIndicators: false) { // Enable horizontal scrolling, hide scrollbar
-            HStack(spacing: 12) { // Place cards in a row with spacing between them
-                ForEach(items, id: \.id) { manga in // Iterate using each manga's stable id
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: Gutter.rail) {
+                ForEach(items, id: \.id) { manga in
                     NavigationLink(destination: MangaDetailView(manga: manga)) {
-                        MangaCoverCard(                 // Reuse the card for each manga
-                            title: manga.title,         // Pass the display title
-                            coverURL: manga.coverURL    // Pass the prebuilt cover URL from the model
+                        MangaCoverCard(
+                            title: manga.title,
+                            coverURL: manga.coverURL,
+                            stamp: stampFor?(manga),
+                            stampTinted: stampTinted
                         )
                     }
+                    .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 16) // Add side padding so cards aren't glued to the edges
+            .padding(.horizontal, Gutter.page)
         }
-        .frame(maxWidth: .infinity, alignment: .leading) // Let the rail take full width of the screen
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

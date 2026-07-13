@@ -1,0 +1,144 @@
+//
+//  InkComponents.swift
+//  Manga-Reader
+//
+//  Reusable "Ink & Seal" building blocks: the screentone placeholder that
+//  stands in for loading art, the section header with its seal tick, small
+//  metadata stamps, and empty-state scaffolding.
+//
+
+import SwiftUI
+
+// MARK: - Screentone (halftone) placeholder
+
+/// The signature motif: a halftone dot field, the way manga renders shading.
+/// Used behind loading covers and pages instead of a flat gray box.
+struct Screentone: View {
+    var dot: CGFloat = 3
+    var spacing: CGFloat = 7
+    var color: Color = Ink.tertiary
+    var opacity: Double = 0.35
+
+    var body: some View {
+        Canvas { context, size in
+            let step = dot + spacing
+            var y: CGFloat = spacing
+            while y < size.height {
+                var x: CGFloat = spacing
+                while x < size.width {
+                    let rect = CGRect(x: x, y: y, width: dot, height: dot)
+                    context.fill(Path(ellipseIn: rect), with: .color(color.opacity(opacity)))
+                    x += step
+                }
+                y += step
+            }
+        }
+        .background(Ink.surfaceAlt)
+    }
+}
+
+/// A cover-shaped placeholder: screentone with a centered seal tick.
+struct CoverPlaceholder: View {
+    var showsSpinner = false
+
+    var body: some View {
+        Screentone()
+            .overlay {
+                if showsSpinner {
+                    ProgressView().tint(Ink.seal)
+                } else {
+                    Image(systemName: "book.closed")
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundStyle(Ink.tertiary)
+                }
+            }
+    }
+}
+
+// MARK: - Section header
+
+/// Section title in the print voice: a vermilion seal tick, a monospaced
+/// eyebrow, and a serif title. The eyebrow encodes the section's role, not decoration.
+struct InkSectionHeader: View {
+    let eyebrow: String
+    let title: String
+
+    init(_ title: String, eyebrow: String) {
+        self.title = title
+        self.eyebrow = eyebrow
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 10) {
+            // Seal tick — the one spot of accent.
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(Ink.seal)
+                .frame(width: 4, height: 22)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(eyebrow.uppercased())
+                    .font(.inkMono(10, weight: .semibold))
+                    .tracking(1.6)
+                    .foregroundStyle(Ink.tertiary)
+                Text(title)
+                    .font(.inkDisplay(22))
+                    .foregroundStyle(Ink.primary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Gutter.page)
+    }
+}
+
+// MARK: - Metadata stamp
+
+/// Small monospaced label, e.g. "CH·012" or "NEW". Reads like a spine stamp.
+struct InkStamp: View {
+    let text: String
+    var tinted = false
+
+    var body: some View {
+        Text(text)
+            .font(.inkMono(10, weight: .semibold))
+            .tracking(0.5)
+            .foregroundStyle(tinted ? Ink.seal : Ink.secondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(tinted ? Ink.sealSoft : Ink.surfaceAlt)
+            )
+    }
+}
+
+// MARK: - Empty state
+
+/// A calm, centered empty state for stubbed / unpopulated screens.
+struct InkEmptyState: View {
+    let symbol: String
+    let title: String
+    let message: String
+
+    var body: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(Ink.sealSoft)
+                    .frame(width: 76, height: 76)
+                Image(systemName: symbol)
+                    .font(.system(size: 30, weight: .regular))
+                    .foregroundStyle(Ink.seal)
+            }
+            Text(title)
+                .font(.inkDisplay(20))
+                .foregroundStyle(Ink.primary)
+            Text(message)
+                .font(.system(.subheadline))
+                .foregroundStyle(Ink.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Ink.background)
+    }
+}

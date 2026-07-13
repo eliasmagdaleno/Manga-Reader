@@ -2,17 +2,56 @@
 //  BookmarksView.swift
 //  Manga-Reader
 //
-//  Created by Elias Magdaleno on 10/2/25.
+//  The "Library" tab: manga the reader has saved. Renders saved items as a grid
+//  and falls back to a themed empty state when nothing is saved yet.
 //
 
 import SwiftUI
 
 struct BookmarksView: View {
+    @EnvironmentObject private var library: LibraryStore
+
+    private let columns = [GridItem(.adaptive(minimum: Gutter.coverWidth), spacing: Gutter.rail)]
+
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        NavigationStack {
+            Group {
+                if library.items.isEmpty {
+                    InkEmptyState(
+                        symbol: "books.vertical",
+                        title: "Your library is empty",
+                        message: "Tap Add to Library on any title to keep it here for quick access."
+                    )
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: columns, alignment: .leading, spacing: Gutter.section) {
+                            ForEach(library.items) { item in
+                                NavigationLink(destination: MangaDetailView(manga: item.asManga)) {
+                                    MangaCoverCard(title: item.title, coverURL: item.coverURL)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.horizontal, Gutter.page)
+                        .padding(.top, 8)
+                        .padding(.bottom, 32)
+                    }
+                    .background(Ink.background)
+                }
+            }
+            .navigationTitle("Library")
+        }
+    }
+}
+
+private extension LibraryItem {
+    /// A minimal `Manga` for navigation; the detail view refetches full data by id.
+    var asManga: Manga {
+        Manga(id: id, title: title, description: "", status: "unknown", year: nil, coverURL: coverURL)
     }
 }
 
 #Preview {
     BookmarksView()
+        .environmentObject(LibraryStore())
 }

@@ -9,9 +9,22 @@ import SwiftUI
 
 @main
 struct Manga_ReaderApp: App {
+    // Persisted appearance choice; drives the whole app's color scheme.
+    @AppStorage(appearanceStorageKey) private var appearanceRaw = AppearanceMode.system.rawValue
+
+    // The user's saved library, shared across the app.
+    @StateObject private var library = LibraryStore()
+
+    private var appearance: AppearanceMode {
+        AppearanceMode(rawValue: appearanceRaw) ?? .system
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .tint(Ink.seal)
+                .environmentObject(library)
+                .preferredColorScheme(appearance.colorScheme)
         }
     }
 }

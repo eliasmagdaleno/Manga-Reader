@@ -2,14 +2,22 @@
 //  SearchView.swift
 //  Manga-Reader
 //
-//  Created by Elias Magdaleno on 10/2/25.
-//
 
 import SwiftUI
 
 struct SearchView: View {
+    @State private var query = ""
+
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        NavigationStack {
+            InkEmptyState(
+                symbol: "magnifyingglass",
+                title: "Search the library",
+                message: "Find manga by title, author, or tag. Full search is coming soon."
+            )
+            .navigationTitle("Search")
+            .searchable(text: $query, prompt: "Titles, authors, tags")
+        }
     }
 }
 

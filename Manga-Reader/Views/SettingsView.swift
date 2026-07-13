@@ -2,14 +2,98 @@
 //  SettingsView.swift
 //  Manga-Reader
 //
-//  Created by Elias Magdaleno on 10/2/25.
-//
 
 import SwiftUI
 
 struct SettingsView: View {
+    @AppStorage(appearanceStorageKey) private var appearanceRaw = AppearanceMode.system.rawValue
+
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Gutter.section) {
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        InkSectionHeader("Appearance", eyebrow: "Theme")
+                        AppearancePicker(selection: $appearanceRaw)
+                            .padding(.horizontal, Gutter.page)
+                        Text("Follows your device by default. Choose Light or Dark to pin it.")
+                            .font(.footnote)
+                            .foregroundStyle(Ink.tertiary)
+                            .padding(.horizontal, Gutter.page)
+                    }
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        InkSectionHeader("About", eyebrow: "Info")
+                        VStack(spacing: 0) {
+                            aboutRow("Source", "MangaDex API")
+                            Divider().overlay(Ink.hairline).padding(.leading, Gutter.page)
+                            aboutRow("Version", "0.1 · WIP")
+                        }
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Ink.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Ink.hairline, lineWidth: 1))
+                        .padding(.horizontal, Gutter.page)
+                    }
+                }
+                .padding(.top, 4)
+                .padding(.bottom, 40)
+            }
+            .background(Ink.background)
+            .navigationTitle("Settings")
+        }
+    }
+
+    private func aboutRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(Ink.primary)
+            Spacer()
+            Text(value)
+                .font(.inkMono(12, weight: .medium))
+                .foregroundStyle(Ink.secondary)
+        }
+        .padding(.horizontal, Gutter.page)
+        .padding(.vertical, 15)
+    }
+}
+
+/// Three seal-highlighted cards: System / Light / Dark. The signature control
+/// for the dark-mode feature.
+private struct AppearancePicker: View {
+    @Binding var selection: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(AppearanceMode.allCases) { mode in
+                let isSelected = selection == mode.rawValue
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { selection = mode.rawValue }
+                } label: {
+                    VStack(spacing: 10) {
+                        Image(systemName: mode.symbol)
+                            .font(.system(size: 22, weight: .regular))
+                            .foregroundStyle(isSelected ? Ink.seal : Ink.secondary)
+                        Text(mode.label)
+                            .font(.inkMono(11, weight: .semibold))
+                            .tracking(0.5)
+                            .foregroundStyle(isSelected ? Ink.primary : Ink.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14)
+                            .fill(isSelected ? Ink.sealSoft : Ink.surface)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(isSelected ? Ink.seal : Ink.hairline,
+                                          lineWidth: isSelected ? 1.5 : 1)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
     }
 }
 
