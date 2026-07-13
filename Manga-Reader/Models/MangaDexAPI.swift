@@ -106,6 +106,7 @@ struct MangaAttributes: Decodable {                 // Raw payload we convert in
 /// Top-level list response for /chapter.
 struct ChapterListResponse: Decodable {             // Decode list of chapters.
     let data: [ChapterData]                         // The array of chapter entries.
+    let total: Int                                  // Total matching chapters (for pagination).
 }
 
 /// One chapter entry from /chapter (we only parse what we need).
@@ -416,17 +417,28 @@ struct MangaDexAPI {                                // Namespace-style struct fo
     }
     
     static func fetchChapters(mangaId: String) async throws -> [Chapter] {
-        let res: ChapterListResponse = try await request(endpoint: "/chapter", queryItems: [
-            URLQueryItem(name: "manga", value: mangaId),
-            URLQueryItem(name: "translatedLanguage[]", value: "en"),
-            URLQueryItem(name: "order[chapter]", value: "asc"),
-            URLQueryItem(name: "limit", value: "500")
-            ]
-                                                         )
+        // The /chapter endpoint caps `limit` at 100, so page through with offset
+        // until we've collected every English chapter (guarded by a safety cap).
+        let pageSize = 100
+        let maxChapters = 2000
+        var raw: [ChapterData] = []
+        var offset = 0
+        while offset < maxChapters {
+            let res: ChapterListResponse = try await request(endpoint: "/chapter", queryItems: [
+                URLQueryItem(name: "manga", value: mangaId),
+                URLQueryItem(name: "translatedLanguage[]", value: "en"),
+                URLQueryItem(name: "order[chapter]", value: "asc"),
+                URLQueryItem(name: "limit", value: String(pageSize)),
+                URLQueryItem(name: "offset", value: String(offset))
+            ])
+            raw += res.data
+            offset += pageSize
+            if res.data.isEmpty || offset >= res.total { break }
+        }
         // Multiple scanlation groups often upload the same chapter number. Keep the
         // first occurrence of each number (unknown-numbered chapters are never merged).
         var seenNumbers = Set<String>()
-        return res.data
+        return raw
             .map { $0.attributes.toChapter(id: $0.id) }
             .filter { $0.number == "?" || seenNumbers.insert($0.number).inserted }
     }

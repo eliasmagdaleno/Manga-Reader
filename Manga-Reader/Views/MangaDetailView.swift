@@ -93,6 +93,7 @@ struct MangaDetailView: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, Gutter.page)
+            .padding(.bottom, 24)
         }
     }
 
@@ -183,7 +184,10 @@ struct MangaDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             InkSectionHeader("Chapters", eyebrow: "\(vm.chapters.count) available")
 
-            if vm.chapters.isEmpty {
+            if let error = vm.errorMessage, vm.chapters.isEmpty {
+                InkNotice(error)
+                    .padding(.horizontal, Gutter.page)
+            } else if vm.chapters.isEmpty {
                 Text(vm.isLoading ? "Loading chapters…" : "No chapters yet.")
                     .font(.footnote)
                     .foregroundStyle(Ink.tertiary)
