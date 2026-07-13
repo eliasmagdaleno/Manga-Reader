@@ -33,4 +33,51 @@ final class Manga_ReaderTests: XCTestCase {
         }
     }
 
+    // MARK: - HistoryStore
+
+    @MainActor
+    private func makeHistoryStore() -> HistoryStore {
+        let suite = UserDefaults(suiteName: "test.history.\(UUID().uuidString)")!
+        return HistoryStore(defaults: suite)
+    }
+
+    private func sampleManga(_ id: String = "m1") -> Manga {
+        Manga(id: id, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil)
+    }
+
+    @MainActor func testRecordPrependsNewEntry() throws {
+        let store = makeHistoryStore()
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 2, pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil), page: 0, pageCount: 8)
+        XCTAssertEqual(store.entries.count, 2)
+        XCTAssertEqual(store.entries.first?.chapterId, "c2") // most-recent-first
+    }
+
+    @MainActor func testRecordSameChapterUpdatesInPlace() throws {
+        let store = makeHistoryStore()
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 2, pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 5, pageCount: 10)
+        XCTAssertEqual(store.entries.count, 1)
+        XCTAssertEqual(store.entries.first?.page, 5)
+    }
+
+    @MainActor func testLatestEntryForManga() throws {
+        let store = makeHistoryStore()
+        store.record(manga: sampleManga("a"), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)
+        store.record(manga: sampleManga("b"), chapter: Chapter(id: "c2", number: "1", title: nil), page: 1, pageCount: 10)
+        XCTAssertEqual(store.latestEntry(forManga: "a")?.chapterId, "c1")
+        XCTAssertNil(store.latestEntry(forManga: "zzz"))
+    }
+
+    @MainActor func testDeleteAndClear() throws {
+        let store = makeHistoryStore()
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)
+        let entry = store.entries[0]
+        store.delete(entry)
+        XCTAssertTrue(store.entries.isEmpty)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)
+        store.clear()
+        XCTAssertTrue(store.entries.isEmpty)
+    }
+
 }
