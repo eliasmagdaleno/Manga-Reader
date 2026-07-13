@@ -27,6 +27,9 @@ spine:
   new entry; a single continuous reading session updates one entry in place.
 - **Update badge:** shows the *number* of new chapters available; clears when the
   reader opens the reader for that manga (i.e., reads).
+- **Chapter list order:** default newest-first (latest chapter at top, first
+  chapter at bottom), with a toggle button to flip to oldest-first.
+- **Reading direction default:** right-to-left (manga order).
 
 ## Architecture
 
@@ -97,6 +100,10 @@ Reasons all three call sites need the richer signature:
 - `chapter` — chapter id **and** number (for "Continue Ch 12" and log rows).
 - `initialPage` — seek target when resuming.
 
+**Reading-direction default:** change `@AppStorage("readingMode")`'s default from
+`.leftToRight` to `.rightToLeft` (manga order). This applies to fresh installs
+only — an existing persisted choice is respected.
+
 Behavior added to `ReaderView`:
 - **Furthest-page tracking** via each page's `.onAppear(index)`. This is the only
   mechanism that works in *both* paged and webtoon modes — the vertical/webtoon
@@ -137,6 +144,21 @@ Styling: secondary treatment relative to the primary "Add to Library" button —
 e.g. seal-outlined rather than filled — so the two buttons read as a pair without
 competing. Follows the existing "Ink & Seal" tokens (`Ink.seal`, `Gutter.page`,
 `.inkMono` for the chapter/page stamp).
+
+**Chapter list ordering.** `fetchChapters` returns chapters ascending; the view
+owns display order. Add `@State private var chaptersDescending = true` (default
+newest-first: latest chapter at top, chapter 1 at bottom). The `chapters` section
+renders `vm.chapters` sorted by chapter number accordingly, with a small toggle
+button in the section header (e.g. an `arrow.up.arrow.down` stamp reading
+"NEWEST" / "OLDEST") that flips the order.
+
+- Sort key is the **numeric** value of `Chapter.number` (`Double(number)`), since
+  numbers are strings ("2" vs "10" vs "10.5"); unparseable/`"?"` numbers sort to
+  the end. Use a stable sort helper so ties keep source order.
+- **Resume "next chapter" logic is independent of display order** — it always
+  finds the next chapter by ascending numeric order, regardless of how the list is
+  currently sorted. Both the display sort and the resume logic share the same
+  numeric-ordering helper.
 
 ### Component 4 — History tab (`HistoryView`)
 
@@ -252,6 +274,9 @@ Unit tests (`Manga-ReaderTests`, Swift Testing) for the pure logic:
   finished + next exists → next chapter page 0; finished + latest → re-read.
   (Extract this into a pure, testable free function / static method taking
   `(entry?, chapters)`.)
+- Numeric chapter-ordering helper: "2" < "10" < "10.5"; `"?"`/unparseable sort to
+  the end; stable on ties. Shared by the display-sort toggle and the resume
+  next-chapter lookup.
 - New-chapter counting: `readableAt` comparison; first-refresh baseline yields 0;
   subsequent refresh counts only newer entries.
 - `LibraryItem` decodes from **old** JSON (without the three new fields) without
@@ -265,8 +290,9 @@ appears only for genuinely new chapters and clears after reading.
 ## Build order
 
 1. `HistoryStore` + `ReaderView` plumbing (widen signature, furthest-page
-   tracking, seek, `record`).
-2. Resume button in `MangaDetailView`.
+   tracking, seek, `record`, RTL default).
+2. Resume button + chapter-order toggle in `MangaDetailView` (shared numeric
+   chapter-ordering helper).
 3. History tab (`HistoryView` + `ContentView` tab + `pbxproj` edit).
 4. Library refresh + badges (`recentChapters` API, `LibraryStore.refresh` /
    `markCaughtUp`, `LibraryItem` fields, `BookmarksView` UI).
