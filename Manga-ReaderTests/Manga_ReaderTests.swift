@@ -61,6 +61,16 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(store.entries.first?.page, 5)
     }
 
+    @MainActor func testRecordNonConsecutiveChapterCreatesNewEntry() throws {
+        let store = makeHistoryStore()
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil), page: 1, pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 3, pageCount: 10) // reopened later
+        XCTAssertEqual(store.entries.count, 3)          // new session, not an in-place update
+        XCTAssertEqual(store.entries.first?.chapterId, "c1")
+        XCTAssertEqual(store.entries.first?.page, 3)
+    }
+
     @MainActor func testLatestEntryForManga() throws {
         let store = makeHistoryStore()
         store.record(manga: sampleManga("a"), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)

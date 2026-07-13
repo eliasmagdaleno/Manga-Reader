@@ -8,8 +8,10 @@
 
 import SwiftUI
 
-/// One logged reading position. A continuous session updates a single entry in
-/// place; re-opening a chapter later creates a new entry.
+/// One logged reading position. A continuous session (the chapter being
+/// recorded is already the newest entry) updates that entry in place;
+/// re-opening a chapter later — after other reading has happened — creates a
+/// brand-new entry so the log is a full chronological history.
 struct ReadingEntry: Codable, Identifiable, Hashable {
     let id: UUID
     let mangaId: String
@@ -35,15 +37,16 @@ final class HistoryStore: ObservableObject {
         load()
     }
 
-    /// Record progress. If the newest entry is the same manga + chapter, update
-    /// it in place and float to the front; otherwise prepend a new entry.
+    /// Record progress. If the newest entry (the current session) is the same
+    /// manga + chapter, update it in place; otherwise (including re-opening a
+    /// chapter read previously) prepend a brand-new entry so the log stays a
+    /// full chronological history of reading sessions.
     func record(manga: Manga, chapter: Chapter, page: Int, pageCount: Int) {
-        if let idx = entries.firstIndex(where: { $0.mangaId == manga.id && $0.chapterId == chapter.id }) {
-            var entry = entries.remove(at: idx)
-            entry.page = max(entry.page, page)   // furthest page reached
-            entry.pageCount = pageCount
-            entry.updatedAt = Date()
-            entries.insert(entry, at: 0)
+        if var first = entries.first, first.mangaId == manga.id, first.chapterId == chapter.id {
+            first.page = max(first.page, page)   // furthest page reached
+            first.pageCount = pageCount
+            first.updatedAt = Date()
+            entries[0] = first
         } else {
             entries.insert(
                 ReadingEntry(id: UUID(), mangaId: manga.id, mangaTitle: manga.title,
