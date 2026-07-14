@@ -56,7 +56,6 @@ struct ReaderView: View {
     @AppStorage("readingMode") private var mode: ReadingMode = .rightToLeft
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var history: HistoryStore
-    @EnvironmentObject private var library: LibraryStore
 
     @State private var pages: [URL] = []
     @State private var currentPage = 0
@@ -92,15 +91,14 @@ struct ReaderView: View {
         .task { await loadAndBegin() }
     }
 
-    /// Fetch the chapter's pages and, on success, seed progress + clear the
-    /// library badge. Also invoked by the retry button after a failed load.
+    /// Fetch the chapter's pages and, on success, seed reading progress. Also
+    /// invoked by the retry button after a failed load.
     private func loadAndBegin() async {
         await load()
-        guard !pages.isEmpty else { return }   // load failed → don't record or clear badge
+        guard !pages.isEmpty else { return }   // load failed → don't record progress
         let start = min(max(initialPage, 0), pages.count - 1)
         currentPage = start
         advanceProgress(to: start)
-        library.markCaughtUp(manga.id)
     }
 
     /// Whole-chapter failure (the page list couldn't be fetched): notice + retry.

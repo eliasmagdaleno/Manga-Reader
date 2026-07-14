@@ -13,9 +13,16 @@ struct LibraryItem: Codable, Identifiable, Hashable {
     let id: String
     let title: String
     let coverURL: URL?
-    var lastSeenReadableAt: String?   // caught-up marker; advances only on read
-    var latestReadableAt: String?     // newest chapter seen at last refresh
-    var newChapterCount: Int?         // badge count (nil/0 = no badge)
+    var chapterNumbers: [String]? = nil   // deduped chapter numbers from last refresh; nil = never refreshed
+}
+
+extension LibraryItem {
+    /// Chapters not yet read, given this manga's read chapter numbers from `HistoryStore`.
+    /// Returns 0 until the first successful refresh populates `chapterNumbers`.
+    func unreadCount(readNumbers: Set<String>) -> Int {
+        guard let chapterNumbers else { return 0 }
+        return chapterNumbers.filter { !readNumbers.contains($0) }.count
+    }
 }
 
 @MainActor
@@ -44,54 +51,34 @@ final class LibraryStore: ObservableObject {
         save()
     }
 
-    /// Refresh every saved manga's latest-chapter info concurrently and recompute
-    /// new-chapter badges. Best-effort: per-item failures are ignored.
-    func refresh(history: HistoryStore) async {
+    /// Refresh every saved manga's full chapter-number list concurrently. Best-effort:
+    /// per-item failures leave that item's existing `chapterNumbers` untouched.
+    func refresh() async {
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
 
         let current = items
-        let results: [(String, [RecentChapter])] = await withTaskGroup(
-            of: (String, [RecentChapter])?.self
+        let results: [(String, [String])] = await withTaskGroup(
+            of: (String, [String])?.self
         ) { group in
             for item in current {
                 group.addTask {
-                    guard let recent = try? await MangaDexAPI.recentChapters(mangaId: item.id) else { return nil }
-                    return (item.id, recent)
+                    guard let chapters = try? await MangaDexAPI.fetchChapters(mangaId: item.id) else { return nil }
+                    return (item.id, chapters.map(\.number))
                 }
             }
-            var out: [(String, [RecentChapter])] = []
+            var out: [(String, [String])] = []
             for await result in group { if let result { out.append(result) } }
             return out
         }
 
         var updated = items
-        for (id, recent) in results {
+        for (id, numbers) in results {
             guard let idx = updated.firstIndex(where: { $0.id == id }) else { continue }
-            let latest = recent.first?.readableAt
-            if updated[idx].lastSeenReadableAt == nil {
-                // First-ever refresh: establish baseline, no false "new".
-                updated[idx].lastSeenReadableAt = latest
-                updated[idx].latestReadableAt = latest
-                updated[idx].newChapterCount = 0
-            } else {
-                updated[idx].latestReadableAt = latest
-                updated[idx].newChapterCount = newChapterCount(
-                    recent, since: updated[idx].lastSeenReadableAt,
-                    excludingNumbers: history.readChapterNumbers(forManga: id))
-            }
+            updated[idx].chapterNumbers = numbers
         }
         items = updated
-        save()
-    }
-
-    /// Mark a manga caught-up (called when the reader opens one of its chapters):
-    /// advance the baseline to the newest known chapter and clear the badge.
-    func markCaughtUp(_ id: String) {
-        guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
-        items[idx].lastSeenReadableAt = items[idx].latestReadableAt ?? items[idx].lastSeenReadableAt
-        items[idx].newChapterCount = 0
         save()
     }
 

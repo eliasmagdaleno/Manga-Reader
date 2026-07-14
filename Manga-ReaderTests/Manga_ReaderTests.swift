@@ -143,6 +143,26 @@ final class Manga_ReaderTests: XCTestCase {
 
     // MARK: - Library updates
 
+    func testUnreadCountNilChapterNumbersIsZero() {
+        let item = LibraryItem(id: "m1", title: "T", coverURL: nil, chapterNumbers: nil)
+        XCTAssertEqual(item.unreadCount(readNumbers: []), 0)
+    }
+
+    func testUnreadCountWithNoneReadCountsAll() {
+        let item = LibraryItem(id: "m1", title: "T", coverURL: nil, chapterNumbers: ["1", "2", "3"])
+        XCTAssertEqual(item.unreadCount(readNumbers: []), 3)
+    }
+
+    func testUnreadCountExcludesReadNumbers() {
+        let item = LibraryItem(id: "m1", title: "T", coverURL: nil, chapterNumbers: ["1", "2", "3"])
+        XCTAssertEqual(item.unreadCount(readNumbers: ["2"]), 2)
+    }
+
+    func testUnreadCountAllReadIsZero() {
+        let item = LibraryItem(id: "m1", title: "T", coverURL: nil, chapterNumbers: ["1", "2"])
+        XCTAssertEqual(item.unreadCount(readNumbers: ["1", "2"]), 0)
+    }
+
     func testNewChapterCountCountsNewerDistinct() {
         let recent = [
             RecentChapter(id: "a", number: "12", readableAt: "2026-07-13T00:00:00Z"),
@@ -243,12 +263,12 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     func testLibraryItemDecodesLegacyJSON() throws {
-        // JSON saved before the update-tracking fields existed.
+        // JSON saved before chapterNumbers existed (pre-migration installs).
         let legacy = #"{"id":"m1","title":"Old","coverURL":null}"#.data(using: .utf8)!
         let item = try JSONDecoder().decode(LibraryItem.self, from: legacy)
         XCTAssertEqual(item.id, "m1")
-        XCTAssertNil(item.newChapterCount)
-        XCTAssertNil(item.lastSeenReadableAt)
+        XCTAssertNil(item.chapterNumbers)
+        XCTAssertEqual(item.unreadCount(readNumbers: []), 0)
     }
 
 }
