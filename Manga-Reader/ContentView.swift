@@ -13,9 +13,10 @@ struct ContentView: View {
     enum Tabs: Equatable, Hashable, Identifiable  {
         case home
         case bookmarks
+        case history
         case search
         case settings
-        
+
         var id: Self { self }
     }
     
@@ -32,6 +33,11 @@ struct ContentView: View {
                         Label("Library", systemImage: "books.vertical")
                     }
                     .tag(Tabs.bookmarks)
+                HistoryView()
+                    .tabItem {
+                        Label("History", systemImage: "clock.arrow.circlepath")
+                    }
+                    .tag(Tabs.history)
                 SearchView()
                     .tabItem {
                         Label("Search", systemImage: "magnifyingglass")
@@ -56,6 +62,11 @@ struct ContentView: View {
                         Label("Library", systemImage: "books.vertical")
                     }
                     .tag(Tabs.bookmarks)
+                HistoryView()
+                    .tabItem {
+                        Label("History", systemImage: "clock.arrow.circlepath")
+                    }
+                    .tag(Tabs.history)
                 SearchView()
                     .tabItem {
                         Label("Search", systemImage: "magnifyingglass")
