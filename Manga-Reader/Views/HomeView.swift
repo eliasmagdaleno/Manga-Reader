@@ -24,15 +24,22 @@ struct HomeView: View {
 
                     section("01", "Popular", "Popular",
                             items: vm.popular,
-                            stamp: yearStamp)
+                            stamp: yearStamp,
+                            fetch: { try await MangaDexAPI.fetchPopular(limit: 60) })
 
                     section("02", "Recently Updated", "Fresh chapters",
                             items: vm.latestUpdates.map { $0.manga },
-                            stamp: { _ in "NEW" }, tinted: true)
+                            stamp: { _ in "NEW" }, tinted: true,
+                            fetch: {
+                                try await MangaDexAPI
+                                    .fetchLatestUpdates(limitTitles: 60, translatedLang: "en")
+                                    .map { $0.manga }
+                            })
 
                     section("03", "Newly Added", "Newly Added",
                             items: vm.newTitles,
-                            stamp: yearStamp)
+                            stamp: yearStamp,
+                            fetch: { try await MangaDexAPI.fetchNewTitles(limit: 60) })
                 }
                 .padding(.top, 4)
                 .padding(.bottom, 32)
@@ -49,10 +56,25 @@ struct HomeView: View {
     private func section(_ eyebrow: String, _ title: String, _ eyebrowLabel: String,
                          items: [Manga],
                          stamp: @escaping (Manga) -> String?,
-                         tinted: Bool = false) -> some View {
+                         tinted: Bool = false,
+                         fetch: (() async throws -> [Manga])? = nil) -> some View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
                 InkSectionHeader(title, eyebrow: eyebrowLabel)
+                    .overlay(alignment: .trailing) {
+                        NavigationLink {
+                            CategoryGridView(title: title, initialItems: items, fetch: fetch)
+                        } label: {
+                            HStack(spacing: 3) {
+                                Text("See all")
+                                Image(systemName: "chevron.right")
+                            }
+                            .font(.inkMono(11, weight: .semibold))
+                            .foregroundStyle(Ink.seal)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, Gutter.page)
+                    }
                 MangaRail(items: items, stampFor: stamp, stampTinted: tinted)
             }
         }

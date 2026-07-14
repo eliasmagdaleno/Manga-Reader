@@ -190,6 +190,7 @@ struct MangaDetail {                                // Plain value type consumed
     let description: String                         // English description (falls back to any locale).
     let authors: [String]                           // Author + artist names (deduped, order preserved).
     let tags: [String]                              // Genre/theme tag names (English preferred).
+    let contentRating: String?                      // safe / suggestive / erotica / pornographic.
 }
 
 // MARK: - Detail wire types (/manga/{id})
@@ -211,7 +212,8 @@ struct MangaDetailResponse: Decodable {             // Object (not array) respon
             .filter { seen.insert($0).inserted }
         // Resolve each tag's name (English preferred, else first available locale).
         let tags = (attrs.tags ?? []).compactMap { $0.attributes.name["en"] ?? $0.attributes.name.values.first }
-        return MangaDetail(description: description, authors: authors, tags: tags)
+        return MangaDetail(description: description, authors: authors, tags: tags,
+                           contentRating: attrs.contentRating)
     }
 }
 
@@ -227,6 +229,7 @@ struct MangaDetailAttributes: Decodable {           // Detail-specific attribute
     let title: [String: String]                     // Localized titles.
     let description: [String: String]?              // Localized descriptions.
     let tags: [MDTag]?                              // Genre/theme tags.
+    let contentRating: String?                      // safe / suggestive / erotica / pornographic.
 }
 
 /// A MangaDex tag entry with a localized name.

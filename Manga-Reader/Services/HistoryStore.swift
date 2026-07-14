@@ -24,11 +24,22 @@ struct ReadingEntry: Codable, Identifiable, Hashable {
     var updatedAt: Date
 }
 
+/// A chapter the user explicitly marked as read (or that was read but whose
+/// history entry was cleared). Kept separate from `ReadingEntry` so a manual
+/// mark never pollutes the chronological reading log.
+struct ReadMark: Codable, Hashable {
+    let mangaId: String
+    let chapterId: String
+    let chapterNumber: String
+}
+
 @MainActor
 final class HistoryStore: ObservableObject {
     @Published private(set) var entries: [ReadingEntry] = []
+    @Published private(set) var readMarks: [ReadMark] = []
 
     private let key = "history.entries"
+    private let marksKey = "history.readMarks"
     private let defaults: UserDefaults
     private let cap = 500
 
@@ -64,9 +75,51 @@ final class HistoryStore: ObservableObject {
         entries.first { $0.mangaId == id }
     }
 
-    /// Chapter numbers the reader has an entry for, for a given manga.
+    /// Newest history entry for a specific chapter, if any. Drives the "Page: N"
+    /// resume label on a chapter row.
+    func entry(forChapter chapterId: String) -> ReadingEntry? {
+        entries.first { $0.chapterId == chapterId }
+    }
+
+    /// Chapter numbers considered read for a manga — opened (has a history
+    /// entry) or manually marked. Single source of truth shared by the chapter
+    /// rows and `LibraryStore` badge reconciliation.
     func readChapterNumbers(forManga id: String) -> Set<String> {
-        Set(entries.filter { $0.mangaId == id }.map(\.chapterNumber))
+        var numbers = Set(entries.filter { $0.mangaId == id }.map(\.chapterNumber))
+        numbers.formUnion(readMarks.filter { $0.mangaId == id }.map(\.chapterNumber))
+        return numbers
+    }
+
+    // MARK: Read / unread
+
+    /// True if the chapter has been opened (has a history entry) or manually
+    /// marked read.
+    func isRead(chapterId: String) -> Bool {
+        entries.contains { $0.chapterId == chapterId } ||
+        readMarks.contains { $0.chapterId == chapterId }
+    }
+
+    func markRead(manga: Manga, chapter: Chapter) {
+        guard !readMarks.contains(where: { $0.chapterId == chapter.id }) else { return }
+        readMarks.append(ReadMark(mangaId: manga.id, chapterId: chapter.id,
+                                  chapterNumber: chapter.number))
+        save()
+    }
+
+    /// Clear read state: drop the manual mark and any history entries for the
+    /// chapter, so "opened" no longer counts it as read.
+    func markUnread(manga: Manga, chapter: Chapter) {
+        readMarks.removeAll { $0.chapterId == chapter.id }
+        entries.removeAll { $0.chapterId == chapter.id }
+        save()
+    }
+
+    func toggleRead(manga: Manga, chapter: Chapter) {
+        if isRead(chapterId: chapter.id) {
+            markUnread(manga: manga, chapter: chapter)
+        } else {
+            markRead(manga: manga, chapter: chapter)
+        }
     }
 
     func delete(_ entry: ReadingEntry) {
@@ -80,14 +133,22 @@ final class HistoryStore: ObservableObject {
     }
 
     private func save() {
-        guard let data = try? JSONEncoder().encode(entries) else { return }
-        defaults.set(data, forKey: key)
+        if let data = try? JSONEncoder().encode(entries) {
+            defaults.set(data, forKey: key)
+        }
+        if let marks = try? JSONEncoder().encode(readMarks) {
+            defaults.set(marks, forKey: marksKey)
+        }
     }
 
     private func load() {
-        guard let data = defaults.data(forKey: key),
-              let decoded = try? JSONDecoder().decode([ReadingEntry].self, from: data)
-        else { return }
-        entries = decoded
+        if let data = defaults.data(forKey: key),
+           let decoded = try? JSONDecoder().decode([ReadingEntry].self, from: data) {
+            entries = decoded
+        }
+        if let data = defaults.data(forKey: marksKey),
+           let decoded = try? JSONDecoder().decode([ReadMark].self, from: data) {
+            readMarks = decoded
+        }
     }
 }

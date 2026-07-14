@@ -12,7 +12,7 @@ struct BookmarksView: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
 
-    private let columns = [GridItem(.adaptive(minimum: Gutter.coverWidth), spacing: Gutter.rail)]
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: Gutter.rail), count: 3)
 
     var body: some View {
         NavigationStack {
@@ -32,7 +32,8 @@ struct BookmarksView: View {
                                         title: item.title,
                                         coverURL: item.coverURL,
                                         stamp: (item.newChapterCount ?? 0) > 0 ? "NEW · \(item.newChapterCount!)" : nil,
-                                        stampTinted: true
+                                        stampTinted: true,
+                                        fill: true
                                     )
                                 }
                                 .buttonStyle(.plain)

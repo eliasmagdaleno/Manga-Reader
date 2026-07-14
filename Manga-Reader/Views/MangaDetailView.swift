@@ -91,6 +91,9 @@ struct MangaDetailView: View {
                             InkStamp(text: String(year))
                         }
                         InkStamp(text: manga.status.uppercased())
+                        if let rating = vm.contentRating, !rating.isEmpty {
+                            InkStamp(text: rating.uppercased(), tinted: true)
+                        }
                     }
                 }
                 Spacer(minLength: 0)
@@ -108,7 +111,7 @@ struct MangaDetailView: View {
             withAnimation(.snappy(duration: 0.2)) { library.toggle(manga) }
         } label: {
             HStack(spacing: 8) {
-                Image(systemName: inLibrary ? "checkmark" : "plus")
+                Image(systemName: inLibrary ? "bookmark.fill" : "bookmark")
                 Text(inLibrary ? "In Library" : "Add to Library")
             }
             .font(.subheadline.weight(.semibold))
@@ -256,6 +259,15 @@ struct MangaDetailView: View {
                             chapterRow(chapter)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            let read = history.isRead(chapterId: chapter.id)
+                            Button {
+                                history.toggleRead(manga: manga, chapter: chapter)
+                            } label: {
+                                Label(read ? "Mark as unread" : "Mark as read",
+                                      systemImage: read ? "circle" : "checkmark.circle")
+                            }
+                        }
                         Divider().overlay(Ink.hairline)
                             .padding(.leading, Gutter.page)
                     }
@@ -265,17 +277,32 @@ struct MangaDetailView: View {
     }
 
     private func chapterRow(_ chapter: Chapter) -> some View {
-        HStack(spacing: 14) {
+        // Show a resume marker only while a chapter is genuinely mid-read; that
+        // chapter stays highlighted (your current spot). Finished/opened
+        // chapters that aren't mid-read are dimmed.
+        let progress = history.entry(forChapter: chapter.id)
+        let inProgress = progress.map { $0.pageCount > 0 && $0.page < $0.pageCount - 1 } ?? false
+        let dimmed = history.isRead(chapterId: chapter.id) && !inProgress
+
+        return HStack(spacing: 14) {
             // Monospaced chapter stamp, like a spine number.
             Text("CH·\(chapter.number)")
                 .font(.inkMono(12, weight: .semibold))
-                .foregroundStyle(Ink.seal)
+                .foregroundStyle(dimmed ? Ink.tertiary : Ink.seal)
                 .frame(minWidth: 62, alignment: .leading)
 
-            Text(chapter.title?.isEmpty == false ? chapter.title! : "Chapter \(chapter.number)")
-                .font(.subheadline)
-                .foregroundStyle(Ink.primary)
-                .lineLimit(1)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(chapter.title?.isEmpty == false ? chapter.title! : "Chapter \(chapter.number)")
+                    .font(.subheadline)
+                    .foregroundStyle(dimmed ? Ink.tertiary : Ink.primary)
+                    .lineLimit(1)
+
+                if inProgress, let p = progress {
+                    Text("Page: \(p.page + 1)")
+                        .font(.inkMono(11, weight: .semibold))
+                        .foregroundStyle(Ink.seal)
+                }
+            }
 
             Spacer(minLength: 8)
 

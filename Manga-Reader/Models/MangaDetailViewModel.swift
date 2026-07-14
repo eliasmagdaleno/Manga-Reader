@@ -14,6 +14,7 @@ final class MangaDetailViewModel: ObservableObject{
     @Published var authors: [String] = []
     @Published var description: String = ""
     @Published var tags: [String] = []
+    @Published var contentRating: String? = nil
     @Published var chapters: [Chapter] = []
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
@@ -36,6 +37,7 @@ final class MangaDetailViewModel: ObservableObject{
             self.description = detail.description
             self.authors = detail.authors
             self.tags = detail.tags
+            self.contentRating = detail.contentRating
             
             self.chapters = try await MangaDexAPI.fetchChapters(mangaId: manga.id)
         }
