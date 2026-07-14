@@ -148,7 +148,7 @@ struct ChapterPagesData: Decodable {                // The per-chapter arrays of
 // MARK: - Detail + Chapter domain types (used by MangaDetailView / MangaDetailViewModel)
 
 /// A single readable chapter for the detail screen's chapter list.
-struct Chapter: Identifiable {                      // Identifiable so SwiftUI ForEach works directly.
+struct Chapter: Identifiable, Equatable {           // Identifiable so SwiftUI ForEach works directly.
     let id: String                                  // Chapter UUID (used to open the reader).
     let number: String                              // Chapter number as displayed (e.g., "12").
     let title: String?                              // Optional chapter title.

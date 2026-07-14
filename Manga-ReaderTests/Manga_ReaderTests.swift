@@ -90,4 +90,55 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertTrue(store.entries.isEmpty)
     }
 
+    // MARK: - Chapter ordering & resume
+
+    private func ch(_ n: String, _ id: String? = nil) -> Chapter {
+        Chapter(id: id ?? "id\(n)", number: n, title: nil)
+    }
+
+    func testNumericChapterValue() {
+        XCTAssertEqual(numericChapterValue("10.5"), 10.5)
+        XCTAssertNil(numericChapterValue("?"))
+    }
+
+    func testSortChaptersNumeric() {
+        let input = [ch("2"), ch("10"), ch("1"), ch("10.5"), ch("?")]
+        let asc = sortChapters(input, descending: false).map(\.number)
+        XCTAssertEqual(asc, ["1", "2", "10", "10.5", "?"])   // unparseable sorts last
+        let desc = sortChapters(input, descending: true).map(\.number)
+        XCTAssertEqual(desc, ["10.5", "10", "2", "1", "?"])  // unparseable still last
+    }
+
+    func testNextChapter() {
+        let asc = [ch("1"), ch("2"), ch("3")]
+        XCTAssertEqual(nextChapter(after: "2", in: asc)?.number, "3")
+        XCTAssertNil(nextChapter(after: "3", in: asc))
+    }
+
+    func testResumeActionNoHistory() {
+        let action = resumeAction(entry: nil, chapters: [ch("2"), ch("1")])
+        XCTAssertEqual(action, .start(ch("1")))
+    }
+
+    func testResumeActionMidChapter() {
+        let entry = ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "t", coverURL: nil,
+                                 chapterId: "id2", chapterNumber: "2", page: 3, pageCount: 10, updatedAt: Date())
+        XCTAssertEqual(resumeAction(entry: entry, chapters: [ch("1"), ch("2"), ch("3")]),
+                       .cont(ch("2"), page: 3))
+    }
+
+    func testResumeActionFinishedJumpsToNext() {
+        let entry = ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "t", coverURL: nil,
+                                 chapterId: "id2", chapterNumber: "2", page: 9, pageCount: 10, updatedAt: Date())
+        XCTAssertEqual(resumeAction(entry: entry, chapters: [ch("1"), ch("2"), ch("3")]),
+                       .next(ch("3")))
+    }
+
+    func testResumeActionFinishedLatestRereads() {
+        let entry = ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "t", coverURL: nil,
+                                 chapterId: "id3", chapterNumber: "3", page: 9, pageCount: 10, updatedAt: Date())
+        XCTAssertEqual(resumeAction(entry: entry, chapters: [ch("1"), ch("2"), ch("3")]),
+                       .reread(ch("3"), page: 9))
+    }
+
 }
