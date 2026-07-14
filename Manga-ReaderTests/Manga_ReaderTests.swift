@@ -222,6 +222,41 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertFalse(store.isRead(chapterId: "c1"))
     }
 
+    @MainActor func testMarkReadBatchMarksAllGivenChapters() throws {
+        let store = makeHistoryStore()
+        let chapters = [Chapter(id: "c1", number: "1", title: nil), Chapter(id: "c2", number: "2", title: nil)]
+        store.markRead(manga: sampleManga("m"), chapters: chapters)
+        XCTAssertTrue(store.isRead(chapterId: "c1"))
+        XCTAssertTrue(store.isRead(chapterId: "c2"))
+        XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["1", "2"])
+    }
+
+    @MainActor func testMarkReadBatchIsIdempotent() throws {
+        let store = makeHistoryStore()
+        let chapter = Chapter(id: "c1", number: "1", title: nil)
+        store.markRead(manga: sampleManga("m"), chapters: [chapter])
+        store.markRead(manga: sampleManga("m"), chapters: [chapter])
+        XCTAssertEqual(store.readMarks.count, 1)
+    }
+
+    @MainActor func testMarkUnreadBatchClearsOnlyGivenChapters() throws {
+        let store = makeHistoryStore()
+        let manga = sampleManga("m")
+        let c1 = Chapter(id: "c1", number: "1", title: nil)
+        let c2 = Chapter(id: "c2", number: "2", title: nil)
+        let c3 = Chapter(id: "c3", number: "3", title: nil)
+        store.record(manga: manga, chapter: c1, page: 2, pageCount: 5)  // opened
+        store.markRead(manga: manga, chapter: c2)                       // manually marked
+        store.markRead(manga: manga, chapter: c3)                       // manually marked, untouched below
+
+        store.markUnread(manga: manga, chapters: [c1, c2])
+        XCTAssertFalse(store.isRead(chapterId: "c1"))
+        XCTAssertFalse(store.isRead(chapterId: "c2"))
+        XCTAssertTrue(store.isRead(chapterId: "c3"))                    // not in the batch, stays read
+        XCTAssertTrue(store.entries.isEmpty)
+        XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["3"])
+    }
+
     @MainActor func testReadMarksPersistAcrossReload() throws {
         let suite = UserDefaults(suiteName: "test.history.\(UUID().uuidString)")!
         let store = HistoryStore(defaults: suite)

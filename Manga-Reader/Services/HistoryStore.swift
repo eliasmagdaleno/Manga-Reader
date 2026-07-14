@@ -122,6 +122,26 @@ final class HistoryStore: ObservableObject {
         }
     }
 
+    /// Mark multiple chapters read in one save. Skips chapters already marked
+    /// (mirrors the single-chapter `markRead`'s idempotency).
+    func markRead(manga: Manga, chapters: [Chapter]) {
+        let existing = Set(readMarks.map(\.chapterId))
+        for chapter in chapters where !existing.contains(chapter.id) {
+            readMarks.append(ReadMark(mangaId: manga.id, chapterId: chapter.id,
+                                      chapterNumber: chapter.number))
+        }
+        save()
+    }
+
+    /// Mark multiple chapters unread in one save: drops both manual marks and
+    /// any history entries for exactly the given chapters, leaving others untouched.
+    func markUnread(manga: Manga, chapters: [Chapter]) {
+        let ids = Set(chapters.map(\.id))
+        readMarks.removeAll { ids.contains($0.chapterId) }
+        entries.removeAll { ids.contains($0.chapterId) }
+        save()
+    }
+
     func delete(_ entry: ReadingEntry) {
         entries.removeAll { $0.id == entry.id }
         save()
