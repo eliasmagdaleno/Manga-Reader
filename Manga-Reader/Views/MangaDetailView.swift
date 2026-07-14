@@ -9,7 +9,9 @@ struct MangaDetailView: View {
     let manga: Manga
     @StateObject private var vm: MangaDetailViewModel
     @EnvironmentObject private var library: LibraryStore
+    @EnvironmentObject private var history: HistoryStore
     @State private var synopsisExpanded = false
+    @State private var chaptersDescending = true
 
     init(manga: Manga) {
         self.manga = manga
@@ -21,6 +23,7 @@ struct MangaDetailView: View {
             VStack(alignment: .leading, spacing: Gutter.section) {
                 hero
                 libraryButton
+                resumeButton
                 if !vm.tags.isEmpty { tags }
                 if !vm.description.isEmpty || vm.isLoading { description }
                 chapters
@@ -125,6 +128,42 @@ struct MangaDetailView: View {
         .padding(.horizontal, Gutter.page)
     }
 
+    // MARK: Resume / Continue reading
+
+    @ViewBuilder private var resumeButton: some View {
+        if let action = resumeAction(entry: history.latestEntry(forManga: manga.id),
+                                     chapters: vm.chapters) {
+            NavigationLink {
+                ReaderView(manga: manga, chapter: action.chapter, initialPage: action.startPage)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "book.pages")
+                    Text(action.label)
+                }
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .foregroundStyle(Ink.seal)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Ink.sealSoft))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Ink.seal, lineWidth: 1.5))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, Gutter.page)
+        } else if vm.isLoading {
+            // Chapters still loading — show a disabled placeholder so layout is stable.
+            HStack(spacing: 8) {
+                ProgressView().tint(Ink.seal)
+                Text("Start Reading")
+            }
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .foregroundStyle(Ink.tertiary)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Ink.sealSoft.opacity(0.5)))
+            .padding(.horizontal, Gutter.page)
+        }
+    }
+
     // MARK: Tags
 
     private var tags: some View {
@@ -182,7 +221,23 @@ struct MangaDetailView: View {
 
     private var chapters: some View {
         VStack(alignment: .leading, spacing: 12) {
-            InkSectionHeader("Chapters", eyebrow: "\(vm.chapters.count) available")
+            HStack {
+                InkSectionHeader("Chapters", eyebrow: "\(vm.chapters.count) available")
+                Spacer()
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { chaptersDescending.toggle() }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.arrow.down")
+                        Text(chaptersDescending ? "NEWEST" : "OLDEST")
+                    }
+                    .font(.inkMono(11, weight: .semibold))
+                    .tracking(0.5)
+                    .foregroundStyle(Ink.seal)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, Gutter.page)
+            }
 
             if let error = vm.errorMessage, vm.chapters.isEmpty {
                 InkNotice(error)
@@ -194,7 +249,7 @@ struct MangaDetailView: View {
                     .padding(.horizontal, Gutter.page)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(vm.chapters) { chapter in
+                    ForEach(sortChapters(vm.chapters, descending: chaptersDescending)) { chapter in
                         NavigationLink {
                             ReaderView(manga: manga, chapter: chapter)
                         } label: {
@@ -231,5 +286,27 @@ struct MangaDetailView: View {
         .padding(.horizontal, Gutter.page)
         .padding(.vertical, 14)
         .contentShape(Rectangle())
+    }
+}
+
+private extension ResumeAction {
+    var chapter: Chapter {
+        switch self {
+        case .start(let c), .next(let c), .cont(let c, _), .reread(let c, _): return c
+        }
+    }
+    var startPage: Int {
+        switch self {
+        case .start, .next: return 0
+        case .cont(_, let p), .reread(_, let p): return p
+        }
+    }
+    var label: String {
+        switch self {
+        case .start:                 return "Start Reading"
+        case .cont(let c, let p):    return "Continue Ch \(c.number) · p.\(p + 1)"
+        case .next(let c):           return "Start Ch \(c.number)"
+        case .reread(let c, _):      return "Read Again · Ch \(c.number)"
+        }
     }
 }
