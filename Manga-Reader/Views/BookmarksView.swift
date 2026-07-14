@@ -27,7 +27,12 @@ struct BookmarksView: View {
                         LazyVGrid(columns: columns, alignment: .leading, spacing: Gutter.section) {
                             ForEach(library.items) { item in
                                 NavigationLink(destination: MangaDetailView(manga: item.asManga)) {
-                                    MangaCoverCard(title: item.title, coverURL: item.coverURL)
+                                    MangaCoverCard(
+                                        title: item.title,
+                                        coverURL: item.coverURL,
+                                        stamp: (item.newChapterCount ?? 0) > 0 ? "NEW · \(item.newChapterCount!)" : nil,
+                                        stampTinted: true
+                                    )
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -37,9 +42,20 @@ struct BookmarksView: View {
                         .padding(.bottom, 32)
                     }
                     .background(Ink.background)
+                    .refreshable { await library.refresh() }
                 }
             }
             .navigationTitle("Library")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await library.refresh() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .disabled(library.isRefreshing || library.items.isEmpty)
+                }
+            }
         }
     }
 }

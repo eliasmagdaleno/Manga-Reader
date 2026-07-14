@@ -56,6 +56,7 @@ struct ReaderView: View {
     @AppStorage("readingMode") private var mode: ReadingMode = .rightToLeft
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var history: HistoryStore
+    @EnvironmentObject private var library: LibraryStore
 
     @State private var pages: [URL] = []
     @State private var currentPage = 0
@@ -92,6 +93,7 @@ struct ReaderView: View {
             currentPage = start
             furthestPage = start
             advanceProgress(to: start)
+            library.markCaughtUp(manga.id)
         }
     }
 
