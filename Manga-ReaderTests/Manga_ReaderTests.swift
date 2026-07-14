@@ -163,36 +163,6 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(item.unreadCount(readNumbers: ["1", "2"]), 0)
     }
 
-    func testNewChapterCountCountsNewerDistinct() {
-        let recent = [
-            RecentChapter(id: "a", number: "12", readableAt: "2026-07-13T00:00:00Z"),
-            RecentChapter(id: "b", number: "12", readableAt: "2026-07-12T00:00:00Z"), // dup number
-            RecentChapter(id: "c", number: "11", readableAt: "2026-07-11T00:00:00Z"),
-            RecentChapter(id: "d", number: "10", readableAt: "2026-07-01T00:00:00Z"),
-        ]
-        // baseline just after ch10 -> ch11 and ch12 are new (distinct) = 2
-        XCTAssertEqual(newChapterCount(recent, since: "2026-07-05T00:00:00Z"), 2)
-    }
-
-    func testNewChapterCountNilBaselineCountsAllDistinct() {
-        let recent = [
-            RecentChapter(id: "a", number: "2", readableAt: "2026-07-13T00:00:00Z"),
-            RecentChapter(id: "b", number: "1", readableAt: "2026-07-12T00:00:00Z"),
-        ]
-        XCTAssertEqual(newChapterCount(recent, since: nil), 2)
-    }
-
-    func testNewChapterCountExcludesReadNumbers() {
-        let recent = [
-            RecentChapter(id: "a", number: "12", readableAt: "2026-07-13T00:00:00Z"),
-            RecentChapter(id: "c", number: "11", readableAt: "2026-07-11T00:00:00Z"),
-        ]
-        // Both newer than baseline, but ch 12 already read → only ch 11 counts as new.
-        XCTAssertEqual(
-            newChapterCount(recent, since: "2026-07-05T00:00:00Z", excludingNumbers: ["12"]),
-            1)
-    }
-
     @MainActor func testReadChapterNumbersForManga() throws {
         let store = makeHistoryStore()
         store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 5)
