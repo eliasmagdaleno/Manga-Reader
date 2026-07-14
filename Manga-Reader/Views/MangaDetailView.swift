@@ -196,7 +196,7 @@ struct MangaDetailView: View {
                 VStack(spacing: 0) {
                     ForEach(vm.chapters) { chapter in
                         NavigationLink {
-                            ReaderView(chapterId: chapter.id)
+                            ReaderView(manga: manga, chapter: chapter)
                         } label: {
                             chapterRow(chapter)
                         }

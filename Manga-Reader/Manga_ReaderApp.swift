@@ -14,6 +14,7 @@ struct Manga_ReaderApp: App {
 
     // The user's saved library, shared across the app.
     @StateObject private var library = LibraryStore()
+    @StateObject private var history = HistoryStore()
 
     private var appearance: AppearanceMode {
         AppearanceMode(rawValue: appearanceRaw) ?? .system
@@ -24,6 +25,7 @@ struct Manga_ReaderApp: App {
             ContentView()
                 .tint(Ink.seal)
                 .environmentObject(library)
+                .environmentObject(history)
                 .preferredColorScheme(appearance.colorScheme)
         }
     }

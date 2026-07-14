@@ -43,13 +43,23 @@ enum ReadingMode: String, CaseIterable, Identifiable {
 // MARK: - Reader
 
 struct ReaderView: View {
-    let chapterId: String
+    let manga: Manga
+    let chapter: Chapter
+    let initialPage: Int
 
-    @AppStorage("readingMode") private var mode: ReadingMode = .leftToRight
+    init(manga: Manga, chapter: Chapter, initialPage: Int = 0) {
+        self.manga = manga
+        self.chapter = chapter
+        self.initialPage = initialPage
+    }
+
+    @AppStorage("readingMode") private var mode: ReadingMode = .rightToLeft
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var history: HistoryStore
 
     @State private var pages: [URL] = []
     @State private var currentPage = 0
+    @State private var furthestPage = 0
     @State private var isLoading = false
     @State private var errorMessage: String? = nil
     @State private var showChrome = false
@@ -76,11 +86,23 @@ struct ReaderView: View {
         }
         .statusBarHidden(!showChrome)
         .toolbar(.hidden, for: .navigationBar)
-        .task { await load() }
+        .task {
+            await load()
+            let start = min(max(initialPage, 0), max(pages.count - 1, 0))
+            currentPage = start
+            furthestPage = start
+            advanceProgress(to: start)
+        }
     }
 
     private func toggleChrome() {
         withAnimation(.snappy(duration: 0.22)) { showChrome.toggle() }
+    }
+
+    private func advanceProgress(to index: Int) {
+        furthestPage = max(furthestPage, index)
+        guard !pages.isEmpty else { return }
+        history.record(manga: manga, chapter: chapter, page: furthestPage, pageCount: pages.count)
     }
 
     // MARK: Content per mode
@@ -107,21 +129,30 @@ struct ReaderView: View {
         .tabViewStyle(.page(indexDisplayMode: .never))
         .scaleEffect(x: mode == .rightToLeft ? -1 : 1, y: 1)
         .ignoresSafeArea()
+        .onChange(of: currentPage) { _, newValue in advanceProgress(to: newValue) }
     }
 
     /// Continuous vertical scroll — the webtoon / long-strip layout.
     private var verticalReader: some View {
-        ScrollView {
-            LazyVStack(spacing: 0) {
-                ForEach(Array(pages.enumerated()), id: \.element) { index, url in
-                    verticalPage(url: url, index: index)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(Array(pages.enumerated()), id: \.offset) { index, url in
+                        verticalPage(url: url, index: index)
+                            .id(index)
+                            .onAppear { advanceProgress(to: index) }
+                    }
+                    if !pages.isEmpty && !isLoading { endMark }
                 }
-                if !pages.isEmpty && !isLoading { endMark }
+                .contentShape(Rectangle())
+                .onTapGesture(perform: toggleChrome)
             }
-            .contentShape(Rectangle())
-            .onTapGesture(perform: toggleChrome)
+            .ignoresSafeArea()
+            .onChange(of: pages.count) { _, count in
+                guard count > 0, initialPage > 0 else { return }
+                proxy.scrollTo(min(initialPage, count - 1), anchor: .top)
+            }
         }
-        .ignoresSafeArea()
     }
 
     private func verticalPage(url: URL, index: Int) -> some View {
@@ -224,7 +255,7 @@ struct ReaderView: View {
         isLoading = true
         errorMessage = nil
         do {
-            pages = try await MangaDexAPI.pageURLs(for: chapterId)
+            pages = try await MangaDexAPI.pageURLs(for: chapter.id)
         } catch {
             errorMessage = error.localizedDescription
         }
