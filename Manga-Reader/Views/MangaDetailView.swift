@@ -297,8 +297,8 @@ private extension ResumeAction {
     }
     var startPage: Int {
         switch self {
-        case .start, .next: return 0
-        case .cont(_, let p), .reread(_, let p): return p
+        case .start, .next, .reread: return 0
+        case .cont(_, let p): return p
         }
     }
     var label: String {

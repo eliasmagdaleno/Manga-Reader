@@ -46,7 +46,7 @@ final class LibraryStore: ObservableObject {
 
     /// Refresh every saved manga's latest-chapter info concurrently and recompute
     /// new-chapter badges. Best-effort: per-item failures are ignored.
-    func refresh() async {
+    func refresh(history: HistoryStore) async {
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
@@ -77,7 +77,9 @@ final class LibraryStore: ObservableObject {
                 updated[idx].newChapterCount = 0
             } else {
                 updated[idx].latestReadableAt = latest
-                updated[idx].newChapterCount = newChapterCount(recent, since: updated[idx].lastSeenReadableAt)
+                updated[idx].newChapterCount = newChapterCount(
+                    recent, since: updated[idx].lastSeenReadableAt,
+                    excludingNumbers: history.readChapterNumbers(forManga: id))
             }
         }
         items = updated

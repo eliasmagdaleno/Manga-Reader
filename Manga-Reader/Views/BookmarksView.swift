@@ -10,6 +10,7 @@ import SwiftUI
 
 struct BookmarksView: View {
     @EnvironmentObject private var library: LibraryStore
+    @EnvironmentObject private var history: HistoryStore
 
     private let columns = [GridItem(.adaptive(minimum: Gutter.coverWidth), spacing: Gutter.rail)]
 
@@ -42,14 +43,14 @@ struct BookmarksView: View {
                         .padding(.bottom, 32)
                     }
                     .background(Ink.background)
-                    .refreshable { await library.refresh() }
+                    .refreshable { await library.refresh(history: history) }
                 }
             }
             .navigationTitle("Library")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        Task { await library.refresh() }
+                        Task { await library.refresh(history: history) }
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }

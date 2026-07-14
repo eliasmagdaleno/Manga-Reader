@@ -61,6 +61,7 @@ struct ReaderView: View {
     @State private var pages: [URL] = []
     @State private var currentPage = 0
     @State private var furthestPage = 0
+    @State private var hasRecordedProgress = false
     @State private var isLoading = false
     @State private var errorMessage: String? = nil
     @State private var showChrome = false
@@ -89,9 +90,9 @@ struct ReaderView: View {
         .toolbar(.hidden, for: .navigationBar)
         .task {
             await load()
-            let start = min(max(initialPage, 0), max(pages.count - 1, 0))
+            guard !pages.isEmpty else { return }   // load failed → don't record or clear badge
+            let start = min(max(initialPage, 0), pages.count - 1)
             currentPage = start
-            furthestPage = start
             advanceProgress(to: start)
             library.markCaughtUp(manga.id)
         }
@@ -102,8 +103,11 @@ struct ReaderView: View {
     }
 
     private func advanceProgress(to index: Int) {
-        furthestPage = max(furthestPage, index)
         guard !pages.isEmpty else { return }
+        // Only persist when reaching a new furthest page (or on the first record).
+        guard index > furthestPage || !hasRecordedProgress else { return }
+        furthestPage = max(furthestPage, index)
+        hasRecordedProgress = true
         history.record(manga: manga, chapter: chapter, page: furthestPage, pageCount: pages.count)
     }
 

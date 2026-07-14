@@ -64,6 +64,11 @@ final class HistoryStore: ObservableObject {
         entries.first { $0.mangaId == id }
     }
 
+    /// Chapter numbers the reader has an entry for, for a given manga.
+    func readChapterNumbers(forManga id: String) -> Set<String> {
+        Set(entries.filter { $0.mangaId == id }.map(\.chapterNumber))
+    }
+
     func delete(_ entry: ReadingEntry) {
         entries.removeAll { $0.id == entry.id }
         save()

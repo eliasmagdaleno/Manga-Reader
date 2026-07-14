@@ -135,11 +135,13 @@ struct RecentChapter: Equatable {
 /// Count of distinct new chapter numbers whose `readableAt` is later than
 /// `baseline`. `recent` is expected newest-first, so the first record per number
 /// wins the dedupe. A `nil` baseline treats every dated chapter as new.
-func newChapterCount(_ recent: [RecentChapter], since baseline: String?) -> Int {
+func newChapterCount(_ recent: [RecentChapter], since baseline: String?,
+                     excludingNumbers: Set<String> = []) -> Int {
     var seen = Set<String>()
     var count = 0
     for chapter in recent {
         guard seen.insert(chapter.number).inserted else { continue } // dedupe by number
+        if excludingNumbers.contains(chapter.number) { continue }     // already read → not new
         guard let readable = chapter.readableAt else { continue }
         if let baseline { if readable > baseline { count += 1 } }
         else { count += 1 }
