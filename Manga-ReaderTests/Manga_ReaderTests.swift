@@ -239,6 +239,13 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(store.readMarks.count, 1)
     }
 
+    @MainActor func testMarkReadBatchIsIdempotentWithinSingleCallDuplicates() throws {
+        let store = makeHistoryStore()
+        let chapter = Chapter(id: "c1", number: "1", title: nil)
+        store.markRead(manga: sampleManga("m"), chapters: [chapter, chapter])
+        XCTAssertEqual(store.readMarks.count, 1)
+    }
+
     @MainActor func testMarkUnreadBatchClearsOnlyGivenChapters() throws {
         let store = makeHistoryStore()
         let manga = sampleManga("m")
