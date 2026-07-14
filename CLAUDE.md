@@ -75,12 +75,24 @@ automatically. **`Views/` is NOT synchronized:** new files there must be added t
 in Xcode does this for you; when editing `pbxproj` by hand, mirror an existing `Views`
 file across all four sections.
 
-## Current state (early WIP)
+## Current state
 
-The app builds, but much is still stubbed:
+The app builds and the core reading loop is implemented:
 
-- `SearchView`, `BookmarksView`, and `SettingsView` are placeholder "Hello, World!" stubs.
-- Only the Home tab has a `NavigationStack`, so detail/reader navigation works only from
-  Home. The other tabs will need their own `NavigationStack` when built out.
-- The detail/reader path (`MangaDetailView` → `ReaderView`) is functional but minimal —
-  no reading progress, bookmarks, or persistence yet.
+- **Tabs:** Home, Library, History, Search, Settings. Home, Library, and History each have
+  their own `NavigationStack`. `SearchView` and `SettingsView` are still placeholder stubs
+  (Settings does wire the appearance/dark-mode toggle).
+- **Reading progress & history:** `Services/HistoryStore.swift` (`@MainActor`, UserDefaults)
+  is the reading-progress spine. `ReaderView(manga:chapter:initialPage:)` records the
+  furthest page reached; the detail screen's "Continue" button resumes there (Netflix-style
+  advance to the next chapter when the last page was finished), and the History tab is a full
+  chronological log that reopens any entry at its exact page.
+- **Library updates:** `LibraryStore.refresh(history:)` pulls each saved manga's latest
+  chapters (`MangaDexAPI.recentChapters`) and shows a "NEW · N" badge for genuinely-new,
+  unread chapters (reconciled against `HistoryStore`); pull-to-refresh + a toolbar button
+  drive it, and reading clears the badge.
+- **Reader:** three modes (L→R / R→L / webtoon), default right-to-left; chapter list defaults
+  to newest-first with a toggle.
+- Design/spec/plan for the above live in `docs/superpowers/{specs,plans}/`.
+
+Still minimal: no cross-device sync, no per-chapter read/unread marks, manual refresh only.
