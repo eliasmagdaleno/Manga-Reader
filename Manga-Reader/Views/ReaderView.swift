@@ -88,6 +88,7 @@ struct ReaderView: View {
         }
         .statusBarHidden(!showChrome)
         .toolbar(.hidden, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .task {
             await load()
             guard !pages.isEmpty else { return }   // load failed → don't record or clear badge
