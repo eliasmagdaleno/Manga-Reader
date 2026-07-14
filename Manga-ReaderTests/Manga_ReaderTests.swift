@@ -141,4 +141,34 @@ final class Manga_ReaderTests: XCTestCase {
                        .reread(ch("3"), page: 9))
     }
 
+    // MARK: - Library updates
+
+    func testNewChapterCountCountsNewerDistinct() {
+        let recent = [
+            RecentChapter(id: "a", number: "12", readableAt: "2026-07-13T00:00:00Z"),
+            RecentChapter(id: "b", number: "12", readableAt: "2026-07-12T00:00:00Z"), // dup number
+            RecentChapter(id: "c", number: "11", readableAt: "2026-07-11T00:00:00Z"),
+            RecentChapter(id: "d", number: "10", readableAt: "2026-07-01T00:00:00Z"),
+        ]
+        // baseline just after ch10 -> ch11 and ch12 are new (distinct) = 2
+        XCTAssertEqual(newChapterCount(recent, since: "2026-07-05T00:00:00Z"), 2)
+    }
+
+    func testNewChapterCountNilBaselineCountsAllDistinct() {
+        let recent = [
+            RecentChapter(id: "a", number: "2", readableAt: "2026-07-13T00:00:00Z"),
+            RecentChapter(id: "b", number: "1", readableAt: "2026-07-12T00:00:00Z"),
+        ]
+        XCTAssertEqual(newChapterCount(recent, since: nil), 2)
+    }
+
+    func testLibraryItemDecodesLegacyJSON() throws {
+        // JSON saved before the update-tracking fields existed.
+        let legacy = #"{"id":"m1","title":"Old","coverURL":null}"#.data(using: .utf8)!
+        let item = try JSONDecoder().decode(LibraryItem.self, from: legacy)
+        XCTAssertEqual(item.id, "m1")
+        XCTAssertNil(item.newChapterCount)
+        XCTAssertNil(item.lastSeenReadableAt)
+    }
+
 }

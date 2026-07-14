@@ -125,6 +125,28 @@ struct ChapterAttributes: Decodable {               // Minimal set for sorting/f
     let readableAt: String?                         // Readable timestamp (often used for sorting).
 }
 
+/// A lightweight recent-chapter record for update detection.
+struct RecentChapter: Equatable {
+    let id: String
+    let number: String
+    let readableAt: String?
+}
+
+/// Count of distinct new chapter numbers whose `readableAt` is later than
+/// `baseline`. `recent` is expected newest-first, so the first record per number
+/// wins the dedupe. A `nil` baseline treats every dated chapter as new.
+func newChapterCount(_ recent: [RecentChapter], since baseline: String?) -> Int {
+    var seen = Set<String>()
+    var count = 0
+    for chapter in recent {
+        guard seen.insert(chapter.number).inserted else { continue } // dedupe by number
+        guard let readable = chapter.readableAt else { continue }
+        if let baseline { if readable > baseline { count += 1 } }
+        else { count += 1 }
+    }
+    return count
+}
+
 // MARK: - Reading (at-home) payloads
 
 /// Response for /at-home/server/{chapterId}.
@@ -442,7 +464,22 @@ struct MangaDexAPI {                                // Namespace-style struct fo
             .map { $0.attributes.toChapter(id: $0.id) }
             .filter { $0.number == "?" || seenNumbers.insert($0.number).inserted }
     }
-        
+
+    /// Newest English chapters for a manga (single page, no pagination) — used to
+    /// detect and count library updates. Ordered newest-first by `readableAt`.
+    static func recentChapters(mangaId: String) async throws -> [RecentChapter] {
+        let res: ChapterListResponse = try await request(endpoint: "/chapter", queryItems: [
+            URLQueryItem(name: "manga", value: mangaId),
+            URLQueryItem(name: "translatedLanguage[]", value: "en"),
+            URLQueryItem(name: "order[readableAt]", value: "desc"),
+            URLQueryItem(name: "limit", value: "100")
+        ])
+        return res.data.map {
+            RecentChapter(id: $0.id, number: $0.attributes.chapter ?? "?",
+                          readableAt: $0.attributes.readableAt)
+        }
+    }
+
 
     // MARK: - Reading: build page URLs for a chapter
 
