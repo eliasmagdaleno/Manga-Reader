@@ -12,6 +12,8 @@ struct MangaDetailView: View {
     @EnvironmentObject private var history: HistoryStore
     @State private var synopsisExpanded = false
     @State private var chaptersDescending = true
+    @State private var isSelecting = false
+    @State private var selectedChapterIDs: Set<String> = []
 
     init(manga: Manga) {
         self.manga = manga
@@ -33,6 +35,23 @@ struct MangaDetailView: View {
         .background(Ink.background)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { vm.load() }
+        .toolbar {
+            if isSelecting {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button(allChaptersSelected ? "Deselect All" : "Select All") {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            selectedChapterIDs = allChaptersSelected ? [] : Set(vm.chapters.map(\.id))
+                        }
+                    }
+                    Spacer()
+                    Button("Mark Unread") { markSelected(read: false) }
+                        .disabled(selectedChapterIDs.isEmpty)
+                    Button("Mark Read") { markSelected(read: true) }
+                        .disabled(selectedChapterIDs.isEmpty)
+                        .fontWeight(.semibold)
+                }
+            }
+        }
     }
 
     // MARK: Hero — blurred backdrop, floating cover plate, title block.
@@ -227,20 +246,48 @@ struct MangaDetailView: View {
             HStack {
                 InkSectionHeader("Chapters", eyebrow: "\(vm.chapters.count) available")
                 Spacer()
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) { chaptersDescending.toggle() }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.up.arrow.down")
-                        Text(chaptersDescending ? "NEWEST" : "OLDEST")
+                if isSelecting {
+                    Button {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            isSelecting = false
+                            selectedChapterIDs.removeAll()
+                        }
+                    } label: {
+                        Text("CANCEL")
+                            .font(.inkMono(11, weight: .semibold))
+                            .tracking(0.5)
+                            .foregroundStyle(Ink.seal)
                     }
-                    .font(.inkMono(11, weight: .semibold))
-                    .tracking(0.5)
-                    .foregroundStyle(Ink.seal)
+                    .buttonStyle(.plain)
+                } else {
+                    HStack(spacing: 16) {
+                        if !vm.chapters.isEmpty {
+                            Button {
+                                withAnimation(.snappy(duration: 0.2)) { isSelecting = true }
+                            } label: {
+                                Text("SELECT")
+                                    .font(.inkMono(11, weight: .semibold))
+                                    .tracking(0.5)
+                                    .foregroundStyle(Ink.seal)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        Button {
+                            withAnimation(.snappy(duration: 0.2)) { chaptersDescending.toggle() }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.up.arrow.down")
+                                Text(chaptersDescending ? "NEWEST" : "OLDEST")
+                            }
+                            .font(.inkMono(11, weight: .semibold))
+                            .tracking(0.5)
+                            .foregroundStyle(Ink.seal)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
-                .buttonStyle(.plain)
-                .padding(.trailing, Gutter.page)
             }
+            .padding(.trailing, Gutter.page)
 
             if let error = vm.errorMessage, vm.chapters.isEmpty {
                 InkNotice(error)
@@ -253,19 +300,28 @@ struct MangaDetailView: View {
             } else {
                 VStack(spacing: 0) {
                     ForEach(sortChapters(vm.chapters, descending: chaptersDescending)) { chapter in
-                        NavigationLink {
-                            ReaderView(manga: manga, chapter: chapter)
-                        } label: {
-                            chapterRow(chapter)
-                        }
-                        .buttonStyle(.plain)
-                        .contextMenu {
-                            let read = history.isRead(chapterId: chapter.id)
+                        if isSelecting {
                             Button {
-                                history.toggleRead(manga: manga, chapter: chapter)
+                                toggleSelection(chapter.id)
                             } label: {
-                                Label(read ? "Mark as unread" : "Mark as read",
-                                      systemImage: read ? "circle" : "checkmark.circle")
+                                chapterRow(chapter, selected: selectedChapterIDs.contains(chapter.id))
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            NavigationLink {
+                                ReaderView(manga: manga, chapter: chapter)
+                            } label: {
+                                chapterRow(chapter, selected: false)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu {
+                                let read = history.isRead(chapterId: chapter.id)
+                                Button {
+                                    history.toggleRead(manga: manga, chapter: chapter)
+                                } label: {
+                                    Label(read ? "Mark as unread" : "Mark as read",
+                                          systemImage: read ? "circle" : "checkmark.circle")
+                                }
                             }
                         }
                         Divider().overlay(Ink.hairline)
@@ -276,7 +332,32 @@ struct MangaDetailView: View {
         }
     }
 
-    private func chapterRow(_ chapter: Chapter) -> some View {
+    private var allChaptersSelected: Bool {
+        !vm.chapters.isEmpty && selectedChapterIDs.count == vm.chapters.count
+    }
+
+    private func toggleSelection(_ id: String) {
+        if selectedChapterIDs.contains(id) {
+            selectedChapterIDs.remove(id)
+        } else {
+            selectedChapterIDs.insert(id)
+        }
+    }
+
+    private func markSelected(read: Bool) {
+        let chapters = vm.chapters.filter { selectedChapterIDs.contains($0.id) }
+        if read {
+            history.markRead(manga: manga, chapters: chapters)
+        } else {
+            history.markUnread(manga: manga, chapters: chapters)
+        }
+        withAnimation(.snappy(duration: 0.2)) {
+            isSelecting = false
+            selectedChapterIDs.removeAll()
+        }
+    }
+
+    private func chapterRow(_ chapter: Chapter, selected: Bool) -> some View {
         // Show a resume marker only while a chapter is genuinely mid-read; that
         // chapter stays highlighted (your current spot). Finished/opened
         // chapters that aren't mid-read are dimmed.
@@ -285,6 +366,12 @@ struct MangaDetailView: View {
         let dimmed = history.isRead(chapterId: chapter.id) && !inProgress
 
         return HStack(spacing: 14) {
+            if isSelecting {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(selected ? Ink.seal : Ink.tertiary)
+            }
+
             // Monospaced chapter stamp, like a spine number.
             Text("CH·\(chapter.number)")
                 .font(.inkMono(12, weight: .semibold))
@@ -306,9 +393,11 @@ struct MangaDetailView: View {
 
             Spacer(minLength: 8)
 
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Ink.tertiary)
+            if !isSelecting {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Ink.tertiary)
+            }
         }
         .padding(.horizontal, Gutter.page)
         .padding(.vertical, 14)
