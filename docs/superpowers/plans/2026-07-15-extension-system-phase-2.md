@@ -1034,3 +1034,225 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ```
 
 (Skip if Step 3 needed no changes.)
+
+---
+
+## Addendum (2026-07-15, post-checkpoint): human E2E findings + requested follow-ups
+
+Checkpoint results: pages ✓, details ✓, switching works but Home only re-sources after app relaunch (spec gap — spec says "selecting WeebCentral re-sources Home"). User also requested: persistent reader zoom, a source label on the detail page, and an open-on-web button (in-app Safari).
+
+### Task 6: Home re-sources immediately when the active source changes
+
+**Files:**
+- Modify: `Manga-Reader/Models/HomeViewModel.swift`
+- Modify: `Manga-Reader/Views/HomeView.swift` (lines 9 and 51)
+- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+
+**Interfaces:**
+- Consumes: `SourceRegistry.shared` (`@Published var activeSourceID: String`, `var active: MangaSource`).
+- Produces: `HomeViewModel.init(source: MangaSource? = nil)` (same signature as today), `var source: MangaSource` now resolves the registry's active source dynamically when no override was injected.
+
+- [ ] **Step 1: Write the failing test** (append inside the `Manga_ReaderTests` class):
+
+```swift
+    // MARK: - Home source switching (Phase 2 addendum)
+
+    @MainActor func testHomeViewModelInjectedSourceWins() {
+        let vm = HomeViewModel(source: MockSource(id: "mock", name: "Mock"))
+        XCTAssertEqual(vm.source.id, "mock")
+    }
+
+    @MainActor func testHomeViewModelDefaultsToRegistryActiveSource() {
+        // No override → the vm must track SourceRegistry.shared.active *at read time*,
+        // not capture it at init.
+        let vm = HomeViewModel()
+        XCTAssertEqual(vm.source.id, SourceRegistry.shared.activeSourceID)
+    }
+```
+
+Note: `MockSource` already exists in the test file (~line 320). Do NOT mutate `SourceRegistry.shared.activeSourceID` in tests (it persists to real UserDefaults).
+
+- [ ] **Step 2: Run tests, expect** `testHomeViewModelDefaultsToRegistryActiveSource` to pass trivially but `testHomeViewModelInjectedSourceWins` to pass too under the CURRENT code — so the real red is behavioral, not unit-testable: the unit tests pin the contract; the fix is verified live. If both pass before the change, proceed (document this in the report).
+
+- [ ] **Step 3: Implement.** In `HomeViewModel`:
+
+```swift
+    /// Injected source for tests; nil means "track the registry's active source".
+    private let sourceOverride: MangaSource?
+    /// The source these browse feeds come from — resolved at read time so a Settings
+    /// switch re-sources Home without an app relaunch.
+    var source: MangaSource { sourceOverride ?? SourceRegistry.shared.active }
+    /// The source id the current feed arrays were loaded from (nil before first load).
+    private var loadedSourceID: String?
+
+    init(source: MangaSource? = nil) {
+        self.sourceOverride = source
+    }
+
+    func loadHome() {
+        // Clear stale feeds when the active source changed since the last load, so the
+        // previous source's rails don't linger while the new one fetches.
+        let activeID = source.id
+        if let loaded = loadedSourceID, loaded != activeID {
+            popular = []; latestUpdates = []; newTitles = []
+            errorMessage = nil
+        }
+        loadedSourceID = activeID
+        Task {
+            await loadHomeAsync()
+        }
+    }
+```
+
+(`loadHomeAsync` and the reload helpers stay as they are; they already read `source` per call.)
+
+In `HomeView`: add `@ObservedObject private var registry = SourceRegistry.shared` under the `@StateObject` line, and change `.task { vm.loadHome() }` to `.task(id: registry.activeSourceID) { vm.loadHome() }`.
+
+- [ ] **Step 4: Run the unit suite** (green) and build.
+- [ ] **Step 5: Commit** `Manga-Reader/Models/HomeViewModel.swift Manga-Reader/Views/HomeView.swift Manga-ReaderTests/Manga_ReaderTests.swift` — message: `Re-source Home immediately when the active source changes` + trailer.
+
+### Task 7: Reader zoom must not reset on its own
+
+**Files:**
+- Modify: `Manga-Reader/Views/ReaderView.swift` (the `ZoomablePage` struct, lines ~279-374)
+- Test: none (gesture behavior — build + manual verification; describe your manual reasoning in the report)
+
+**Symptom (user report):** after double-tap-to-zoom or pinch-to-zoom, the page zooms back out by itself.
+
+**Required behavior:** zoom persists until the user explicitly zooms out (double-tap while zoomed, or pinch back below 1×). Resetting when the user pages away to a DIFFERENT page is acceptable and desirable. Webtoon mode has no zoom — out of scope.
+
+**Prime suspects (verify, then fix what's real):**
+1. `.onDisappear { resetZoom() }` (~line 305) — in a `.page`-style `TabView`, offscreen-neighbor churn / chrome (toolbar) toggling can fire `onDisappear` for the still-visible page, nuking the zoom. If confirmed: remove it and instead reset when the pager's selection actually changes (e.g. pass the current selection index into `ZoomablePage` and `.onChange(of:)` it, or reset via the existing `index` when it stops being the selected page).
+2. The structural branch `if scale > 1 { base.gesture(pan) } else { base }` (~lines 308-312) — switching branches mid-pinch tears down the in-flight gesture. Replace with a structurally-stable mask: `base.gesture(pan, including: scale > 1 ? .all : .subviews)` so the pan gesture exists always but yields to the TabView swipe at 1×.
+
+Keep the fix minimal and inside `ZoomablePage` (plus its call site if the selection index needs passing). Preserve: pan-only-while-zoomed (TabView must still own the swipe at 1×), double-tap toggles 1×/2.5×, pinch clamped 1×–4×, snap-back animation when pinching below 1×.
+
+- [ ] **Step 1:** Read `ZoomablePage` and its call site; confirm which suspect(s) actually cause the reset (reason it through; note SwiftUI TabView page lifecycle).
+- [ ] **Step 2:** Implement the minimal fix.
+- [ ] **Step 3:** Build (`** BUILD SUCCEEDED **`) and run the unit suite (green — no reader tests exist, this is regression only).
+- [ ] **Step 4: Commit** `Manga-Reader/Views/ReaderView.swift` — message: `Keep reader zoom until the user zooms out` + trailer.
+
+### Task 8: Detail page shows the manga's source + opens its page in an in-app browser
+
+**Files:**
+- Modify: `Manga-Reader/Models/MangaSource.swift` (protocol + default impl)
+- Modify: `Manga-Reader/Models/MangaDexSource.swift`
+- Modify: `Manga-Reader/Models/WeebCentralSource.swift`
+- Create: `Manga-Reader/Views/Components/SafariView.swift`
+- Modify: `Manga-Reader/Views/MangaDetailView.swift`
+- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+
+**Interfaces:**
+- Produces: `MangaSource.webURL(forManga id: String) -> URL?` — optional capability, default `nil` (same pattern as `newTitles`); `struct SafariView: UIViewControllerRepresentable` with `let url: URL`.
+
+- [ ] **Step 1: Write the failing tests** (append inside the class):
+
+```swift
+    // MARK: - Source web URLs (Phase 2 addendum)
+
+    func testMangaDexWebURL() {
+        XCTAssertEqual(MangaDexSource().webURL(forManga: "abc-123")?.absoluteString,
+                       "https://mangadex.org/title/abc-123")
+    }
+
+    @MainActor func testWeebCentralWebURL() {
+        let (source, _) = makeWeebCentral()
+        XCTAssertEqual(source.webURL(forManga: "01J76XYZ")?.absoluteString,
+                       "https://weebcentral.com/series/01J76XYZ")
+    }
+
+    func testWebURLDefaultsToNil() {
+        XCTAssertNil(MockSource(id: "x", name: "X").webURL(forManga: "y"))
+    }
+```
+
+- [ ] **Step 2: Run tests** — expect build failure (`webURL` not defined).
+- [ ] **Step 3: Implement.**
+
+`MangaSource.swift` — add to the protocol (below `pageURLs`):
+```swift
+    /// The human-facing web page for a manga on the source's site (for "open in
+    /// browser"). Optional capability; nil when the source has no web presence.
+    func webURL(forManga id: String) -> URL?
+```
+and to the optional-capabilities extension:
+```swift
+    func webURL(forManga id: String) -> URL? { nil }
+```
+
+`MangaDexSource.swift`:
+```swift
+    func webURL(forManga id: String) -> URL? {
+        URL(string: "https://mangadex.org/title/\(id)")
+    }
+```
+
+`WeebCentralSource.swift` (below `pageURLs`):
+```swift
+    func webURL(forManga id: String) -> URL? {
+        Self.base.appending(path: "series/\(id)")
+    }
+```
+
+`Views/Components/SafariView.swift` (new):
+```swift
+//
+//  SafariView.swift
+//  Manga-Reader
+//
+//  In-app Safari (SFSafariViewController) presented as a sheet — used by the manga
+//  detail screen's "open on web" action so users never leave the app.
+//
+
+import SwiftUI
+import SafariServices
+
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+
+    func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
+}
+```
+
+`MangaDetailView.swift`:
+- Add state + helpers:
+```swift
+    @State private var showingWebPage = false
+
+    /// The registered source this manga came from (nil if its source was unregistered).
+    private var mangaSource: MangaSource? {
+        SourceRegistry.shared.source(id: manga.sourceId)
+    }
+
+    private var mangaWebURL: URL? {
+        mangaSource?.webURL(forManga: manga.id)
+    }
+```
+- In the hero's stamp `HStack` (after the content-rating stamp), show the originating source:
+```swift
+                        InkStamp(text: (mangaSource?.name ?? manga.sourceId).uppercased(), tinted: true)
+```
+- Add a toolbar item (inside the existing `.toolbar`, alongside the `if isSelecting` group):
+```swift
+            ToolbarItem(placement: .topBarTrailing) {
+                if let url = mangaWebURL {
+                    Button {
+                        showingWebPage = true
+                    } label: {
+                        Image(systemName: "safari")
+                    }
+                    .accessibilityLabel("Open on \(mangaSource?.name ?? "web")")
+                    .sheet(isPresented: $showingWebPage) {
+                        SafariView(url: url)
+                            .ignoresSafeArea()
+                    }
+                }
+            }
+```
+
+- [ ] **Step 4: Run the unit suite** (all green) and build.
+- [ ] **Step 5: Commit** the five source files + test file — message: `Show manga's source on detail + open its page in in-app Safari` + trailer.
