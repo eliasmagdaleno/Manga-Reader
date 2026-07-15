@@ -1,0 +1,225 @@
+//
+//  WebViewService.swift
+//  Manga-Reader
+//
+//  The Cloudflare-clearing HTML-extraction engine behind WebView-based sources
+//  (WeebCentral now; private-source/comix in later phases). Loads a page in a shared
+//  off-screen WKWebView — a real browser, so Cloudflare's non-interactive JS
+//  challenge clears itself — then runs an injected JS script whose final expression
+//  is a JSON string, and decodes it into a Codable DTO. When Cloudflare demands an
+//  interactive (Turnstile) tap, `isChallengeActive` flips and ContentView presents
+//  the WebView in a sheet; once the target page loads challenge-free, extraction
+//  resumes automatically.
+//
+
+import Foundation
+import WebKit
+import Combine
+
+@MainActor
+final class WebViewService: NSObject, ObservableObject, WebViewExtracting {
+    static let shared = WebViewService()
+
+    /// True while an interactive Cloudflare challenge needs the user. Drives the
+    /// sheet in ContentView; the service flips it back off when the challenge clears.
+    @Published var isChallengeActive = false
+
+    /// The shared browser. Exposed so CloudflareChallengeView can host it on screen
+    /// while a challenge is active; lives off-screen the rest of the time.
+    let webView: WKWebView
+
+    private let navigationTimeout: TimeInterval = 30
+    private let challengeTimeout: TimeInterval = 120
+
+    // Single-flight state — only ever touched on the MainActor.
+    private var lockBusy = false
+    private var lockWaiters: [CheckedContinuation<Void, Never>] = []
+    private var loadContinuation: CheckedContinuation<Void, Error>?
+    private var challengeContinuation: CheckedContinuation<Void, Error>?
+    private var sawChallengeHeader = false
+    /// The navigation the pending `load(_:)` is waiting on. Client-side redirects
+    /// supersede it (adopted in `didStartProvisionalNavigation`); callbacks for any
+    /// other navigation — e.g. stragglers from a timed-out earlier load — are ignored.
+    private var currentNavigation: WKNavigation?
+
+    override init() {
+        let config = WKWebViewConfiguration()
+        // Persistent store: cf_clearance must survive across loads AND app relaunches.
+        config.websiteDataStore = .default()
+        webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 390, height: 844), configuration: config)
+        // cf_clearance is bound to the UA that earned it — pin one real UA for every load.
+        webView.customUserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) "
+            + "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"
+        super.init()
+        webView.navigationDelegate = self
+    }
+
+    // MARK: - WebViewExtracting
+
+    // Nonisolated so the non-Sendable `T.Type`/`T` never cross an actor boundary
+    // (the protocol's callers aren't MainActor); only the Sendable script output
+    // string comes back from the MainActor browser work below.
+    nonisolated func extract<T: Decodable>(from url: URL, script: String, as type: T.Type) async throws -> T {
+        let json = try await extractJSON(from: url, script: script)
+        do {
+            return try JSONDecoder().decode(T.self, from: Data(json.utf8))
+        } catch {
+            throw SourceError.extractionFailed("decoding script output: \(error.localizedDescription)")
+        }
+    }
+
+    /// The serialized load → (challenge wait) → script-run pipeline, on the MainActor.
+    private func extractJSON(from url: URL, script: String) async throws -> String {
+        try await withLock {
+            try await self.load(url)
+            if self.sawChallengeHeader {
+                try await self.awaitChallengeResolution()
+            }
+            return try await self.runScript(script)
+        }
+    }
+
+    /// Called when the user dismisses the challenge sheet without solving it.
+    /// Safe to call redundantly (e.g. from the sheet's onDismiss after success).
+    func cancelChallenge() {
+        resumeChallenge(.failure(SourceError.cloudflareUnsolved))
+    }
+
+    // MARK: - Navigation plumbing
+
+    private func load(_ url: URL) async throws {
+        sawChallengeHeader = false
+        let deadline = Task { [navigationTimeout] in
+            try? await Task.sleep(for: .seconds(navigationTimeout))
+            // A cancelled deadline still reaches this line (the `try?` swallows
+            // CancellationError) — bail so it can't fail a *later* load's continuation.
+            guard !Task.isCancelled else { return }
+            self.webView.stopLoading()
+            self.resumeLoad(.failure(SourceError.navigationFailed("timed out loading \(url.absoluteString)")))
+        }
+        defer { deadline.cancel() }
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            loadContinuation = cont
+            currentNavigation = webView.load(URLRequest(url: url))
+        }
+    }
+
+    private func awaitChallengeResolution() async throws {
+        isChallengeActive = true
+        defer { isChallengeActive = false }
+        let deadline = Task { [challengeTimeout] in
+            try? await Task.sleep(for: .seconds(challengeTimeout))
+            guard !Task.isCancelled else { return }  // same straggler guard as load()
+            self.resumeChallenge(.failure(SourceError.cloudflareUnsolved))
+        }
+        defer { deadline.cancel() }
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            challengeContinuation = cont
+        }
+    }
+
+    private func runScript(_ script: String) async throws -> String {
+        // Completion-handler variant on purpose: the async overload traps if JS returns nil.
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
+            webView.evaluateJavaScript(script) { result, error in
+                if let error {
+                    cont.resume(throwing: SourceError.extractionFailed(error.localizedDescription))
+                } else if let json = result as? String {
+                    cont.resume(returning: json)
+                } else {
+                    cont.resume(throwing: SourceError.extractionFailed("script did not return a JSON string"))
+                }
+            }
+        }
+    }
+
+    // Single-resume guards: delegate callbacks and timeouts can race; whoever gets
+    // there first wins, later calls are no-ops.
+    private func resumeLoad(_ result: Result<Void, Error>) {
+        guard let cont = loadContinuation else { return }
+        loadContinuation = nil
+        cont.resume(with: result)
+    }
+
+    private func resumeChallenge(_ result: Result<Void, Error>) {
+        guard let cont = challengeContinuation else { return }
+        challengeContinuation = nil
+        cont.resume(with: result)
+    }
+
+    /// True when a delegate callback belongs to the navigation `load(_:)` is waiting on.
+    /// WKWebView occasionally hands delegates a nil navigation — treat that as matching
+    /// (better a rare wrong resume than a guaranteed hang until timeout).
+    private func isCurrentNavigation(_ navigation: WKNavigation?) -> Bool {
+        guard let navigation, let currentNavigation else { return true }
+        return navigation === currentNavigation
+    }
+
+    private func handleNavigationFailure(_ navigation: WKNavigation?, _ error: Error) {
+        let nsError = error as NSError
+        // "Cancelled" means this navigation was superseded — by a client-side redirect,
+        // or by our own stopLoading()/next load. Never terminal; the superseding
+        // navigation (or the timeout) resolves the wait.
+        if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorCancelled { return }
+        guard isCurrentNavigation(navigation) else { return }
+        resumeLoad(.failure(SourceError.navigationFailed(error.localizedDescription)))
+    }
+
+    /// Serializes extracts: one WKWebView, one in-flight navigation at a time.
+    private func withLock<T>(_ body: () async throws -> T) async rethrows -> T {
+        while lockBusy {
+            await withCheckedContinuation { lockWaiters.append($0) }
+        }
+        lockBusy = true
+        defer {
+            lockBusy = false
+            if !lockWaiters.isEmpty { lockWaiters.removeFirst().resume() }
+        }
+        return try await body()
+    }
+}
+
+// MARK: - WKNavigationDelegate
+
+extension WebViewService: WKNavigationDelegate {
+    func webView(_ webView: WKWebView,
+                 decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        if navigationResponse.isForMainFrame,
+           let http = navigationResponse.response as? HTTPURLResponse {
+            sawChallengeHeader = http.value(forHTTPHeaderField: "cf-mitigated")?.lowercased() == "challenge"
+        }
+        return .allow
+    }
+
+    func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        // While a load is pending, any new main-frame navigation is part of its chain
+        // (a JS/meta redirect that superseded the one we started) — adopt it so its
+        // didFinish/didFail resolve the pending load.
+        if loadContinuation != nil, let navigation {
+            currentNavigation = navigation
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if loadContinuation != nil {
+            guard isCurrentNavigation(navigation) else { return }
+            // Initial load finished — possibly on the challenge page; extract() checks
+            // sawChallengeHeader next and waits for resolution if needed.
+            resumeLoad(.success(()))
+        } else if challengeContinuation != nil, !sawChallengeHeader {
+            // A main-frame load completed without the challenge header while we were
+            // waiting: the challenge cleared and Cloudflare reloaded the target page.
+            // (Challenge-page self-reloads still carry the header and are ignored.)
+            resumeChallenge(.success(()))
+        }
+    }
+
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        handleNavigationFailure(navigation, error)
+    }
+
+    func webView(_ webView: WKWebView,
+                 didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        handleNavigationFailure(navigation, error)
+    }
+}
