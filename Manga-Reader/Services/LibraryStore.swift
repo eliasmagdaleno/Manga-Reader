@@ -14,6 +14,7 @@ struct LibraryItem: Codable, Identifiable, Hashable {
     let title: String
     let coverURL: URL?
     var chapterNumbers: [String]? = nil   // deduped chapter numbers from last refresh; nil = never refreshed
+    var sourceId: String? = nil   // nil = saved before multi-source; treat as MangaDex
 }
 
 extension LibraryItem {
@@ -44,7 +45,8 @@ final class LibraryStore: ObservableObject {
             items.removeAll { $0.id == manga.id }
         } else {
             items.insert(
-                LibraryItem(id: manga.id, title: manga.title, coverURL: manga.coverURL),
+                LibraryItem(id: manga.id, title: manga.title, coverURL: manga.coverURL,
+                            sourceId: manga.sourceId),
                 at: 0
             )
         }

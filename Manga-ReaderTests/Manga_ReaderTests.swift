@@ -299,6 +299,21 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(item.unreadCount(readNumbers: []), 0)
     }
 
+    @MainActor func testLibraryToggleRecordsSourceId() {
+        let store = LibraryStore()
+        let manga = sampleManga("m", sourceId: "weebcentral")
+        store.toggle(manga)
+        XCTAssertEqual(store.items.first?.sourceId, "weebcentral")
+        store.toggle(manga)   // clean up shared UserDefaults
+    }
+
+    func testLibraryItemRoundTripsSourceId() throws {
+        let item = LibraryItem(id: "m", title: "T", coverURL: nil, sourceId: "weebcentral")
+        let data = try JSONEncoder().encode(item)
+        let decoded = try JSONDecoder().decode(LibraryItem.self, from: data)
+        XCTAssertEqual(decoded.sourceId, "weebcentral")
+    }
+
     // MARK: - Source abstraction
 
     /// Minimal in-memory `MangaSource` proving the protocol is mockable / bridge-friendly.
