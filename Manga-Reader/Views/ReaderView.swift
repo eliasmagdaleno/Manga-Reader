@@ -154,7 +154,7 @@ struct ReaderView: View {
     private var pagedReader: some View {
         TabView(selection: $currentPage) {
             ForEach(pages.indices, id: \.self) { index in
-                ZoomablePage(url: pages[index], index: index,
+                ZoomablePage(url: pages[index], index: index, currentIndex: currentPage,
                              mirrored: mode == .rightToLeft, onTap: toggleChrome)
                     .tag(index)
             }
@@ -281,6 +281,7 @@ struct ReaderView: View {
 private struct ZoomablePage: View {
     let url: URL
     let index: Int
+    let currentIndex: Int
     let mirrored: Bool
     let onTap: () -> Void
 
@@ -293,23 +294,26 @@ private struct ZoomablePage: View {
     private let maxScale: CGFloat = 4
 
     var body: some View {
-        let base = image
+        image
             .scaleEffect(scale)
             .offset(offset)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .scaleEffect(x: mirrored ? -1 : 1, y: 1)   // un-mirror for RTL pager
             .contentShape(Rectangle())
             .gesture(magnification)
+            // Pan only claims touches while zoomed — otherwise the TabView owns the
+            // swipe. The gesture stays structurally attached at all times (only the
+            // mask toggles) so an in-flight pinch never has its recognizer torn down
+            // mid-gesture by a branch swap.
+            .gesture(pan, including: scale > 1 ? .all : .subviews)
             .onTapGesture(count: 2) { toggleZoom() }
             .onTapGesture(count: 1) { onTap() }
-            .onDisappear { resetZoom() }
-
-        // Pan only when zoomed — otherwise let the TabView own the swipe.
-        if scale > 1 {
-            base.gesture(pan)
-        } else {
-            base
-        }
+            .onChange(of: currentIndex) { _, newValue in
+                // Reset only once this page actually stops being the selected page —
+                // not on every transient re-render (chrome toggling, offscreen-neighbor
+                // churn in the .page TabView) that can fire without a real page change.
+                if newValue != index { resetZoom() }
+            }
     }
 
     private var image: some View {
