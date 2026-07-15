@@ -425,6 +425,24 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertTrue(AdultMock().isNSFW)
     }
 
+    @MainActor func testVisibleSourcesRespectAdultToggle() {
+        struct AdultMock: MangaSource {
+            let id = "adult"; let name = "Adult"
+            var isNSFW: Bool { true }
+            func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+            func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+            func mangaDetail(id: String) async throws -> MangaDetail {
+                MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+            }
+            func chapters(mangaId: String) async throws -> [Chapter] { [] }
+            func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+        }
+        let registry = SourceRegistry(sources: [MangaDexSource(), AdultMock()])
+
+        XCTAssertEqual(registry.visibleSources(includeAdult: false).map(\.id), ["mangadex"])
+        XCTAssertEqual(registry.visibleSources(includeAdult: true).map(\.id), ["mangadex", "adult"])
+    }
+
     func testMangaDexDecodeStampsSourceId() throws {
         // A /manga list entry decoded exactly as the API layer does it must carry the
         // MangaDex source id so downstream source resolution works.

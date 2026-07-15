@@ -51,4 +51,9 @@ final class SourceRegistry: ObservableObject {
     func source(for manga: Manga) -> MangaSource {
         source(id: manga.sourceId) ?? active
     }
+
+    /// Sources eligible to show in the picker: adult sources only when opted in.
+    func visibleSources(includeAdult: Bool) -> [MangaSource] {
+        sources.filter { includeAdult || !$0.isNSFW }
+    }
 }
