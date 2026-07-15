@@ -8,8 +8,9 @@
 //    • Webtoon       — continuous vertical scroll (manhwa / long-strip).
 //
 //  Paged pages support pinch-to-zoom and double-tap-to-zoom. The chosen mode
-//  is persisted so it carries across chapters. Page URLs come from the MangaDex
-//  At-Home server via `MangaDexAPI.pageURLs(for:)`.
+//  is persisted so it carries across chapters. Page URLs come from the manga's
+//  own `MangaSource` (resolved via `SourceRegistry`), which for MangaDex hits the
+//  At-Home server.
 //
 
 import SwiftUI
@@ -263,7 +264,8 @@ struct ReaderView: View {
         isLoading = true
         errorMessage = nil
         do {
-            pages = try await MangaDexAPI.pageURLs(for: chapter.id)
+            pages = try await SourceRegistry.shared.source(for: manga)
+                .pageURLs(chapterId: chapter.id, preferDataSaver: true)
         } catch {
             errorMessage = error.localizedDescription
         }

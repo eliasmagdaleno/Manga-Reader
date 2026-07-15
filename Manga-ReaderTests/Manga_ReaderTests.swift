@@ -41,8 +41,8 @@ final class Manga_ReaderTests: XCTestCase {
         return HistoryStore(defaults: suite)
     }
 
-    private func sampleManga(_ id: String = "m1") -> Manga {
-        Manga(id: id, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil)
+    private func sampleManga(_ id: String = "m1", sourceId: String = "mangadex") -> Manga {
+        Manga(id: id, sourceId: sourceId, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil)
     }
 
     @MainActor func testRecordPrependsNewEntry() throws {
@@ -281,6 +281,114 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(item.id, "m1")
         XCTAssertNil(item.chapterNumbers)
         XCTAssertEqual(item.unreadCount(readNumbers: []), 0)
+    }
+
+    // MARK: - Source abstraction
+
+    /// Minimal in-memory `MangaSource` proving the protocol is mockable / bridge-friendly.
+    private struct MockSource: MangaSource {
+        let id: String
+        let name: String
+        var detail: MangaDetail = MangaDetail(description: "d", authors: ["A"], tags: ["T"], contentRating: "safe")
+        var stubChapters: [Chapter] = [Chapter(id: "c1", number: "1", title: nil)]
+        var stubManga: [Manga] = []
+
+        func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { stubManga }
+        func popular(limit: Int, offset: Int) async throws -> [Manga] { stubManga }
+        func newTitles(limit: Int, offset: Int) async throws -> [Manga] { stubManga }
+        func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] { [] }
+        func mangaDetail(id: String) async throws -> MangaDetail { detail }
+        func chapters(mangaId: String) async throws -> [Chapter] { stubChapters }
+        func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+    }
+
+    /// A source that omits the optional feed capabilities to exercise the default impls.
+    private struct MinimalSource: MangaSource {
+        let id = "minimal"
+        let name = "Minimal"
+        func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func mangaDetail(id: String) async throws -> MangaDetail {
+            MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+        }
+        func chapters(mangaId: String) async throws -> [Chapter] { [] }
+        func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+    }
+
+    @MainActor func testRegistryResolvesActiveAndByID() {
+        let a = MockSource(id: "a", name: "A")
+        let b = MockSource(id: "b", name: "B")
+        let registry = SourceRegistry(sources: [a, b])
+
+        XCTAssertEqual(registry.active.id, "a")               // first source is active by default
+        XCTAssertEqual(registry.source(id: "b")?.id, "b")     // lookup by id
+        XCTAssertNil(registry.source(id: "nope"))             // unknown id → nil
+
+        registry.activeSourceID = "b"
+        XCTAssertEqual(registry.active.id, "b")               // switching active source works
+    }
+
+    @MainActor func testRegistryActiveFallsBackWhenActiveIDMissing() {
+        let registry = SourceRegistry(sources: [MockSource(id: "only", name: "Only")])
+        registry.activeSourceID = "ghost"                     // point at a non-existent source
+        XCTAssertEqual(registry.active.id, "only")            // still resolves to the first source
+    }
+
+    @MainActor func testRegistrySourceForMangaUsesSourceId() {
+        let a = MockSource(id: "a", name: "A")
+        let b = MockSource(id: "b", name: "B")
+        let registry = SourceRegistry(sources: [a, b])
+        let manga = Manga(id: "x", sourceId: "b", title: "T", description: "", status: "ongoing", year: nil, coverURL: nil)
+        XCTAssertEqual(registry.source(for: manga).id, "b")   // resolves to the manga's own source
+    }
+
+    @MainActor func testDetailViewModelLoadsThroughInjectedSource() async {
+        let source = MockSource(
+            id: "mock", name: "Mock",
+            detail: MangaDetail(description: "desc", authors: ["Author"], tags: ["Tag"], contentRating: "safe"),
+            stubChapters: [Chapter(id: "c1", number: "1", title: "One"),
+                           Chapter(id: "c2", number: "2", title: nil)]
+        )
+        let manga = sampleManga("m", sourceId: "mock")
+        let vm = MangaDetailViewModel(manga: manga, source: source)
+
+        await vm.loadAsync()
+
+        XCTAssertEqual(vm.description, "desc")
+        XCTAssertEqual(vm.authors, ["Author"])
+        XCTAssertEqual(vm.tags, ["Tag"])
+        XCTAssertEqual(vm.contentRating, "safe")
+        XCTAssertEqual(vm.chapters.map(\.id), ["c1", "c2"])
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertFalse(vm.isLoading)
+    }
+
+    func testUnsupportedFeedCapabilityThrows() async {
+        let source = MinimalSource()
+        do {
+            _ = try await source.newTitles(limit: 10, offset: 0)
+            XCTFail("newTitles should be unsupported on MinimalSource")
+        } catch let SourceError.unsupported(capability) {
+            XCTAssertEqual(capability, "newTitles")
+        } catch {
+            XCTFail("Expected SourceError.unsupported, got \(error)")
+        }
+    }
+
+    func testMangaDexDecodeStampsSourceId() throws {
+        // A /manga list entry decoded exactly as the API layer does it must carry the
+        // MangaDex source id so downstream source resolution works.
+        let json = #"""
+        {"data":[{"id":"abc","attributes":{"title":{"en":"Berserk"},"description":{"en":"d"},"status":"ongoing","year":1989},"relationships":[]}]}
+        """#.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let res = try decoder.decode(MangaListResponse.self, from: json)
+        let manga = res.data[0].attributes.toManga(id: res.data[0].id, relationships: res.data[0].relationships)
+
+        XCTAssertEqual(manga.id, "abc")
+        XCTAssertEqual(manga.sourceId, "mangadex")
+        XCTAssertEqual(manga.sourceId, MangaDexSource.sourceID)
     }
 
 }

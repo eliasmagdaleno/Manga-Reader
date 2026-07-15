@@ -59,6 +59,10 @@ final class LibraryStore: ObservableObject {
         defer { isRefreshing = false }
 
         let current = items
+        // Capture the source as a value here (MainActor) so the off-actor refresh tasks
+        // below don't touch MainActor-isolated registry state. LibraryItem doesn't yet
+        // carry a sourceId, so saved manga refresh against the active source for now.
+        let source = SourceRegistry.shared.active
         let maxConcurrent = 4
         let results: [(String, [String])] = await withTaskGroup(
             of: (String, [String])?.self
@@ -68,7 +72,7 @@ final class LibraryStore: ObservableObject {
             func addNext() {
                 guard let item = iterator.next() else { return }
                 group.addTask {
-                    guard let chapters = try? await MangaDexAPI.fetchChapters(mangaId: item.id) else { return nil }
+                    guard let chapters = try? await source.chapters(mangaId: item.id) else { return nil }
                     return (item.id, chapters.map(\.number))
                 }
             }

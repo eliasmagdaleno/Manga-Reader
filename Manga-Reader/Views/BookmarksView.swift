@@ -66,7 +66,7 @@ struct BookmarksView: View {
 private extension LibraryItem {
     /// A minimal `Manga` for navigation; the detail view refetches full data by id.
     var asManga: Manga {
-        Manga(id: id, title: title, description: "", status: "unknown", year: nil, coverURL: coverURL)
+        Manga(id: id, sourceId: MangaDexSource.sourceID, title: title, description: "", status: "unknown", year: nil, coverURL: coverURL)
     }
 }
 
