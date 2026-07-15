@@ -37,15 +37,28 @@ usually faster than the CLI.
 
 ## Architecture
 
-MVVM over a stateless API layer. Data flows: `MangaDexAPI` (network) → `@MainActor`
-`ObservableObject` view models → SwiftUI views.
+MVVM over a source-abstraction layer. Data flows: `MangaSource` (protocol, network) →
+`@MainActor` `ObservableObject` view models → SwiftUI views. Nothing outside the source
+adapters calls `MangaDexAPI` directly.
 
-- **`Models/MangaDexAPI.swift`** — the entire networking layer in one file. `MangaDexAPI`
-  is a namespace struct of `static` async methods over a single generic
+- **`Models/MangaSource.swift`** — the `MangaSource` protocol every source conforms to
+  (search / popular / newTitles / latestUpdates / mangaDetail / chapters / pageURLs).
+  Deliberately **bridge-friendly** (only `Int`/`String` params, value/Codable returns) so
+  a future dynamic-extension runtime can conform via a bridge. `newTitles`/`latestUpdates`
+  are optional capabilities with default impls that throw `SourceError.unsupported`.
+- **`Services/SourceRegistry.swift`** — `@MainActor` singleton (`.shared`, injectable init)
+  that owns the registered sources and the active browse source. Resolve a source with
+  `active`, `source(id:)`, or `source(for: manga)` (uses `manga.sourceId`). ViewModels/
+  Services fetch through this, never `MangaDexAPI`.
+- **`Models/MangaDexSource.swift`** — MangaDex as source #1: a thin adapter delegating to
+  the `MangaDexAPI` static methods. Owns `sourceID = "mangadex"`.
+- **`Models/MangaDexAPI.swift`** — the MangaDex networking implementation in one file.
+  `MangaDexAPI` is a namespace struct of `static` async methods over a single generic
   `request<T: Decodable>(endpoint:queryItems:)` helper (uses `.convertFromSnakeCase`).
   It also defines the app's domain types (`Manga`, `MangaUpdate`) and all the private
   `Decodable` wire types (`MangaData`, `MangaAttributes`, `ChapterData`, etc.).
-  Raw API payloads are converted to domain types via `toManga(id:relationships:)`.
+  Raw API payloads are converted to domain types via `toManga(id:relationships:)`, which
+  stamps `Manga.sourceId` with the MangaDex source id.
 - **`Models/*ViewModel.swift`** — `@MainActor final class ... : ObservableObject` with
   `@Published` state (`isLoading`, `errorMessage`, data arrays). They wrap the API's
   `async` methods in `Task {}` and surface errors as `errorMessage` strings.
