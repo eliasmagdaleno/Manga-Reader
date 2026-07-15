@@ -106,7 +106,7 @@ struct HistoryView: View {
 
 private extension ReadingEntry {
     var asManga: Manga {
-        Manga(id: mangaId, sourceId: MangaDexSource.sourceID, title: mangaTitle, description: "", status: "unknown", year: nil, coverURL: coverURL)
+        Manga(id: mangaId, sourceId: sourceId ?? MangaDexSource.sourceID, title: mangaTitle, description: "", status: "unknown", year: nil, coverURL: coverURL)
     }
     var asChapter: Chapter {
         Chapter(id: chapterId, number: chapterNumber, title: nil)

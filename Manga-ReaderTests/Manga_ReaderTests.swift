@@ -91,6 +91,21 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertTrue(store.entries.isEmpty)
     }
 
+    @MainActor func testReadingEntryRecordsSourceId() {
+        let store = makeHistoryStore()
+        let manga = sampleManga("m", sourceId: "weebcentral")
+        store.record(manga: manga, chapter: Chapter(id: "c1", number: "1", title: nil), page: 0, pageCount: 5)
+        XCTAssertEqual(store.entries.first?.sourceId, "weebcentral")
+    }
+
+    func testReadingEntryDecodesLegacyJSONAsNil() throws {
+        // JSON saved before sourceId existed.
+        let legacy = #"{"id":"00000000-0000-0000-0000-000000000000","mangaId":"m","mangaTitle":"T","coverURL":null,"chapterId":"c","chapterNumber":"1","page":0,"pageCount":5,"updatedAt":0}"#
+            .data(using: .utf8)!
+        let entry = try JSONDecoder().decode(ReadingEntry.self, from: legacy)
+        XCTAssertNil(entry.sourceId)
+    }
+
     // MARK: - Chapter ordering & resume
 
     private func ch(_ n: String, _ id: String? = nil) -> Chapter {
