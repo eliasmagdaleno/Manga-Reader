@@ -1,0 +1,48 @@
+//
+//  MangaDexSource.swift
+//  Manga-Reader
+//
+//  MangaDex as the first `MangaSource`. A thin adapter over the existing `MangaDexAPI`
+//  networking layer — no request/decoding logic lives here. `MangaDexAPI` remains the
+//  implementation (429 retry, pagination, cover-URL building); this type just exposes it
+//  through the source-agnostic protocol.
+//
+
+import Foundation
+
+struct MangaDexSource: MangaSource {
+    /// Single source of truth for this source's identifier. `Manga.sourceId` is stamped
+    /// with this value in `MangaAttributes.toManga`, and `SourceRegistry` resolves by it.
+    static let sourceID = "mangadex"
+
+    let id = MangaDexSource.sourceID
+    let name = "MangaDex"
+
+    func search(title: String, limit: Int, offset: Int) async throws -> [Manga] {
+        try await MangaDexAPI.searchManga(title: title, limit: limit, offset: offset)
+    }
+
+    func popular(limit: Int, offset: Int) async throws -> [Manga] {
+        try await MangaDexAPI.fetchPopular(limit: limit, offset: offset)
+    }
+
+    func newTitles(limit: Int, offset: Int) async throws -> [Manga] {
+        try await MangaDexAPI.fetchNewTitles(limit: limit, offset: offset)
+    }
+
+    func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] {
+        try await MangaDexAPI.fetchLatestUpdates(limitTitles: limitTitles, translatedLang: language)
+    }
+
+    func mangaDetail(id: String) async throws -> MangaDetail {
+        try await MangaDexAPI.fetchMangaDetails(id: id)
+    }
+
+    func chapters(mangaId: String) async throws -> [Chapter] {
+        try await MangaDexAPI.fetchChapters(mangaId: mangaId)
+    }
+
+    func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] {
+        try await MangaDexAPI.pageURLs(for: chapterId, useDataSaver: preferDataSaver)
+    }
+}

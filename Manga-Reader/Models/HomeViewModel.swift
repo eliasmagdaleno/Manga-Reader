@@ -15,7 +15,14 @@ final class HomeViewModel: ObservableObject {
     
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
-    
+
+    /// The source these browse feeds come from. Defaults to the active source; injectable for tests.
+    let source: MangaSource
+
+    init(source: MangaSource? = nil) {
+        self.source = source ?? SourceRegistry.shared.active
+    }
+
     func loadHome() {
         Task {
             await loadHomeAsync()
@@ -31,9 +38,9 @@ final class HomeViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            async let popularTask: [Manga] = MangaDexAPI.fetchPopular(limit: 20)
-            async let updatesTask: [MangaUpdate] = MangaDexAPI.fetchLatestUpdates(limitTitles: 20, translatedLang: "en")
-            async let newTitlesTask: [Manga] = MangaDexAPI.fetchNewTitles(limit: 20)
+            async let popularTask: [Manga] = source.popular(limit: 20, offset: 0)
+            async let updatesTask: [MangaUpdate] = source.latestUpdates(limitTitles: 20, language: "en")
+            async let newTitlesTask: [Manga] = source.newTitles(limit: 20, offset: 0)
             
             self.popular = try await popularTask
             self.latestUpdates = try await updatesTask
@@ -48,7 +55,7 @@ final class HomeViewModel: ObservableObject {
     func reloadPopular(limit: Int = 20, offset: Int = 0) {
         Task {
             do {
-                let items = try await MangaDexAPI.fetchPopular(limit: limit, offset: offset)
+                let items = try await source.popular(limit: limit, offset: offset)
                 self.popular = items
             } catch {
                 self.errorMessage = error.localizedDescription
@@ -59,7 +66,7 @@ final class HomeViewModel: ObservableObject {
     func reloadLatestUpdates(limit: Int = 20, lang: String = "en") {
         Task {
             do {
-                let items = try await MangaDexAPI.fetchLatestUpdates(limitTitles: limit, translatedLang: lang)
+                let items = try await source.latestUpdates(limitTitles: limit, language: lang)
                 self.latestUpdates = items
             } catch {
                 self.errorMessage = error.localizedDescription
@@ -70,7 +77,7 @@ final class HomeViewModel: ObservableObject {
     func reloadNewTitles(limit: Int = 20, offset: Int = 0) {
         Task {
             do {
-                let items = try await MangaDexAPI.fetchNewTitles(limit: limit, offset: offset)
+                let items = try await source.newTitles(limit: limit, offset: offset)
                 self.newTitles = items
             } catch {
                 self.errorMessage = error.localizedDescription

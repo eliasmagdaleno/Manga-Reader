@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import UIKit
 @testable import Manga_Reader
 
 final class Manga_ReaderTests: XCTestCase {
@@ -41,8 +42,8 @@ final class Manga_ReaderTests: XCTestCase {
         return HistoryStore(defaults: suite)
     }
 
-    private func sampleManga(_ id: String = "m1") -> Manga {
-        Manga(id: id, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil)
+    private func sampleManga(_ id: String = "m1", sourceId: String = "mangadex") -> Manga {
+        Manga(id: id, sourceId: sourceId, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil)
     }
 
     @MainActor func testRecordPrependsNewEntry() throws {
@@ -88,6 +89,21 @@ final class Manga_ReaderTests: XCTestCase {
         store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)
         store.clear()
         XCTAssertTrue(store.entries.isEmpty)
+    }
+
+    @MainActor func testReadingEntryRecordsSourceId() {
+        let store = makeHistoryStore()
+        let manga = sampleManga("m", sourceId: "weebcentral")
+        store.record(manga: manga, chapter: Chapter(id: "c1", number: "1", title: nil), page: 0, pageCount: 5)
+        XCTAssertEqual(store.entries.first?.sourceId, "weebcentral")
+    }
+
+    func testReadingEntryDecodesLegacyJSONAsNil() throws {
+        // JSON saved before sourceId existed.
+        let legacy = #"{"id":"00000000-0000-0000-0000-000000000000","mangaId":"m","mangaTitle":"T","coverURL":null,"chapterId":"c","chapterNumber":"1","page":0,"pageCount":5,"updatedAt":0}"#
+            .data(using: .utf8)!
+        let entry = try JSONDecoder().decode(ReadingEntry.self, from: legacy)
+        XCTAssertNil(entry.sourceId)
     }
 
     // MARK: - Chapter ordering & resume
@@ -281,6 +297,273 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(item.id, "m1")
         XCTAssertNil(item.chapterNumbers)
         XCTAssertEqual(item.unreadCount(readNumbers: []), 0)
+    }
+
+    @MainActor func testLibraryToggleRecordsSourceId() {
+        let suite = UserDefaults(suiteName: "test.library.\(UUID().uuidString)")!
+        let store = LibraryStore(defaults: suite)
+        let manga = sampleManga("m", sourceId: "weebcentral")
+        store.toggle(manga)
+        XCTAssertEqual(store.items.first?.sourceId, "weebcentral")
+    }
+
+    func testLibraryItemRoundTripsSourceId() throws {
+        let item = LibraryItem(id: "m", title: "T", coverURL: nil, sourceId: "weebcentral")
+        let data = try JSONEncoder().encode(item)
+        let decoded = try JSONDecoder().decode(LibraryItem.self, from: data)
+        XCTAssertEqual(decoded.sourceId, "weebcentral")
+    }
+
+    // MARK: - Source abstraction
+
+    /// Minimal in-memory `MangaSource` proving the protocol is mockable / bridge-friendly.
+    private struct MockSource: MangaSource {
+        let id: String
+        let name: String
+        var detail: MangaDetail = MangaDetail(description: "d", authors: ["A"], tags: ["T"], contentRating: "safe")
+        var stubChapters: [Chapter] = [Chapter(id: "c1", number: "1", title: nil)]
+        var stubManga: [Manga] = []
+
+        func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { stubManga }
+        func popular(limit: Int, offset: Int) async throws -> [Manga] { stubManga }
+        func newTitles(limit: Int, offset: Int) async throws -> [Manga] { stubManga }
+        func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] { [] }
+        func mangaDetail(id: String) async throws -> MangaDetail { detail }
+        func chapters(mangaId: String) async throws -> [Chapter] { stubChapters }
+        func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+    }
+
+    /// A source that omits the optional feed capabilities to exercise the default impls.
+    private struct MinimalSource: MangaSource {
+        let id = "minimal"
+        let name = "Minimal"
+        func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func mangaDetail(id: String) async throws -> MangaDetail {
+            MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+        }
+        func chapters(mangaId: String) async throws -> [Chapter] { [] }
+        func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+    }
+
+    @MainActor func testRegistryResolvesActiveAndByID() {
+        let a = MockSource(id: "a", name: "A")
+        let b = MockSource(id: "b", name: "B")
+        let registry = SourceRegistry(sources: [a, b])
+
+        XCTAssertEqual(registry.active.id, "a")               // first source is active by default
+        XCTAssertEqual(registry.source(id: "b")?.id, "b")     // lookup by id
+        XCTAssertNil(registry.source(id: "nope"))             // unknown id → nil
+
+        registry.activeSourceID = "b"
+        XCTAssertEqual(registry.active.id, "b")               // switching active source works
+    }
+
+    @MainActor func testRegistryActiveFallsBackWhenActiveIDMissing() {
+        let registry = SourceRegistry(sources: [MockSource(id: "only", name: "Only")])
+        registry.activeSourceID = "ghost"                     // point at a non-existent source
+        XCTAssertEqual(registry.active.id, "only")            // still resolves to the first source
+    }
+
+    @MainActor func testRegistrySourceForMangaUsesSourceId() {
+        let a = MockSource(id: "a", name: "A")
+        let b = MockSource(id: "b", name: "B")
+        let registry = SourceRegistry(sources: [a, b])
+        let manga = Manga(id: "x", sourceId: "b", title: "T", description: "", status: "ongoing", year: nil, coverURL: nil)
+        XCTAssertEqual(registry.source(for: manga).id, "b")   // resolves to the manga's own source
+    }
+
+    @MainActor func testDetailViewModelLoadsThroughInjectedSource() async {
+        let source = MockSource(
+            id: "mock", name: "Mock",
+            detail: MangaDetail(description: "desc", authors: ["Author"], tags: ["Tag"], contentRating: "safe"),
+            stubChapters: [Chapter(id: "c1", number: "1", title: "One"),
+                           Chapter(id: "c2", number: "2", title: nil)]
+        )
+        let manga = sampleManga("m", sourceId: "mock")
+        let vm = MangaDetailViewModel(manga: manga, source: source)
+
+        await vm.loadAsync()
+
+        XCTAssertEqual(vm.description, "desc")
+        XCTAssertEqual(vm.authors, ["Author"])
+        XCTAssertEqual(vm.tags, ["Tag"])
+        XCTAssertEqual(vm.contentRating, "safe")
+        XCTAssertEqual(vm.chapters.map(\.id), ["c1", "c2"])
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertFalse(vm.isLoading)
+    }
+
+    func testUnsupportedFeedCapabilityThrows() async {
+        let source = MinimalSource()
+        do {
+            _ = try await source.newTitles(limit: 10, offset: 0)
+            XCTFail("newTitles should be unsupported on MinimalSource")
+        } catch let SourceError.unsupported(capability) {
+            XCTAssertEqual(capability, "newTitles")
+        } catch {
+            XCTFail("Expected SourceError.unsupported, got \(error)")
+        }
+    }
+
+    func testMangaDexSourceIsNotNSFWByDefault() {
+        XCTAssertFalse(MangaDexSource().isNSFW)
+    }
+
+    func testSourceCanDeclareNSFW() {
+        struct AdultMock: MangaSource {
+            let id = "adult"; let name = "Adult"
+            var isNSFW: Bool { true }
+            func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+            func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+            func mangaDetail(id: String) async throws -> MangaDetail {
+                MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+            }
+            func chapters(mangaId: String) async throws -> [Chapter] { [] }
+            func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+        }
+        XCTAssertTrue(AdultMock().isNSFW)
+    }
+
+    @MainActor func testVisibleSourcesRespectAdultToggle() {
+        struct AdultMock: MangaSource {
+            let id = "adult"; let name = "Adult"
+            var isNSFW: Bool { true }
+            func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+            func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+            func mangaDetail(id: String) async throws -> MangaDetail {
+                MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+            }
+            func chapters(mangaId: String) async throws -> [Chapter] { [] }
+            func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+        }
+        let registry = SourceRegistry(sources: [MangaDexSource(), AdultMock()])
+
+        XCTAssertEqual(registry.visibleSources(includeAdult: false).map(\.id), ["mangadex"])
+        XCTAssertEqual(registry.visibleSources(includeAdult: true).map(\.id), ["mangadex", "adult"])
+    }
+
+    func testMangaDexDecodeStampsSourceId() throws {
+        // A /manga list entry decoded exactly as the API layer does it must carry the
+        // MangaDex source id so downstream source resolution works.
+        let json = #"""
+        {"data":[{"id":"abc","attributes":{"title":{"en":"Berserk"},"description":{"en":"d"},"status":"ongoing","year":1989},"relationships":[]}]}
+        """#.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let res = try decoder.decode(MangaListResponse.self, from: json)
+        let manga = res.data[0].attributes.toManga(id: res.data[0].id, relationships: res.data[0].relationships)
+
+        XCTAssertEqual(manga.id, "abc")
+        XCTAssertEqual(manga.sourceId, "mangadex")
+        XCTAssertEqual(manga.sourceId, MangaDexSource.sourceID)
+    }
+
+    // MARK: - Image cache
+
+    /// Thread-safe call counter for the injected fetcher.
+    private final class CallCounter: @unchecked Sendable {
+        private let lock = NSLock()
+        private var _count = 0
+        var count: Int { lock.lock(); defer { lock.unlock() }; return _count }
+        func bump() { lock.lock(); _count += 1; lock.unlock() }
+    }
+
+    private func makeTempDir() -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("imgcache-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    @MainActor private func tinyPNG(_ color: UIColor = .red) -> Data {
+        let r = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2))
+        return r.pngData { ctx in color.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 2, height: 2)) }
+    }
+
+    @MainActor func testLoadImageFetchesOnceThenServesFromMemory() async {
+        let png = tinyPNG()
+        let counter = CallCounter()
+        let cache = ImageCache(directory: makeTempDir(), fetcher: { _ in counter.bump(); return png })
+        let url = URL(string: "https://example.com/p1.png")!
+
+        let first = await cache.loadImage(for: url)        // network
+        XCTAssertNotNil(first)
+        XCTAssertEqual(counter.count, 1)
+        let second = await cache.loadImage(for: url)       // memory hit
+        XCTAssertNotNil(second)
+        XCTAssertEqual(counter.count, 1)
+    }
+
+    @MainActor func testDiskPersistsAcrossInstancesWithoutRefetch() async {
+        let dir = makeTempDir()
+        let png = tinyPNG()
+        let url = URL(string: "https://example.com/p2.png")!
+
+        let c1 = CallCounter()
+        let cache1 = ImageCache(directory: dir, fetcher: { _ in c1.bump(); return png })
+        _ = await cache1.loadImage(for: url)               // network → disk
+        XCTAssertEqual(c1.count, 1)
+
+        let c2 = CallCounter()
+        let cache2 = ImageCache(directory: dir, fetcher: { _ in c2.bump(); return png }) // fresh memory, same disk
+        let hit = await cache2.loadImage(for: url)         // disk hit
+        XCTAssertNotNil(hit)
+        XCTAssertEqual(c2.count, 0)                        // no network
+    }
+
+    func testKeyIsStableAndURLSpecific() {
+        let u1 = URL(string: "https://example.com/a.png")!
+        let u2 = URL(string: "https://example.com/b.png")!
+        XCTAssertEqual(ImageCache.key(for: u1), ImageCache.key(for: u1))
+        XCTAssertNotEqual(ImageCache.key(for: u1), ImageCache.key(for: u2))
+        XCTAssertEqual(ImageCache.key(for: u1).count, 64)  // sha256 hex length
+    }
+
+    func testDiskTrimEnforcesCap() async {
+        let disk = ImageDiskCache(directory: makeTempDir(), maxBytes: 1000)
+        await disk.store(Data(count: 400), for: "a")
+        await disk.store(Data(count: 400), for: "b")
+        await disk.store(Data(count: 400), for: "c")       // 1200 > cap
+        var total = await disk.totalBytes()
+        XCTAssertEqual(total, 1200)
+        await disk.trim()
+        total = await disk.totalBytes()
+        XCTAssertLessThanOrEqual(total, 800)               // trimmed to <= 80% of cap
+    }
+
+    func testDiskClearRemovesFiles() async {
+        let disk = ImageDiskCache(directory: makeTempDir(), maxBytes: 1000)
+        await disk.store(Data(count: 100), for: "x")
+        var present = await disk.has("x")
+        XCTAssertTrue(present)
+        await disk.clear()
+        present = await disk.has("x")
+        XCTAssertFalse(present)
+    }
+
+    @MainActor func testClearEmptiesMemory() async {
+        let png = tinyPNG()
+        let cache = ImageCache(directory: makeTempDir(), fetcher: { _ in png })
+        let url = URL(string: "https://example.com/p3.png")!
+        _ = await cache.loadImage(for: url)
+        XCTAssertNotNil(cache.image(for: url))
+        cache.clear()
+        XCTAssertNil(cache.image(for: url))
+    }
+
+    @MainActor func testPrefetchWarmsAllURLsAndDedupes() async {
+        let png = tinyPNG()
+        let counter = CallCounter()
+        let cache = ImageCache(directory: makeTempDir(), fetcher: { _ in counter.bump(); return png })
+        let urls = (0..<8).map { URL(string: "https://example.com/pf\($0).png")! }
+
+        await cache.prefetchAwaitable(urls)
+        for u in urls { XCTAssertNotNil(cache.image(for: u)) }
+        XCTAssertEqual(counter.count, 8)
+
+        await cache.prefetchAwaitable(urls)                // all cached now
+        XCTAssertEqual(counter.count, 8)                   // no new fetches
     }
 
 }

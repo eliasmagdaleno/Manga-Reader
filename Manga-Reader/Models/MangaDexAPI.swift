@@ -11,7 +11,8 @@ import Foundation
 
 /// A lightweight representation of a manga item that ALWAYS carries a cover URL if available.
 struct Manga: Identifiable {                        // Conform to Identifiable so SwiftUI lists work nicely.
-    let id: String                                  // The MangaDex UUID for the manga.
+    let id: String                                  // The source's ID for the manga (unique only WITHIN a source).
+    let sourceId: String                            // Which source this manga came from (e.g. "mangadex").
     let title: String                               // Display title (prefer English; fallback to first available).
     let description: String                         // Short description (English if available).
     let status: String                              // e.g., ongoing, completed (may be "unknown").
@@ -92,6 +93,7 @@ struct MangaAttributes: Decodable {                 // Raw payload we convert in
         // 6) Produce our finalized Manga value with the pre-attached cover URL.
         return Manga(
             id: id,
+            sourceId: MangaDexSource.sourceID,          // Everything from this API belongs to the MangaDex source.
             title: resolvedTitle,
             description: resolvedDescription,
             status: resolvedStatus,

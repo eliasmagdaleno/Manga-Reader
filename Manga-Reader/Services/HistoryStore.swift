@@ -22,6 +22,7 @@ struct ReadingEntry: Codable, Identifiable, Hashable {
     var page: Int
     var pageCount: Int
     var updatedAt: Date
+    var sourceId: String? = nil   // nil = saved before multi-source; treat as MangaDex
 }
 
 /// A chapter the user explicitly marked as read (or that was read but whose
@@ -63,7 +64,8 @@ final class HistoryStore: ObservableObject {
                 ReadingEntry(id: UUID(), mangaId: manga.id, mangaTitle: manga.title,
                              coverURL: manga.coverURL, chapterId: chapter.id,
                              chapterNumber: chapter.number, page: page,
-                             pageCount: pageCount, updatedAt: Date()),
+                             pageCount: pageCount, updatedAt: Date(),
+                             sourceId: manga.sourceId),
                 at: 0
             )
         }

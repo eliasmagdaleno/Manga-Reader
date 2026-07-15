@@ -7,6 +7,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage(appearanceStorageKey) private var appearanceRaw = AppearanceMode.system.rawValue
+    @AppStorage("settings.showAdultSources") private var showAdultSources = false
+    @ObservedObject private var registry = SourceRegistry.shared
 
     var body: some View {
         NavigationStack {
@@ -20,6 +22,43 @@ struct SettingsView: View {
                         Text("Follows your device by default. Choose Light or Dark to pin it.")
                             .font(.footnote)
                             .foregroundStyle(Ink.tertiary)
+                            .padding(.horizontal, Gutter.page)
+                    }
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        InkSectionHeader("Sources", eyebrow: "Content")
+                        VStack(spacing: 0) {
+                            let visible = registry.visibleSources(includeAdult: showAdultSources)
+                            ForEach(Array(visible.enumerated()), id: \.element.id) { idx, source in
+                                if idx > 0 {
+                                    Divider().overlay(Ink.hairline).padding(.leading, Gutter.page)
+                                }
+                                Button {
+                                    registry.activeSourceID = source.id
+                                } label: {
+                                    HStack {
+                                        Text(source.name)
+                                            .font(.subheadline)
+                                            .foregroundStyle(Ink.primary)
+                                        Spacer()
+                                        if source.id == registry.activeSourceID {
+                                            Image(systemName: "checkmark").foregroundStyle(Ink.seal)
+                                        }
+                                    }
+                                    .contentShape(Rectangle())
+                                    .padding(.horizontal, Gutter.page)
+                                    .padding(.vertical, 15)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Ink.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Ink.hairline, lineWidth: 1))
+                        .padding(.horizontal, Gutter.page)
+
+                        Toggle("Show adult sources", isOn: $showAdultSources)
+                            .font(.subheadline)
+                            .tint(Ink.seal)
                             .padding(.horizontal, Gutter.page)
                     }
 

@@ -14,6 +14,7 @@ struct LibraryItem: Codable, Identifiable, Hashable {
     let title: String
     let coverURL: URL?
     var chapterNumbers: [String]? = nil   // deduped chapter numbers from last refresh; nil = never refreshed
+    var sourceId: String? = nil   // nil = saved before multi-source; treat as MangaDex
 }
 
 extension LibraryItem {
@@ -31,8 +32,12 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var isRefreshing = false
 
     private let key = "library.items"
+    private let defaults: UserDefaults
 
-    init() { load() }
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        load()
+    }
 
     func contains(_ id: String) -> Bool {
         items.contains { $0.id == id }
@@ -44,7 +49,8 @@ final class LibraryStore: ObservableObject {
             items.removeAll { $0.id == manga.id }
         } else {
             items.insert(
-                LibraryItem(id: manga.id, title: manga.title, coverURL: manga.coverURL),
+                LibraryItem(id: manga.id, title: manga.title, coverURL: manga.coverURL,
+                            sourceId: manga.sourceId),
                 at: 0
             )
         }
@@ -59,6 +65,10 @@ final class LibraryStore: ObservableObject {
         defer { isRefreshing = false }
 
         let current = items
+        // Capture the source as a value here (MainActor) so the off-actor refresh tasks
+        // below don't touch MainActor-isolated registry state. LibraryItem doesn't yet
+        // carry a sourceId, so saved manga refresh against the active source for now.
+        let source = SourceRegistry.shared.active
         let maxConcurrent = 4
         let results: [(String, [String])] = await withTaskGroup(
             of: (String, [String])?.self
@@ -68,7 +78,7 @@ final class LibraryStore: ObservableObject {
             func addNext() {
                 guard let item = iterator.next() else { return }
                 group.addTask {
-                    guard let chapters = try? await MangaDexAPI.fetchChapters(mangaId: item.id) else { return nil }
+                    guard let chapters = try? await source.chapters(mangaId: item.id) else { return nil }
                     return (item.id, chapters.map(\.number))
                 }
             }
@@ -94,11 +104,11 @@ final class LibraryStore: ObservableObject {
 
     private func save() {
         guard let data = try? JSONEncoder().encode(items) else { return }
-        UserDefaults.standard.set(data, forKey: key)
+        defaults.set(data, forKey: key)
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: key),
+        guard let data = defaults.data(forKey: key),
               let decoded = try? JSONDecoder().decode([LibraryItem].self, from: data)
         else { return }
         items = decoded

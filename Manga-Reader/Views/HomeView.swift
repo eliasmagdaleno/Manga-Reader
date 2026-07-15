@@ -9,7 +9,10 @@ struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
 
     var body: some View {
-        NavigationStack {
+        // Capture the browse source as a value so the escaping "See all" fetch closures
+        // don't reach back into MainActor-isolated state.
+        let source = vm.source
+        return NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Gutter.section) {
 
@@ -25,21 +28,21 @@ struct HomeView: View {
                     section("01", "Popular", "Popular",
                             items: vm.popular,
                             stamp: yearStamp,
-                            fetch: { try await MangaDexAPI.fetchPopular(limit: 60) })
+                            fetch: { try await source.popular(limit: 60, offset: 0) })
 
                     section("02", "Recently Updated", "Fresh chapters",
                             items: vm.latestUpdates.map { $0.manga },
                             stamp: { _ in "NEW" }, tinted: true,
                             fetch: {
-                                try await MangaDexAPI
-                                    .fetchLatestUpdates(limitTitles: 60, translatedLang: "en")
+                                try await source
+                                    .latestUpdates(limitTitles: 60, language: "en")
                                     .map { $0.manga }
                             })
 
                     section("03", "Newly Added", "Newly Added",
                             items: vm.newTitles,
                             stamp: yearStamp,
-                            fetch: { try await MangaDexAPI.fetchNewTitles(limit: 60) })
+                            fetch: { try await source.newTitles(limit: 60, offset: 0) })
                 }
                 .padding(.top, 4)
                 .padding(.bottom, 32)
