@@ -266,6 +266,7 @@ struct ReaderView: View {
         do {
             pages = try await SourceRegistry.shared.source(for: manga)
                 .pageURLs(chapterId: chapter.id, preferDataSaver: true)
+            ImageCache.shared.prefetch(pages)   // warm the whole chapter for instant scrolling
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -312,7 +313,7 @@ private struct ZoomablePage: View {
     }
 
     private var image: some View {
-        AsyncImage(url: url) { phase in
+        CachedAsyncImage(url: url) { phase in
             switch phase {
             case .success(let img):
                 img.resizable().scaledToFit()
@@ -383,7 +384,7 @@ private struct WebtoonPage: View {
     @State private var reloadToken = 0
 
     var body: some View {
-        AsyncImage(url: url) { phase in
+        CachedAsyncImage(url: url) { phase in
             switch phase {
             case .success(let img):
                 img.resizable().scaledToFit().frame(maxWidth: .infinity)

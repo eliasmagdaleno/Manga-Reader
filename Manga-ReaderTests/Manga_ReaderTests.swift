@@ -6,6 +6,7 @@
 //
 
 import XCTest
+import UIKit
 @testable import Manga_Reader
 
 final class Manga_ReaderTests: XCTestCase {
@@ -389,6 +390,113 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(manga.id, "abc")
         XCTAssertEqual(manga.sourceId, "mangadex")
         XCTAssertEqual(manga.sourceId, MangaDexSource.sourceID)
+    }
+
+    // MARK: - Image cache
+
+    /// Thread-safe call counter for the injected fetcher.
+    private final class CallCounter: @unchecked Sendable {
+        private let lock = NSLock()
+        private var _count = 0
+        var count: Int { lock.lock(); defer { lock.unlock() }; return _count }
+        func bump() { lock.lock(); _count += 1; lock.unlock() }
+    }
+
+    private func makeTempDir() -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("imgcache-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    @MainActor private func tinyPNG(_ color: UIColor = .red) -> Data {
+        let r = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2))
+        return r.pngData { ctx in color.setFill(); ctx.fill(CGRect(x: 0, y: 0, width: 2, height: 2)) }
+    }
+
+    @MainActor func testLoadImageFetchesOnceThenServesFromMemory() async {
+        let png = tinyPNG()
+        let counter = CallCounter()
+        let cache = ImageCache(directory: makeTempDir(), fetcher: { _ in counter.bump(); return png })
+        let url = URL(string: "https://example.com/p1.png")!
+
+        let first = await cache.loadImage(for: url)        // network
+        XCTAssertNotNil(first)
+        XCTAssertEqual(counter.count, 1)
+        let second = await cache.loadImage(for: url)       // memory hit
+        XCTAssertNotNil(second)
+        XCTAssertEqual(counter.count, 1)
+    }
+
+    @MainActor func testDiskPersistsAcrossInstancesWithoutRefetch() async {
+        let dir = makeTempDir()
+        let png = tinyPNG()
+        let url = URL(string: "https://example.com/p2.png")!
+
+        let c1 = CallCounter()
+        let cache1 = ImageCache(directory: dir, fetcher: { _ in c1.bump(); return png })
+        _ = await cache1.loadImage(for: url)               // network → disk
+        XCTAssertEqual(c1.count, 1)
+
+        let c2 = CallCounter()
+        let cache2 = ImageCache(directory: dir, fetcher: { _ in c2.bump(); return png }) // fresh memory, same disk
+        let hit = await cache2.loadImage(for: url)         // disk hit
+        XCTAssertNotNil(hit)
+        XCTAssertEqual(c2.count, 0)                        // no network
+    }
+
+    func testKeyIsStableAndURLSpecific() {
+        let u1 = URL(string: "https://example.com/a.png")!
+        let u2 = URL(string: "https://example.com/b.png")!
+        XCTAssertEqual(ImageCache.key(for: u1), ImageCache.key(for: u1))
+        XCTAssertNotEqual(ImageCache.key(for: u1), ImageCache.key(for: u2))
+        XCTAssertEqual(ImageCache.key(for: u1).count, 64)  // sha256 hex length
+    }
+
+    func testDiskTrimEnforcesCap() async {
+        let disk = ImageDiskCache(directory: makeTempDir(), maxBytes: 1000)
+        await disk.store(Data(count: 400), for: "a")
+        await disk.store(Data(count: 400), for: "b")
+        await disk.store(Data(count: 400), for: "c")       // 1200 > cap
+        var total = await disk.totalBytes()
+        XCTAssertEqual(total, 1200)
+        await disk.trim()
+        total = await disk.totalBytes()
+        XCTAssertLessThanOrEqual(total, 800)               // trimmed to <= 80% of cap
+    }
+
+    func testDiskClearRemovesFiles() async {
+        let disk = ImageDiskCache(directory: makeTempDir(), maxBytes: 1000)
+        await disk.store(Data(count: 100), for: "x")
+        var present = await disk.has("x")
+        XCTAssertTrue(present)
+        await disk.clear()
+        present = await disk.has("x")
+        XCTAssertFalse(present)
+    }
+
+    @MainActor func testClearEmptiesMemory() async {
+        let png = tinyPNG()
+        let cache = ImageCache(directory: makeTempDir(), fetcher: { _ in png })
+        let url = URL(string: "https://example.com/p3.png")!
+        _ = await cache.loadImage(for: url)
+        XCTAssertNotNil(cache.image(for: url))
+        cache.clear()
+        XCTAssertNil(cache.image(for: url))
+    }
+
+    @MainActor func testPrefetchWarmsAllURLsAndDedupes() async {
+        let png = tinyPNG()
+        let counter = CallCounter()
+        let cache = ImageCache(directory: makeTempDir(), fetcher: { _ in counter.bump(); return png })
+        let urls = (0..<8).map { URL(string: "https://example.com/pf\($0).png")! }
+
+        await cache.prefetchAwaitable(urls)
+        for u in urls { XCTAssertNotNil(cache.image(for: u)) }
+        XCTAssertEqual(counter.count, 8)
+
+        await cache.prefetchAwaitable(urls)                // all cached now
+        XCTAssertEqual(counter.count, 8)                   // no new fetches
     }
 
 }
