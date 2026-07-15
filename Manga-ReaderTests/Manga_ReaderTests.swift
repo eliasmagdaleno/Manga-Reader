@@ -300,11 +300,11 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     @MainActor func testLibraryToggleRecordsSourceId() {
-        let store = LibraryStore()
+        let suite = UserDefaults(suiteName: "test.library.\(UUID().uuidString)")!
+        let store = LibraryStore(defaults: suite)
         let manga = sampleManga("m", sourceId: "weebcentral")
         store.toggle(manga)
         XCTAssertEqual(store.items.first?.sourceId, "weebcentral")
-        store.toggle(manga)   // clean up shared UserDefaults
     }
 
     func testLibraryItemRoundTripsSourceId() throws {

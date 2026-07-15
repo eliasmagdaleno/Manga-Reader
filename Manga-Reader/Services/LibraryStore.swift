@@ -32,8 +32,12 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var isRefreshing = false
 
     private let key = "library.items"
+    private let defaults: UserDefaults
 
-    init() { load() }
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        load()
+    }
 
     func contains(_ id: String) -> Bool {
         items.contains { $0.id == id }
@@ -100,11 +104,11 @@ final class LibraryStore: ObservableObject {
 
     private func save() {
         guard let data = try? JSONEncoder().encode(items) else { return }
-        UserDefaults.standard.set(data, forKey: key)
+        defaults.set(data, forKey: key)
     }
 
     private func load() {
-        guard let data = UserDefaults.standard.data(forKey: key),
+        guard let data = defaults.data(forKey: key),
               let decoded = try? JSONDecoder().decode([LibraryItem].self, from: data)
         else { return }
         items = decoded
