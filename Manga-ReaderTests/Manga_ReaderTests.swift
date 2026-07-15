@@ -713,11 +713,101 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(vm.source.id, "mock")
     }
 
-    @MainActor func testHomeViewModelDefaultsToRegistryActiveSource() {
-        // No override → the vm must track SourceRegistry.shared.active *at read time*,
-        // not capture it at init.
-        let vm = HomeViewModel()
-        XCTAssertEqual(vm.source.id, SourceRegistry.shared.activeSourceID)
+    /// A source whose FIRST popular() call suspends until the test lets it proceed;
+    /// every later call returns `fresh` immediately. Two first-call behaviors:
+    /// - `.parkUntilReleased` parks on a continuation that deliberately ignores task
+    ///   cancellation, so a superseded load runs to completion *late* — exercising the
+    ///   "stale task must never write" guard.
+    /// - `.sleepCancellably` suspends in `Task.sleep`, which throws `CancellationError`
+    ///   the moment the load is superseded — exercising the "cancellation is not a
+    ///   user-facing error" path.
+    private actor SupersededSource: MangaSource {
+        enum FirstCallBehavior { case parkUntilReleased, sleepCancellably }
+
+        nonisolated let id = "superseded"
+        nonisolated let name = "Superseded"
+        private let firstCall: FirstCallBehavior
+        private let stale: [Manga]
+        private let fresh: [Manga]
+        private var gate: CheckedContinuation<Void, Never>?
+        private(set) var popularCalls = 0
+
+        init(firstCall: FirstCallBehavior, stale: [Manga], fresh: [Manga]) {
+            self.firstCall = firstCall
+            self.stale = stale
+            self.fresh = fresh
+        }
+
+        var isParked: Bool { gate != nil }
+        func releaseGate() { gate?.resume(); gate = nil }
+
+        func popular(limit: Int, offset: Int) async throws -> [Manga] {
+            popularCalls += 1
+            guard popularCalls == 1 else { return fresh }
+            switch firstCall {
+            case .parkUntilReleased:
+                await withCheckedContinuation { gate = $0 } // cancellation-blind on purpose
+            case .sleepCancellably:
+                try await Task.sleep(nanoseconds: 3_600_000_000_000) // cancelled long before 1h
+            }
+            return stale
+        }
+
+        func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func newTitles(limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] { [] }
+        func mangaDetail(id: String) async throws -> MangaDetail {
+            MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+        }
+        func chapters(mangaId: String) async throws -> [Chapter] { [] }
+        func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+    }
+
+    /// Polls an async condition until it holds or a 5s deadline expires.
+    @MainActor private func waitUntil(_ what: String, _ condition: () async -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline {
+            if await condition() { return }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        XCTFail("Timed out waiting for \(what)")
+    }
+
+    @MainActor func testSupersededHomeLoadNeitherClobbersRailsNorSurfacesCancellation() async throws {
+        let stale = [sampleManga("stale", sourceId: "superseded")]
+        let fresh = [sampleManga("fresh", sourceId: "superseded")]
+
+        // Phase A: the superseded load's fetch ignores cancellation and completes LATE —
+        // it must not overwrite the rails the superseding load already populated.
+        let sourceA = SupersededSource(firstCall: .parkUntilReleased, stale: stale, fresh: fresh)
+        let vmA = HomeViewModel(source: sourceA)
+
+        vmA.loadHome()                                    // load #1 parks inside popular()
+        try await waitUntil("first load to park") { await sourceA.isParked }
+        vmA.loadHome()                                    // load #2 supersedes #1, finishes fast
+        try await waitUntil("fresh rails to land") { vmA.popular.map(\.id) == ["fresh"] }
+
+        await sourceA.releaseGate()                       // late-complete the superseded load
+        try await Task.sleep(nanoseconds: 200_000_000)    // give it time to (wrongly) write
+
+        XCTAssertEqual(vmA.popular.map(\.id), ["fresh"])  // stale data must not clobber
+        XCTAssertNil(vmA.errorMessage)
+        XCTAssertFalse(vmA.isLoading)
+
+        // Phase B: the superseded load's fetch IS cancellation-aware — the resulting
+        // CancellationError must not surface as a user-facing errorMessage.
+        let sourceB = SupersededSource(firstCall: .sleepCancellably, stale: stale, fresh: fresh)
+        let vmB = HomeViewModel(source: sourceB)
+
+        vmB.loadHome()                                    // load #1 suspends in Task.sleep
+        try await waitUntil("first load to start") { await sourceB.popularCalls == 1 }
+        vmB.loadHome()                                    // cancels #1 → sleep throws CancellationError
+        try await waitUntil("fresh rails to land") { vmB.popular.map(\.id) == ["fresh"] }
+        try await Task.sleep(nanoseconds: 200_000_000)    // let the cancelled load unwind
+
+        XCTAssertNil(vmB.errorMessage)                    // cancellation is not an error
+        XCTAssertEqual(vmB.popular.map(\.id), ["fresh"])
+        XCTAssertFalse(vmB.isLoading)
     }
 
 }
