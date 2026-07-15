@@ -16,17 +16,30 @@ final class HomeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
 
-    /// The source these browse feeds come from. Defaults to the active source; injectable for tests.
-    let source: MangaSource
+    /// Injected source for tests; nil means "track the registry's active source".
+    private let sourceOverride: MangaSource?
+    /// The source these browse feeds come from — resolved at read time so a Settings
+    /// switch re-sources Home without an app relaunch.
+    var source: MangaSource { sourceOverride ?? SourceRegistry.shared.active }
+    /// The source id the current feed arrays were loaded from (nil before first load).
+    private var loadedSourceID: String?
 
     init(source: MangaSource? = nil) {
-        self.source = source ?? SourceRegistry.shared.active
+        self.sourceOverride = source
     }
 
     func loadHome() {
+        // Clear stale feeds when the active source changed since the last load, so the
+        // previous source's rails don't linger while the new one fetches.
+        let activeID = source.id
+        if let loaded = loadedSourceID, loaded != activeID {
+            popular = []; latestUpdates = []; newTitles = []
+            errorMessage = nil
+        }
+        loadedSourceID = activeID
         Task {
             await loadHomeAsync()
-                
+
         }
     }
     

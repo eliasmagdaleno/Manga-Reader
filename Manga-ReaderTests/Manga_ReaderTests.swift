@@ -706,4 +706,18 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertTrue(registry.visibleSources(includeAdult: false).contains { $0.id == "weebcentral" })
     }
 
+    // MARK: - Home source switching (Phase 2 addendum)
+
+    @MainActor func testHomeViewModelInjectedSourceWins() {
+        let vm = HomeViewModel(source: MockSource(id: "mock", name: "Mock"))
+        XCTAssertEqual(vm.source.id, "mock")
+    }
+
+    @MainActor func testHomeViewModelDefaultsToRegistryActiveSource() {
+        // No override → the vm must track SourceRegistry.shared.active *at read time*,
+        // not capture it at init.
+        let vm = HomeViewModel()
+        XCTAssertEqual(vm.source.id, SourceRegistry.shared.activeSourceID)
+    }
+
 }
