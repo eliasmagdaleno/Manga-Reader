@@ -59,17 +59,27 @@ final class LibraryStore: ObservableObject {
         defer { isRefreshing = false }
 
         let current = items
+        let maxConcurrent = 4
         let results: [(String, [String])] = await withTaskGroup(
             of: (String, [String])?.self
         ) { group in
-            for item in current {
+            var iterator = current.makeIterator()
+
+            func addNext() {
+                guard let item = iterator.next() else { return }
                 group.addTask {
                     guard let chapters = try? await MangaDexAPI.fetchChapters(mangaId: item.id) else { return nil }
                     return (item.id, chapters.map(\.number))
                 }
             }
+
+            for _ in 0..<maxConcurrent { addNext() }
+
             var out: [(String, [String])] = []
-            for await result in group { if let result { out.append(result) } }
+            while let result = await group.next() {
+                if let result { out.append(result) }
+                addNext()
+            }
             return out
         }
 
