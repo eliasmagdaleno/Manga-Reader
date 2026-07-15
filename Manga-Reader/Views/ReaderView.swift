@@ -56,7 +56,6 @@ struct ReaderView: View {
     @AppStorage("readingMode") private var mode: ReadingMode = .rightToLeft
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var history: HistoryStore
-    @EnvironmentObject private var library: LibraryStore
 
     @State private var pages: [URL] = []
     @State private var currentPage = 0
@@ -71,7 +70,7 @@ struct ReaderView: View {
             Ink.background.ignoresSafeArea()
 
             if let errorMessage {
-                InkNotice(errorMessage).padding(Gutter.page)
+                errorState(errorMessage)
             } else if isLoading && pages.isEmpty {
                 loadingState
             } else {
@@ -89,14 +88,40 @@ struct ReaderView: View {
         .statusBarHidden(!showChrome)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .task {
-            await load()
-            guard !pages.isEmpty else { return }   // load failed → don't record or clear badge
-            let start = min(max(initialPage, 0), pages.count - 1)
-            currentPage = start
-            advanceProgress(to: start)
-            library.markCaughtUp(manga.id)
+        .task { await loadAndBegin() }
+    }
+
+    /// Fetch the chapter's pages and, on success, seed reading progress. Also
+    /// invoked by the retry button after a failed load.
+    private func loadAndBegin() async {
+        await load()
+        guard !pages.isEmpty else { return }   // load failed → don't record progress
+        let start = min(max(initialPage, 0), pages.count - 1)
+        currentPage = start
+        advanceProgress(to: start)
+    }
+
+    /// Whole-chapter failure (the page list couldn't be fetched): notice + retry.
+    private func errorState(_ message: String) -> some View {
+        VStack(spacing: 16) {
+            InkNotice(message)
+            Button {
+                Task { await loadAndBegin() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Retry")
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Ink.seal)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Ink.sealSoft))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Ink.seal, lineWidth: 1.5))
+            }
+            .buttonStyle(.plain)
         }
+        .padding(Gutter.page)
     }
 
     private func toggleChrome() {
@@ -145,7 +170,7 @@ struct ReaderView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(Array(pages.enumerated()), id: \.offset) { index, url in
-                        verticalPage(url: url, index: index)
+                        WebtoonPage(url: url, index: index)
                             .id(index)
                             .onAppear { advanceProgress(to: index) }
                     }
@@ -158,30 +183,6 @@ struct ReaderView: View {
             .onChange(of: pages.count) { _, count in
                 guard count > 0, initialPage > 0 else { return }
                 proxy.scrollTo(min(initialPage, count - 1), anchor: .top)
-            }
-        }
-    }
-
-    private func verticalPage(url: URL, index: Int) -> some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let img):
-                img.resizable().scaledToFit().frame(maxWidth: .infinity)
-            case .empty:
-                Screentone()
-                    .frame(height: 460)
-                    .overlay(
-                        Text(String(format: "%03d", index + 1))
-                            .font(.inkMono(13, weight: .semibold))
-                            .foregroundStyle(Ink.tertiary)
-                    )
-            default:
-                Screentone(opacity: 0.5)
-                    .frame(height: 460)
-                    .overlay(
-                        Image(systemName: "exclamationmark.triangle")
-                            .foregroundStyle(Ink.tertiary)
-                    )
             }
         }
     }
@@ -284,6 +285,7 @@ private struct ZoomablePage: View {
     @State private var lastScale: CGFloat = 1
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
+    @State private var reloadToken = 0
 
     private let maxScale: CGFloat = 4
 
@@ -321,12 +323,10 @@ private struct ZoomablePage: View {
                     )
             default:
                 Screentone(opacity: 0.5)
-                    .overlay(
-                        Image(systemName: "exclamationmark.triangle")
-                            .foregroundStyle(Ink.tertiary)
-                    )
+                    .overlay(PageRetry { reloadToken += 1 })
             }
         }
+        .id(reloadToken)
     }
 
     private var magnification: some Gesture {
@@ -367,5 +367,60 @@ private struct ZoomablePage: View {
         lastScale = 1
         offset = .zero
         lastOffset = .zero
+    }
+}
+
+// MARK: - Webtoon page
+
+/// A single page in the continuous vertical reader. Owns its own reload token
+/// so a failed page can be retried independently of the rest of the strip.
+private struct WebtoonPage: View {
+    let url: URL
+    let index: Int
+
+    @State private var reloadToken = 0
+
+    var body: some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let img):
+                img.resizable().scaledToFit().frame(maxWidth: .infinity)
+            case .empty:
+                Screentone()
+                    .frame(height: 460)
+                    .overlay(
+                        Text(String(format: "%03d", index + 1))
+                            .font(.inkMono(13, weight: .semibold))
+                            .foregroundStyle(Ink.tertiary)
+                    )
+            default:
+                Screentone(opacity: 0.5)
+                    .frame(height: 460)
+                    .overlay(PageRetry { reloadToken += 1 })
+            }
+        }
+        .id(reloadToken)
+    }
+}
+
+// MARK: - Retry affordance
+
+/// Tappable failure placeholder for a page that couldn't load. A `Button` so its
+/// tap wins over the reader's chrome-toggle tap gesture.
+private struct PageRetry: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 22, weight: .semibold))
+                Text("RETRY")
+                    .font(.inkMono(11, weight: .semibold))
+                    .tracking(1.5)
+            }
+            .foregroundStyle(Ink.secondary)
+        }
+        .buttonStyle(.plain)
     }
 }

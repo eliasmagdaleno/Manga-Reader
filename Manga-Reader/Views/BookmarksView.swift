@@ -12,7 +12,7 @@ struct BookmarksView: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
 
-    private let columns = [GridItem(.adaptive(minimum: Gutter.coverWidth), spacing: Gutter.rail)]
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: Gutter.rail), count: 3)
 
     var body: some View {
         NavigationStack {
@@ -27,12 +27,14 @@ struct BookmarksView: View {
                     ScrollView {
                         LazyVGrid(columns: columns, alignment: .leading, spacing: Gutter.section) {
                             ForEach(library.items) { item in
+                                let unread = item.unreadCount(readNumbers: history.readChapterNumbers(forManga: item.id))
                                 NavigationLink(destination: MangaDetailView(manga: item.asManga)) {
                                     MangaCoverCard(
                                         title: item.title,
                                         coverURL: item.coverURL,
-                                        stamp: (item.newChapterCount ?? 0) > 0 ? "NEW · \(item.newChapterCount!)" : nil,
-                                        stampTinted: true
+                                        stamp: unread > 0 ? "UNREAD · \(unread)" : nil,
+                                        stampTinted: true,
+                                        fill: true
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -43,14 +45,14 @@ struct BookmarksView: View {
                         .padding(.bottom, 32)
                     }
                     .background(Ink.background)
-                    .refreshable { await library.refresh(history: history) }
+                    .refreshable { await library.refresh() }
                 }
             }
             .navigationTitle("Library")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        Task { await library.refresh(history: history) }
+                        Task { await library.refresh() }
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }

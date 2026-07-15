@@ -143,34 +143,24 @@ final class Manga_ReaderTests: XCTestCase {
 
     // MARK: - Library updates
 
-    func testNewChapterCountCountsNewerDistinct() {
-        let recent = [
-            RecentChapter(id: "a", number: "12", readableAt: "2026-07-13T00:00:00Z"),
-            RecentChapter(id: "b", number: "12", readableAt: "2026-07-12T00:00:00Z"), // dup number
-            RecentChapter(id: "c", number: "11", readableAt: "2026-07-11T00:00:00Z"),
-            RecentChapter(id: "d", number: "10", readableAt: "2026-07-01T00:00:00Z"),
-        ]
-        // baseline just after ch10 -> ch11 and ch12 are new (distinct) = 2
-        XCTAssertEqual(newChapterCount(recent, since: "2026-07-05T00:00:00Z"), 2)
+    func testUnreadCountNilChapterNumbersIsZero() {
+        let item = LibraryItem(id: "m1", title: "T", coverURL: nil, chapterNumbers: nil)
+        XCTAssertEqual(item.unreadCount(readNumbers: []), 0)
     }
 
-    func testNewChapterCountNilBaselineCountsAllDistinct() {
-        let recent = [
-            RecentChapter(id: "a", number: "2", readableAt: "2026-07-13T00:00:00Z"),
-            RecentChapter(id: "b", number: "1", readableAt: "2026-07-12T00:00:00Z"),
-        ]
-        XCTAssertEqual(newChapterCount(recent, since: nil), 2)
+    func testUnreadCountWithNoneReadCountsAll() {
+        let item = LibraryItem(id: "m1", title: "T", coverURL: nil, chapterNumbers: ["1", "2", "3"])
+        XCTAssertEqual(item.unreadCount(readNumbers: []), 3)
     }
 
-    func testNewChapterCountExcludesReadNumbers() {
-        let recent = [
-            RecentChapter(id: "a", number: "12", readableAt: "2026-07-13T00:00:00Z"),
-            RecentChapter(id: "c", number: "11", readableAt: "2026-07-11T00:00:00Z"),
-        ]
-        // Both newer than baseline, but ch 12 already read → only ch 11 counts as new.
-        XCTAssertEqual(
-            newChapterCount(recent, since: "2026-07-05T00:00:00Z", excludingNumbers: ["12"]),
-            1)
+    func testUnreadCountExcludesReadNumbers() {
+        let item = LibraryItem(id: "m1", title: "T", coverURL: nil, chapterNumbers: ["1", "2", "3"])
+        XCTAssertEqual(item.unreadCount(readNumbers: ["2"]), 2)
+    }
+
+    func testUnreadCountAllReadIsZero() {
+        let item = LibraryItem(id: "m1", title: "T", coverURL: nil, chapterNumbers: ["1", "2"])
+        XCTAssertEqual(item.unreadCount(readNumbers: ["1", "2"]), 0)
     }
 
     @MainActor func testReadChapterNumbersForManga() throws {
@@ -181,13 +171,116 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertTrue(store.readChapterNumbers(forManga: "other").isEmpty)
     }
 
+    // MARK: - Read / unread marks
+
+    @MainActor func testOpenedChapterCountsAsRead() throws {
+        let store = makeHistoryStore()
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), page: 0, pageCount: 5)
+        XCTAssertTrue(store.isRead(chapterId: "c1"))       // has a history entry → read
+        XCTAssertFalse(store.isRead(chapterId: "c2"))
+    }
+
+    @MainActor func testMarkReadWithoutOpening() throws {
+        let store = makeHistoryStore()
+        let chapter = Chapter(id: "c1", number: "3", title: nil)
+        XCTAssertFalse(store.isRead(chapterId: "c1"))
+        store.markRead(manga: sampleManga("m"), chapter: chapter)
+        XCTAssertTrue(store.isRead(chapterId: "c1"))
+        // Manual mark contributes to the shared read-numbers set (badge reconciliation).
+        XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["3"])
+        // ...but never pollutes the chronological reading log.
+        XCTAssertTrue(store.entries.isEmpty)
+    }
+
+    @MainActor func testMarkReadIsIdempotent() throws {
+        let store = makeHistoryStore()
+        let chapter = Chapter(id: "c1", number: "1", title: nil)
+        store.markRead(manga: sampleManga("m"), chapter: chapter)
+        store.markRead(manga: sampleManga("m"), chapter: chapter)
+        XCTAssertEqual(store.readMarks.count, 1)
+    }
+
+    @MainActor func testMarkUnreadClearsBothMarkAndHistory() throws {
+        let store = makeHistoryStore()
+        let chapter = Chapter(id: "c1", number: "1", title: nil)
+        store.record(manga: sampleManga("m"), chapter: chapter, page: 2, pageCount: 5) // opened
+        store.markRead(manga: sampleManga("m"), chapter: chapter)                       // and marked
+        XCTAssertTrue(store.isRead(chapterId: "c1"))
+
+        store.markUnread(manga: sampleManga("m"), chapter: chapter)
+        XCTAssertFalse(store.isRead(chapterId: "c1"))                 // no longer read
+        XCTAssertTrue(store.entries.isEmpty)                          // history entry removed
+        XCTAssertTrue(store.readChapterNumbers(forManga: "m").isEmpty)
+    }
+
+    @MainActor func testToggleReadRoundTrips() throws {
+        let store = makeHistoryStore()
+        let chapter = Chapter(id: "c1", number: "1", title: nil)
+        store.toggleRead(manga: sampleManga("m"), chapter: chapter)
+        XCTAssertTrue(store.isRead(chapterId: "c1"))
+        store.toggleRead(manga: sampleManga("m"), chapter: chapter)
+        XCTAssertFalse(store.isRead(chapterId: "c1"))
+    }
+
+    @MainActor func testMarkReadBatchMarksAllGivenChapters() throws {
+        let store = makeHistoryStore()
+        let chapters = [Chapter(id: "c1", number: "1", title: nil), Chapter(id: "c2", number: "2", title: nil)]
+        store.markRead(manga: sampleManga("m"), chapters: chapters)
+        XCTAssertTrue(store.isRead(chapterId: "c1"))
+        XCTAssertTrue(store.isRead(chapterId: "c2"))
+        XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["1", "2"])
+    }
+
+    @MainActor func testMarkReadBatchIsIdempotent() throws {
+        let store = makeHistoryStore()
+        let chapter = Chapter(id: "c1", number: "1", title: nil)
+        store.markRead(manga: sampleManga("m"), chapters: [chapter])
+        store.markRead(manga: sampleManga("m"), chapters: [chapter])
+        XCTAssertEqual(store.readMarks.count, 1)
+    }
+
+    @MainActor func testMarkReadBatchIsIdempotentWithinSingleCallDuplicates() throws {
+        let store = makeHistoryStore()
+        let chapter = Chapter(id: "c1", number: "1", title: nil)
+        store.markRead(manga: sampleManga("m"), chapters: [chapter, chapter])
+        XCTAssertEqual(store.readMarks.count, 1)
+    }
+
+    @MainActor func testMarkUnreadBatchClearsOnlyGivenChapters() throws {
+        let store = makeHistoryStore()
+        let manga = sampleManga("m")
+        let c1 = Chapter(id: "c1", number: "1", title: nil)
+        let c2 = Chapter(id: "c2", number: "2", title: nil)
+        let c3 = Chapter(id: "c3", number: "3", title: nil)
+        store.record(manga: manga, chapter: c1, page: 2, pageCount: 5)  // opened
+        store.markRead(manga: manga, chapter: c2)                       // manually marked
+        store.markRead(manga: manga, chapter: c3)                       // manually marked, untouched below
+
+        store.markUnread(manga: manga, chapters: [c1, c2])
+        XCTAssertFalse(store.isRead(chapterId: "c1"))
+        XCTAssertFalse(store.isRead(chapterId: "c2"))
+        XCTAssertTrue(store.isRead(chapterId: "c3"))                    // not in the batch, stays read
+        XCTAssertTrue(store.entries.isEmpty)
+        XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["3"])
+    }
+
+    @MainActor func testReadMarksPersistAcrossReload() throws {
+        let suite = UserDefaults(suiteName: "test.history.\(UUID().uuidString)")!
+        let store = HistoryStore(defaults: suite)
+        store.markRead(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "7", title: nil))
+
+        let reloaded = HistoryStore(defaults: suite)
+        XCTAssertTrue(reloaded.isRead(chapterId: "c1"))
+        XCTAssertEqual(reloaded.readChapterNumbers(forManga: "m"), ["7"])
+    }
+
     func testLibraryItemDecodesLegacyJSON() throws {
-        // JSON saved before the update-tracking fields existed.
+        // JSON saved before chapterNumbers existed (pre-migration installs).
         let legacy = #"{"id":"m1","title":"Old","coverURL":null}"#.data(using: .utf8)!
         let item = try JSONDecoder().decode(LibraryItem.self, from: legacy)
         XCTAssertEqual(item.id, "m1")
-        XCTAssertNil(item.newChapterCount)
-        XCTAssertNil(item.lastSeenReadableAt)
+        XCTAssertNil(item.chapterNumbers)
+        XCTAssertEqual(item.unreadCount(readNumbers: []), 0)
     }
 
 }
