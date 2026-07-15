@@ -376,6 +376,25 @@ final class Manga_ReaderTests: XCTestCase {
         }
     }
 
+    func testMangaDexSourceIsNotNSFWByDefault() {
+        XCTAssertFalse(MangaDexSource().isNSFW)
+    }
+
+    func testSourceCanDeclareNSFW() {
+        struct AdultMock: MangaSource {
+            let id = "adult"; let name = "Adult"
+            var isNSFW: Bool { true }
+            func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+            func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+            func mangaDetail(id: String) async throws -> MangaDetail {
+                MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+            }
+            func chapters(mangaId: String) async throws -> [Chapter] { [] }
+            func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+        }
+        XCTAssertTrue(AdultMock().isNSFW)
+    }
+
     func testMangaDexDecodeStampsSourceId() throws {
         // A /manga list entry decoded exactly as the API layer does it must carry the
         // MangaDex source id so downstream source resolution works.

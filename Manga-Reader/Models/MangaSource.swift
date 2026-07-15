@@ -20,6 +20,8 @@ protocol MangaSource {
     var id: String { get }
     /// Human-readable name for pickers/UI (e.g. "MangaDex").
     var name: String { get }
+    /// Whether this source serves adult content. Gated behind a Settings toggle.
+    var isNSFW: Bool { get }
 
     /// Search the source by title. Results carry `coverURL` and `sourceId`.
     func search(title: String, limit: Int, offset: Int) async throws -> [Manga]
@@ -56,6 +58,8 @@ enum SourceError: LocalizedError {
 /// a "new titles" or "latest updates" feed simply doesn't implement these and callers get
 /// a clear `SourceError.unsupported` instead of a crash. MangaDex overrides all of them.
 extension MangaSource {
+    var isNSFW: Bool { false }
+
     func newTitles(limit: Int, offset: Int) async throws -> [Manga] {
         throw SourceError.unsupported("newTitles")
     }
