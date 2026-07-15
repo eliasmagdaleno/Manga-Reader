@@ -26,14 +26,24 @@ final class SourceRegistry: ObservableObject {
 
     private static let activeKey = "source.activeID"
 
-    /// - Parameter sources: Sources to register. Defaults to the app's built-in set.
+    /// - Parameter sources: Sources to register, or `nil` for the app's built-in set
+    ///   (MangaDex + WeebCentral, sharing one WebView-backed `SourceContext`).
     ///   Injectable so tests can supply mock sources.
-    init(sources: [MangaSource] = [MangaDexSource()]) {
+    init(sources: [MangaSource]? = nil) {
+        let sources = sources ?? Self.builtInSources()
         precondition(!sources.isEmpty, "SourceRegistry requires at least one source")
         self.sources = sources
         // Restore the persisted active source if it still exists; otherwise fall back to the first.
         let stored = UserDefaults.standard.string(forKey: Self.activeKey)
         self.activeSourceID = sources.contains(where: { $0.id == stored }) ? stored! : sources[0].id
+    }
+
+    /// The app's compiled-in sources. One `SourceContext` (backed by the shared
+    /// Cloudflare-clearing WebView) is built here and handed to every source that
+    /// needs it; MangaDex talks to its own API client and takes no context.
+    private static func builtInSources() -> [MangaSource] {
+        let context = SourceContext(webView: WebViewService.shared)
+        return [MangaDexSource(), WeebCentralSource(context: context)]
     }
 
     /// The currently-active browsing source (never nil — falls back to the first source).

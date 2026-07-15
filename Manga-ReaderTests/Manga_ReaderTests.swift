@@ -696,4 +696,14 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(WeebCentralSource.chapterNumber(fromTitle: "Oneshot"), "?")
     }
 
+    // MARK: - Default source registration (Phase 2)
+
+    @MainActor func testDefaultRegistryContainsMangaDexAndWeebCentral() {
+        let registry = SourceRegistry()
+        XCTAssertEqual(registry.sources.map(\.id), ["mangadex", "weebcentral"])
+        XCTAssertNotNil(registry.source(id: "weebcentral"))
+        // WeebCentral is not adult content — visible without the adult toggle.
+        XCTAssertTrue(registry.visibleSources(includeAdult: false).contains { $0.id == "weebcentral" })
+    }
+
 }
