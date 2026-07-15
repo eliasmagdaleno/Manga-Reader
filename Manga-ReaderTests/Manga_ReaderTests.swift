@@ -566,4 +566,15 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(counter.count, 8)                   // no new fetches
     }
 
+    // MARK: - Source-layer contract (Phase 2)
+
+    func testSourceErrorWebViewCasesHaveDescriptions() {
+        XCTAssertEqual(SourceError.cloudflareUnsolved.errorDescription,
+                       "Cloudflare verification wasn't completed.")
+        XCTAssertEqual(SourceError.navigationFailed("timeout").errorDescription,
+                       "Couldn't load the page: timeout")
+        XCTAssertEqual(SourceError.extractionFailed("bad JSON").errorDescription,
+                       "Couldn't read the page: bad JSON")
+    }
+
 }

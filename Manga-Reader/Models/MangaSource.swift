@@ -43,11 +43,23 @@ protocol MangaSource {
 enum SourceError: LocalizedError {
     /// The source does not implement an optional capability (carries the capability name).
     case unsupported(String)
+    /// A Cloudflare interactive challenge was shown but never completed (dismissed/timed out).
+    case cloudflareUnsolved
+    /// The WebView could not load the page (carries the underlying reason).
+    case navigationFailed(String)
+    /// The extraction script failed or its output couldn't be decoded (carries the reason).
+    case extractionFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .unsupported(let capability):
             return "This source doesn't support \(capability)."
+        case .cloudflareUnsolved:
+            return "Cloudflare verification wasn't completed."
+        case .navigationFailed(let reason):
+            return "Couldn't load the page: \(reason)"
+        case .extractionFailed(let reason):
+            return "Couldn't read the page: \(reason)"
         }
     }
 }
