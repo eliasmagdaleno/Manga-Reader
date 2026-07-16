@@ -418,6 +418,12 @@ struct MangaDetailView: View {
 
             Spacer(minLength: 8)
 
+            if let date = chapter.date {
+                Text(date.formatted(.dateTime.month().day().year()))
+                    .font(.inkMono(11, weight: .medium))
+                    .foregroundStyle(dimmed ? Ink.tertiary : Ink.secondary)
+            }
+
             if !isSelecting {
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
