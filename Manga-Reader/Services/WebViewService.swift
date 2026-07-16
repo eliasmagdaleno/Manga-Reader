@@ -30,6 +30,8 @@ final class WebViewService: NSObject, ObservableObject, WebViewExtracting {
 
     private let navigationTimeout: TimeInterval = 30
     private let challengeTimeout: TimeInterval = 120
+    private let declineStickiness: TimeInterval = 30
+    private let dismissalEchoWindow: TimeInterval = 1.5
 
     // Single-flight state — only ever touched on the MainActor.
     private var lockBusy = false
@@ -37,6 +39,21 @@ final class WebViewService: NSObject, ObservableObject, WebViewExtracting {
     private var loadContinuation: CheckedContinuation<Void, Error>?
     private var challengeContinuation: CheckedContinuation<Void, Error>?
     private var sawChallengeHeader = false
+    /// Sticky decline: while set and in the future, extracts that hit a Cloudflare
+    /// challenge fail fast with `.cloudflareUnsolved` instead of re-presenting the
+    /// sheet. Armed whenever a challenge wait ends unsolved (user decline OR the
+    /// 120 s timeout) so queued extracts can't cascade sheets at the user; cleared
+    /// the moment a challenge is actually solved. Pages that load challenge-free
+    /// are unaffected by the window.
+    private var challengeDeclinedUntil: Date?
+    /// When the *service* ends a challenge while its sheet is still presented
+    /// (solve, timeout, or the sheet's Cancel button), the programmatic dismissal
+    /// echoes one `cancelChallenge()` through the sheet's onDismiss. Calls arriving
+    /// within this deadline are that echo and are swallowed, so a stale dismissal
+    /// callback can never decline a LATER extract's challenge. A user swipe writes
+    /// `isChallengeActive = false` *before* onDismiss runs, so no echo window is
+    /// armed on that path and genuine declines are never swallowed.
+    private var dismissalEchoDeadline: Date?
     /// The navigation the pending `load(_:)` is waiting on. Client-side redirects
     /// supersede it (adopted in `didStartProvisionalNavigation`); callbacks for any
     /// other navigation — e.g. stragglers from a timed-out earlier load — are ignored.
@@ -71,17 +88,34 @@ final class WebViewService: NSObject, ObservableObject, WebViewExtracting {
     /// The serialized load → (challenge wait) → script-run pipeline, on the MainActor.
     private func extractJSON(from url: URL, script: String) async throws -> String {
         try await withLock {
+            // A fetch cancelled while queued for the lock must not drive the browser
+            // (or worse, summon the challenge sheet) for a result nobody wants.
+            try Task.checkCancellation()
             try await self.load(url)
             if self.sawChallengeHeader {
+                // Re-check: cancellation during the page load must not flip
+                // isChallengeActive for a dead fetch.
+                try Task.checkCancellation()
+                // Sticky decline: the user (or the 120 s timeout) just refused a
+                // challenge — don't re-present the sheet for every queued extract;
+                // fail fast until the window lapses or a challenge gets solved.
+                if let until = self.challengeDeclinedUntil, Date() < until {
+                    throw SourceError.cloudflareUnsolved
+                }
                 try await self.awaitChallengeResolution()
             }
             return try await self.runScript(script)
         }
     }
 
-    /// Called when the user dismisses the challenge sheet without solving it.
-    /// Safe to call redundantly (e.g. from the sheet's onDismiss after success).
+    /// Called when the user declines the challenge sheet (swipe-dismiss or its Cancel
+    /// button). Safe to call redundantly: the sheet's onDismiss also fires after the
+    /// service closes the sheet itself (solve/timeout/Cancel button) — those echoes
+    /// land inside `dismissalEchoDeadline` and are ignored, so they can never decline
+    /// a challenge that a LATER extract has since started waiting on.
     func cancelChallenge() {
+        if let deadline = dismissalEchoDeadline, Date() < deadline { return }
+        guard challengeContinuation != nil else { return }
         resumeChallenge(.failure(SourceError.cloudflareUnsolved))
     }
 
@@ -144,6 +178,17 @@ final class WebViewService: NSObject, ObservableObject, WebViewExtracting {
     private func resumeChallenge(_ result: Result<Void, Error>) {
         guard let cont = challengeContinuation else { return }
         challengeContinuation = nil
+        // If the sheet is still presented, we're about to close it programmatically
+        // (a user swipe already wrote isChallengeActive = false before reaching here);
+        // arm the echo window so the dismissal's onDismiss → cancelChallenge is inert.
+        if isChallengeActive {
+            dismissalEchoDeadline = Date().addingTimeInterval(dismissalEchoWindow)
+        }
+        // Solved → clear any sticky decline; unsolved (decline or timeout) → arm it.
+        switch result {
+        case .success: challengeDeclinedUntil = nil
+        case .failure: challengeDeclinedUntil = Date().addingTimeInterval(declineStickiness)
+        }
         cont.resume(with: result)
     }
 
