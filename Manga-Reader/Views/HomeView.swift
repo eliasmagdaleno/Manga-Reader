@@ -8,6 +8,7 @@ import SwiftUI
 struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
     @ObservedObject private var registry = SourceRegistry.shared
+    @AppStorage("settings.showAdultSources") private var showAdultSources = false
 
     var body: some View {
         // Capture the browse source as a value so the escaping "See all" fetch closures
@@ -52,6 +53,32 @@ struct HomeView: View {
             .task(id: registry.activeSourceID) { vm.loadHome() }
             .navigationTitle("Read")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        ForEach(registry.visibleSources(includeAdult: showAdultSources), id: \.id) { source in
+                            Button {
+                                registry.activeSourceID = source.id
+                            } label: {
+                                if source.id == registry.activeSourceID {
+                                    Label(source.name, systemImage: "checkmark")
+                                } else {
+                                    Text(source.name)
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(registry.active.name.uppercased())
+                                .font(.inkMono(11, weight: .semibold))
+                                .tracking(0.5)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 9, weight: .semibold))
+                        }
+                        .foregroundStyle(Ink.seal)
+                    }
+                }
+            }
         }
     }
 
