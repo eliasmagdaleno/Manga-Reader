@@ -30,6 +30,7 @@ final class WebViewService: NSObject, ObservableObject, WebViewExtracting {
 
     private let navigationTimeout: TimeInterval = 30
     private let challengeTimeout: TimeInterval = 120
+    private let scriptTimeout: TimeInterval = 15
     private let declineStickiness: TimeInterval = 30
     private let dismissalEchoWindow: TimeInterval = 1.5
 
@@ -38,6 +39,11 @@ final class WebViewService: NSObject, ObservableObject, WebViewExtracting {
     private var lockWaiters: [CheckedContinuation<Void, Never>] = []
     private var loadContinuation: CheckedContinuation<Void, Error>?
     private var challengeContinuation: CheckedContinuation<Void, Error>?
+    private var scriptContinuation: CheckedContinuation<String, Error>?
+    /// Identity of the current `runScript` run. An `evaluateJavaScript` callback that
+    /// straggles in after its run timed out must not resume a LATER extract's script
+    /// wait with the wrong script's output — same staleness class as `currentNavigation`.
+    private var scriptGeneration = 0
     private var sawChallengeHeader = false
     /// Sticky decline: while set and in the future, extracts that hit a Cloudflare
     /// challenge fail fast with `.cloudflareUnsolved` instead of re-presenting the
@@ -153,15 +159,30 @@ final class WebViewService: NSObject, ObservableObject, WebViewExtracting {
     }
 
     private func runScript(_ script: String) async throws -> String {
+        scriptGeneration += 1
+        let generation = scriptGeneration
+        let deadline = Task { [scriptTimeout] in
+            try? await Task.sleep(for: .seconds(scriptTimeout))
+            // Same straggler guard as load(): a cancelled deadline still reaches this
+            // line (`try?` swallows CancellationError) — bail so it can't fail a
+            // *later* extract's script wait.
+            guard !Task.isCancelled else { return }
+            self.resumeScript(.failure(SourceError.extractionFailed("script timed out")))
+        }
+        defer { deadline.cancel() }
         // Completion-handler variant on purpose: the async overload traps if JS returns nil.
-        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
+        return try await withCheckedThrowingContinuation { (cont: CheckedContinuation<String, Error>) in
+            scriptContinuation = cont
             webView.evaluateJavaScript(script) { result, error in
+                // A callback straggling in after this run timed out must not touch a
+                // later run's continuation (nil-check alone can't tell them apart).
+                guard generation == self.scriptGeneration else { return }
                 if let error {
-                    cont.resume(throwing: SourceError.extractionFailed(error.localizedDescription))
+                    self.resumeScript(.failure(SourceError.extractionFailed(error.localizedDescription)))
                 } else if let json = result as? String {
-                    cont.resume(returning: json)
+                    self.resumeScript(.success(json))
                 } else {
-                    cont.resume(throwing: SourceError.extractionFailed("script did not return a JSON string"))
+                    self.resumeScript(.failure(SourceError.extractionFailed("script did not return a JSON string")))
                 }
             }
         }
@@ -172,6 +193,12 @@ final class WebViewService: NSObject, ObservableObject, WebViewExtracting {
     private func resumeLoad(_ result: Result<Void, Error>) {
         guard let cont = loadContinuation else { return }
         loadContinuation = nil
+        cont.resume(with: result)
+    }
+
+    private func resumeScript(_ result: Result<String, Error>) {
+        guard let cont = scriptContinuation else { return }
+        scriptContinuation = nil
         cont.resume(with: result)
     }
 
@@ -266,5 +293,26 @@ extension WebViewService: WKNavigationDelegate {
     func webView(_ webView: WKWebView,
                  didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         handleNavigationFailure(navigation, error)
+    }
+
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        // iOS reaps off-screen web content processes under memory pressure. Whatever
+        // was in flight is dead — fail every pending wait so no extract hangs on a
+        // continuation nothing will ever resume. WKWebView recreates the process on
+        // its next load, so the following extract starts clean.
+        let reason = SourceError.navigationFailed("web content process terminated")
+        resumeLoad(.failure(reason))
+        // If the sheet was up, this arms the dismissal-echo window (we're closing the
+        // sheet programmatically), keeping the onDismiss echo inert — desired.
+        resumeChallenge(.failure(reason))
+        resumeScript(.failure(reason))
+        // Termination is NOT a user decline: undo the sticky-decline window that
+        // resumeChallenge's failure branch just armed (and any earlier one — the
+        // browser state it was protecting is gone). The next extract may present
+        // a fresh challenge in the recreated process.
+        challengeDeclinedUntil = nil
+        // awaitChallengeResolution's defer clears this as its continuation resumes;
+        // clear it here too so nothing dangles even if no challenge wait was pending.
+        isChallengeActive = false
     }
 }
