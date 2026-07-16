@@ -14,10 +14,20 @@ struct MangaDetailView: View {
     @State private var chaptersDescending = true
     @State private var isSelecting = false
     @State private var selectedChapterIDs: Set<String> = []
+    @State private var showingWebPage = false
 
     init(manga: Manga) {
         self.manga = manga
         _vm = StateObject(wrappedValue: MangaDetailViewModel(manga: manga))
+    }
+
+    /// The registered source this manga came from (nil if its source was unregistered).
+    private var mangaSource: MangaSource? {
+        SourceRegistry.shared.source(id: manga.sourceId)
+    }
+
+    private var mangaWebURL: URL? {
+        mangaSource?.webURL(forManga: manga.id)
     }
 
     var body: some View {
@@ -49,6 +59,20 @@ struct MangaDetailView: View {
                     Button("Mark Read") { markSelected(read: true) }
                         .disabled(selectedChapterIDs.isEmpty)
                         .fontWeight(.semibold)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if let url = mangaWebURL {
+                    Button {
+                        showingWebPage = true
+                    } label: {
+                        Image(systemName: "safari")
+                    }
+                    .accessibilityLabel("Open on \(mangaSource?.name ?? "web")")
+                    .sheet(isPresented: $showingWebPage) {
+                        SafariView(url: url)
+                            .ignoresSafeArea()
+                    }
                 }
             }
         }
@@ -113,6 +137,7 @@ struct MangaDetailView: View {
                         if let rating = vm.contentRating, !rating.isEmpty {
                             InkStamp(text: rating.uppercased(), tinted: true)
                         }
+                        InkStamp(text: (mangaSource?.name ?? manga.sourceId).uppercased(), tinted: true)
                     }
                 }
                 Spacer(minLength: 0)

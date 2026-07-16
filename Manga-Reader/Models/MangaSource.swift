@@ -37,6 +37,9 @@ protocol MangaSource {
     func chapters(mangaId: String) async throws -> [Chapter]
     /// The per-page image URLs for a chapter.
     func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL]
+    /// The human-facing web page for a manga on the source's site (for "open in
+    /// browser"). Optional capability; nil when the source has no web presence.
+    func webURL(forManga id: String) -> URL?
 }
 
 /// Errors common to the source layer (distinct from a source's own transport errors).
@@ -79,4 +82,6 @@ extension MangaSource {
     func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] {
         throw SourceError.unsupported("latestUpdates")
     }
+
+    func webURL(forManga id: String) -> URL? { nil }
 }

@@ -810,4 +810,21 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertFalse(vmB.isLoading)
     }
 
+    // MARK: - Source web URLs (Phase 2 addendum)
+
+    func testMangaDexWebURL() {
+        XCTAssertEqual(MangaDexSource().webURL(forManga: "abc-123")?.absoluteString,
+                       "https://mangadex.org/title/abc-123")
+    }
+
+    @MainActor func testWeebCentralWebURL() {
+        let (source, _) = makeWeebCentral()
+        XCTAssertEqual(source.webURL(forManga: "01J76XYZ")?.absoluteString,
+                       "https://weebcentral.com/series/01J76XYZ")
+    }
+
+    func testWebURLDefaultsToNil() {
+        XCTAssertNil(MockSource(id: "x", name: "X").webURL(forManga: "y"))
+    }
+
 }
