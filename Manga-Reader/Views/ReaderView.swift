@@ -7,8 +7,9 @@
 //    • Right → Left  — paged, manga order (swipe right to advance).
 //    • Webtoon       — continuous vertical scroll (manhwa / long-strip).
 //
-//  Paged pages support pinch-to-zoom and double-tap-to-zoom. The chosen mode
-//  is persisted so it carries across chapters. Page URLs come from the manga's
+//  Paged pages zoom through the UIScrollView-backed `ZoomableContainer`
+//  (native pinch / pan physics, double-tap zooms into the tapped point). The
+//  chosen mode is persisted so it carries across chapters. Page URLs come from the manga's
 //  own `MangaSource` (resolved via `SourceRegistry`), which for MangaDex hits the
 //  At-Home server.
 //
@@ -149,20 +150,32 @@ struct ReaderView: View {
         }
     }
 
-    /// Paged reader. RTL is achieved by mirroring the pager horizontally and
-    /// un-mirroring each page, so page order stays 1…n while swipe direction flips.
+    /// Paged reader. RTL is achieved by laying pages out in reversed order —
+    /// page i+1 sits to the LEFT of page i, so the story advances with a
+    /// rightward swipe — while every page (including its embedded UIScrollView
+    /// zoom layer) stays in a plain, un-mirrored coordinate space. The old
+    /// mirror-the-pager `scaleEffect(x: -1)` approach inverted horizontal pan
+    /// translations for gestures inside the page.
     private var pagedReader: some View {
         TabView(selection: $currentPage) {
-            ForEach(pages.indices, id: \.self) { index in
+            ForEach(pageOrder, id: \.self) { index in
                 ZoomablePage(url: pages[index], index: index, currentIndex: currentPage,
-                             mirrored: mode == .rightToLeft, onTap: toggleChrome)
+                             onTap: toggleChrome)
                     .tag(index)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .scaleEffect(x: mode == .rightToLeft ? -1 : 1, y: 1)
         .ignoresSafeArea()
+        // Rebuild the pager when the direction flips — reordering live pages
+        // inside a paged TabView is glitch-prone. Selection is restored from
+        // `currentPage` (tags are logical page indices in both orders).
+        .id(mode)
         .onChange(of: currentPage) { _, newValue in advanceProgress(to: newValue) }
+    }
+
+    /// Layout order of the page indices: natural for LTR, reversed for RTL.
+    private var pageOrder: [Int] {
+        mode == .rightToLeft ? Array(pages.indices.reversed()) : Array(pages.indices)
     }
 
     /// Continuous vertical scroll — the webtoon / long-strip layout.
@@ -276,104 +289,39 @@ struct ReaderView: View {
 
 // MARK: - Zoomable page
 
-/// A single paged image with pinch-to-zoom, double-tap-to-zoom, and pan while
-/// zoomed. `mirrored` un-flips the page for the right-to-left pager.
+/// A single paged image hosted inside a `ZoomableContainer`, which supplies
+/// native UIScrollView pinch / pan / double-tap-to-point zoom. This view owns
+/// the page content phases (image, screentone placeholder, retry) and the
+/// reload token; the container resets zoom when `index` stops matching the
+/// pager's `currentIndex`.
 private struct ZoomablePage: View {
     let url: URL
     let index: Int
     let currentIndex: Int
-    let mirrored: Bool
     let onTap: () -> Void
 
-    @State private var scale: CGFloat = 1
-    @State private var lastScale: CGFloat = 1
-    @State private var offset: CGSize = .zero
-    @State private var lastOffset: CGSize = .zero
     @State private var reloadToken = 0
 
-    private let maxScale: CGFloat = 4
-
     var body: some View {
-        image
-            .scaleEffect(scale)
-            .offset(offset)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .scaleEffect(x: mirrored ? -1 : 1, y: 1)   // un-mirror for RTL pager
-            .contentShape(Rectangle())
-            .gesture(magnification)
-            // Pan only claims touches while zoomed — otherwise the TabView owns the
-            // swipe. The gesture stays structurally attached at all times (only the
-            // mask toggles) so an in-flight pinch never has its recognizer torn down
-            // mid-gesture by a branch swap.
-            .gesture(pan, including: scale > 1 ? .all : .subviews)
-            .onTapGesture(count: 2) { toggleZoom() }
-            .onTapGesture(count: 1) { onTap() }
-            .onChange(of: currentIndex) { _, newValue in
-                // Reset only once this page actually stops being the selected page —
-                // not on every transient re-render (chrome toggling, offscreen-neighbor
-                // churn in the .page TabView) that can fire without a real page change.
-                if newValue != index { resetZoom() }
+        ZoomableContainer(isActive: index == currentIndex, onSingleTap: onTap) {
+            CachedAsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let img):
+                    img.resizable().scaledToFit()
+                case .empty:
+                    Screentone()
+                        .overlay(
+                            Text(String(format: "%03d", index + 1))
+                                .font(.inkMono(13, weight: .semibold))
+                                .foregroundStyle(Ink.tertiary)
+                        )
+                default:
+                    Screentone(opacity: 0.5)
+                        .overlay(PageRetry { reloadToken += 1 })
+                }
             }
-    }
-
-    private var image: some View {
-        CachedAsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let img):
-                img.resizable().scaledToFit()
-            case .empty:
-                Screentone()
-                    .overlay(
-                        Text(String(format: "%03d", index + 1))
-                            .font(.inkMono(13, weight: .semibold))
-                            .foregroundStyle(Ink.tertiary)
-                    )
-            default:
-                Screentone(opacity: 0.5)
-                    .overlay(PageRetry { reloadToken += 1 })
-            }
+            .id(reloadToken)
         }
-        .id(reloadToken)
-    }
-
-    private var magnification: some Gesture {
-        MagnificationGesture()
-            .onChanged { value in
-                scale = min(max(lastScale * value, 1), maxScale)
-            }
-            .onEnded { _ in
-                lastScale = scale
-                if scale <= 1 { withAnimation(.snappy(duration: 0.2)) { resetZoom() } }
-            }
-    }
-
-    private var pan: some Gesture {
-        DragGesture()
-            .onChanged { value in
-                offset = CGSize(
-                    width: lastOffset.width + value.translation.width,
-                    height: lastOffset.height + value.translation.height
-                )
-            }
-            .onEnded { _ in lastOffset = offset }
-    }
-
-    private func toggleZoom() {
-        withAnimation(.snappy(duration: 0.22)) {
-            if scale > 1 {
-                resetZoom()
-            } else {
-                scale = 2.5
-                lastScale = 2.5
-            }
-        }
-    }
-
-    private func resetZoom() {
-        scale = 1
-        lastScale = 1
-        offset = .zero
-        lastOffset = .zero
     }
 }
 
