@@ -413,6 +413,10 @@ struct MangaDetailView: View {
                     Text("Page: \(p.page + 1)")
                         .font(.inkMono(11, weight: .semibold))
                         .foregroundStyle(Ink.seal)
+                } else if let date = chapter.date {
+                    Text(date.formatted(.dateTime.month().day().year()))
+                        .font(.inkMono(11, weight: .medium))
+                        .foregroundStyle(dimmed ? Ink.tertiary : Ink.secondary)
                 }
             }
 

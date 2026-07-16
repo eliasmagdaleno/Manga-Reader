@@ -68,7 +68,8 @@ struct WeebCentralSource: MangaSource {
         let url = Self.base.appending(path: "series/\(mangaId)/full-chapter-list")
         let items = try await context.webView.extract(from: url, script: Self.chaptersScript,
                                                       as: [WCChapterItem].self)
-        return items.map { Chapter(id: $0.id, number: Self.chapterNumber(fromTitle: $0.title), title: $0.title) }
+        return items.map { Chapter(id: $0.id, number: Self.chapterNumber(fromTitle: $0.title),
+                                   title: $0.title, date: Chapter.parseISO8601($0.date)) }
     }
 
     func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] {
@@ -139,6 +140,7 @@ private struct WCDetail: Decodable {
 private struct WCChapterItem: Decodable {
     let id: String
     let title: String
+    let date: String?
 }
 
 private struct WCUpdateItem: Decodable {
@@ -217,9 +219,11 @@ private extension WeebCentralSource {
         const titleEl = a.querySelector('span.grow.flex.gap-2 span')
           || a.querySelector('span.grow span')
           || a.querySelector('span');
+        const timeEl = a.querySelector('time[datetime]');
         return {
           id: seg(a.getAttribute('href'), 'chapters'),
-          title: titleEl ? titleEl.textContent.trim() : ''
+          title: titleEl ? titleEl.textContent.trim() : '',
+          date: timeEl ? timeEl.getAttribute('datetime') : null
         };
       }).filter(x => x.id);
       return JSON.stringify(items);
