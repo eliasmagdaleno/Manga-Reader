@@ -52,6 +52,18 @@ adapters calls `MangaDexAPI` directly.
   Services fetch through this, never `MangaDexAPI`.
 - **`Models/MangaDexSource.swift`** — MangaDex as source #1: a thin adapter delegating to
   the `MangaDexAPI` static methods. Owns `sourceID = "mangadex"`.
+- **`Services/WebViewService.swift`** + **`Services/SourceContext.swift`** — the host
+  capability layer for HTML-scraping sources. `WebViewService` (`@MainActor`, `.shared`)
+  loads pages in a shared off-screen `WKWebView` (persistent data store so Cloudflare's
+  `cf_clearance` survives; pinned UA), runs an injected JS script whose final expression is
+  a `JSON.stringify(...)` string, and decodes it into Codable DTOs. Interactive Cloudflare
+  challenges surface the WebView in a sheet (`Components/CloudflareChallengeView`, wired in
+  `ContentView`); declines are sticky for 30s and task cancellation is honored. Sources
+  receive it via `SourceContext` (`WebViewExtracting` protocol — mock it in tests).
+- **`Models/WeebCentralSource.swift`** — WeebCentral as source #2 (`sourceID =
+  "weebcentral"`): server-rendered HTML scraped via per-page JS extraction scripts
+  (co-located raw strings — the volatile part when the site redesigns). Browse feeds map
+  to `/search/data` sort modes; unit-tested against a `MockWebView`.
 - **`Models/MangaDexAPI.swift`** — the MangaDex networking implementation in one file.
   `MangaDexAPI` is a namespace struct of `static` async methods over a single generic
   `request<T: Decodable>(endpoint:queryItems:)` helper (uses `.convertFromSnakeCase`).
@@ -93,8 +105,14 @@ file across all four sections.
 The app builds and the core reading loop is implemented:
 
 - **Tabs:** Home, Library, History, Search, Settings. Home, Library, and History each have
-  their own `NavigationStack`. `SearchView` and `SettingsView` are still placeholder stubs
-  (Settings does wire the appearance/dark-mode toggle).
+  their own `NavigationStack`. `SearchView` is still a placeholder stub. Settings wires the
+  appearance/dark-mode toggle plus the **source picker** ("Show adult sources" gating);
+  switching sources re-sources Home immediately (in-flight loads are cancelled so a slow
+  old source can't repaint the rails).
+- **Sources:** two registered — MangaDex and WeebCentral (Cloudflare-protected HTML,
+  fetched through `WebViewService`). Saved items reopen via their own source
+  (`SourceRegistry.source(for:)`); the detail page shows the originating source and can
+  open the manga's page in an in-app Safari sheet (`webURL(forManga:)`).
 - **Reading progress & history:** `Services/HistoryStore.swift` (`@MainActor`, UserDefaults)
   is the reading-progress spine. `ReaderView(manga:chapter:initialPage:)` records the
   furthest page reached; the detail screen's "Continue" button resumes there (Netflix-style
@@ -105,7 +123,9 @@ The app builds and the core reading loop is implemented:
   unread chapters (reconciled against `HistoryStore`); pull-to-refresh + a toolbar button
   drive it, and reading clears the badge.
 - **Reader:** three modes (L→R / R→L / webtoon), default right-to-left; chapter list defaults
-  to newest-first with a toggle.
+  to newest-first with a toggle. Paged zoom is `UIScrollView`-backed
+  (`Components/ZoomableContainer.swift`) for native pinch/pan physics; R→L is reversed page
+  order (NOT a mirror transform — a previous mirror-based approach inverted zoomed panning).
 - Design/spec/plan for the above live in `docs/superpowers/{specs,plans}/`.
 
 Still minimal: no cross-device sync, no per-chapter read/unread marks, manual refresh only.
