@@ -664,6 +664,19 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(chapters[0].title, "Chapter 105")
     }
 
+    // MARK: - Chapter date-added (WeebCentral)
+
+    @MainActor func testWeebCentralChaptersCarryDate() async throws {
+        let (source, mock) = makeWeebCentral()
+        mock.responses["https://weebcentral.com/series/01J76XYZ/full-chapter-list"] = #"""
+        [{"id": "chap3", "title": "Chapter 105", "date": "2024-01-15T12:00:00Z"},
+         {"id": "chap2", "title": "Chapter 104", "date": null}]
+        """#
+        let chapters = try await source.chapters(mangaId: "01J76XYZ")
+        XCTAssertEqual(chapters[0].date, Chapter.parseISO8601("2024-01-15T12:00:00Z"))
+        XCTAssertNil(chapters[1].date)
+    }
+
     @MainActor func testWeebCentralPageURLs() async throws {
         let (source, mock) = makeWeebCentral()
         mock.responses["https://weebcentral.com/chapters/chap3/images?reading_style=long_strip"] = #"""
