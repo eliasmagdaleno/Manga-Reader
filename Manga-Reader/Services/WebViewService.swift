@@ -3,7 +3,7 @@
 //  Manga-Reader
 //
 //  The Cloudflare-clearing HTML-extraction engine behind WebView-based sources
-//  (WeebCentral now; private-source/comix in later phases). Loads a page in a shared
+//  (WeebCentral now; more sources in later phases). Loads a page in a shared
 //  off-screen WKWebView — a real browser, so Cloudflare's non-interactive JS
 //  challenge clears itself — then runs an injected JS script whose final expression
 //  is a JSON string, and decodes it into a Codable DTO. When Cloudflare demands an

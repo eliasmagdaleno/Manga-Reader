@@ -10,7 +10,7 @@
 //  way back. The disk tier is an `actor` so file I/O stays off the main thread.
 //
 //  This is URL-keyed, which serves any source that hands the reader real image
-//  URLs (MangaDex, and later WeebCentral / private-source). A future source whose pages
+//  URLs (MangaDex, and later WeebCentral / other sources). A future source whose pages
 //  are transformed on-device (comix.to's descrambled bitmaps) will cache its
 //  final image through the same memory tier, keyed by a post-transform identity.
 //

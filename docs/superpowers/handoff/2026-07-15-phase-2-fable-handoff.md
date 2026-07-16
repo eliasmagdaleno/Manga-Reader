@@ -83,7 +83,7 @@ Domain `https://weebcentral.com`. All **server-rendered HTML** (no JSON API):
 - **Cloudflare** is signaled by a `cf-mitigated: challenge` response header. A real WKWebView
   clears non-interactive JS challenges automatically; only interactive Turnstile needs a user
   tap — surface the WebView then.
-- Content rating **EVERYONE** (no NSFW gating needed; the adult toggle is for private-source, Phase 3).
+- Content rating **EVERYONE** (no NSFW gating needed; the adult toggle is for a future adult source, Phase 3).
 - Chapter page images are **plain image URLs** (no scrambling) → return `[URL]` normally.
 
 ## Testing strategy
@@ -134,6 +134,6 @@ against live weebcentral.com HTML** — selectors are the most volatile part.
 
 - **This phase:** WebViewService + SourceContext + WeebCentralSource (browse/search/details/
   chapters/read) + registration.
-- **Deferred:** private-source (Phase 3), comix.to descrambler + JS-signing (Phase 4), JS-loadability
+- **Deferred:** a future adult source (Phase 3), comix.to descrambler + JS-signing (Phase 4), JS-loadability
   (Phase 5); within WeebCentral: advanced search filters, settings form, `SourceContext.net`/
   `storage`.

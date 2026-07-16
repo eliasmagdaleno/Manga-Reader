@@ -7,14 +7,14 @@ Date: 2026-07-14
 The app is a MangaDex reader that, as of the source-abstraction work
 (`2026-07-14-source-abstraction-design.md`), talks to a `MangaSource` protocol with
 MangaDex as source #1. The goal now is **multiple real sources** — starting with the two
-the user named, **comix.to** and **private-source** — on the way to the original vision: "an
+the user named, **comix.to** and another adult source — on the way to the original vision: "an
 extension system that functions like Aidoku and Paperback."
 
 ### What research into those two sources revealed
 
-Both are Paperback (iOS) extensions in the community repos the user provided
-([inkdex/general-extensions](https://github.com/inkdex/general-extensions),
-[karrot0/KakarotExtension](https://github.com/karrot0/KakarotExtension)). Reading them
+Both are Paperback (iOS) extensions in community repos (e.g.
+[inkdex/general-extensions](https://github.com/inkdex/general-extensions), plus other
+community extension repos). Reading them
 showed they are **not standalone JSON clients** — they ride the Paperback *runtime*:
 
 - Both declare `SourceIntents.CLOUDFLARE_BYPASS_PROVIDING` — the Paperback app solves the
@@ -24,7 +24,7 @@ showed they are **not standalone JSON clients** — they ride the Paperback *run
   by proxying `JSON.parse`. Its page images are **scrambled** (5×5 tile Fisher–Yates
   shuffle keyed by `X-Scramble-*` headers, optional byte-XOR) and must be **descrambled
   on-device from the decoded bitmap**.
-- **private-source** needs the Cloudflare cookie + a ~200-line image request throttler (429/503
+- **The adult source** needs the Cloudflare cookie + a ~200-line image request throttler (429/503
   backoff); its images are plain (no scramble). Its main extension was dropped from the
   major Tachiyomi repo, confirming it's a hostile, moving target.
 
@@ -80,7 +80,7 @@ the phase that first needs it, then reused (including by the JS layer in Phase 5
 2. **CF-bypass WKWebView + HTML extraction → WeebCentral.** The first real second source
    (popular, Cloudflare + HTML scrape, but no scramble/signing — the gentlest full source).
    Builds the WebView spine.
-3. **private-source.** Reuses the CF WebView; adds gallery→single-chapter mapping, NSFW gating in
+3. **Adult source.** Reuses the CF WebView; adds gallery→single-chapter mapping, NSFW gating in
    practice, and image-request throttling. JSON API (no HTML parser needed).
 4. **comix.to.** Extends the WebView service with JS-signing/decryption capture, adds the
    5×5 tile descrambler and a byte-transform image pipeline (`pageURLs` evolves so a page
@@ -170,8 +170,7 @@ Injected into each source. Phase 1 surface:
 
 - comix.to technique reference: `inkdex/general-extensions/src/Comix` (`utils/webView.ts`,
   `utils/descramble.ts`, `utils/decryptImage.ts`, `network.ts`).
-- private-source technique reference: `karrot0/KakarotExtension/src/private-source` (`interceptors.ts`,
-  `main.ts`, `model.ts`).
+- Adult-source technique reference: kept in private notes (out of this public repo).
 - WeebCentral reference: `inkdex/general-extensions/src/WeebCentral` (`parsers.ts`,
   `network.ts`).
 

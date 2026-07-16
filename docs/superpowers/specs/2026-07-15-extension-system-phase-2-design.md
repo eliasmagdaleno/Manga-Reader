@@ -25,7 +25,7 @@ From the Paperback reference extension
   - Chapter images: `/chapters/{chapterId}/images?reading_style=long_strip`
   - Search: `/search/…` with query items (title, genres, status, order)
 - Content rating: EVERYONE (not adult — no NSFW gating needed; the Phase-1 adult toggle
-  stays for private-source in Phase 3).
+  stays for a future adult source in Phase 3).
 - **Cloudflare** manifests as a `cf-mitigated: challenge` response header. Paperback reacts
   by surfacing a WebView so the user clears the challenge, then reuses the `cf_clearance`
   cookie.
@@ -160,7 +160,7 @@ Cloudflare). Strategy:
 
 - **This phase:** `WebViewService` + `SourceContext` + `WeebCentralSource` (core browse/
   search/details/chapters/read) + registration.
-- **Deferred:** private-source (Phase 3 — reuses the WebView service; adds NSFW-in-practice,
+- **Deferred:** a future adult source (Phase 3 — reuses the WebView service; adds NSFW-in-practice,
   gallery→single-chapter, image throttling); comix.to descrambler + JS-signing (Phase 4);
   JS-loadability (Phase 5). Also deferred within WeebCentral: advanced search filters
   (genres/status/order), settings form, `SourceContext.net`/`storage`.
