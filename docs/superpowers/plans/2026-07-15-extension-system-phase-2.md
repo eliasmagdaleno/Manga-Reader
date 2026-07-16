@@ -1070,6 +1070,11 @@ Checkpoint results: pages ✓, details ✓, switching works but Home only re-sou
     }
 ```
 
+> **Executed as amended:** `testHomeViewModelDefaultsToRegistryActiveSource` was dropped during
+> review (it passed under both the old and new implementations — a tautology) and replaced by
+> `testSupersededHomeLoadNeitherClobbersRailsNorSurfacesCancellation`, which pins the
+> stale-source clobber fix (commit 2c0df62).
+
 Note: `MockSource` already exists in the test file (~line 320). Do NOT mutate `SourceRegistry.shared.activeSourceID` in tests (it persists to real UserDefaults).
 
 - [ ] **Step 2: Run tests, expect** `testHomeViewModelDefaultsToRegistryActiveSource` to pass trivially but `testHomeViewModelInjectedSourceWins` to pass too under the CURRENT code — so the real red is behavioral, not unit-testable: the unit tests pin the contract; the fix is verified live. If both pass before the change, proceed (document this in the report).
