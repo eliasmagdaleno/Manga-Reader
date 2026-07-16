@@ -154,12 +154,33 @@ struct Chapter: Identifiable, Equatable {           // Identifiable so SwiftUI F
     let id: String                                  // Chapter UUID (used to open the reader).
     let number: String                              // Chapter number as displayed (e.g., "12").
     let title: String?                              // Optional chapter title.
+    let date: Date?                                 // When the chapter was added/published (nil if unknown).
+
+    init(id: String, number: String, title: String?, date: Date? = nil) {
+        self.id = id
+        self.number = number
+        self.title = title
+        self.date = date
+    }
+
+    /// Parse an ISO-8601 timestamp (with or without fractional seconds) into a `Date`.
+    /// Shared by the sources that expose a chapter date. Returns nil for nil/empty/garbage.
+    static func parseISO8601(_ string: String?) -> Date? {
+        guard let string, !string.isEmpty else { return nil }
+        let withFractional = ISO8601DateFormatter()
+        withFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = withFractional.date(from: string) { return date }
+        let plain = ISO8601DateFormatter()
+        plain.formatOptions = [.withInternetDateTime]
+        return plain.date(from: string)
+    }
 }
 
 extension ChapterAttributes {                       // Convert raw chapter attributes → domain `Chapter`.
     /// Builds a `Chapter` from decoded attributes plus the chapter id from its container.
     func toChapter(id: String) -> Chapter {
-        Chapter(id: id, number: chapter ?? "?", title: title)
+        Chapter(id: id, number: chapter ?? "?", title: title,
+                date: Chapter.parseISO8601(publishAt ?? readableAt))
     }
 }
 

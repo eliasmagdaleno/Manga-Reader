@@ -827,4 +827,37 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(MockSource(id: "x", name: "X").webURL(forManga: "y"))
     }
 
+    // MARK: - Chapter date-added (MangaDex)
+
+    func testChapterParseISO8601() {
+        XCTAssertNotNil(Chapter.parseISO8601("2024-01-15T12:00:00+00:00"))
+        XCTAssertNotNil(Chapter.parseISO8601("2024-01-15T12:00:00.123+00:00"))  // fractional seconds
+        XCTAssertNotNil(Chapter.parseISO8601("2024-01-15T12:00:00Z"))
+        XCTAssertNil(Chapter.parseISO8601(nil))
+        XCTAssertNil(Chapter.parseISO8601(""))
+        XCTAssertNil(Chapter.parseISO8601("not a date"))
+    }
+
+    func testChapterDateDefaultsToNil() {
+        XCTAssertNil(Chapter(id: "c1", number: "1", title: nil).date)   // existing call shape → nil
+    }
+
+    func testMangaDexToChapterUsesPublishAt() throws {
+        let json = #"{"chapter":"12","title":"T","translatedLanguage":"en","publishAt":"2024-01-15T12:00:00+00:00","readableAt":"2024-01-16T12:00:00+00:00"}"#
+        let attrs = try JSONDecoder().decode(ChapterAttributes.self, from: Data(json.utf8))
+        XCTAssertEqual(attrs.toChapter(id: "c1").date, Chapter.parseISO8601("2024-01-15T12:00:00+00:00"))
+    }
+
+    func testMangaDexToChapterFallsBackToReadableAt() throws {
+        let json = #"{"chapter":"12","title":null,"translatedLanguage":"en","publishAt":null,"readableAt":"2024-01-16T12:00:00+00:00"}"#
+        let attrs = try JSONDecoder().decode(ChapterAttributes.self, from: Data(json.utf8))
+        XCTAssertEqual(attrs.toChapter(id: "c1").date, Chapter.parseISO8601("2024-01-16T12:00:00+00:00"))
+    }
+
+    func testMangaDexToChapterNilWhenNoTimestamps() throws {
+        let json = #"{"chapter":"12","title":null,"translatedLanguage":"en","publishAt":null,"readableAt":null}"#
+        let attrs = try JSONDecoder().decode(ChapterAttributes.self, from: Data(json.utf8))
+        XCTAssertNil(attrs.toChapter(id: "c1").date)
+    }
+
 }
