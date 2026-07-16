@@ -1261,3 +1261,27 @@ struct SafariView: UIViewControllerRepresentable {
 
 - [ ] **Step 4: Run the unit suite** (all green) and build.
 - [ ] **Step 5: Commit** the five source files + test file — message: `Show manga's source on detail + open its page in in-app Safari` + trailer.
+
+### Task 9: Photos-quality reader zoom (UIScrollView-backed pages)
+
+**User report (second checkpoint):** zoomed panning stutters (not smooth), and in the default right-to-left mode a leftward swipe moves the image right (inverted). Required bar: "function just like zooming into a photo in the Photos app."
+
+**Diagnosis:** SwiftUI `DragGesture`/`MagnificationGesture` state-updates can't match UIScrollView physics (no velocity/deceleration/rubber-band, and the pan fights the TabView pager); the pan translation is also read inside the un-mirrored coordinate space while rendering passes through the RTL double-flip, inverting x.
+
+**Files:**
+- Modify: `Manga-Reader/Views/ReaderView.swift` (replace `ZoomablePage`'s gesture stack)
+- Create: `Manga-Reader/Views/Components/ZoomableContainer.swift` (UIViewRepresentable)
+- Test: none (gesture feel — build + unit-suite regression + human verification)
+
+**Approach (implementer owns the details):** wrap each paged page's content in a `UIScrollView` via a `ZoomableContainer<Content: View>: UIViewRepresentable` hosting the SwiftUI content (`UIHostingController`, view pinned to `contentLayoutGuide`, sized to `frameLayoutGuide`):
+- `minimumZoomScale 1`, `maximumZoomScale 4`, `viewForZooming` = hosted view; native pinch (anchored at pinch centroid), native pan with deceleration — the Photos feel comes free from UIScrollView.
+- Double-tap: zoom to the tapped point (`zoom(to:animated:)`) toggling 1×/2.5×; single-tap (requiring double-tap failure) → chrome toggle callback.
+- At 1× the scroll view has nothing to scroll → TabView owns the page swipe. Decide bounces so that, when zoomed and panned to a horizontal edge, continued dragging hands off to the pager (Photos-like) rather than rubber-banding forever — verify which config achieves this inside SwiftUI's paged TabView.
+- Zoom persists (UIScrollView state); reset to 1× when the page stops being the selected page (keep the existing `currentIndex` mechanism — drive `setZoomScale(1, animated: false)` from it).
+- RTL: the pager mirrors the TabView and each page un-mirrors, netting an identity transform over page content — place the container so the net transform over the UIScrollView is identity and verify gesture directions in BOTH reading modes; if UIKit hit-testing misbehaves under the double-flip, restructure the mirroring rather than negating translations by hand.
+- Keep `CachedAsyncImage` phases (placeholder/retry/page-number overlay) working inside the container; keep webtoon mode untouched.
+
+- [ ] **Step 1:** Implement `ZoomableContainer` + rewire `ZoomablePage`.
+- [ ] **Step 2:** Build + full unit suite green.
+- [ ] **Step 3: Commit** — message: `Rebuild reader zoom on UIScrollView for native pan/zoom feel` + trailer.
+- [ ] **Step 4:** Human verifies: smooth zoomed pan both axes, correct directions in BOTH reading modes, double-tap zooms to point, single-tap chrome, page-swipe at 1×, edge handoff while zoomed, reset on page change.
