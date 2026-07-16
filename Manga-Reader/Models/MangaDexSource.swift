@@ -45,4 +45,8 @@ struct MangaDexSource: MangaSource {
     func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] {
         try await MangaDexAPI.pageURLs(for: chapterId, useDataSaver: preferDataSaver)
     }
+
+    func webURL(forManga id: String) -> URL? {
+        URL(string: "https://mangadex.org/title/\(id)")
+    }
 }

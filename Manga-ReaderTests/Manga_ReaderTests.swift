@@ -566,4 +566,265 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(counter.count, 8)                   // no new fetches
     }
 
+    // MARK: - Source-layer contract (Phase 2)
+
+    func testSourceErrorWebViewCasesHaveDescriptions() {
+        XCTAssertEqual(SourceError.cloudflareUnsolved.errorDescription,
+                       "Cloudflare verification wasn't completed.")
+        XCTAssertEqual(SourceError.navigationFailed("timeout").errorDescription,
+                       "Couldn't load the page: timeout")
+        XCTAssertEqual(SourceError.extractionFailed("bad JSON").errorDescription,
+                       "Couldn't read the page: bad JSON")
+    }
+
+    // MARK: - WeebCentralSource (Phase 2)
+
+    /// Canned-response fake for the WebView seam: returns fixture JSON per URL and
+    /// records what was requested, so tests cover URL building + DTO→domain mapping.
+    @MainActor
+    private final class MockWebView: WebViewExtracting {
+        var responses: [String: String] = [:]           // URL absoluteString → JSON
+        private(set) var requestedURLs: [URL] = []
+
+        func extract<T: Decodable>(from url: URL, script: String, as type: T.Type) async throws -> T {
+            requestedURLs.append(url)
+            guard let json = responses[url.absoluteString] else {
+                throw SourceError.extractionFailed("no canned response for \(url.absoluteString)")
+            }
+            return try JSONDecoder().decode(T.self, from: Data(json.utf8))
+        }
+    }
+
+    @MainActor
+    private func makeWeebCentral() -> (WeebCentralSource, MockWebView) {
+        let mock = MockWebView()
+        return (WeebCentralSource(context: SourceContext(webView: mock)), mock)
+    }
+
+    @MainActor func testWeebCentralIdentity() {
+        let (source, _) = makeWeebCentral()
+        XCTAssertEqual(source.id, "weebcentral")
+        XCTAssertEqual(source.name, "WeebCentral")
+        XCTAssertFalse(source.isNSFW)
+    }
+
+    @MainActor func testWeebCentralSearchBuildsURLAndMapsManga() async throws {
+        let (source, mock) = makeWeebCentral()
+        let expected = "https://weebcentral.com/search/data?sort=Best%20Match&display_mode=Full%20Display&limit=20&offset=0&text=Naruto"
+        mock.responses[expected] = #"""
+        [{"id": "01J76XYZ", "title": "Naruto", "cover": "https://temp.compsci88.com/cover/naruto.webp"},
+         {"id": "01J76ABC", "title": "Boruto", "cover": null}]
+        """#
+        let results = try await source.search(title: "Naruto", limit: 20, offset: 0)
+        XCTAssertEqual(mock.requestedURLs.first?.absoluteString, expected)
+        XCTAssertEqual(results.count, 2)
+        XCTAssertEqual(results[0].id, "01J76XYZ")
+        XCTAssertEqual(results[0].sourceId, "weebcentral")
+        XCTAssertEqual(results[0].title, "Naruto")
+        XCTAssertEqual(results[0].coverURL?.absoluteString, "https://temp.compsci88.com/cover/naruto.webp")
+        XCTAssertNil(results[1].coverURL)
+    }
+
+    @MainActor func testWeebCentralPopularAndNewTitlesUseSortFeeds() async throws {
+        let (source, mock) = makeWeebCentral()
+        let popularURL = "https://weebcentral.com/search/data?sort=Popularity&display_mode=Full%20Display&limit=10&offset=5"
+        let newURL = "https://weebcentral.com/search/data?sort=Recently%20Added&display_mode=Full%20Display&limit=10&offset=0"
+        mock.responses[popularURL] = #"[{"id": "p1", "title": "Popular One", "cover": null}]"#
+        mock.responses[newURL] = #"[{"id": "n1", "title": "New One", "cover": null}]"#
+        let popular = try await source.popular(limit: 10, offset: 5)
+        let new = try await source.newTitles(limit: 10, offset: 0)
+        XCTAssertEqual(popular.first?.id, "p1")
+        XCTAssertEqual(new.first?.id, "n1")
+        XCTAssertEqual(new.first?.sourceId, "weebcentral")
+    }
+
+    @MainActor func testWeebCentralMangaDetailMapping() async throws {
+        let (source, mock) = makeWeebCentral()
+        mock.responses["https://weebcentral.com/series/01J76XYZ"] = #"""
+        {"description": "A ninja story.", "authors": ["Masashi Kishimoto"],
+         "tags": ["Action", "Adventure"], "adult": false}
+        """#
+        let detail = try await source.mangaDetail(id: "01J76XYZ")
+        XCTAssertEqual(detail.description, "A ninja story.")
+        XCTAssertEqual(detail.authors, ["Masashi Kishimoto"])
+        XCTAssertEqual(detail.tags, ["Action", "Adventure"])
+        XCTAssertEqual(detail.contentRating, "safe")
+    }
+
+    @MainActor func testWeebCentralChaptersMapping() async throws {
+        let (source, mock) = makeWeebCentral()
+        mock.responses["https://weebcentral.com/series/01J76XYZ/full-chapter-list"] = #"""
+        [{"id": "chap3", "title": "Chapter 105"},
+         {"id": "chap2", "title": "Special 3.5"},
+         {"id": "chap1", "title": "Oneshot"}]
+        """#
+        let chapters = try await source.chapters(mangaId: "01J76XYZ")
+        XCTAssertEqual(chapters.map(\.id), ["chap3", "chap2", "chap1"])
+        XCTAssertEqual(chapters.map(\.number), ["105", "3.5", "?"])
+        XCTAssertEqual(chapters[0].title, "Chapter 105")
+    }
+
+    @MainActor func testWeebCentralPageURLs() async throws {
+        let (source, mock) = makeWeebCentral()
+        mock.responses["https://weebcentral.com/chapters/chap3/images?reading_style=long_strip"] = #"""
+        ["https://official.lowee.us/manga/x/0001.png", "https://official.lowee.us/manga/x/0002.png"]
+        """#
+        let pages = try await source.pageURLs(chapterId: "chap3", preferDataSaver: true)
+        XCTAssertEqual(pages.map(\.absoluteString),
+                       ["https://official.lowee.us/manga/x/0001.png",
+                        "https://official.lowee.us/manga/x/0002.png"])
+    }
+
+    @MainActor func testWeebCentralLatestUpdates() async throws {
+        let (source, mock) = makeWeebCentral()
+        mock.responses["https://weebcentral.com/latest-updates/1"] = #"""
+        [{"mangaId": "01J76XYZ", "chapterId": "chapZ", "title": "Naruto",
+          "cover": "https://temp.compsci88.com/cover/naruto.webp"},
+         {"mangaId": "01J76ABC", "chapterId": "chapY", "title": "Boruto", "cover": null}]
+        """#
+        let updates = try await source.latestUpdates(limitTitles: 1, language: "en")
+        XCTAssertEqual(updates.count, 1)                 // truncated to limitTitles
+        XCTAssertEqual(updates[0].chapterId, "chapZ")
+        XCTAssertEqual(updates[0].manga.id, "01J76XYZ")
+        XCTAssertEqual(updates[0].manga.sourceId, "weebcentral")
+    }
+
+    func testWeebCentralChapterNumberHelper() {
+        XCTAssertEqual(WeebCentralSource.chapterNumber(fromTitle: "Chapter 105"), "105")
+        XCTAssertEqual(WeebCentralSource.chapterNumber(fromTitle: "Special 3.5"), "3.5")
+        XCTAssertEqual(WeebCentralSource.chapterNumber(fromTitle: "Season 2 Chapter 12"), "12")
+        XCTAssertEqual(WeebCentralSource.chapterNumber(fromTitle: "Oneshot"), "?")
+    }
+
+    // MARK: - Default source registration (Phase 2)
+
+    @MainActor func testDefaultRegistryContainsMangaDexAndWeebCentral() {
+        let registry = SourceRegistry()
+        XCTAssertEqual(registry.sources.map(\.id), ["mangadex", "weebcentral"])
+        XCTAssertNotNil(registry.source(id: "weebcentral"))
+        // WeebCentral is not adult content — visible without the adult toggle.
+        XCTAssertTrue(registry.visibleSources(includeAdult: false).contains { $0.id == "weebcentral" })
+    }
+
+    // MARK: - Home source switching (Phase 2 addendum)
+
+    @MainActor func testHomeViewModelInjectedSourceWins() {
+        let vm = HomeViewModel(source: MockSource(id: "mock", name: "Mock"))
+        XCTAssertEqual(vm.source.id, "mock")
+    }
+
+    /// A source whose FIRST popular() call suspends until the test lets it proceed;
+    /// every later call returns `fresh` immediately. Two first-call behaviors:
+    /// - `.parkUntilReleased` parks on a continuation that deliberately ignores task
+    ///   cancellation, so a superseded load runs to completion *late* — exercising the
+    ///   "stale task must never write" guard.
+    /// - `.sleepCancellably` suspends in `Task.sleep`, which throws `CancellationError`
+    ///   the moment the load is superseded — exercising the "cancellation is not a
+    ///   user-facing error" path.
+    private actor SupersededSource: MangaSource {
+        enum FirstCallBehavior { case parkUntilReleased, sleepCancellably }
+
+        nonisolated let id = "superseded"
+        nonisolated let name = "Superseded"
+        private let firstCall: FirstCallBehavior
+        private let stale: [Manga]
+        private let fresh: [Manga]
+        private var gate: CheckedContinuation<Void, Never>?
+        private(set) var popularCalls = 0
+
+        init(firstCall: FirstCallBehavior, stale: [Manga], fresh: [Manga]) {
+            self.firstCall = firstCall
+            self.stale = stale
+            self.fresh = fresh
+        }
+
+        var isParked: Bool { gate != nil }
+        func releaseGate() { gate?.resume(); gate = nil }
+
+        func popular(limit: Int, offset: Int) async throws -> [Manga] {
+            popularCalls += 1
+            guard popularCalls == 1 else { return fresh }
+            switch firstCall {
+            case .parkUntilReleased:
+                await withCheckedContinuation { gate = $0 } // cancellation-blind on purpose
+            case .sleepCancellably:
+                try await Task.sleep(nanoseconds: 3_600_000_000_000) // cancelled long before 1h
+            }
+            return stale
+        }
+
+        func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func newTitles(limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] { [] }
+        func mangaDetail(id: String) async throws -> MangaDetail {
+            MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+        }
+        func chapters(mangaId: String) async throws -> [Chapter] { [] }
+        func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+    }
+
+    /// Polls an async condition until it holds or a 5s deadline expires.
+    @MainActor private func waitUntil(_ what: String, _ condition: () async -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(5)
+        while Date() < deadline {
+            if await condition() { return }
+            try await Task.sleep(nanoseconds: 20_000_000)
+        }
+        XCTFail("Timed out waiting for \(what)")
+    }
+
+    @MainActor func testSupersededHomeLoadNeitherClobbersRailsNorSurfacesCancellation() async throws {
+        let stale = [sampleManga("stale", sourceId: "superseded")]
+        let fresh = [sampleManga("fresh", sourceId: "superseded")]
+
+        // Phase A: the superseded load's fetch ignores cancellation and completes LATE —
+        // it must not overwrite the rails the superseding load already populated.
+        let sourceA = SupersededSource(firstCall: .parkUntilReleased, stale: stale, fresh: fresh)
+        let vmA = HomeViewModel(source: sourceA)
+
+        vmA.loadHome()                                    // load #1 parks inside popular()
+        try await waitUntil("first load to park") { await sourceA.isParked }
+        vmA.loadHome()                                    // load #2 supersedes #1, finishes fast
+        try await waitUntil("fresh rails to land") { vmA.popular.map(\.id) == ["fresh"] }
+
+        await sourceA.releaseGate()                       // late-complete the superseded load
+        try await Task.sleep(nanoseconds: 200_000_000)    // give it time to (wrongly) write
+
+        XCTAssertEqual(vmA.popular.map(\.id), ["fresh"])  // stale data must not clobber
+        XCTAssertNil(vmA.errorMessage)
+        XCTAssertFalse(vmA.isLoading)
+
+        // Phase B: the superseded load's fetch IS cancellation-aware — the resulting
+        // CancellationError must not surface as a user-facing errorMessage.
+        let sourceB = SupersededSource(firstCall: .sleepCancellably, stale: stale, fresh: fresh)
+        let vmB = HomeViewModel(source: sourceB)
+
+        vmB.loadHome()                                    // load #1 suspends in Task.sleep
+        try await waitUntil("first load to start") { await sourceB.popularCalls == 1 }
+        vmB.loadHome()                                    // cancels #1 → sleep throws CancellationError
+        try await waitUntil("fresh rails to land") { vmB.popular.map(\.id) == ["fresh"] }
+        try await Task.sleep(nanoseconds: 200_000_000)    // let the cancelled load unwind
+
+        XCTAssertNil(vmB.errorMessage)                    // cancellation is not an error
+        XCTAssertEqual(vmB.popular.map(\.id), ["fresh"])
+        XCTAssertFalse(vmB.isLoading)
+    }
+
+    // MARK: - Source web URLs (Phase 2 addendum)
+
+    func testMangaDexWebURL() {
+        XCTAssertEqual(MangaDexSource().webURL(forManga: "abc-123")?.absoluteString,
+                       "https://mangadex.org/title/abc-123")
+    }
+
+    @MainActor func testWeebCentralWebURL() {
+        let (source, _) = makeWeebCentral()
+        XCTAssertEqual(source.webURL(forManga: "01J76XYZ")?.absoluteString,
+                       "https://weebcentral.com/series/01J76XYZ")
+    }
+
+    func testWebURLDefaultsToNil() {
+        XCTAssertNil(MockSource(id: "x", name: "X").webURL(forManga: "y"))
+    }
+
 }

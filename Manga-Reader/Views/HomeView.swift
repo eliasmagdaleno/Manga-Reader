@@ -7,6 +7,7 @@ import SwiftUI
 
 struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
+    @ObservedObject private var registry = SourceRegistry.shared
 
     var body: some View {
         // Capture the browse source as a value so the escaping "See all" fetch closures
@@ -48,7 +49,7 @@ struct HomeView: View {
                 .padding(.bottom, 32)
             }
             .background(Ink.background)
-            .task { vm.loadHome() }
+            .task(id: registry.activeSourceID) { vm.loadHome() }
             .navigationTitle("Read")
             .navigationBarTitleDisplayMode(.large)
         }

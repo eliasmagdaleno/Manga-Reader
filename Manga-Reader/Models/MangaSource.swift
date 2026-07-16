@@ -37,17 +37,32 @@ protocol MangaSource {
     func chapters(mangaId: String) async throws -> [Chapter]
     /// The per-page image URLs for a chapter.
     func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL]
+    /// The human-facing web page for a manga on the source's site (for "open in
+    /// browser"). Optional capability; nil when the source has no web presence.
+    func webURL(forManga id: String) -> URL?
 }
 
 /// Errors common to the source layer (distinct from a source's own transport errors).
 enum SourceError: LocalizedError {
     /// The source does not implement an optional capability (carries the capability name).
     case unsupported(String)
+    /// A Cloudflare interactive challenge was shown but never completed (dismissed/timed out).
+    case cloudflareUnsolved
+    /// The WebView could not load the page (carries the underlying reason).
+    case navigationFailed(String)
+    /// The extraction script failed or its output couldn't be decoded (carries the reason).
+    case extractionFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .unsupported(let capability):
             return "This source doesn't support \(capability)."
+        case .cloudflareUnsolved:
+            return "Cloudflare verification wasn't completed."
+        case .navigationFailed(let reason):
+            return "Couldn't load the page: \(reason)"
+        case .extractionFailed(let reason):
+            return "Couldn't read the page: \(reason)"
         }
     }
 }
@@ -67,4 +82,6 @@ extension MangaSource {
     func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] {
         throw SourceError.unsupported("latestUpdates")
     }
+
+    func webURL(forManga id: String) -> URL? { nil }
 }
