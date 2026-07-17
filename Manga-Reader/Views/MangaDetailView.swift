@@ -45,6 +45,9 @@ struct MangaDetailView: View {
         .background(Ink.background)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { vm.load() }
+        // Hide the tab bar while selecting so the bottom-bar batch actions
+        // (Select All / Mark Read / Mark Unread) aren't obscured behind it.
+        .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
         .toolbar {
             if isSelecting {
                 ToolbarItemGroup(placement: .bottomBar) {
