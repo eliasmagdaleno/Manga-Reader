@@ -27,6 +27,7 @@ struct MangaRail: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("mangaCoverCard")
                 }
             }
             .padding(.horizontal, Gutter.page)

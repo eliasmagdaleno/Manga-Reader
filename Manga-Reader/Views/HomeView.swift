@@ -18,6 +18,16 @@ struct HomeView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: Gutter.section) {
 
+                    // Source switcher — every visible source, one tap away.
+                    SourceChipBar(
+                        sources: registry.visibleSources(includeAdult: showAdultSources),
+                        activeID: registry.activeSourceID
+                    ) { id in
+                        withAnimation(.snappy(duration: 0.2)) {
+                            registry.activeSourceID = id
+                        }
+                    }
+
                     if let err = vm.errorMessage {
                         InkNotice(err)
                             .padding(.horizontal, Gutter.page)
@@ -27,12 +37,17 @@ struct HomeView: View {
                         loadingRail
                     }
 
-                    section("01", "Popular", "Popular",
+                    let titles = source.homeRailTitles.count >= 3 ? source.homeRailTitles : ["Popular", "Recently Updated", "Newly Added"]
+                    // Eyebrows describe each feed's true ordering; sources that
+                    // don't provide them just show the plain serif title.
+                    let eyebrows = source.homeRailEyebrows
+
+                    section(titles[0], eyebrow: eyebrows.count > 0 ? eyebrows[0] : nil,
                             items: vm.popular,
                             stamp: yearStamp,
                             fetch: { try await source.popular(limit: 60, offset: 0) })
 
-                    section("02", "Recently Updated", "Fresh chapters",
+                    section(titles[1], eyebrow: eyebrows.count > 1 ? eyebrows[1] : nil,
                             items: vm.latestUpdates.map { $0.manga },
                             stamp: { _ in "NEW" }, tinted: true,
                             fetch: {
@@ -41,7 +56,7 @@ struct HomeView: View {
                                     .map { $0.manga }
                             })
 
-                    section("03", "Newly Added", "Newly Added",
+                    section(titles[2], eyebrow: eyebrows.count > 2 ? eyebrows[2] : nil,
                             items: vm.newTitles,
                             stamp: yearStamp,
                             fetch: { try await source.newTitles(limit: 60, offset: 0) })
@@ -53,45 +68,19 @@ struct HomeView: View {
             .task(id: registry.activeSourceID) { vm.loadHome() }
             .navigationTitle("Read")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        ForEach(registry.visibleSources(includeAdult: showAdultSources), id: \.id) { source in
-                            Button {
-                                registry.activeSourceID = source.id
-                            } label: {
-                                if source.id == registry.activeSourceID {
-                                    Label(source.name, systemImage: "checkmark")
-                                } else {
-                                    Text(source.name)
-                                }
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(registry.active.name.uppercased())
-                                .font(.inkMono(11, weight: .semibold))
-                                .tracking(0.5)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 9, weight: .semibold))
-                        }
-                        .foregroundStyle(Ink.seal)
-                    }
-                }
-            }
         }
     }
 
     // A titled section: header + rail. Hidden until it has content.
     @ViewBuilder
-    private func section(_ eyebrow: String, _ title: String, _ eyebrowLabel: String,
+    private func section(_ title: String, eyebrow: String?,
                          items: [Manga],
                          stamp: @escaping (Manga) -> String?,
                          tinted: Bool = false,
                          fetch: (() async throws -> [Manga])? = nil) -> some View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                InkSectionHeader(title, eyebrow: eyebrowLabel)
+                InkSectionHeader(title, eyebrow: eyebrow)
                     .overlay(alignment: .trailing) {
                         NavigationLink {
                             CategoryGridView(title: title, initialItems: items, fetch: fetch)
@@ -118,7 +107,7 @@ struct HomeView: View {
     // Skeleton rail shown on first load.
     private var loadingRail: some View {
         VStack(alignment: .leading, spacing: 14) {
-            InkSectionHeader("Loading", eyebrow: "Please wait")
+            InkSectionHeader("Loading", eyebrow: vm.source.name)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: Gutter.rail) {
                     ForEach(0..<4, id: \.self) { _ in

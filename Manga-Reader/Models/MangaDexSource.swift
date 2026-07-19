@@ -18,6 +18,10 @@ struct MangaDexSource: MangaSource {
     let id = MangaDexSource.sourceID
     let name = "MangaDex"
 
+    /// True orderings of the three browse feeds (order[rating] / order[readableAt] /
+    /// order[createdAt] in MangaDexAPI).
+    var homeRailEyebrows: [String] { ["Top rated", "New chapters", "Just added"] }
+
     func search(title: String, limit: Int, offset: Int) async throws -> [Manga] {
         try await MangaDexAPI.searchManga(title: title, limit: limit, offset: offset)
     }

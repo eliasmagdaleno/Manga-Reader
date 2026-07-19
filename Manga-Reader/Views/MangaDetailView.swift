@@ -34,8 +34,7 @@ struct MangaDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Gutter.section) {
                 hero
-                libraryButton
-                resumeButton
+                actionRow
                 if !vm.tags.isEmpty { tags }
                 if !vm.description.isEmpty || vm.isLoading { description }
                 chapters
@@ -81,58 +80,47 @@ struct MangaDetailView: View {
         }
     }
 
-    // MARK: Hero — blurred backdrop, floating cover plate, title block.
+    // MARK: Hero — cover plate on flat paper: title, authors, metadata stamps.
 
     private var hero: some View {
-        ZStack(alignment: .bottom) {
-            // Ambient backdrop from the cover itself.
-            AsyncImage(url: manga.coverURL) { image in
-                image.resizable().scaledToFill()
-            } placeholder: {
-                Ink.surfaceAlt
-            }
-            .frame(height: 300)
-            .clipped()
-            .blur(radius: 28)
-            .opacity(0.55)
-            .overlay(
-                LinearGradient(
-                    colors: [Ink.background.opacity(0), Ink.background],
-                    startPoint: .top, endPoint: .bottom
-                )
-            )
-
-            HStack(alignment: .bottom, spacing: 16) {
-                // Cover plate.
-                AsyncImage(url: manga.coverURL) { phase in
-                    switch phase {
-                    case .success(let img): img.resizable().scaledToFill()
-                    case .empty: CoverPlaceholder(showsSpinner: true)
-                    default: CoverPlaceholder()
-                    }
+        HStack(alignment: .bottom, spacing: 16) {
+            // Cover plate.
+            AsyncImage(url: manga.coverURL) { phase in
+                switch phase {
+                case .success(let img): img.resizable().scaledToFill()
+                case .empty: CoverPlaceholder(showsSpinner: true)
+                default: CoverPlaceholder()
                 }
-                .frame(width: 132, height: 188)
-                .clipShape(RoundedRectangle(cornerRadius: Gutter.cardRadius))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Gutter.cardRadius)
-                        .strokeBorder(Ink.hairline, lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.25), radius: 12, x: 0, y: 6)
+            }
+            .frame(width: 132, height: 188)
+            .clipShape(RoundedRectangle(cornerRadius: Gutter.cardRadius))
+            .overlay(
+                RoundedRectangle(cornerRadius: Gutter.cardRadius)
+                    .strokeBorder(Ink.hairline, lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.18), radius: 8, x: 0, y: 4)
 
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(manga.title)
-                        .font(.inkDisplay(26))
-                        .foregroundStyle(Ink.primary)
-                        .lineLimit(3)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(manga.title)
+                    .font(.inkDisplay(26))
+                    .foregroundStyle(Ink.primary)
+                    .lineLimit(4)
+                    .minimumScaleFactor(0.6)
 
-                    if !vm.authors.isEmpty {
-                        Text(vm.authors.joined(separator: " · "))
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(Ink.seal)
-                            .lineLimit(2)
-                    }
+                if !vm.authors.isEmpty {
+                    Text(vm.authors.joined(separator: " · "))
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Ink.seal)
+                        .lineLimit(2)
+                }
 
+                // Source first — "where is this from" leads the stamp row.
+                // The scroll area escapes the trailing page margin so chips run
+                // to the screen edge, matching the genre row below.
+                ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
+                        SourceStamp(sourceID: manga.sourceId,
+                                    name: mangaSource?.name ?? manga.sourceId)
                         if let year = manga.year {
                             InkStamp(text: String(year))
                         }
@@ -140,78 +128,128 @@ struct MangaDetailView: View {
                         if let rating = vm.contentRating, !rating.isEmpty {
                             InkStamp(text: rating.uppercased(), tinted: true)
                         }
-                        InkStamp(text: (mangaSource?.name ?? manga.sourceId).uppercased(), tinted: true)
                     }
+                    .padding(.trailing, Gutter.page)
                 }
-                Spacer(minLength: 0)
+                .padding(.trailing, -Gutter.page)
+                .padding(.top, 2)
             }
-            .padding(.horizontal, Gutter.page)
-            .padding(.bottom, 24)
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, Gutter.page)
+        .padding(.top, 12)
     }
 
-    // MARK: Add to Library
+    // MARK: Actions — one primary (Continue), one compact library toggle.
 
-    private var libraryButton: some View {
+    @ViewBuilder private var actionRow: some View {
+        let entry = history.latestEntry(forManga: manga.id)
+        let action = resumeAction(entry: entry, chapters: vm.chapters)
+        HStack(spacing: 10) {
+            if let action {
+                continueLink(action, progress: continueProgress(action: action, entry: entry))
+                libraryToggle
+            } else if vm.isLoading {
+                // Chapters still loading — placeholder keeps the layout stable.
+                HStack(spacing: 8) {
+                    ProgressView().tint(Ink.seal)
+                    Text("Start Reading")
+                }
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .foregroundStyle(Ink.tertiary)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Ink.sealSoft.opacity(0.5)))
+                libraryToggle
+            } else {
+                // No readable chapters — the library toggle gets its words back.
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { library.toggle(manga) }
+                } label: {
+                    let inLibrary = library.contains(manga.id)
+                    HStack(spacing: 8) {
+                        Image(systemName: inLibrary ? "bookmark.fill" : "bookmark")
+                        Text(inLibrary ? "In Library" : "Add to Library")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .foregroundStyle(inLibrary ? Ink.seal : Color.white)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(inLibrary ? Ink.sealSoft : Ink.seal))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, Gutter.page)
+    }
+
+    /// The reader's furthest progress through the resume chapter, 0...1, or nil
+    /// when the action isn't a mid-chapter continue.
+    private func continueProgress(action: ResumeAction, entry: ReadingEntry?) -> Double? {
+        guard case .cont(_, let page) = action,
+              let entry, entry.pageCount > 0 else { return nil }
+        return min(1, Double(page + 1) / Double(entry.pageCount))
+    }
+
+    private func continueLink(_ action: ResumeAction, progress: Double?) -> some View {
+        NavigationLink {
+            ReaderView(manga: manga, chapter: action.chapter, initialPage: action.startPage)
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12).fill(Ink.seal)
+
+                // A thin ink-fill rule showing how far into the chapter you are.
+                if let progress {
+                    GeometryReader { geo in
+                        Rectangle()
+                            .fill(Color.white.opacity(0.18))
+                            .overlay(alignment: .leading) {
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.9))
+                                    .frame(width: geo.size.width * progress)
+                            }
+                            .frame(height: 2)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                    }
+                }
+
+                // Centered label with a start marker; the page stamp rides inline.
+                HStack(spacing: 7) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(action.label)
+                        .lineLimit(1)
+                    if case .cont(_, let page) = action {
+                        Text("· p.\(page + 1)")
+                            .font(.inkMono(11, weight: .semibold))
+                            .opacity(0.85)
+                    }
+                }
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 16)
+            }
+            .foregroundStyle(Color.white)
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var libraryToggle: some View {
         let inLibrary = library.contains(manga.id)
         return Button {
             withAnimation(.snappy(duration: 0.2)) { library.toggle(manga) }
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: inLibrary ? "bookmark.fill" : "bookmark")
-                Text(inLibrary ? "In Library" : "Add to Library")
-            }
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .foregroundStyle(inLibrary ? Ink.seal : Color.white)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(inLibrary ? Ink.sealSoft : Ink.seal)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(Ink.seal, lineWidth: inLibrary ? 1.5 : 0)
-            )
+            Image(systemName: inLibrary ? "bookmark.fill" : "bookmark")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(Ink.seal)
+                .frame(width: 50, height: 50)
+                .background(RoundedRectangle(cornerRadius: 12).fill(inLibrary ? Ink.sealSoft : Ink.surface))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(inLibrary ? Ink.seal : Ink.hairline, lineWidth: inLibrary ? 1.5 : 1)
+                )
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, Gutter.page)
-    }
-
-    // MARK: Resume / Continue reading
-
-    @ViewBuilder private var resumeButton: some View {
-        if let action = resumeAction(entry: history.latestEntry(forManga: manga.id),
-                                     chapters: vm.chapters) {
-            NavigationLink {
-                ReaderView(manga: manga, chapter: action.chapter, initialPage: action.startPage)
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "book.pages")
-                    Text(action.label)
-                }
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .foregroundStyle(Ink.seal)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Ink.sealSoft))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Ink.seal, lineWidth: 1.5))
-            }
-            .buttonStyle(.plain)
-            .padding(.horizontal, Gutter.page)
-        } else if vm.isLoading {
-            // Chapters still loading — show a disabled placeholder so layout is stable.
-            HStack(spacing: 8) {
-                ProgressView().tint(Ink.seal)
-                Text("Start Reading")
-            }
-            .font(.subheadline.weight(.semibold))
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .foregroundStyle(Ink.tertiary)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Ink.sealSoft.opacity(0.5)))
-            .padding(.horizontal, Gutter.page)
-        }
+        .accessibilityLabel(inLibrary ? "Remove from Library" : "Add to Library")
     }
 
     // MARK: Tags
@@ -220,11 +258,16 @@ struct MangaDetailView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(vm.tags, id: \.self) { tag in
-                    Text(tag)
-                        .font(.caption.weight(.medium))
+                    // Mono + uppercase keeps every chip the same height and
+                    // visual weight regardless of the tag's length.
+                    Text(tag.uppercased())
+                        .font(.inkMono(10, weight: .medium))
+                        .tracking(0.5)
+                        .lineLimit(1)
+                        .fixedSize()
                         .foregroundStyle(Ink.secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
                         .background(
                             Capsule().fill(Ink.surface)
                         )
@@ -452,7 +495,7 @@ private extension ResumeAction {
     var label: String {
         switch self {
         case .start:                 return "Start Reading"
-        case .cont(let c, let p):    return "Continue Ch \(c.number) · p.\(p + 1)"
+        case .cont(let c, _):        return "Continue · Ch \(c.number)"
         case .next(let c):           return "Start Ch \(c.number)"
         case .reread(let c, _):      return "Read Again · Ch \(c.number)"
         }

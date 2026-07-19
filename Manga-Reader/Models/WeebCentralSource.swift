@@ -22,6 +22,10 @@ struct WeebCentralSource: MangaSource {
     let name = "WeebCentral"
     let isNSFW = false
 
+    /// True orderings of the three browse feeds ("Popularity" / latest chapter
+    /// updates / "Recently Added" — see the fetches below).
+    var homeRailEyebrows: [String] { ["By popularity", "New chapters", "Just added"] }
+
     private let context: SourceContext
     private static let base = URL(string: "https://weebcentral.com")!
 

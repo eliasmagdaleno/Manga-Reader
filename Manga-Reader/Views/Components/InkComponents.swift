@@ -57,13 +57,14 @@ struct CoverPlaceholder: View {
 
 // MARK: - Section header
 
-/// Section title in the print voice: a vermilion seal tick, a monospaced
-/// eyebrow, and a serif title. The eyebrow encodes the section's role, not decoration.
+/// Section title in the print voice: a vermilion seal tick, an optional monospaced
+/// eyebrow, and a serif title. Only pass an eyebrow when it states something the
+/// title doesn't (a feed's ordering, a count) — never a restatement of the title.
 struct InkSectionHeader: View {
-    let eyebrow: String
+    let eyebrow: String?
     let title: String
 
-    init(_ title: String, eyebrow: String) {
+    init(_ title: String, eyebrow: String? = nil) {
         self.title = title
         self.eyebrow = eyebrow
     }
@@ -76,10 +77,12 @@ struct InkSectionHeader: View {
                 .frame(width: 4, height: 22)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(eyebrow.uppercased())
-                    .font(.inkMono(10, weight: .semibold))
-                    .tracking(1.6)
-                    .foregroundStyle(Ink.tertiary)
+                if let eyebrow, !eyebrow.isEmpty {
+                    Text(eyebrow.uppercased())
+                        .font(.inkMono(10, weight: .semibold))
+                        .tracking(1.6)
+                        .foregroundStyle(Ink.tertiary)
+                }
                 Text(title)
                     .font(.inkDisplay(22))
                     .foregroundStyle(Ink.primary)
@@ -101,6 +104,8 @@ struct InkStamp: View {
         Text(text)
             .font(.inkMono(10, weight: .semibold))
             .tracking(0.5)
+            .lineLimit(1)
+            .fixedSize()
             .foregroundStyle(tinted ? Ink.seal : Ink.secondary)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)

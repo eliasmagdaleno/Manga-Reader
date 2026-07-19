@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AD1157092EA0000200CF2434 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1157092EA0000100CF2434 /* HistoryView.swift */; };
+		ADCA7E112EC7000100CF2434 /* CategoryGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCA7E102EC7000100CF2434 /* CategoryGridView.swift */; };
 		ADDACC8C2EC6AC370026FBAE /* MangaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDACC8B2EC6AC2D0026FBAE /* MangaDetailView.swift */; };
 		ADDACC9B2EC6AC370026FBAE /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDACC9A2EC6AC2D0026FBAE /* ReaderView.swift */; };
 		ADE549252C0A9CCA007AE172 /* Manga_ReaderApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE549242C0A9CCA007AE172 /* Manga_ReaderApp.swift */; };
@@ -20,8 +22,6 @@
 		ADEF83D02E8F329200CF2434 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83CF2E8F329200CF2434 /* BookmarksView.swift */; };
 		ADEF83D22E8F32A500CF2434 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83D12E8F32A500CF2434 /* SearchView.swift */; };
 		ADEF83D42E8F32B300CF2434 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83D32E8F32B300CF2434 /* SettingsView.swift */; };
-		AD1157092EA0000200CF2434 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1157092EA0000100CF2434 /* HistoryView.swift */; };
-		ADCA7E112EC7000100CF2434 /* CategoryGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCA7E102EC7000100CF2434 /* CategoryGridView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +42,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		AD1157092EA0000100CF2434 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		ADCA7E102EC7000100CF2434 /* CategoryGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryGridView.swift; sourceTree = "<group>"; };
 		ADDACC8B2EC6AC2D0026FBAE /* MangaDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MangaDetailView.swift; sourceTree = "<group>"; };
 		ADDACC9A2EC6AC2D0026FBAE /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
 		ADE549212C0A9CCA007AE172 /* Manga-Reader.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Manga-Reader.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -58,8 +60,6 @@
 		ADEF83CF2E8F329200CF2434 /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
 		ADEF83D12E8F32A500CF2434 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		ADEF83D32E8F32B300CF2434 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		AD1157092EA0000100CF2434 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
-		ADCA7E102EC7000100CF2434 /* CategoryGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryGridView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */

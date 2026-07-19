@@ -40,6 +40,18 @@ protocol MangaSource {
     /// The human-facing web page for a manga on the source's site (for "open in
     /// browser"). Optional capability; nil when the source has no web presence.
     func webURL(forManga id: String) -> URL?
+
+    // NOTE: these three must be protocol requirements (not extension-only) so a
+    // source's override is reached through `any MangaSource` — extension-only
+    // members dispatch statically and always hit the defaults.
+
+    /// Titles for the three Home browse rails: [popular, latest-updates, new-titles].
+    var homeRailTitles: [String] { get }
+    /// Eyebrow labels above the rail titles, describing how each feed is actually
+    /// ordered (e.g. "Top rated"). Empty (the default) hides the eyebrows.
+    var homeRailEyebrows: [String] { get }
+    /// Whether the middle (latest-updates) rail shows the tinted "NEW" badge.
+    var latestRailShowsNewBadge: Bool { get }
 }
 
 /// Errors common to the source layer (distinct from a source's own transport errors).
@@ -84,4 +96,8 @@ extension MangaSource {
     }
 
     func webURL(forManga id: String) -> URL? { nil }
+
+    var homeRailTitles: [String] { ["Popular", "Recently Updated", "Newly Added"] }
+    var homeRailEyebrows: [String] { [] }
+    var latestRailShowsNewBadge: Bool { true }
 }
