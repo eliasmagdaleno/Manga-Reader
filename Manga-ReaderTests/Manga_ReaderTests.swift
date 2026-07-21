@@ -1880,4 +1880,39 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(reloaded.resolution(sourceId: "s", mangaId: "m"), .resolved(malId: 7))
     }
 
+    // MARK: - MALEntityResolver
+
+    @MainActor func testResolverFastPathReturnsMangaMalIdWithoutTouchingStore() async {
+        let defaults = UserDefaults(suiteName: "test.resolver.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        let resolver = MALEntityResolver(store: store)
+        let manga = Manga(id: "m", sourceId: "mangadex", title: "Berserk",
+                          description: "", status: "ongoing", year: nil, coverURL: nil, malId: 2)
+        let id = await resolver.malId(for: manga)
+        XCTAssertEqual(id, 2)
+        XCTAssertTrue(store.cache.isEmpty, "fast path must not write to the cache")
+    }
+
+    @MainActor func testResolverReturnsCachedResolvedHit() async {
+        let defaults = UserDefaults(suiteName: "test.resolver.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        store.record(sourceId: "weebcentral", mangaId: "x", .resolved(malId: 55))
+        let resolver = MALEntityResolver(store: store)
+        let manga = Manga(id: "x", sourceId: "weebcentral", title: "Whatever",
+                          description: "", status: "unknown", year: nil, coverURL: nil, malId: nil)
+        let id = await resolver.malId(for: manga)
+        XCTAssertEqual(id, 55)   // returned from cache; no network
+    }
+
+    @MainActor func testResolverReturnsNilForFreshCachedMiss() async {
+        let defaults = UserDefaults(suiteName: "test.resolver.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        store.record(sourceId: "weebcentral", mangaId: "x", .unresolved(checkedAt: Date()))
+        let resolver = MALEntityResolver(store: store)
+        let manga = Manga(id: "x", sourceId: "weebcentral", title: "Whatever",
+                          description: "", status: "unknown", year: nil, coverURL: nil, malId: nil)
+        let id = await resolver.malId(for: manga)
+        XCTAssertNil(id)   // fresh miss short-circuits before any network call
+    }
+
 }
