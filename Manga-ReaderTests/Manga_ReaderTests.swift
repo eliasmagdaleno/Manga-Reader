@@ -43,7 +43,7 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     private func sampleManga(_ id: String = "m1", sourceId: String = "mangadex") -> Manga {
-        Manga(id: id, sourceId: sourceId, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil)
+        Manga(id: id, sourceId: sourceId, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil, malId: nil)
     }
 
     @MainActor func testRecordPrependsNewEntry() throws {
@@ -369,7 +369,7 @@ final class Manga_ReaderTests: XCTestCase {
         let a = MockSource(id: "a", name: "A")
         let b = MockSource(id: "b", name: "B")
         let registry = SourceRegistry(sources: [a, b])
-        let manga = Manga(id: "x", sourceId: "b", title: "T", description: "", status: "ongoing", year: nil, coverURL: nil)
+        let manga = Manga(id: "x", sourceId: "b", title: "T", description: "", status: "ongoing", year: nil, coverURL: nil, malId: nil)
         XCTAssertEqual(registry.source(for: manga).id, "b")   // resolves to the manga's own source
     }
 
@@ -458,6 +458,34 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(manga.id, "abc")
         XCTAssertEqual(manga.sourceId, "mangadex")
         XCTAssertEqual(manga.sourceId, MangaDexSource.sourceID)
+    }
+
+    func testMangaAttributesToMangaExtractsMalIdFromLinks() throws {
+        let json = """
+        {
+          "title": {"en": "Berserk"},
+          "links": {"mal": "2", "al": "30002"}
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let attrs = try decoder.decode(MangaAttributes.self, from: json)
+        let manga = attrs.toManga(id: "abc", relationships: nil)
+        XCTAssertEqual(manga.malId, 2)
+    }
+
+    func testMangaAttributesToMangaMalIdNilWhenAbsentOrNonNumeric() throws {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        let noLinks = #"{ "title": {"en": "X"} }"#.data(using: .utf8)!
+        let a = try decoder.decode(MangaAttributes.self, from: noLinks)
+        XCTAssertNil(a.toManga(id: "1", relationships: nil).malId)
+
+        // MangaDex occasionally stores a non-numeric mal link — must not crash, must be nil.
+        let badLink = #"{ "title": {"en": "X"}, "links": {"mal": "not-a-number"} }"#.data(using: .utf8)!
+        let b = try decoder.decode(MangaAttributes.self, from: badLink)
+        XCTAssertNil(b.toManga(id: "1", relationships: nil).malId)
     }
 
     // MARK: - Image cache

@@ -102,7 +102,7 @@ struct WeebCentralSource: MangaSource {
     /// List feeds carry only id/title/cover — description and status arrive with `mangaDetail`.
     private func manga(id: String, title: String, cover: String?) -> Manga {
         Manga(id: id, sourceId: Self.sourceID, title: title, description: "",
-              status: "unknown", year: nil, coverURL: cover.flatMap(URL.init(string:)))
+              status: "unknown", year: nil, coverURL: cover.flatMap(URL.init(string:)), malId: nil)
     }
 
     /// `/search/data` is the server-rendered results fragment the site itself fetches;
