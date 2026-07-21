@@ -60,6 +60,9 @@ struct SettingsView: View {
                             .font(.subheadline)
                             .tint(Ink.seal)
                             .padding(.horizontal, Gutter.page)
+                            .onChange(of: showAdultSources) { _, newValue in
+                                registry.enforceAdultGating(includeAdult: newValue)
+                            }
                     }
 
                     VStack(alignment: .leading, spacing: 14) {

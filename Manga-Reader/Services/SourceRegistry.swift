@@ -66,4 +66,12 @@ final class SourceRegistry: ObservableObject {
     func visibleSources(includeAdult: Bool) -> [MangaSource] {
         sources.filter { includeAdult || !$0.isNSFW }
     }
+
+    /// Enforce adult gating: if adult sources are now hidden but the active browse source is
+    /// adult, fall back to the first non-adult source. Call when the "show adult" flag changes.
+    func enforceAdultGating(includeAdult: Bool) {
+        guard !includeAdult, active.isNSFW,
+              let fallback = visibleSources(includeAdult: false).first else { return }
+        activeSourceID = fallback.id
+    }
 }

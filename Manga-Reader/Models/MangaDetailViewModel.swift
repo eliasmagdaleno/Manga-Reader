@@ -18,6 +18,7 @@ final class MangaDetailViewModel: ObservableObject{
     @Published var authors: [String] = []
     @Published var description: String = ""
     @Published var tags: [String] = []
+    @Published var detailTags: [Tag] = []
     @Published var contentRating: String? = nil
     @Published var chapters: [Chapter] = []
     @Published var isLoading = false
@@ -43,7 +44,8 @@ final class MangaDetailViewModel: ObservableObject{
             let detail = try await source.mangaDetail(id: manga.id)
             self.description = detail.description
             self.authors = detail.authors
-            self.tags = detail.tags
+            self.detailTags = detail.tags
+            self.tags = detail.tags.map(\.name)
             self.contentRating = detail.contentRating
 
             self.chapters = try await source.chapters(mangaId: manga.id)
@@ -52,6 +54,6 @@ final class MangaDetailViewModel: ObservableObject{
             self.errorMessage = error.localizedDescription
         }
         isLoading = false
-            
+
     }
 }

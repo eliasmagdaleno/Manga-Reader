@@ -11,62 +11,95 @@ import SwiftUI
 
 struct CategoryGridView: View {
     let title: String
-    let fetch: (() async throws -> [Manga])?
+    /// Shown only until page one arrives, so pushing in from a rail doesn't flash an
+    /// empty grid. Deliberately NOT seeded into the loader: that would populate its
+    /// `seenIDs`, making page one read as all-duplicates and ending the feed at once.
+    private let initialItems: [Manga]
+    private let pagedFetch: (_ limit: Int, _ offset: Int) async throws -> [Manga]
 
-    @State private var items: [Manga]
-    @State private var isLoading = false
-    @State private var errorMessage: String?
+    @StateObject private var loader: PagedMangaLoader
     @State private var loadedOnce = false
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: Gutter.rail), count: 3)
 
-    init(title: String, initialItems: [Manga] = [], fetch: (() async throws -> [Manga])? = nil) {
+    /// An infinite-scroll grid over a paged feed.
+    /// - Parameter pageSize: Raise it for feeds that shrink after server-side dedupe
+    ///   (latest-updates pages chapters, not manga), so a page still fills a screen.
+    init(title: String,
+         initialItems: [Manga] = [],
+         pageSize: Int = 24,
+         pagedFetch: @escaping (_ limit: Int, _ offset: Int) async throws -> [Manga]) {
         self.title = title
-        self.fetch = fetch
-        _items = State(initialValue: initialItems)
+        self.initialItems = initialItems
+        self.pagedFetch = pagedFetch
+        _loader = StateObject(wrappedValue: PagedMangaLoader(pageSize: pageSize))
     }
 
     var body: some View {
         ScrollView {
-            if let errorMessage, items.isEmpty {
-                InkNotice(errorMessage)
-                    .padding(Gutter.page)
-            } else {
-                LazyVGrid(columns: columns, alignment: .leading, spacing: Gutter.section) {
-                    ForEach(items) { manga in
-                        NavigationLink(destination: MangaDetailView(manga: manga)) {
-                            MangaCoverCard(
-                                title: manga.title,
-                                coverURL: manga.coverURL,
-                                stamp: manga.year.map { String($0) },
-                                fill: true
-                            )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(.horizontal, Gutter.page)
-                .padding(.top, 8)
-                .padding(.bottom, 32)
-
-                if isLoading && items.isEmpty {
-                    ProgressView().tint(Ink.seal)
-                        .padding(.vertical, 40)
-                }
-            }
+            content
         }
         .background(Ink.background)
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            // Single larger fetch on first appearance; keep any seeded items
-            // visible while it loads so the transition is smooth.
-            guard !loadedOnce, let fetch else { return }
+            guard !loadedOnce else { return }
             loadedOnce = true
-            isLoading = true
-            do { items = try await fetch() }
-            catch { errorMessage = error.localizedDescription }
-            isLoading = false
+            loader.load(fetch: pagedFetch)
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if let error = loader.errorMessage, loader.items.isEmpty {
+            VStack(spacing: 14) {
+                InkNotice(error)
+                Button("Try again") { loader.retry() }
+                    .font(.inkMono(12, weight: .semibold))
+                    .foregroundStyle(Ink.seal)
+            }
+            .padding(Gutter.page)
+        } else if loader.items.isEmpty && loader.isLoading {
+            // Page one is still in flight — hold the rail's covers in place.
+            placeholderGrid
+        } else if loader.items.isEmpty && loadedOnce {
+            InkEmptyState(
+                symbol: "tray",
+                title: "No results",
+                message: "Nothing found for \(title)."
+            )
+            .padding(.top, 80)
+        } else {
+            PagedMangaGrid(loader: loader)
+                .padding(.top, 8)
+                .padding(.bottom, 32)
+        }
+    }
+
+    /// The seeded covers from the rail, rendered while page one loads. Static — the
+    /// loader owns paging, so these carry no load-more hook and are replaced wholesale.
+    private var placeholderGrid: some View {
+        LazyVGrid(columns: columns, alignment: .leading, spacing: Gutter.section) {
+            ForEach(initialItems) { manga in
+                NavigationLink(destination: MangaDetailView(manga: manga)) {
+                    MangaCoverCard(
+                        title: manga.title,
+                        coverURL: manga.coverURL,
+                        stamp: manga.year.map { String($0) },
+                        fill: true
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, Gutter.page)
+        .padding(.top, 8)
+        .padding(.bottom, 32)
+        .overlay(alignment: .bottom) {
+            if initialItems.isEmpty {
+                ProgressView().tint(Ink.seal)
+                    .padding(.vertical, 40)
+            }
         }
     }
 }

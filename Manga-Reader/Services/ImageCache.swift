@@ -19,6 +19,9 @@ import Foundation
 import UIKit
 import CryptoKit
 
+/// Signals the image fetcher hit a rate-limit response worth backing off on.
+enum ImageFetchError: Error { case rateLimited }
+
 // MARK: - Disk tier
 
 /// Persistent on-disk byte cache with a size cap. Keys are opaque strings
@@ -107,26 +110,42 @@ final class ImageCache: @unchecked Sendable {
     private let disk: ImageDiskCache
     private let fetch: @Sendable (URL) async throws -> Data
     private let maxConcurrentPrefetch = 5
+    private let retryBaseDelay: TimeInterval
+    private let maxImageRetries: Int
 
     /// - Parameters:
     ///   - directory: Disk cache location (defaults to `Caches/PageImageCache`).
     ///   - memoryLimitBytes: `NSCache` total cost limit.
     ///   - diskLimitBytes: Disk cap enforced by `trim()`.
+    ///   - retryBaseDelay: Base delay for exponential backoff on rate-limit retries.
+    ///   - maxImageRetries: Maximum number of retries on rate-limit errors.
     ///   - fetcher: Network fetch (injectable for tests). Defaults to `URLSession.shared`.
     init(directory: URL? = nil,
          memoryLimitBytes: Int = 100 * 1024 * 1024,
          diskLimitBytes: Int = 500 * 1024 * 1024,
+         retryBaseDelay: TimeInterval = 0.5,
+         maxImageRetries: Int = 2,
          fetcher: (@Sendable (URL) async throws -> Data)? = nil) {
         let dir = directory ?? FileManager.default
             .urls(for: .cachesDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("PageImageCache")
         self.disk = ImageDiskCache(directory: dir, maxBytes: diskLimitBytes)
         self.memory.totalCostLimit = memoryLimitBytes
+        self.retryBaseDelay = retryBaseDelay
+        self.maxImageRetries = maxImageRetries
         self.fetch = fetcher ?? { url in
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let (data, response) = try await URLSession.shared.data(from: url)
+            if let http = response as? HTTPURLResponse, http.statusCode == 429 || http.statusCode == 503 {
+                throw ImageFetchError.rateLimited
+            }
             return data
         }
         Task { await disk.trim() }   // enforce the cap on startup
+    }
+
+    /// Exponential backoff schedule for image retries: `base * 2^attempt`.
+    static func imageBackoffDelay(attempt: Int, base: TimeInterval) -> TimeInterval {
+        base * pow(2.0, Double(attempt))
     }
 
     /// Stable disk key for a URL.
@@ -148,22 +167,32 @@ final class ImageCache: @unchecked Sendable {
             memory.setObject(img, forKey: url as NSURL, cost: data.count)
             return img
         }
-        guard let data = try? await fetch(url), let img = UIImage(data: data) else { return nil }
-        memory.setObject(img, forKey: url as NSURL, cost: data.count)
-        await disk.store(data, for: key)
-        return img
-    }
-
-    /// Warm the cache for `urls` in the background (bounded concurrency), skipping
-    /// anything already resident. Fire-and-forget.
-    func prefetch(_ urls: [URL]) {
-        Task.detached(priority: .utility) { [self] in
-            await prefetchAwaitable(urls)
+        var attempt = 0
+        while true {
+            do {
+                let data = try await fetch(url)
+                guard let img = UIImage(data: data) else { return nil }
+                memory.setObject(img, forKey: url as NSURL, cost: data.count)
+                await disk.store(data, for: key)
+                return img
+            } catch ImageFetchError.rateLimited where attempt < maxImageRetries {
+                try? await Task.sleep(for: .seconds(Self.imageBackoffDelay(attempt: attempt, base: retryBaseDelay)))
+                attempt += 1
+            } catch {
+                return nil
+            }
         }
     }
 
-    /// Awaitable form of `prefetch` (used by tests).
-    func prefetchAwaitable(_ urls: [URL]) async {
+    func prefetch(_ urls: [URL], maxConcurrent: Int? = nil) {
+        Task.detached(priority: .utility) { [self] in
+            await prefetchAwaitable(urls, maxConcurrent: maxConcurrent)
+        }
+    }
+
+    /// Awaitable form of `prefetch` (used by tests). `maxConcurrent` nil → default width.
+    func prefetchAwaitable(_ urls: [URL], maxConcurrent: Int? = nil) async {
+        let width = max(1, maxConcurrent ?? maxConcurrentPrefetch)
         await withTaskGroup(of: Void.self) { group in
             var iterator = urls.makeIterator()
             func addNext() {
@@ -173,7 +202,7 @@ final class ImageCache: @unchecked Sendable {
                     _ = await loadImage(for: url)
                 }
             }
-            for _ in 0..<maxConcurrentPrefetch { addNext() }
+            for _ in 0..<width { addNext() }
             while await group.next() != nil { addNext() }
         }
     }

@@ -47,9 +47,11 @@ struct WeebCentralSource: MangaSource {
         try await seriesList(url: Self.searchURL(text: nil, sort: "Recently Added", limit: limit, offset: offset))
     }
 
-    func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] {
+    func latestUpdates(limitTitles: Int, language: String, offset: Int) async throws -> [MangaUpdate] {
         // `language` ignored: WeebCentral is English-only.
-        let url = Self.base.appending(path: "latest-updates/1")
+        // The site paginates by 1-based page number, not by item offset.
+        let page = limitTitles > 0 ? offset / limitTitles + 1 : 1
+        let url = Self.base.appending(path: "latest-updates/\(page)")
         let items = try await context.webView.extract(from: url, script: Self.latestUpdatesScript,
                                                       as: [WCUpdateItem].self)
         return items.prefix(limitTitles).map { item in
@@ -60,10 +62,11 @@ struct WeebCentralSource: MangaSource {
     func mangaDetail(id: String) async throws -> MangaDetail {
         let url = Self.base.appending(path: "series/\(id)")
         let detail = try await context.webView.extract(from: url, script: Self.detailScript, as: WCDetail.self)
+        let tags = detail.tags.map { Tag(id: "", name: $0, group: "") }
         return MangaDetail(
             description: detail.description ?? "",
             authors: detail.authors,
-            tags: detail.tags,
+            tags: tags,
             contentRating: detail.adult == true ? "erotica" : "safe"
         )
     }

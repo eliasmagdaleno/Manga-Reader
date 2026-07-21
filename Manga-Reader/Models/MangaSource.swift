@@ -25,18 +25,33 @@ protocol MangaSource {
 
     /// Search the source by title. Results carry `coverURL` and `sourceId`.
     func search(title: String, limit: Int, offset: Int) async throws -> [Manga]
+    /// Whether this source can browse by a genre/tag name (see `mangaByTag`). The detail
+    /// screen renders tappable genre chips only when this is true. Optional capability;
+    /// defaults to false. Must be a protocol requirement so overrides dispatch through
+    /// `any MangaSource` (see the NOTE below).
+    var supportsTagBrowse: Bool { get }
+    /// A genre/tag browse feed matching the given tag display name (as surfaced in
+    /// `MangaDetail.tags`). Optional capability. Bridge-friendly: String/Int in, value out.
+    func mangaByTag(tag: String, limit: Int, offset: Int) async throws -> [Manga]
     /// A "popular" browse feed (rating-ordered on MangaDex).
     func popular(limit: Int, offset: Int) async throws -> [Manga]
     /// A "newest titles" browse feed (creation-ordered on MangaDex). Optional capability.
     func newTitles(limit: Int, offset: Int) async throws -> [Manga]
     /// A "latest updates" feed (recent chapters → unique manga). Optional capability.
-    func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate]
+    /// `offset` pages the feed. Note it addresses the source's *underlying* feed, not the
+    /// returned manga: MangaDex pages recent chapters and then dedupes them to unique
+    /// manga, so a page can return far fewer than `limitTitles` items without being the
+    /// end of the feed. Callers must not treat a short page as exhaustion.
+    func latestUpdates(limitTitles: Int, language: String, offset: Int) async throws -> [MangaUpdate]
     /// Enriched metadata for a single manga.
     func mangaDetail(id: String) async throws -> MangaDetail
     /// The readable chapter list for a manga.
     func chapters(mangaId: String) async throws -> [Chapter]
     /// The per-page image URLs for a chapter.
     func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL]
+    /// How many page images the reader may prefetch concurrently for this source.
+    /// Lower it for rate-limit-sensitive image CDNs. Default 5.
+    var imagePrefetchConcurrency: Int { get }
     /// The human-facing web page for a manga on the source's site (for "open in
     /// browser"). Optional capability; nil when the source has no web presence.
     func webURL(forManga id: String) -> URL?
@@ -87,17 +102,32 @@ enum SourceError: LocalizedError {
 extension MangaSource {
     var isNSFW: Bool { false }
 
+    var supportsTagBrowse: Bool { false }
+
+    func mangaByTag(tag: String, limit: Int, offset: Int) async throws -> [Manga] {
+        throw SourceError.unsupported("mangaByTag")
+    }
+
     func newTitles(limit: Int, offset: Int) async throws -> [Manga] {
         throw SourceError.unsupported("newTitles")
     }
 
-    func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] {
+    func latestUpdates(limitTitles: Int, language: String, offset: Int) async throws -> [MangaUpdate] {
         throw SourceError.unsupported("latestUpdates")
     }
+
+    /// First page of the latest-updates feed. Convenience for the many callers that only
+    /// ever want the top of the feed (Home rails, tests).
+    func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] {
+        try await latestUpdates(limitTitles: limitTitles, language: language, offset: 0)
+    }
+
+    var imagePrefetchConcurrency: Int { 5 }
 
     func webURL(forManga id: String) -> URL? { nil }
 
     var homeRailTitles: [String] { ["Popular", "Recently Updated", "Newly Added"] }
     var homeRailEyebrows: [String] { [] }
+    /// Whether the middle (latest-updates) rail shows the tinted "NEW" badge.
     var latestRailShowsNewBadge: Bool { true }
 }
