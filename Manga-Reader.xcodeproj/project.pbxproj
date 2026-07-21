@@ -61,6 +61,7 @@
 		ADEF83D12E8F32A500CF2434 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		ADEF83D32E8F32B300CF2434 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AD1157092EA0000300CF2434 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		AD1157092EA0000600CF2434 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -122,6 +123,7 @@
 				ADEF83D62E96ED2E00CF2434 /* Services */,
 				ADE549242C0A9CCA007AE172 /* Manga_ReaderApp.swift */,
 				ADE549262C0A9CCA007AE172 /* ContentView.swift */,
+				AD1157092EA0000600CF2434 /* Info.plist */,
 				ADEF83D52E8F375100CF2434 /* Views */,
 				ADE549282C0A9CCC007AE172 /* Assets.xcassets */,
 				ADE5492A2C0A9CCC007AE172 /* Preview Content */,
@@ -484,7 +486,7 @@
 				DEVELOPMENT_TEAM = V2BG9SHQYS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_MALClientID = "$(MAL_CLIENT_ID)";
+				INFOPLIST_FILE = "Manga-Reader/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -515,7 +517,7 @@
 				DEVELOPMENT_TEAM = V2BG9SHQYS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_MALClientID = "$(MAL_CLIENT_ID)";
+				INFOPLIST_FILE = "Manga-Reader/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
