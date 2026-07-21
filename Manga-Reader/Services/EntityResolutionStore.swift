@@ -34,7 +34,7 @@ final class EntityResolutionStore: ObservableObject {
     @Published private(set) var cache: [String: MALResolution] = [:]
 
     /// How long a miss is trusted before it's re-attempted.
-    static let missTTL: TimeInterval = 14 * 24 * 60 * 60   // 14 days
+    nonisolated static let missTTL: TimeInterval = 14 * 24 * 60 * 60   // 14 days
 
     private let cacheKey = "entityResolution.cache"
     private let defaults: UserDefaults
