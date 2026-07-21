@@ -90,7 +90,52 @@ Replace with:
 		};
 ```
 
-- [ ] **Step 3: Point the app target's Debug config at `Secrets.xcconfig` and add the Info.plist key**
+> **Correction (discovered during implementation):** `INFOPLIST_KEY_<Key>` only
+> synthesizes a fixed, Xcode-recognized set of Info.plist keys (scene manifest, launch
+> screen, supported orientations, usage-description strings, etc.) into a
+> `GENERATE_INFOPLIST_FILE = YES` build. It does **not** work for an arbitrary custom
+> key like `MALClientID` — confirmed empirically: a clean build with
+> `INFOPLIST_KEY_MALClientID = "$(MAL_CLIENT_ID)"` set produced a generated Info.plist
+> with every *recognized* `INFOPLIST_KEY_*` present except that one. The fix below adds
+> a small custom `Info.plist` containing just the one custom key, and points
+> `INFOPLIST_FILE` at it — Xcode merges an `INFOPLIST_FILE`'s contents (including
+> `$(...)` variable substitution) with the synthesized keys, which is the documented way
+> to add custom keys without abandoning `GENERATE_INFOPLIST_FILE`. Steps 3–8 below
+> reflect this corrected approach.
+
+- [ ] **Step 3: Create a minimal `Info.plist` carrying the custom key**
+
+Create `Manga-Reader/Info.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>MALClientID</key>
+	<string>$(MAL_CLIENT_ID)</string>
+</dict>
+</plist>
+```
+
+- [ ] **Step 4: Add a `PBXFileReference` for `Manga-Reader/Info.plist` and list it in the `Manga-Reader` group**
+
+In the `PBXFileReference` section, add (anywhere in the section is fine; e.g. right
+after the `Secrets.xcconfig` entry added in Step 1):
+
+```
+		AD1157092EA0000600CF2434 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+```
+
+In the `ADE549232C0A9CCA007AE172 /* Manga-Reader */` group's `children`, add it (e.g.
+right after `ADE549262C0A9CCA007AE172 /* ContentView.swift */,`):
+
+```
+				ADE549262C0A9CCA007AE172 /* ContentView.swift */,
+				AD1157092EA0000600CF2434 /* Info.plist */,
+```
+
+- [ ] **Step 5: Point the app target's Debug config at `Secrets.xcconfig` and the new `Info.plist`**
 
 Find the block starting with `ADE549462C0A9CCD007AE172 /* Debug */ = {` (this is the
 **app target's** Debug config — confirm by checking it contains
@@ -128,7 +173,7 @@ Find the block starting with `ADE549462C0A9CCD007AE172 /* Debug */ = {` (this is
 		};
 ```
 
-Replace with (adds `baseConfigurationReference` and `INFOPLIST_KEY_MALClientID`):
+Replace with (adds `baseConfigurationReference` and `INFOPLIST_FILE`):
 
 ```
 		ADE549462C0A9CCD007AE172 /* Debug */ = {
@@ -143,7 +188,7 @@ Replace with (adds `baseConfigurationReference` and `INFOPLIST_KEY_MALClientID`)
 				DEVELOPMENT_TEAM = V2BG9SHQYS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_MALClientID = "$(MAL_CLIENT_ID)";
+				INFOPLIST_FILE = "Manga-Reader/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -164,16 +209,16 @@ Replace with (adds `baseConfigurationReference` and `INFOPLIST_KEY_MALClientID`)
 		};
 ```
 
-- [ ] **Step 4: Do the same for the Release config**
+- [ ] **Step 6: Do the same for the Release config**
 
 Find the block starting with `ADE549472C0A9CCD007AE172 /* Release */ = {` (the app
 target's Release config — same field set as Debug above, `name = Release;`) and apply
 the identical two additions: `baseConfigurationReference = AD1157092EA0000300CF2434 /* Secrets.xcconfig */;`
 right after `isa = XCBuildConfiguration;`, and
-`INFOPLIST_KEY_MALClientID = "$(MAL_CLIENT_ID)";` inside `buildSettings`, alongside the
-other `INFOPLIST_KEY_*` entries.
+`INFOPLIST_FILE = "Manga-Reader/Info.plist";` inside `buildSettings`, alongside
+`GENERATE_INFOPLIST_FILE`.
 
-- [ ] **Step 5: Verify the build settings resolve correctly**
+- [ ] **Step 7: Verify the build settings resolve correctly**
 
 Run:
 
@@ -184,19 +229,24 @@ xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone
 
 Expected: `** BUILD SUCCEEDED **`.
 
-- [ ] **Step 6: Verify the Info.plist key actually made it into the built app**
+- [ ] **Step 8: Verify the Info.plist key actually made it into the built app**
+
+Resolve the exact build output directory for this project/scheme rather than globbing
+`~/Library/Developer/Xcode/DerivedData` (a machine can have more than one DerivedData
+directory for the same project from earlier builds, and an unqualified `find … -quit`
+can silently pick a stale one):
 
 ```bash
-BUILT_APP=$(find ~/Library/Developer/Xcode/DerivedData -type d -name "Manga-Reader.app" \
-  -path "*Debug-iphonesimulator*" -print -quit)
-/usr/libexec/PlistBuddy -c "Print :MALClientID" "$BUILT_APP/Info.plist"
+BUILT_DIR=$(xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -showBuildSettings 2>/dev/null | awk -F' = ' '/ TARGET_BUILD_DIR /{print $2; exit}')
+/usr/libexec/PlistBuddy -c "Print :MALClientID" "$BUILT_DIR/Manga-Reader.app/Info.plist"
 ```
 
 Expected: prints a non-empty string matching the value in your local
 `Secrets.xcconfig` (do not paste the actual value anywhere it could get committed —
 just confirm it's non-empty and matches).
 
-- [ ] **Step 7: Confirm `Secrets.xcconfig` is still untracked by git**
+- [ ] **Step 9: Confirm `Secrets.xcconfig` is still untracked by git**
 
 ```bash
 git status --short
@@ -206,10 +256,10 @@ git check-ignore -v Secrets.xcconfig
 Expected: `git status` shows no `Secrets.xcconfig` entry; `check-ignore` prints the
 `.gitignore` rule matching it.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 10: Commit**
 
 ```bash
-git add Manga-Reader.xcodeproj/project.pbxproj
+git add Manga-Reader.xcodeproj/project.pbxproj Manga-Reader/Info.plist
 git commit -m "Wire Secrets.xcconfig into build settings for MAL_CLIENT_ID"
 ```
 
