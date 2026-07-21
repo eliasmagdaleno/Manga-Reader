@@ -221,6 +221,53 @@ final class Manga_ReaderUITests: XCTestCase {
                       "related_manga / recommendations fields")
     }
 
+    /// Throwaway live-verification for cross-source entity resolution: drives the MAL
+    /// debug screen's "Resolve source title" field with a title whose MAL main title
+    /// differs from the scraped one ("Attack on Titan" → Shingeki no Kyojin), proving the
+    /// alt-title fuzzy path lands on the right MAL entry against the real API. Same
+    /// no-mock live technique as testMyAnimeListDebugScreenLiveVerification; keeping it
+    /// long-term is a human call (it hits the network and is slow).
+    func testMALEntityResolutionLiveVerification() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let settingsNavTitle = app.navigationBars["Settings"]
+        var reachedSettings = false
+        for _ in 0..<3 {
+            app.tabBars.buttons["Settings"].tap()
+            if settingsNavTitle.waitForExistence(timeout: 8) { reachedSettings = true; break }
+        }
+        XCTAssertTrue(reachedSettings, "should have navigated to the Settings tab")
+
+        let malRow = app.buttons["malClientRow"]
+        XCTAssertTrue(malRow.waitForExistence(timeout: 10), "the DEBUG MAL row should be on Settings")
+
+        let resolveField = app.textFields["malResolveField"]
+        var reachedDebugScreen = false
+        for _ in 0..<3 {
+            malRow.tap()
+            if resolveField.waitForExistence(timeout: 8) { reachedDebugScreen = true; break }
+        }
+        XCTAssertTrue(reachedDebugScreen, "the MAL resolve field should be present")
+
+        var focused = false
+        for _ in 0..<3 {
+            resolveField.tap()
+            if app.keyboards.element.waitForExistence(timeout: 5) { focused = true; break }
+        }
+        XCTAssertTrue(focused, "the resolve field should have keyboard focus before typing")
+        resolveField.typeText("Attack on Titan")
+        app.buttons["malResolveButton"].tap()
+
+        // Ground truth: the resolver must land on Shingeki no Kyojin via the English
+        // alternate title. Poll generously — MAL rate-limits and this does 2 requests.
+        let result = app.staticTexts["malResolveResult"]
+        XCTAssertTrue(result.waitForExistence(timeout: 90), "a resolve result should appear")
+        attach(app, name: "mal-entity-resolution")  // existing screenshot helper in this file
+        XCTAssertTrue(result.label.contains("Shingeki no Kyojin"),
+                      "expected resolution to Shingeki no Kyojin, got: \(result.label)")
+    }
+
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.

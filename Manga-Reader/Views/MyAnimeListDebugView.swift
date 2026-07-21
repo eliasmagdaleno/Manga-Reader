@@ -14,6 +14,8 @@ struct MyAnimeListDebugView: View {
     @State private var detail: MyAnimeListMangaDetail?
     @State private var errorMessage: String?
     @State private var isLoading = false
+    @State private var resolveQuery = ""
+    @State private var resolvedText: String?
 
     var body: some View {
         List {
@@ -24,6 +26,19 @@ struct MyAnimeListDebugView: View {
                 Button("Search") { search() }
                     .accessibilityIdentifier("malSearchButton")
                     .disabled(query.isEmpty || isLoading)
+            }
+
+            Section("Resolve source title") {
+                TextField("Scraped-source title", text: $resolveQuery)
+                    .accessibilityIdentifier("malResolveField")
+                    .onSubmit { resolve() }
+                Button("Resolve") { resolve() }
+                    .accessibilityIdentifier("malResolveButton")
+                    .disabled(resolveQuery.isEmpty || isLoading)
+                if let resolvedText {
+                    Text(resolvedText)
+                        .accessibilityIdentifier("malResolveResult")
+                }
             }
 
             if let errorMessage {
@@ -93,6 +108,26 @@ struct MyAnimeListDebugView: View {
             } catch {
                 errorMessage = error.localizedDescription
                 results = []
+            }
+        }
+    }
+
+    /// Runs a synthetic scraped-source manga (no malId) through the entity resolver so
+    /// the live fuzzy path can be verified end-to-end against the real MAL API.
+    private func resolve() {
+        resolvedText = nil
+        isLoading = true
+        let manga = Manga(id: "debug-\(UUID().uuidString)", sourceId: "weebcentral",
+                          title: resolveQuery, description: "", status: "unknown",
+                          year: nil, coverURL: nil, malId: nil)
+        let resolver = MALEntityResolver(store: EntityResolutionStore())
+        Task {
+            defer { isLoading = false }
+            if let id = await resolver.malId(for: manga) {
+                let title = (try? await MyAnimeListAPI.mangaDetail(id: id))?.title ?? "?"
+                resolvedText = "Resolved to MAL id \(id): \(title)"
+            } else {
+                resolvedText = "No confident match"
             }
         }
     }
