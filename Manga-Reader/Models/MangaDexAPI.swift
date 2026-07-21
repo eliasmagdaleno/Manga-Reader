@@ -184,11 +184,18 @@ extension ChapterAttributes {                       // Convert raw chapter attri
     }
 }
 
+/// A MangaDex tag with its stable id and grouping (genre / theme / format / content).
+struct Tag: Codable, Hashable {
+    let id: String
+    let name: String
+    let group: String
+}
+
 /// Enriched manga metadata shown on the detail screen.
 struct MangaDetail {                                // Plain value type consumed by the detail view model.
     let description: String                         // English description (falls back to any locale).
     let authors: [String]                           // Author + artist names (deduped, order preserved).
-    let tags: [String]                              // Genre/theme tag names (English preferred).
+    let tags: [Tag]                                 // Genre/theme tags with id, name, and group.
     let contentRating: String?                      // safe / suggestive / erotica / pornographic.
 }
 
@@ -209,8 +216,12 @@ struct MangaDetailResponse: Decodable {             // Object (not array) respon
             .filter { $0.type == "author" || $0.type == "artist" }
             .compactMap { $0.attributes?.name }
             .filter { seen.insert($0).inserted }
-        // Resolve each tag's name (English preferred, else first available locale).
-        let tags = (attrs.tags ?? []).compactMap { $0.attributes.name["en"] ?? $0.attributes.name.values.first }
+        // Resolve each tag's id, name, and group.
+        let tags: [Tag] = (attrs.tags ?? []).compactMap { mdt in
+            let name = mdt.attributes.name["en"] ?? mdt.attributes.name.values.first ?? ""
+            guard !name.isEmpty else { return nil }
+            return Tag(id: mdt.id, name: name, group: mdt.attributes.group ?? "")
+        }
         return MangaDetail(description: description, authors: authors, tags: tags,
                            contentRating: attrs.contentRating)
     }
@@ -233,12 +244,77 @@ struct MangaDetailAttributes: Decodable {           // Detail-specific attribute
 
 /// A MangaDex tag entry with a localized name.
 struct MDTag: Decodable {                            // Wraps a tag's attributes.
+    let id: String                                  // Tag UUID.
     let attributes: MDTagAttributes                 // Holds the localized name dictionary.
+}
+
+/// A tag entry from `/manga/tag` — like `MDTag` but with the tag's UUID, needed to
+/// filter `/manga` via `includedTags[]`.
+struct MDTagEntity: Decodable {
+    let id: String                                  // Tag UUID used in includedTags[].
+    let attributes: MDTagAttributes                 // Localized name dictionary.
+}
+
+/// Response wrapper for `GET /manga/tag`.
+struct TagListResponse: Decodable {
+    let data: [MDTagEntity]
+}
+
+/// Caches MangaDex's tag catalog as a case-insensitive name→UUID map. The app only ever
+/// carries tag *display names* (`MangaDetail.tags`), but `/manga?includedTags[]=` needs
+/// UUIDs, so tapping a genre chip resolves the name here first.
+///
+/// An `actor` because `MangaDexAPI`'s static methods are nonisolated — a shared mutable
+/// dictionary would be a data race. We cache the in-flight *Task* (not just the result)
+/// so concurrent first lookups share one network fetch, and drop it on failure so a
+/// transient error isn't cached forever.
+actor MangaDexTagCatalog {
+    static let shared = MangaDexTagCatalog()
+
+    /// Overridable fetch for tests; defaults to the live `/manga/tag` endpoint.
+    private let fetchAll: () async throws -> [MDTagEntity]
+    private var mapTask: Task<[String: String], Error>?
+
+    init(fetchAll: @escaping () async throws -> [MDTagEntity] = {
+        let res: TagListResponse = try await MangaDexAPI.request(endpoint: "/manga/tag")
+        return res.data
+    }) {
+        self.fetchAll = fetchAll
+    }
+
+    /// The tag UUID for a display name (case-insensitive), or nil if no such tag exists.
+    func id(forName name: String) async throws -> String? {
+        let map = try await loadMap()
+        return map[name.lowercased()]
+    }
+
+    private func loadMap() async throws -> [String: String] {
+        if let mapTask { return try await mapTask.value }
+        let task = Task { () throws -> [String: String] in
+            let entities = try await fetchAll()
+            return Dictionary(
+                entities.compactMap { entity -> (String, String)? in
+                    guard let name = entity.attributes.name["en"] ?? entity.attributes.name.values.first
+                    else { return nil }
+                    return (name.lowercased(), entity.id)
+                },
+                uniquingKeysWith: { first, _ in first }
+            )
+        }
+        mapTask = task
+        do {
+            return try await task.value
+        } catch {
+            mapTask = nil   // Don't cache a failed fetch.
+            throw error
+        }
+    }
 }
 
 /// Localized name payload for a tag.
 struct MDTagAttributes: Decodable {                 // e.g., name == ["en": "Action"].
     let name: [String: String]                      // Tag name per locale.
+    let group: String?                              // Tag group (genre / theme / format / content); absent on some payloads.
 }
 
 /// Relationship on the detail endpoint that can carry an author/artist name.
@@ -347,6 +423,22 @@ struct MangaDexAPI {                                // Namespace-style struct fo
         return mangaList(from: res)
     }
 
+    /// Fetches manga carrying a given genre/tag (by display name) with cover URLs.
+    /// Resolves the name to its UUID via `MangaDexTagCatalog`; an unknown name yields
+    /// no results rather than an error.
+    static func fetchMangaByTag(name: String, limit: Int = 20, offset: Int = 0) async throws -> [Manga] {
+        guard let tagID = try await MangaDexTagCatalog.shared.id(forName: name) else { return [] }
+        let items = [
+            URLQueryItem(name: "includedTags[]", value: tagID),     // Filter to this tag.
+            URLQueryItem(name: "order[rating]", value: "desc"),     // Stable order → correct pagination.
+            URLQueryItem(name: "includes[]", value: "cover_art"),   // ✅ Ask for cover relationships.
+            URLQueryItem(name: "limit", value: String(limit)),      // Page size.
+            URLQueryItem(name: "offset", value: String(offset))     // Skip for pagination.
+        ]
+        let res: MangaListResponse = try await MangaDexAPI.request(endpoint: "/manga", queryItems: items)
+        return mangaList(from: res)
+    }
+
     /// Fetches newly created manga (Newest first) with cover URLs.
     static func fetchNewTitles(limit: Int = 20, offset: Int = 0) async throws -> [Manga] {
         let items = [
@@ -378,17 +470,25 @@ struct MangaDexAPI {                                // Namespace-style struct fo
     /// - Parameters:
     ///   - limitTitles: How many unique manga to return.
     ///   - translatedLang: Filter chapters by language (e.g., "en").
+    ///   - offset: Paging offset into the *chapter* feed, not the returned manga. Dedupe
+    ///     collapses chapters to unique manga, so a page routinely yields far fewer than
+    ///     `limitTitles` items — callers must not read that as end-of-feed.
     /// - Note: This does a two-step process:
     ///         1) Get recent chapters with `includes[]=manga`
     ///         2) Batch-fetch the unique manga by IDs with `includes[]=cover_art`
     static func fetchLatestUpdates(limitTitles: Int = 20,
-                                   translatedLang: String = "en") async throws -> [MangaUpdate] {
+                                   translatedLang: String = "en",
+                                   offset: Int = 0) async throws -> [MangaUpdate] {
         // 1) Ask for latest chapters, newest readable first, including manga relationship.
+        //    Over-fetch chapters relative to the titles we want, since dedupe shrinks the
+        //    page; /chapter caps `limit` at 100.
+        let chapterLimit = min(100, max(limitTitles * 2, limitTitles))
         let items = [
             URLQueryItem(name: "includes[]", value: "manga"),       // Include "manga" relation on chapters.
             URLQueryItem(name: "translatedLanguage[]", value: translatedLang), // Filter by language.
             URLQueryItem(name: "order[readableAt]", value: "desc"), // Newest updates first.
-            URLQueryItem(name: "limit", value: "100")               // Fetch enough to dedupe.
+            URLQueryItem(name: "limit", value: String(chapterLimit)), // Fetch enough to dedupe.
+            URLQueryItem(name: "offset", value: String(offset))     // Page through the chapter feed.
         ]
         let chapters: ChapterListResponse = try await MangaDexAPI.request(endpoint: "/chapter", queryItems: items)
 

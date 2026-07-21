@@ -277,9 +277,9 @@ struct ReaderView: View {
         isLoading = true
         errorMessage = nil
         do {
-            pages = try await SourceRegistry.shared.source(for: manga)
-                .pageURLs(chapterId: chapter.id, preferDataSaver: true)
-            ImageCache.shared.prefetch(pages)   // warm the whole chapter for instant scrolling
+            let src = SourceRegistry.shared.source(for: manga)
+            pages = try await src.pageURLs(chapterId: chapter.id, preferDataSaver: true)
+            ImageCache.shared.prefetch(pages, maxConcurrent: src.imagePrefetchConcurrency)
         } catch {
             errorMessage = error.localizedDescription
         }

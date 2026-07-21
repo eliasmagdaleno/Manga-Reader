@@ -105,10 +105,15 @@ file across all four sections.
 The app builds and the core reading loop is implemented:
 
 - **Tabs:** Home, Library, History, Search, Settings. Home, Library, and History each have
-  their own `NavigationStack`. `SearchView` is still a placeholder stub. Settings wires the
+  their own `NavigationStack`. `SearchView` is a debounced, source-scoped title search
+  (`SearchViewModel` + a shared `PagedMangaLoader` for infinite-scroll results). Settings wires the
   appearance/dark-mode toggle plus the **source picker** ("Show adult sources" gating);
   switching sources re-sources Home immediately (in-flight loads are cancelled so a slow
   old source can't repaint the rails).
+- **Recommendations:** Home shows a personalized **"For You"** rail (`RecommendationEngine` +
+  `TasteProfile` + `TagCandidateProvider`, on-device, MangaDex-only) built from reading
+  history; `TasteProfileStore` caches read-manga tags and Not-interested / More-like-this
+  feedback. Rail #0 on Home with a "See all" grid; hidden until there's enough signal.
 - **Sources:** two registered — MangaDex and WeebCentral (Cloudflare-protected HTML,
   fetched through `WebViewService`). Saved items reopen via their own source
   (`SourceRegistry.source(for:)`); the detail page shows the originating source and can

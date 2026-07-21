@@ -10,6 +10,7 @@ struct MangaDetailView: View {
     @StateObject private var vm: MangaDetailViewModel
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
+    @EnvironmentObject private var tasteProfile: TasteProfileStore
     @State private var synopsisExpanded = false
     @State private var chaptersDescending = true
     @State private var isSelecting = false
@@ -30,6 +31,13 @@ struct MangaDetailView: View {
         mangaSource?.webURL(forManga: manga.id)
     }
 
+    /// This manga's source when it can browse by genre — otherwise nil, so the genre
+    /// chips render as plain, non-tappable metadata.
+    private var tagBrowseSource: MangaSource? {
+        guard let mangaSource, mangaSource.supportsTagBrowse else { return nil }
+        return mangaSource
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Gutter.section) {
@@ -44,6 +52,10 @@ struct MangaDetailView: View {
         .background(Ink.background)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { vm.load() }
+        .onChange(of: vm.detailTags) { _, tags in
+            guard manga.sourceId == "mangadex", !tags.isEmpty else { return }
+            tasteProfile.recordTags(mangaId: manga.id, tags: tags)
+        }
         // Hide the tab bar while selecting so the bottom-bar batch actions
         // (Select All / Mark Read / Mark Unread) aren't obscured behind it.
         .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
@@ -258,24 +270,40 @@ struct MangaDetailView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(vm.tags, id: \.self) { tag in
-                    // Mono + uppercase keeps every chip the same height and
-                    // visual weight regardless of the tag's length.
-                    Text(tag.uppercased())
-                        .font(.inkMono(10, weight: .medium))
-                        .tracking(0.5)
-                        .lineLimit(1)
-                        .fixedSize()
-                        .foregroundStyle(Ink.secondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule().fill(Ink.surface)
-                        )
-                        .overlay(Capsule().strokeBorder(Ink.hairline, lineWidth: 1))
+                    if let source = tagBrowseSource {
+                        NavigationLink {
+                            CategoryGridView(title: tag, pagedFetch: { limit, offset in
+                                try await source.mangaByTag(tag: tag, limit: limit, offset: offset)
+                            })
+                        } label: {
+                            chip(tag, interactive: true)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Browse \(tag)")
+                    } else {
+                        chip(tag, interactive: false)
+                    }
                 }
             }
             .padding(.horizontal, Gutter.page)
         }
+    }
+
+    /// A single genre chip. Interactive chips (source supports tag browse) read as
+    /// tappable in the seal voice; plain chips are quiet metadata. Mono + uppercase
+    /// keeps every chip the same height regardless of the tag's length.
+    @ViewBuilder
+    private func chip(_ tag: String, interactive: Bool) -> some View {
+        Text(tag.uppercased())
+            .font(.inkMono(10, weight: .medium))
+            .tracking(0.5)
+            .lineLimit(1)
+            .fixedSize()
+            .foregroundStyle(interactive ? Ink.seal : Ink.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(interactive ? Ink.sealSoft : Ink.surface))
+            .overlay(Capsule().strokeBorder(interactive ? Ink.seal : Ink.hairline, lineWidth: 1))
     }
 
     // MARK: Description

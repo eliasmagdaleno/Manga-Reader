@@ -21,9 +21,14 @@ struct MangaDexSource: MangaSource {
     /// True orderings of the three browse feeds (order[rating] / order[readableAt] /
     /// order[createdAt] in MangaDexAPI).
     var homeRailEyebrows: [String] { ["Top rated", "New chapters", "Just added"] }
+    var supportsTagBrowse: Bool { true }
 
     func search(title: String, limit: Int, offset: Int) async throws -> [Manga] {
         try await MangaDexAPI.searchManga(title: title, limit: limit, offset: offset)
+    }
+
+    func mangaByTag(tag: String, limit: Int, offset: Int) async throws -> [Manga] {
+        try await MangaDexAPI.fetchMangaByTag(name: tag, limit: limit, offset: offset)
     }
 
     func popular(limit: Int, offset: Int) async throws -> [Manga] {
@@ -34,8 +39,8 @@ struct MangaDexSource: MangaSource {
         try await MangaDexAPI.fetchNewTitles(limit: limit, offset: offset)
     }
 
-    func latestUpdates(limitTitles: Int, language: String) async throws -> [MangaUpdate] {
-        try await MangaDexAPI.fetchLatestUpdates(limitTitles: limitTitles, translatedLang: language)
+    func latestUpdates(limitTitles: Int, language: String, offset: Int) async throws -> [MangaUpdate] {
+        try await MangaDexAPI.fetchLatestUpdates(limitTitles: limitTitles, translatedLang: language, offset: offset)
     }
 
     func mangaDetail(id: String) async throws -> MangaDetail {
