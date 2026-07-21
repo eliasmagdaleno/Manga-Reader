@@ -1626,4 +1626,104 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(out.map(\.id), ["r1", "r2"])
     }
 
+    // MARK: - MyAnimeListAPI DTOs
+
+    func testMyAnimeListSearchResponseDecodesAndUnwrapsNode() throws {
+        let json = """
+        {
+          "data": [
+            {
+              "node": {
+                "id": 2,
+                "title": "Berserk",
+                "main_picture": {
+                  "medium": "https://example.com/berserk_m.jpg",
+                  "large": "https://example.com/berserk_l.jpg"
+                }
+              }
+            },
+            {
+              "node": { "id": 401, "title": "Berserk: The Prototype" }
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let response = try decoder.decode(MyAnimeListSearchResponse.self, from: json)
+        XCTAssertEqual(response.data.map(\.node.id), [2, 401])
+        XCTAssertEqual(response.data[0].node.title, "Berserk")
+        XCTAssertEqual(response.data[0].node.mainPicture?.medium,
+                       "https://example.com/berserk_m.jpg")
+        XCTAssertNil(response.data[1].node.mainPicture)
+    }
+
+    func testMyAnimeListMangaDetailDecodesRelatedAndRecommendations() throws {
+        let json = """
+        {
+          "id": 2,
+          "title": "Berserk",
+          "synopsis": "Guts, a former mercenary...",
+          "main_picture": {
+            "medium": "https://example.com/berserk_m.jpg",
+            "large": "https://example.com/berserk_l.jpg"
+          },
+          "genres": [
+            {"id": 1, "name": "Action"},
+            {"id": 8, "name": "Drama"}
+          ],
+          "related_manga": [
+            {
+              "node": {"id": 401, "title": "Berserk: The Prototype"},
+              "relation_type": "prequel",
+              "relation_type_formatted": "Prequel"
+            }
+          ],
+          "recommendations": [
+            {
+              "node": {"id": 656, "title": "Vagabond"},
+              "num_recommendations": 42
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let detail = try decoder.decode(MyAnimeListMangaDetail.self, from: json)
+        XCTAssertEqual(detail.title, "Berserk")
+        XCTAssertEqual(detail.genres?.map(\.name), ["Action", "Drama"])
+        XCTAssertEqual(detail.relatedManga?.first?.node.title, "Berserk: The Prototype")
+        XCTAssertEqual(detail.relatedManga?.first?.relationTypeFormatted, "Prequel")
+        XCTAssertEqual(detail.recommendations?.first?.node.title, "Vagabond")
+        XCTAssertEqual(detail.recommendations?.first?.numRecommendations, 42)
+    }
+
+    func testMyAnimeListMangaDetailDecodesWithoutOptionalRelations() throws {
+        let json = """
+        {
+          "id": 977,
+          "title": "One-Off Oneshot",
+          "synopsis": null,
+          "main_picture": null,
+          "genres": null
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let detail = try decoder.decode(MyAnimeListMangaDetail.self, from: json)
+        XCTAssertEqual(detail.id, 977)
+        XCTAssertEqual(detail.title, "One-Off Oneshot")
+        XCTAssertNil(detail.synopsis)
+        XCTAssertNil(detail.genres)
+        XCTAssertNil(detail.relatedManga)
+        XCTAssertNil(detail.recommendations)
+    }
+
+    func testMyAnimeListErrorDescriptions() {
+        XCTAssertEqual(MyAnimeListError.missingClientID.errorDescription,
+                       "Missing MyAnimeList API client ID. Set MAL_CLIENT_ID in Secrets.xcconfig.")
+        XCTAssertEqual(MyAnimeListError.httpStatus(404).errorDescription,
+                       "MyAnimeList request failed with HTTP status 404.")
+    }
+
 }
