@@ -1844,4 +1844,40 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(matcher.decide(sourceTitle: "X", candidates: []), .noMatch)
     }
 
+    // MARK: - EntityResolutionStore
+
+    @MainActor func testEntityResolutionRecordsAndReadsBack() {
+        let defaults = UserDefaults(suiteName: "test.entityres.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        store.record(sourceId: "weebcentral", mangaId: "abc", .resolved(malId: 42))
+        XCTAssertEqual(store.resolution(sourceId: "weebcentral", mangaId: "abc"), .resolved(malId: 42))
+        XCTAssertNil(store.resolution(sourceId: "weebcentral", mangaId: "other"))
+    }
+
+    @MainActor func testEntityResolutionKeysAreSourceQualified() {
+        let defaults = UserDefaults(suiteName: "test.entityres.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        store.record(sourceId: "weebcentral", mangaId: "x", .resolved(malId: 1))
+        store.record(sourceId: "mangadex", mangaId: "x", .resolved(malId: 2))
+        XCTAssertEqual(store.resolution(sourceId: "weebcentral", mangaId: "x"), .resolved(malId: 1))
+        XCTAssertEqual(store.resolution(sourceId: "mangadex", mangaId: "x"), .resolved(malId: 2))
+    }
+
+    func testMALResolutionFreshness() {
+        XCTAssertTrue(MALResolution.resolved(malId: 1).isFresh())            // hits never expire
+        let now = Date()
+        let justMissed = MALResolution.unresolved(checkedAt: now)
+        XCTAssertTrue(justMissed.isFresh(now: now))
+        let old = MALResolution.unresolved(checkedAt: now.addingTimeInterval(-EntityResolutionStore.missTTL - 1))
+        XCTAssertFalse(old.isFresh(now: now))                               // past TTL → stale
+    }
+
+    @MainActor func testEntityResolutionPersistsAcrossInstances() {
+        let suite = "test.entityres.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        EntityResolutionStore(defaults: defaults).record(sourceId: "s", mangaId: "m", .resolved(malId: 7))
+        let reloaded = EntityResolutionStore(defaults: defaults)
+        XCTAssertEqual(reloaded.resolution(sourceId: "s", mangaId: "m"), .resolved(malId: 7))
+    }
+
 }
