@@ -34,10 +34,29 @@ struct MyAnimeListManga: Decodable {
     let id: Int
     let title: String
     let mainPicture: MainPicture?
+    let alternativeTitles: AlternativeTitles?
 
     struct MainPicture: Decodable {
         let medium: String?
         let large: String?
+    }
+
+    struct AlternativeTitles: Decodable {
+        let synonyms: [String]?
+        let en: String?
+        let ja: String?
+    }
+
+    /// Every title this manga goes by, for entity-resolution matching: main title
+    /// first, then the English and Japanese alternates, then synonyms. Blank entries
+    /// dropped, order-preserving de-dup — so a scraped source that uses the English
+    /// title still matches even when MAL's main title is the romaji one.
+    var allTitles: [String] {
+        var seen = Set<String>()
+        return ([title, alternativeTitles?.en, alternativeTitles?.ja]
+                    .compactMap { $0 } + (alternativeTitles?.synonyms ?? []))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && seen.insert($0).inserted }
     }
 }
 

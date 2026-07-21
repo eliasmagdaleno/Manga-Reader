@@ -1719,6 +1719,39 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(detail.recommendations)
     }
 
+    func testMyAnimeListMangaDecodesAlternativeTitlesAndAllTitles() throws {
+        let json = """
+        {
+          "id": 25,
+          "title": "Shingeki no Kyojin",
+          "alternative_titles": {
+            "synonyms": ["AoT"],
+            "en": "Attack on Titan",
+            "ja": "進撃の巨人"
+          }
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let manga = try decoder.decode(MyAnimeListManga.self, from: json)
+
+        XCTAssertEqual(manga.alternativeTitles?.en, "Attack on Titan")
+        XCTAssertEqual(manga.alternativeTitles?.ja, "進撃の巨人")
+        XCTAssertEqual(manga.alternativeTitles?.synonyms, ["AoT"])
+        // allTitles: main first, then en, ja, synonyms — no empties, deduped.
+        XCTAssertEqual(manga.allTitles,
+                       ["Shingeki no Kyojin", "Attack on Titan", "進撃の巨人", "AoT"])
+    }
+
+    func testMyAnimeListMangaAllTitlesWithoutAlternatives() throws {
+        let json = #"{ "id": 1, "title": "Solo Leveling" }"#.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let manga = try decoder.decode(MyAnimeListManga.self, from: json)
+        XCTAssertNil(manga.alternativeTitles)
+        XCTAssertEqual(manga.allTitles, ["Solo Leveling"])
+    }
+
     func testMyAnimeListErrorDescriptions() {
         XCTAssertEqual(MyAnimeListError.missingClientID.errorDescription,
                        "Missing MyAnimeList API client ID. Set MAL_CLIENT_ID in Secrets.xcconfig.")
