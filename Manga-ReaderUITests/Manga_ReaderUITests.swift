@@ -72,6 +72,155 @@ final class Manga_ReaderUITests: XCTestCase {
         add(shot)
     }
 
+    /// Throwaway live-verification for Task 3 (MAL networking + debug screen): drives
+    /// Settings → "MyAnimeList Client" → search "One Piece" → tap a result, and asserts
+    /// (not just screenshots) that real search results and a real detail payload
+    /// (synopsis/genres/related/recommendations) rendered from the live MAL API. This
+    /// is this codebase's established technique for verifying network code with no
+    /// mocking harness (see `testHomeAndDetailScreenshots` above for the same pattern
+    /// against MangaDex). Leave this test in place — whether it should stay long-term
+    /// once the real "More Like This" UI ships is a call for a human, not this test.
+    func testMyAnimeListDebugScreenLiveVerification() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        // Navigate to Settings. Retry the tab tap: on a slow/loaded Home tab the first
+        // tap can land while the app is still busy and get swallowed.
+        let settingsNavTitle = app.navigationBars["Settings"]
+        var reachedSettings = false
+        for _ in 0..<3 {
+            app.tabBars.buttons["Settings"].tap()
+            if settingsNavTitle.waitForExistence(timeout: 8) {
+                reachedSettings = true
+                break
+            }
+        }
+        XCTAssertTrue(reachedSettings, "should have navigated to the Settings tab")
+
+        let malRow = app.buttons["malClientRow"]
+        XCTAssertTrue(malRow.waitForExistence(timeout: 10),
+                      "the DEBUG 'MyAnimeList Client' row should be on Settings")
+
+        // Retry the tap into the debug screen too — same rationale as the tab switch.
+        let searchField = app.textFields["malSearchField"]
+        var reachedDebugScreen = false
+        for _ in 0..<3 {
+            malRow.tap()
+            if searchField.waitForExistence(timeout: 8) {
+                reachedDebugScreen = true
+                break
+            }
+        }
+        XCTAssertTrue(reachedDebugScreen, "the MAL debug search field should be present")
+
+        // Retry the tap-to-focus too: typeText fails outright ("Neither element nor any
+        // descendant has keyboard focus") if the tap didn't land while this app is busy.
+        var focused = false
+        for _ in 0..<3 {
+            searchField.tap()
+            if app.keyboards.element.waitForExistence(timeout: 5) {
+                focused = true
+                break
+            }
+        }
+        XCTAssertTrue(focused, "the search field should have keyboard focus before typing")
+        searchField.typeText("One Piece")
+
+        let searchButton = app.buttons["malSearchButton"]
+        XCTAssertTrue(searchButton.exists)
+        searchButton.tap()
+
+        // Ground truth: a result row must actually appear (proves searchManga() +
+        // the node-unwrapping worked against the real API, not a fixture). Poll for
+        // either a result or an error (e.g. .rateLimited) rather than a single fixed
+        // wait — MAL's Retry-After on a 429 can itself run tens of seconds, and this
+        // test has hammered the live search endpoint a lot while being developed.
+        let firstResult = app.buttons.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'malResultRow_'")
+        ).firstMatch
+        let searchErrorMessage = app.staticTexts["malErrorMessage"]
+        var resultAppeared = false
+        var searchErrorAppeared = false
+        let searchDeadline = Date().addingTimeInterval(90)
+        while Date() < searchDeadline {
+            if firstResult.exists { resultAppeared = true; break }
+            if searchErrorMessage.exists { searchErrorAppeared = true; break }
+            usleep(500_000)
+        }
+        attach(app, name: "01-mal-search-results")
+        if searchErrorAppeared {
+            XCTFail("searchManga() surfaced an error instead of results: \(searchErrorMessage.label)")
+        }
+        XCTAssertTrue(resultAppeared,
+                      "a search result row should render from the live MAL API")
+
+        // Tap into detail, then poll for either outcome: the detail title rendering, or
+        // an error surfacing (e.g. .missingClientID / an HTTP status / .rateLimited
+        // after MAL's 429 retry-after wait). This also swipes the List up periodically:
+        // the Detail section is appended after up to 10 Results rows, and SwiftUI's
+        // List is lazy — a row that hasn't scrolled into view yet isn't materialized as
+        // an XCUIElement at all, so `.exists` alone stays false even after the data has
+        // loaded. (Verified live while writing this test: a temporary file-marker
+        // diagnostic in loadDetail() proved mangaDetail() was resolving successfully —
+        // real title, 27 related, 10 recommendations — long before the query found it,
+        // which is what pointed at "not materialized," not "never fetched.")
+        //
+        // The outer attempt loop guards against this app's occasional swallowed-first-tap
+        // flakiness (seen at every other navigation step above too, while Home's rails
+        // are still loading in the background) — bounded at 2 attempts, not spammed,
+        // since a real in-flight network request shouldn't be interrupted by a re-tap.
+        let detailTitle = app.staticTexts["malDetailTitle"]
+        let errorMessage = app.staticTexts["malErrorMessage"]
+        var detailAppeared = false
+        var errorAppeared = false
+        for attempt in 0..<2 {
+            firstResult.tap()
+            let budget: TimeInterval = attempt == 0 ? 60 : 90
+            let deadline = Date().addingTimeInterval(budget)
+            while Date() < deadline {
+                if detailTitle.exists { detailAppeared = true; break }
+                if errorMessage.exists { errorAppeared = true; break }
+                app.swipeUp()
+                usleep(500_000)
+            }
+            if detailAppeared || errorAppeared { break }
+        }
+        sleep(2) // let synopsis/genres/related/recommendations text finish laying out
+        attach(app, name: "02-mal-detail")
+
+        if errorAppeared {
+            XCTFail("mangaDetail() surfaced an error instead of detail: \(errorMessage.label)")
+        }
+        XCTAssertTrue(detailAppeared,
+                      "the MAL detail title should render from the live API")
+
+        // The actual point of this verification: related manga and/or recommendations
+        // (not just title/synopsis) must have rendered from the real API response.
+        // These rows sit even further down (One Piece has 27 related entries before
+        // Recommendations even starts), so keep swiping until one header appears.
+        let relatedHeader = app.staticTexts["malRelatedHeader"]
+        let recommendationsHeader = app.staticTexts["malRecommendationsHeader"]
+        var relatedOrRecsAppeared = relatedHeader.exists || recommendationsHeader.exists
+        let relatedDeadline = Date().addingTimeInterval(30)
+        while !relatedOrRecsAppeared && Date() < relatedDeadline {
+            app.swipeUp()
+            usleep(500_000)
+            relatedOrRecsAppeared = relatedHeader.exists || recommendationsHeader.exists
+        }
+        // Rows can exist in the AX tree slightly ahead of what's actually scrolled into
+        // the visible viewport (List prefetches nearby cells). Swipe a couple more times
+        // so the screenshot below actually shows Related/Recommendations content on
+        // screen, not just proves it exists off-screen.
+        for _ in 0..<3 {
+            app.swipeUp()
+            usleep(300_000)
+        }
+        attach(app, name: "03-mal-related-recommendations")
+        XCTAssertTrue(relatedOrRecsAppeared,
+                      "Related and/or Recommendations should render from the live API's " +
+                      "related_manga / recommendations fields")
+    }
+
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.

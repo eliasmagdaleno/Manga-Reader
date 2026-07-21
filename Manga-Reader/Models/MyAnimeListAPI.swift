@@ -76,3 +76,78 @@ struct MyAnimeListSearchResponse: Decodable {
     }
     let data: [Entry]
 }
+
+struct MyAnimeListAPI {                              // Namespace-style struct for static helpers.
+    static let baseURL = "https://api.myanimelist.net/v2"
+
+    /// Shared decoder (snake_case → camelCase), same strategy as MangaDexAPI's.
+    private static let decoder: JSONDecoder = {
+        let d = JSONDecoder()
+        d.keyDecodingStrategy = .convertFromSnakeCase
+        return d
+    }()
+
+    /// Search MAL by title. What cross-source entity resolution will call for sources
+    /// with no direct MAL id (MangaDex usually has one already via external links).
+    static func searchManga(title: String, limit: Int = 10) async throws -> [MyAnimeListManga] {
+        let response: MyAnimeListSearchResponse = try await request(
+            path: "/manga",
+            queryItems: [
+                URLQueryItem(name: "q", value: title),
+                URLQueryItem(name: "limit", value: String(limit)),
+                URLQueryItem(name: "fields", value: "alternative_titles,main_picture"),
+            ]
+        )
+        return response.data.map(\.node)
+    }
+
+    /// Fetch a manga's detail by MAL id, including the two fields a future
+    /// "More Like This" UI will consume: related manga and recommendations.
+    static func mangaDetail(id: Int) async throws -> MyAnimeListMangaDetail {
+        try await request(
+            path: "/manga/\(id)",
+            queryItems: [
+                URLQueryItem(name: "fields",
+                             value: "alternative_titles,synopsis,main_picture,genres,related_manga,recommendations"),
+            ]
+        )
+    }
+
+    /// Generic GET + JSON decode helper for MAL endpoints.
+    /// - Note: MAL is known to soft rate-limit (HTTP 429). On a 429 we retry once,
+    ///         honoring the `Retry-After` header, before giving up — same behavior as
+    ///         MangaDexAPI.request.
+    private static func request<T: Decodable>(path: String,
+                                               queryItems: [URLQueryItem]) async throws -> T {
+        guard var comps = URLComponents(string: baseURL + path) else {
+            throw MyAnimeListError.invalidURL
+        }
+        comps.queryItems = queryItems
+        guard let url = comps.url else {
+            throw MyAnimeListError.invalidURL
+        }
+        guard let clientID = Bundle.main.object(forInfoDictionaryKey: "MALClientID") as? String,
+              !clientID.isEmpty else {
+            throw MyAnimeListError.missingClientID
+        }
+        var req = URLRequest(url: url)
+        req.setValue(clientID, forHTTPHeaderField: "X-MAL-CLIENT-ID")
+
+        for attempt in 0..<2 {                                   // Initial try + one retry on 429.
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            guard let http = resp as? HTTPURLResponse else {
+                throw MyAnimeListError.invalidResponse
+            }
+            if http.statusCode == 429, attempt == 0 {
+                let retryAfter = http.value(forHTTPHeaderField: "Retry-After").flatMap(Double.init) ?? 1
+                try await Task.sleep(nanoseconds: UInt64(retryAfter * 1_000_000_000))
+                continue
+            }
+            guard (200...299).contains(http.statusCode) else {
+                throw MyAnimeListError.httpStatus(http.statusCode)
+            }
+            return try decoder.decode(T.self, from: data)
+        }
+        throw MyAnimeListError.rateLimited
+    }
+}

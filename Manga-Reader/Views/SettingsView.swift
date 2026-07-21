@@ -76,6 +76,23 @@ struct SettingsView: View {
                         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Ink.hairline, lineWidth: 1))
                         .padding(.horizontal, Gutter.page)
                     }
+
+                    #if DEBUG
+                    VStack(alignment: .leading, spacing: 14) {
+                        InkSectionHeader("Debug", eyebrow: "Dev")
+                        NavigationLink("MyAnimeList Client") {
+                            MyAnimeListDebugView()
+                        }
+                        .accessibilityIdentifier("malClientRow")
+                        .font(.subheadline)
+                        .foregroundStyle(Ink.primary)
+                        .padding(.horizontal, Gutter.page)
+                        .padding(.vertical, 15)
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Ink.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Ink.hairline, lineWidth: 1))
+                        .padding(.horizontal, Gutter.page)
+                    }
+                    #endif
                 }
                 .padding(.top, 4)
                 .padding(.bottom, 40)
