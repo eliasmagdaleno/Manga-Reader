@@ -1787,4 +1787,61 @@ final class Manga_ReaderTests: XCTestCase {
                        "MyAnimeList request failed with HTTP status 404.")
     }
 
+    // MARK: - MALTitleMatcher
+
+    func testMALNormalizeStripsCaseDiacriticsPunctuationAndNoise() {
+        XCTAssertEqual(MALTitleMatcher.normalize("Attack on Titan (Manga)"), "attack on titan")
+        XCTAssertEqual(MALTitleMatcher.normalize("Ōkami!!  Shōnen"), "okami shonen")
+        XCTAssertEqual(MALTitleMatcher.normalize("  Berserk  "), "berserk")
+    }
+
+    func testMALSimilarityExactAfterNormalizationIsOne() {
+        XCTAssertEqual(MALTitleMatcher.similarity("attack on titan", "attack on titan"), 1.0, accuracy: 0.0001)
+        XCTAssertEqual(MALTitleMatcher.similarity("", "berserk"), 0.0, accuracy: 0.0001)
+    }
+
+    func testMALDecideMatchesViaAlternativeTitle() {
+        // Source uses the English title; MAL's main title is the romaji one — the match
+        // must come from the alternate title in the candidate's title set.
+        let matcher = MALTitleMatcher()
+        let candidates = [
+            MALCandidate(malId: 25, titles: ["Shingeki no Kyojin", "Attack on Titan"]),
+            MALCandidate(malId: 99, titles: ["Some Unrelated Manga"]),
+        ]
+        XCTAssertEqual(matcher.decide(sourceTitle: "Attack on Titan", candidates: candidates),
+                       .matched(malId: 25))
+    }
+
+    func testMALDecideRejectsBelowThreshold() {
+        let matcher = MALTitleMatcher()
+        let candidates = [MALCandidate(malId: 1, titles: ["Completely Different Story"])]
+        XCTAssertEqual(matcher.decide(sourceTitle: "Berserk", candidates: candidates), .noMatch)
+    }
+
+    func testMALDecideAmbiguityGuardRejectsNearTiedCandidates() {
+        // Two distinct MAL entries share the exact title — genuinely ambiguous, reject.
+        let matcher = MALTitleMatcher()
+        let candidates = [
+            MALCandidate(malId: 1, titles: ["Hero"]),
+            MALCandidate(malId: 2, titles: ["Hero"]),
+        ]
+        XCTAssertEqual(matcher.decide(sourceTitle: "Hero", candidates: candidates), .noMatch)
+    }
+
+    func testMALDecideAcceptsClearWinnerOverWeakRunnerUp() {
+        let matcher = MALTitleMatcher()
+        let candidates = [
+            MALCandidate(malId: 1, titles: ["Vinland Saga"]),
+            MALCandidate(malId: 2, titles: ["Totally Other Thing"]),
+        ]
+        XCTAssertEqual(matcher.decide(sourceTitle: "Vinland Saga", candidates: candidates),
+                       .matched(malId: 1))
+    }
+
+    func testMALDecideEmptyInputsAreNoMatch() {
+        let matcher = MALTitleMatcher()
+        XCTAssertEqual(matcher.decide(sourceTitle: "", candidates: [MALCandidate(malId: 1, titles: ["X"])]), .noMatch)
+        XCTAssertEqual(matcher.decide(sourceTitle: "X", candidates: []), .noMatch)
+    }
+
 }
