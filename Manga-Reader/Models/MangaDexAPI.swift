@@ -524,7 +524,7 @@ struct MangaDexAPI {                                // Namespace-style struct fo
 
     /// Helper: batch-fetches manga by IDs with cover_art included, returning `Manga` with coverURL.
     /// - Parameter ids: Array of manga UUID strings (max 100 recommended per call).
-    private static func fetchMangaByIdsWithCovers(ids: [String]) async throws -> [Manga] {
+    static func fetchMangaByIdsWithCovers(ids: [String]) async throws -> [Manga] {
         // Build repeated ids[] query parameters along with includes[]=cover_art.
         var items: [URLQueryItem] = [URLQueryItem(name: "includes[]", value: "cover_art")] // Ask for covers.
         ids.forEach { items.append(URLQueryItem(name: "ids[]", value: $0)) }               // Add each id.

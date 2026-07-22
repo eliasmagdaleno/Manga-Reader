@@ -2022,4 +2022,27 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(MoreLikeThis.pickMatch(targetMalId: 5, malTitle: "Berserk", candidates: []))
     }
 
+    // MARK: - MoreLikeThisProvider.topRecommendations (pure)
+
+    /// Minimal `Recommendation` builder — the MAL DTO memberwise inits are internal,
+    /// reachable via `@testable import Manga_Reader`.
+    private func mlRec(malId: Int, weight: Int) -> MyAnimeListMangaDetail.Recommendation {
+        MyAnimeListMangaDetail.Recommendation(
+            node: MyAnimeListManga(id: malId, title: "T\(malId)",
+                                   mainPicture: nil, alternativeTitles: nil),
+            numRecommendations: weight)
+    }
+
+    func testTopRecommendationsSortsByWeightDescendingAndCaps() {
+        let recs = [mlRec(malId: 1, weight: 3), mlRec(malId: 2, weight: 10), mlRec(malId: 3, weight: 7)]
+        let top = MoreLikeThisProvider.topRecommendations(recs, limit: 2)
+        XCTAssertEqual(top.map { $0.node.id }, [2, 3])   // 10, 7 — highest weight first, capped at 2
+    }
+
+    func testTopRecommendationsHandlesEmptyAndUndercount() {
+        XCTAssertTrue(MoreLikeThisProvider.topRecommendations([], limit: 8).isEmpty)
+        let recs = [mlRec(malId: 1, weight: 5)]
+        XCTAssertEqual(MoreLikeThisProvider.topRecommendations(recs, limit: 8).map { $0.node.id }, [1])
+    }
+
 }
