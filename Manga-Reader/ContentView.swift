@@ -11,7 +11,7 @@ struct ContentView: View {
     @State private var selectedTab: Tabs = .home
     @StateObject private var webViewService = WebViewService.shared
 
-    enum Tabs: Equatable, Hashable, Identifiable  {
+    enum Tabs: Equatable, Hashable, Identifiable {
         case home
         case bookmarks
         case history

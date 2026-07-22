@@ -7,8 +7,8 @@
 
 import Foundation
 @MainActor
-final class MangaDetailViewModel: ObservableObject{
-    
+final class MangaDetailViewModel: ObservableObject {
+
     let manga: Manga
 
     /// The source this manga came from. Defaults to the registry's resolution by
@@ -23,18 +23,18 @@ final class MangaDetailViewModel: ObservableObject{
     @Published var chapters: [Chapter] = []
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
-    
-    init(manga: Manga, source: MangaSource? = nil){
+
+    init(manga: Manga, source: MangaSource? = nil) {
         self.manga = manga
         self.source = source ?? SourceRegistry.shared.source(for: manga)
     }
-    
+
     func load() {
-        Task{
+        Task {
             await loadAsync()
         }
     }
-    
+
     /// Internal (not private) so tests can await it deterministically instead of racing
     /// the fire-and-forget `Task` in `load()`.
     func loadAsync() async {
@@ -49,8 +49,7 @@ final class MangaDetailViewModel: ObservableObject{
             self.contentRating = detail.contentRating
 
             self.chapters = try await source.chapters(mangaId: manga.id)
-        }
-        catch {
+        } catch {
             self.errorMessage = error.localizedDescription
         }
         isLoading = false

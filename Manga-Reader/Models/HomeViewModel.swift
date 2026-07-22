@@ -12,7 +12,7 @@ final class HomeViewModel: ObservableObject {
     @Published var popular: [Manga] = []
     @Published var latestUpdates: [MangaUpdate] = []
     @Published var newTitles: [Manga] = []
-    
+
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
 
@@ -46,7 +46,7 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    func refresh(){
+    func refresh() {
         loadHome()
     }
 
@@ -67,12 +67,10 @@ final class HomeViewModel: ObservableObject {
             self.popular = popular
             self.latestUpdates = updates
             self.newTitles = newTitles
-        }
-        catch is CancellationError {
+        } catch is CancellationError {
             // Superseded, not failed — don't surface cancellation as an error.
             return
-        }
-        catch {
+        } catch {
             guard !Task.isCancelled else { return }
             self.errorMessage = error.localizedDescription
         }

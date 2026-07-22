@@ -533,18 +533,17 @@ struct MangaDexAPI {                                // Namespace-style struct fo
         // Convert to `Manga` with coverURL attached via toManga(...).
         return mangaList(from: res)
     }
-    
+
     static func fetchMangaDetails(id: String) async throws -> MangaDetail {
-        let res: MangaDetailResponse = try await request(endpoint: "/manga/\(id)",queryItems: [
+        let res: MangaDetailResponse = try await request(endpoint: "/manga/\(id)", queryItems: [
             URLQueryItem(name: "includes[]", value: "author"),
             URLQueryItem(name: "includes[]", value: "artist")
             ]
                                                          )
         return res.toDomain()
-                                                         
-            
+
     }
-    
+
     static func fetchChapters(mangaId: String) async throws -> [Chapter] {
         // The /chapter endpoint caps `limit` at 100, so page through with offset
         // until we've collected every English chapter (guarded by a safety cap).
@@ -591,8 +590,7 @@ struct MangaDexAPI {                                // Namespace-style struct fo
         // 4) Map file names → URL objects, dropping any malformed ones with compactMap.
         return files.compactMap { URL(string: "\(base)/\(mode)/\(hash)/\($0)") }
     }
-    
-    
+
 }
 
 // MARK: - Image URL helpers

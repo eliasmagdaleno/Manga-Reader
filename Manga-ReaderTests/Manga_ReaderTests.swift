@@ -1385,10 +1385,10 @@ final class Manga_ReaderTests: XCTestCase {
     func testProfileRecencyDecayHalvesAtThirtyDays() {
         let now = Date()
         let tagCache = ["recent": [Tag(id: "a", name: "A", group: "genre")],
-                        "old":    [Tag(id: "b", name: "B", group: "genre")]]
+                        "old": [Tag(id: "b", name: "B", group: "genre")]]
         let history = [
-            entry("recent", chapter: "1", page: 0, pageCount: 10, daysAgo: 0,  now: now),
-            entry("old",    chapter: "1", page: 0, pageCount: 10, daysAgo: 30, now: now),
+            entry("recent", chapter: "1", page: 0, pageCount: 10, daysAgo: 0, now: now),
+            entry("old", chapter: "1", page: 0, pageCount: 10, daysAgo: 30, now: now),
         ]
         let p = TasteProfile.build(history: history, savedIds: [], tagCache: tagCache,
                                    moreLikeThis: [], now: now)
@@ -1401,10 +1401,10 @@ final class Manga_ReaderTests: XCTestCase {
         // Two manga, distinct genre tags, read the same recency/chapter count. One is
         // finished + saved; the other is a bare unfinished read. The boosted one must win.
         let tagCache = ["boost": [Tag(id: "b", name: "B", group: "genre")],
-                        "bare":  [Tag(id: "p", name: "P", group: "genre")]]
+                        "bare": [Tag(id: "p", name: "P", group: "genre")]]
         let history = [
             entry("boost", chapter: "1", page: 9, pageCount: 10, daysAgo: 0, now: now),   // finished
-            entry("bare",  chapter: "1", page: 3, pageCount: 10, daysAgo: 0, now: now),   // unfinished
+            entry("bare", chapter: "1", page: 3, pageCount: 10, daysAgo: 0, now: now),   // unfinished
         ]
         let p = TasteProfile.build(history: history, savedIds: ["boost"], tagCache: tagCache,
                                    moreLikeThis: [], now: now)
@@ -1417,7 +1417,7 @@ final class Manga_ReaderTests: XCTestCase {
         let tagCache = ["seed": [Tag(id: "s", name: "S", group: "genre")],
                         "plain": [Tag(id: "n", name: "N", group: "genre")]]
         let history = [
-            entry("seed",  chapter: "1", page: 3, pageCount: 10, daysAgo: 0, now: now),
+            entry("seed", chapter: "1", page: 3, pageCount: 10, daysAgo: 0, now: now),
             entry("plain", chapter: "1", page: 3, pageCount: 10, daysAgo: 0, now: now),
         ]
         let p = TasteProfile.build(history: history, savedIds: [], tagCache: tagCache,
