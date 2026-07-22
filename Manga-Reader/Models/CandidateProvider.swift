@@ -175,7 +175,9 @@ struct CompositeCandidateProvider: CandidateProvider {
         let both = Set(tagNorm.keys).intersection(malNorm.keys)
         for id in both { score[id, default: 0] += overlapBonus }
 
-        return score.sorted { $0.value > $1.value }
+        // Secondary sort on id keeps the order stable for exactly-tied scores, so the
+        // "See all" grid (which uses the straight ranking) doesn't reshuffle between opens.
+        return score.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
             .prefix(limit)
             .compactMap { id, value in
                 guard let m = manga[id] else { return nil }

@@ -2187,4 +2187,16 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(out.map(\.manga.id), ["x", "y"])            // exactly the tag ranking
     }
 
+    func testCompositeDegradesToMALOnlyWhenTagEmpty() async throws {
+        let profile = TasteProfile(weights: [:], tagName: [:], orderedTagIds: [],
+                                   taggedMangaCount: 0, seeds: [])
+        let tag = StubProvider(out: [])
+        let mal = StubProvider(out: [ScoredManga(manga: mdManga("p", "P"), score: 40, reason: "Because you read S"),
+                                     ScoredManga(manga: mdManga("q", "Q"), score: 20, reason: "Because you read S")])
+        let out = try await CompositeCandidateProvider(tag: tag, mal: mal)
+            .candidates(for: profile, excluding: [], limit: 10)
+        XCTAssertEqual(out.map(\.manga.id), ["p", "q"])            // exactly the MAL ranking, no overlap bonus
+        XCTAssertEqual(out.first?.reason, "Because you read S")
+    }
+
 }
