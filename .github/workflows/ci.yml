@@ -28,7 +28,7 @@ jobs:
     steps:
       # 1. Copy the repository onto the runner.
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # 2. Recreate the gitignored Secrets.xcconfig. It defines MAL_CLIENT_ID and
       #    is the app target's *base configuration*, so the build cannot resolve
