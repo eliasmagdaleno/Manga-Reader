@@ -18,6 +18,7 @@ struct Manga: Identifiable {                        // Conform to Identifiable s
     let status: String                              // e.g., ongoing, completed (may be "unknown").
     let year: Int?                                  // Optional year of publication.
     let coverURL: URL?                              // ✅ Pre-built cover URL (nil if none).
+    let malId: Int?                                 // Canonical MyAnimeList id, if known (nil for sources without one).
 }
 
 /// A small item representing “latest updates” (which chapter just arrived for a manga).
@@ -72,6 +73,7 @@ struct MangaAttributes: Decodable {                 // Raw payload we convert in
     let description: [String: String]?              // Optional descriptions per locale.
     let status: String?                             // Ongoing/Completed/etc. (may be missing).
     let year: Int?                                  // Optional publication year.
+    let links: [String: String]?                    // External-site ids (e.g. ["mal": "25"]); values may be slugs.
 
     /// Converts API attributes into our app’s `Manga` while attaching a prebuilt cover URL.
     /// - Parameters:
@@ -98,7 +100,8 @@ struct MangaAttributes: Decodable {                 // Raw payload we convert in
             description: resolvedDescription,
             status: resolvedStatus,
             year: year,
-            coverURL: cover
+            coverURL: cover,
+            malId: links?["mal"].flatMap(Int.init)      // Free cross-source identity when MangaDex provides it.
         )
     }
 }

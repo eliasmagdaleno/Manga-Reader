@@ -67,7 +67,7 @@ private extension LibraryItem {
     /// A minimal `Manga` for navigation; the detail view refetches full data by id.
     var asManga: Manga {
         Manga(id: id, sourceId: sourceId ?? MangaDexSource.sourceID, title: title,
-              description: "", status: "unknown", year: nil, coverURL: coverURL)
+              description: "", status: "unknown", year: nil, coverURL: coverURL, malId: nil)
     }
 }
 

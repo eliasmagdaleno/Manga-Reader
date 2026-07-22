@@ -43,7 +43,7 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     private func sampleManga(_ id: String = "m1", sourceId: String = "mangadex") -> Manga {
-        Manga(id: id, sourceId: sourceId, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil)
+        Manga(id: id, sourceId: sourceId, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil, malId: nil)
     }
 
     @MainActor func testRecordPrependsNewEntry() throws {
@@ -369,7 +369,7 @@ final class Manga_ReaderTests: XCTestCase {
         let a = MockSource(id: "a", name: "A")
         let b = MockSource(id: "b", name: "B")
         let registry = SourceRegistry(sources: [a, b])
-        let manga = Manga(id: "x", sourceId: "b", title: "T", description: "", status: "ongoing", year: nil, coverURL: nil)
+        let manga = Manga(id: "x", sourceId: "b", title: "T", description: "", status: "ongoing", year: nil, coverURL: nil, malId: nil)
         XCTAssertEqual(registry.source(for: manga).id, "b")   // resolves to the manga's own source
     }
 
@@ -458,6 +458,34 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(manga.id, "abc")
         XCTAssertEqual(manga.sourceId, "mangadex")
         XCTAssertEqual(manga.sourceId, MangaDexSource.sourceID)
+    }
+
+    func testMangaAttributesToMangaExtractsMalIdFromLinks() throws {
+        let json = """
+        {
+          "title": {"en": "Berserk"},
+          "links": {"mal": "2", "al": "30002"}
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let attrs = try decoder.decode(MangaAttributes.self, from: json)
+        let manga = attrs.toManga(id: "abc", relationships: nil)
+        XCTAssertEqual(manga.malId, 2)
+    }
+
+    func testMangaAttributesToMangaMalIdNilWhenAbsentOrNonNumeric() throws {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        let noLinks = #"{ "title": {"en": "X"} }"#.data(using: .utf8)!
+        let a = try decoder.decode(MangaAttributes.self, from: noLinks)
+        XCTAssertNil(a.toManga(id: "1", relationships: nil).malId)
+
+        // MangaDex occasionally stores a non-numeric mal link — must not crash, must be nil.
+        let badLink = #"{ "title": {"en": "X"}, "links": {"mal": "not-a-number"} }"#.data(using: .utf8)!
+        let b = try decoder.decode(MangaAttributes.self, from: badLink)
+        XCTAssertNil(b.toManga(id: "1", relationships: nil).malId)
     }
 
     // MARK: - Image cache
@@ -1719,11 +1747,172 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(detail.recommendations)
     }
 
+    func testMyAnimeListMangaDecodesAlternativeTitlesAndAllTitles() throws {
+        let json = """
+        {
+          "id": 25,
+          "title": "Shingeki no Kyojin",
+          "alternative_titles": {
+            "synonyms": ["AoT"],
+            "en": "Attack on Titan",
+            "ja": "進撃の巨人"
+          }
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let manga = try decoder.decode(MyAnimeListManga.self, from: json)
+
+        XCTAssertEqual(manga.alternativeTitles?.en, "Attack on Titan")
+        XCTAssertEqual(manga.alternativeTitles?.ja, "進撃の巨人")
+        XCTAssertEqual(manga.alternativeTitles?.synonyms, ["AoT"])
+        // allTitles: main first, then en, ja, synonyms — no empties, deduped.
+        XCTAssertEqual(manga.allTitles,
+                       ["Shingeki no Kyojin", "Attack on Titan", "進撃の巨人", "AoT"])
+    }
+
+    func testMyAnimeListMangaAllTitlesWithoutAlternatives() throws {
+        let json = #"{ "id": 1, "title": "Solo Leveling" }"#.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let manga = try decoder.decode(MyAnimeListManga.self, from: json)
+        XCTAssertNil(manga.alternativeTitles)
+        XCTAssertEqual(manga.allTitles, ["Solo Leveling"])
+    }
+
     func testMyAnimeListErrorDescriptions() {
         XCTAssertEqual(MyAnimeListError.missingClientID.errorDescription,
                        "Missing MyAnimeList API client ID. Set MAL_CLIENT_ID in Secrets.xcconfig.")
         XCTAssertEqual(MyAnimeListError.httpStatus(404).errorDescription,
                        "MyAnimeList request failed with HTTP status 404.")
+    }
+
+    // MARK: - MALTitleMatcher
+
+    func testMALNormalizeStripsCaseDiacriticsPunctuationAndNoise() {
+        XCTAssertEqual(MALTitleMatcher.normalize("Attack on Titan (Manga)"), "attack on titan")
+        XCTAssertEqual(MALTitleMatcher.normalize("Ōkami!!  Shōnen"), "okami shonen")
+        XCTAssertEqual(MALTitleMatcher.normalize("  Berserk  "), "berserk")
+    }
+
+    func testMALSimilarityExactAfterNormalizationIsOne() {
+        XCTAssertEqual(MALTitleMatcher.similarity("attack on titan", "attack on titan"), 1.0, accuracy: 0.0001)
+        XCTAssertEqual(MALTitleMatcher.similarity("", "berserk"), 0.0, accuracy: 0.0001)
+    }
+
+    func testMALDecideMatchesViaAlternativeTitle() {
+        // Source uses the English title; MAL's main title is the romaji one — the match
+        // must come from the alternate title in the candidate's title set.
+        let matcher = MALTitleMatcher()
+        let candidates = [
+            MALCandidate(malId: 25, titles: ["Shingeki no Kyojin", "Attack on Titan"]),
+            MALCandidate(malId: 99, titles: ["Some Unrelated Manga"]),
+        ]
+        XCTAssertEqual(matcher.decide(sourceTitle: "Attack on Titan", candidates: candidates),
+                       .matched(malId: 25))
+    }
+
+    func testMALDecideRejectsBelowThreshold() {
+        let matcher = MALTitleMatcher()
+        let candidates = [MALCandidate(malId: 1, titles: ["Completely Different Story"])]
+        XCTAssertEqual(matcher.decide(sourceTitle: "Berserk", candidates: candidates), .noMatch)
+    }
+
+    func testMALDecideAmbiguityGuardRejectsNearTiedCandidates() {
+        // Two distinct MAL entries share the exact title — genuinely ambiguous, reject.
+        let matcher = MALTitleMatcher()
+        let candidates = [
+            MALCandidate(malId: 1, titles: ["Hero"]),
+            MALCandidate(malId: 2, titles: ["Hero"]),
+        ]
+        XCTAssertEqual(matcher.decide(sourceTitle: "Hero", candidates: candidates), .noMatch)
+    }
+
+    func testMALDecideAcceptsClearWinnerOverWeakRunnerUp() {
+        let matcher = MALTitleMatcher()
+        let candidates = [
+            MALCandidate(malId: 1, titles: ["Vinland Saga"]),
+            MALCandidate(malId: 2, titles: ["Totally Other Thing"]),
+        ]
+        XCTAssertEqual(matcher.decide(sourceTitle: "Vinland Saga", candidates: candidates),
+                       .matched(malId: 1))
+    }
+
+    func testMALDecideEmptyInputsAreNoMatch() {
+        let matcher = MALTitleMatcher()
+        XCTAssertEqual(matcher.decide(sourceTitle: "", candidates: [MALCandidate(malId: 1, titles: ["X"])]), .noMatch)
+        XCTAssertEqual(matcher.decide(sourceTitle: "X", candidates: []), .noMatch)
+    }
+
+    // MARK: - EntityResolutionStore
+
+    @MainActor func testEntityResolutionRecordsAndReadsBack() {
+        let defaults = UserDefaults(suiteName: "test.entityres.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        store.record(sourceId: "weebcentral", mangaId: "abc", .resolved(malId: 42))
+        XCTAssertEqual(store.resolution(sourceId: "weebcentral", mangaId: "abc"), .resolved(malId: 42))
+        XCTAssertNil(store.resolution(sourceId: "weebcentral", mangaId: "other"))
+    }
+
+    @MainActor func testEntityResolutionKeysAreSourceQualified() {
+        let defaults = UserDefaults(suiteName: "test.entityres.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        store.record(sourceId: "weebcentral", mangaId: "x", .resolved(malId: 1))
+        store.record(sourceId: "mangadex", mangaId: "x", .resolved(malId: 2))
+        XCTAssertEqual(store.resolution(sourceId: "weebcentral", mangaId: "x"), .resolved(malId: 1))
+        XCTAssertEqual(store.resolution(sourceId: "mangadex", mangaId: "x"), .resolved(malId: 2))
+    }
+
+    func testMALResolutionFreshness() {
+        XCTAssertTrue(MALResolution.resolved(malId: 1).isFresh())            // hits never expire
+        let now = Date()
+        let justMissed = MALResolution.unresolved(checkedAt: now)
+        XCTAssertTrue(justMissed.isFresh(now: now))
+        let old = MALResolution.unresolved(checkedAt: now.addingTimeInterval(-EntityResolutionStore.missTTL - 1))
+        XCTAssertFalse(old.isFresh(now: now))                               // past TTL → stale
+    }
+
+    @MainActor func testEntityResolutionPersistsAcrossInstances() {
+        let suite = "test.entityres.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        EntityResolutionStore(defaults: defaults).record(sourceId: "s", mangaId: "m", .resolved(malId: 7))
+        let reloaded = EntityResolutionStore(defaults: defaults)
+        XCTAssertEqual(reloaded.resolution(sourceId: "s", mangaId: "m"), .resolved(malId: 7))
+    }
+
+    // MARK: - MALEntityResolver
+
+    @MainActor func testResolverFastPathReturnsMangaMalIdWithoutTouchingStore() async {
+        let defaults = UserDefaults(suiteName: "test.resolver.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        let resolver = MALEntityResolver(store: store)
+        let manga = Manga(id: "m", sourceId: "mangadex", title: "Berserk",
+                          description: "", status: "ongoing", year: nil, coverURL: nil, malId: 2)
+        let id = await resolver.malId(for: manga)
+        XCTAssertEqual(id, 2)
+        XCTAssertTrue(store.cache.isEmpty, "fast path must not write to the cache")
+    }
+
+    @MainActor func testResolverReturnsCachedResolvedHit() async {
+        let defaults = UserDefaults(suiteName: "test.resolver.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        store.record(sourceId: "weebcentral", mangaId: "x", .resolved(malId: 55))
+        let resolver = MALEntityResolver(store: store)
+        let manga = Manga(id: "x", sourceId: "weebcentral", title: "Whatever",
+                          description: "", status: "unknown", year: nil, coverURL: nil, malId: nil)
+        let id = await resolver.malId(for: manga)
+        XCTAssertEqual(id, 55)   // returned from cache; no network
+    }
+
+    @MainActor func testResolverReturnsNilForFreshCachedMiss() async {
+        let defaults = UserDefaults(suiteName: "test.resolver.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        store.record(sourceId: "weebcentral", mangaId: "x", .unresolved(checkedAt: Date()))
+        let resolver = MALEntityResolver(store: store)
+        let manga = Manga(id: "x", sourceId: "weebcentral", title: "Whatever",
+                          description: "", status: "unknown", year: nil, coverURL: nil, malId: nil)
+        let id = await resolver.malId(for: manga)
+        XCTAssertNil(id)   // fresh miss short-circuits before any network call
     }
 
 }
