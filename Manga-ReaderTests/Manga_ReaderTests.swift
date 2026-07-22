@@ -1447,6 +1447,36 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertGreaterThan(p.weights["f"]!, p.weights["u"]!)
     }
 
+    // MARK: - TasteProfile.seeds
+
+    private func seedEntry(_ id: String, title: String, updated: Date) -> ReadingEntry {
+        ReadingEntry(id: UUID(), mangaId: id, mangaTitle: title, coverURL: nil,
+                     chapterId: "\(id)-c1", chapterNumber: "1", page: 9, pageCount: 10,
+                     updatedAt: updated, sourceId: "mangadex")
+    }
+
+    func testTasteProfileSeedsRankedByWeightAndCapped() {
+        let now = Date()
+        let tag = [Tag(id: "t1", name: "Action", group: "genre")]
+        // Three tagged, read manga; "b" is saved (weight boost), "c" is more-like-this (×2).
+        let history = [seedEntry("a", title: "A", updated: now),
+                       seedEntry("b", title: "B", updated: now),
+                       seedEntry("c", title: "C", updated: now)]
+        let profile = TasteProfile.build(
+            history: history, savedIds: ["b"],
+            tagCache: ["a": tag, "b": tag, "c": tag],
+            moreLikeThis: ["c"], now: now,
+            libraryItems: [Manga(id: "b", sourceId: "mangadex", title: "B", description: "",
+                                 status: "unknown", year: nil, coverURL: nil, malId: 42)],
+            seedLimit: 2)
+        // c (×2) and b (+saved) outrank a; capped at 2; c first.
+        XCTAssertEqual(profile.seeds.map(\.manga.id), ["c", "b"])
+        // Saved seed uses the library Manga → carries malId.
+        XCTAssertEqual(profile.seeds.first(where: { $0.manga.id == "b" })?.manga.malId, 42)
+        // Read-only seed falls back to history-derived Manga (title from mangaTitle).
+        XCTAssertEqual(profile.seeds.first(where: { $0.manga.id == "c" })?.manga.title, "C")
+    }
+
     // MARK: - TagCandidateProvider
 
     /// A source whose mangaByTag returns canned lists keyed by tag name.
@@ -1473,7 +1503,7 @@ final class Manga_ReaderTests: XCTestCase {
         var weights: [String: Double] = [:]; var names: [String: String] = [:]
         for p in pairs { weights[p.id] = p.weight; names[p.id] = p.name }
         let ordered = weights.sorted { $0.value > $1.value }.map(\.key)
-        return TasteProfile(weights: weights, tagName: names, orderedTagIds: ordered, taggedMangaCount: 5)
+        return TasteProfile(weights: weights, tagName: names, orderedTagIds: ordered, taggedMangaCount: 5, seeds: [])
     }
 
     func testCandidateInTwoTagFeedsOutscoresOne() async throws {

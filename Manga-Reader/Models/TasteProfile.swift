@@ -9,6 +9,12 @@
 
 import Foundation
 
+/// A recommendation seed: a manga the user engaged with, plus its engagement weight.
+struct SeedManga {
+    let manga: Manga
+    let weight: Double
+}
+
 struct TasteProfile {
     /// tagId → weight in [0, 1] (normalized so the strongest tag is 1).
     let weights: [String: Double]
@@ -18,6 +24,8 @@ struct TasteProfile {
     let orderedTagIds: [String]
     /// How many distinct read manga contributed tags — drives the cold-start gate.
     let taggedMangaCount: Int
+    /// Top read/saved manga (materialized), highest engagement first — MAL rec seeds.
+    let seeds: [SeedManga]
 
     var isEmpty: Bool { weights.isEmpty }
 
@@ -36,12 +44,15 @@ struct TasteProfile {
                       savedIds: Set<String>,
                       tagCache: [String: [Tag]],
                       moreLikeThis: Set<String>,
-                      now: Date) -> TasteProfile {
+                      now: Date,
+                      libraryItems: [Manga] = [],
+                      seedLimit: Int = 5) -> TasteProfile {
         var entriesByManga: [String: [ReadingEntry]] = [:]
         for e in history { entriesByManga[e.mangaId, default: []].append(e) }
 
         var raw: [String: Double] = [:]
         var names: [String: String] = [:]
+        var mangaWeight: [String: Double] = [:]   // per-manga engagement weight, for seeds
         var taggedCount = 0
 
         for (mangaId, entries) in entriesByManga {
@@ -59,6 +70,7 @@ struct TasteProfile {
                                + (finished ? 1.5 : 0.0)
                                + (savedIds.contains(mangaId) ? 1.0 : 0.0))
             if moreLikeThis.contains(mangaId) { w *= 2.0 }
+            mangaWeight[mangaId] = w
 
             for t in tags {
                 raw[t.id, default: 0] += w * groupWeight(t.group)
@@ -66,12 +78,38 @@ struct TasteProfile {
             }
         }
 
+        let seeds = makeSeeds(mangaWeight: mangaWeight, entriesByManga: entriesByManga,
+                              libraryItems: libraryItems, limit: seedLimit)
+
         guard let maxW = raw.values.max(), maxW > 0 else {
-            return TasteProfile(weights: [:], tagName: [:], orderedTagIds: [], taggedMangaCount: taggedCount)
+            return TasteProfile(weights: [:], tagName: [:], orderedTagIds: [],
+                                taggedMangaCount: taggedCount, seeds: seeds)
         }
         let normalized = raw.mapValues { $0 / maxW }
         let ordered = normalized.sorted { $0.value > $1.value }.map(\.key)
-        return TasteProfile(weights: normalized, tagName: names,
-                            orderedTagIds: ordered, taggedMangaCount: taggedCount)
+        return TasteProfile(weights: normalized, tagName: names, orderedTagIds: ordered,
+                            taggedMangaCount: taggedCount, seeds: seeds)
+    }
+
+    /// Top `limit` manga by engagement weight, materialized to `Manga`: prefer a saved
+    /// library entry (carries malId); else synthesize from a history entry (title/cover).
+    private static func makeSeeds(mangaWeight: [String: Double],
+                                  entriesByManga: [String: [ReadingEntry]],
+                                  libraryItems: [Manga],
+                                  limit: Int) -> [SeedManga] {
+        let libraryById = Dictionary(libraryItems.map { ($0.id, $0) },
+                                     uniquingKeysWith: { first, _ in first })
+        return mangaWeight.sorted { $0.value > $1.value }
+            .prefix(limit)
+            .compactMap { id, weight -> SeedManga? in
+                if let saved = libraryById[id] {
+                    return SeedManga(manga: saved, weight: weight)
+                }
+                guard let e = entriesByManga[id]?.first else { return nil }
+                let manga = Manga(id: id, sourceId: e.sourceId ?? "mangadex",
+                                  title: e.mangaTitle, description: "", status: "unknown",
+                                  year: nil, coverURL: e.coverURL, malId: nil)
+                return SeedManga(manga: manga, weight: weight)
+            }
     }
 }

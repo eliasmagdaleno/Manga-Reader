@@ -111,11 +111,18 @@ final class RecommendationEngine: ObservableObject {
     /// or nil when there isn't enough signal (cold-start). Shared by the rail and the grid.
     private func profileAndExclusions() -> (TasteProfile, Set<String>)? {
         let savedIds = Set(library.items.map(\.id))
+        // LibraryItem carries no malId/description/status/year — synthesize a minimal
+        // Manga per saved item so TasteProfile.build can materialize seeds for it.
+        let libraryManga = library.items.map { item in
+            Manga(id: item.id, sourceId: item.sourceId ?? "mangadex", title: item.title,
+                 description: "", status: "unknown", year: nil, coverURL: item.coverURL, malId: nil)
+        }
         let profile = TasteProfile.build(history: history.entries,
                                          savedIds: savedIds,
                                          tagCache: profileStore.tagCache,
                                          moreLikeThis: Set(profileStore.moreLikeThis),
-                                         now: now())
+                                         now: now(),
+                                         libraryItems: libraryManga)
         guard profile.taggedMangaCount >= minTaggedManga, !profile.isEmpty else { return nil }
         let readIds = Set(history.entries.map(\.mangaId))
         return (profile, readIds.union(savedIds).union(profileStore.notInterested))
