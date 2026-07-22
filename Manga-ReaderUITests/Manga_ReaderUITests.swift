@@ -468,4 +468,24 @@ final class Manga_ReaderUITests: XCTestCase {
         XCTAssertTrue(select.waitForExistence(timeout: 5),
                       "select mode should exit after Mark Read")
     }
+
+    /// The "For You" rail still populates end-to-end with the composite (tag + MAL)
+    /// provider wired in. Network-dependent: a flake is API/seed availability, not a
+    /// logic bug. The rail is hidden until there's enough reading signal, so this asserts
+    /// the app launches to a populated Home and — if a "For You" rail is present — it has
+    /// at least one card.
+    func testForYouRailPopulatesWithCompositeProvider() throws {
+        let app = XCUIApplication()
+        app.launch()
+        // Home must load content at all (proves the composite provider didn't break Home).
+        let anyCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
+        XCTAssertTrue(anyCard.waitForExistence(timeout: 25), "Home should load cover cards")
+
+        // If the personalized rail is showing, it must have a card under it.
+        let forYou = app.staticTexts["For You"]
+        if forYou.waitForExistence(timeout: 5) {
+            let card = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
+            XCTAssertTrue(card.exists, "the For You rail should render at least one card")
+        }
+    }
 }

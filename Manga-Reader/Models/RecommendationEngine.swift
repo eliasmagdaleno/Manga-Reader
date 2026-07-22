@@ -47,7 +47,11 @@ final class RecommendationEngine: ObservableObject {
          library: LibraryStore,
          profileStore: TasteProfileStore,
          mangaDexSource: MangaSource = MangaDexSource(),
-         makeProvider: @escaping (MangaSource) -> CandidateProvider = { TagCandidateProvider(source: $0) },
+         makeProvider: @escaping (MangaSource) -> CandidateProvider = { @MainActor source in
+             CompositeCandidateProvider(
+                 tag: TagCandidateProvider(source: source),
+                 mal: MALCandidateProvider(similar: MoreLikeThisProvider()))
+         },
          now: @escaping () -> Date = Date.init,
          seed: UInt64? = nil) {
         self.history = history
