@@ -1844,6 +1844,31 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(matcher.decide(sourceTitle: "X", candidates: []), .noMatch)
     }
 
+    func testMALBestMatchIsGenericOverStringId() {
+        let matcher = MALTitleMatcher()
+        let candidates: [(id: String, titles: [String])] = [
+            (id: "md-1", titles: ["Shingeki no Kyojin", "Attack on Titan"]),
+            (id: "md-2", titles: ["Some Unrelated Manga"]),
+        ]
+        XCTAssertEqual(matcher.bestMatch(sourceTitle: "Attack on Titan", candidates: candidates), "md-1")
+    }
+
+    func testMALBestMatchRejectsAmbiguousAndBelowThreshold() {
+        let matcher = MALTitleMatcher()
+        // Two identical titles → ambiguity guard → nil.
+        XCTAssertNil(matcher.bestMatch(sourceTitle: "Hero", candidates: [
+            (id: 1, titles: ["Hero"]),
+            (id: 2, titles: ["Hero"]),
+        ]))
+        // Nothing clears the acceptance threshold → nil.
+        XCTAssertNil(matcher.bestMatch(sourceTitle: "Berserk", candidates: [
+            (id: 1, titles: ["Completely Different Story"]),
+        ]))
+        // Empty candidates / empty source → nil.
+        XCTAssertNil(matcher.bestMatch(sourceTitle: "Berserk", candidates: [(id: Int, titles: [String])]()))
+        XCTAssertNil(matcher.bestMatch(sourceTitle: "", candidates: [(id: 1, titles: ["Berserk"])]))
+    }
+
     // MARK: - EntityResolutionStore
 
     @MainActor func testEntityResolutionRecordsAndReadsBack() {

@@ -72,25 +72,37 @@ struct MALTitleMatcher {
         return previous[b.count]
     }
 
-    /// Best MAL match for `sourceTitle` among `candidates`, or `.noMatch`.
-    func decide(sourceTitle: String, candidates: [MALCandidate]) -> MALMatchDecision {
+    /// The id of the best-matching candidate for `sourceTitle`, or nil if no candidate
+    /// clears the acceptance threshold and the ambiguity guard. Generic over the id type
+    /// so it serves both MAL-id matching (forward) and MangaDex-id matching (reverse).
+    /// Precision-biased: any doubt resolves to nil rather than a wrong id.
+    func bestMatch<ID>(sourceTitle: String,
+                       candidates: [(id: ID, titles: [String])]) -> ID? {
         let normSource = Self.normalize(sourceTitle)
-        guard !normSource.isEmpty, !candidates.isEmpty else { return .noMatch }
+        guard !normSource.isEmpty, !candidates.isEmpty else { return nil }
 
         let scored = candidates
-            .map { candidate -> (malId: Int, score: Double) in
+            .map { candidate -> (id: ID, score: Double) in
                 let best = candidate.titles
                     .map { Self.similarity(normSource, Self.normalize($0)) }
                     .max() ?? 0
-                return (candidate.malId, best)
+                return (candidate.id, best)
             }
             .sorted { $0.score > $1.score }
 
-        guard let best = scored.first, best.score >= acceptanceThreshold else { return .noMatch }
+        guard let best = scored.first, best.score >= acceptanceThreshold else { return nil }
         // Ambiguity guard rejects even exact matches (1.0) if the runner-up is too close.
         if scored.count >= 2, best.score - scored[1].score < ambiguityMargin {
-            return .noMatch   // too close to call — precision over recall
+            return nil   // too close to call — precision over recall
         }
-        return .matched(malId: best.malId)
+        return best.id
+    }
+
+    /// Best MAL match for `sourceTitle` among `candidates`, or `.noMatch`. Delegates to
+    /// the generic `bestMatch`; kept for callers that speak the `MALCandidate`/decision API.
+    func decide(sourceTitle: String, candidates: [MALCandidate]) -> MALMatchDecision {
+        let match = bestMatch(sourceTitle: sourceTitle,
+                              candidates: candidates.map { (id: $0.malId, titles: $0.titles) })
+        return match.map { .matched(malId: $0) } ?? .noMatch
     }
 }
