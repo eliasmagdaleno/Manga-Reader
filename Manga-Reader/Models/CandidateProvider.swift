@@ -132,3 +132,61 @@ struct MALCandidateProvider: CandidateProvider {
             }
     }
 }
+
+/// Blends two candidate pools (tag + MAL). Each pool is normalized to [0, 1] (÷ its own
+/// max) so the two signals are comparable, then combined `W_TAG·tag + W_MAL·mal`; a title
+/// in BOTH pools gets an extra OVERLAP_BONUS so agreement leads. Empty MAL pool ⇒ exactly
+/// the tag ranking (graceful degradation).
+struct CompositeCandidateProvider: CandidateProvider {
+    let tag: CandidateProvider
+    let mal: CandidateProvider
+
+    private let wTag = 1.0
+    private let wMal = 0.85
+    private let overlapBonus = 0.25
+
+    func candidates(for profile: TasteProfile,
+                    excluding: Set<String>,
+                    limit: Int) async throws -> [ScoredManga] {
+        async let tagPool = tag.candidates(for: profile, excluding: excluding, limit: limit)
+        async let malPool = mal.candidates(for: profile, excluding: excluding, limit: limit)
+        // Either pool failing degrades to empty (MAL failing ⇒ tag-only rail).
+        let tags = (try? await tagPool) ?? []
+        let mals = (try? await malPool) ?? []
+
+        let tagNorm = Self.normalized(tags)
+        let malNorm = Self.normalized(mals)
+
+        var score: [String: Double] = [:]
+        var manga: [String: Manga] = [:]
+        var reason: [String: String] = [:]
+
+        for c in tags {
+            manga[c.manga.id] = c.manga
+            reason[c.manga.id] = c.reason
+            score[c.manga.id, default: 0] += wTag * (tagNorm[c.manga.id] ?? 0)
+        }
+        for c in mals {
+            if manga[c.manga.id] == nil { manga[c.manga.id] = c.manga }
+            reason[c.manga.id] = c.reason      // MAL reason preferred when MAL contributed
+            score[c.manga.id, default: 0] += wMal * (malNorm[c.manga.id] ?? 0)
+        }
+        // Gold-star: present in both pools.
+        let both = Set(tagNorm.keys).intersection(malNorm.keys)
+        for id in both { score[id, default: 0] += overlapBonus }
+
+        return score.sorted { $0.value > $1.value }
+            .prefix(limit)
+            .compactMap { id, value in
+                guard let m = manga[id] else { return nil }
+                return ScoredManga(manga: m, score: value, reason: reason[id] ?? "Recommended")
+            }
+    }
+
+    /// id → score ÷ pool max, in [0, 1]. Empty/all-zero pool → empty map.
+    private static func normalized(_ pool: [ScoredManga]) -> [String: Double] {
+        guard let max = pool.map(\.score).max(), max > 0 else { return [:] }
+        return Dictionary(pool.map { ($0.manga.id, $0.score / max) },
+                          uniquingKeysWith: { first, _ in first })
+    }
+}
