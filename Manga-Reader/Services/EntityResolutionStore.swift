@@ -28,15 +28,40 @@ enum MALResolution: Codable, Equatable {
     }
 }
 
+/// The cached outcome of reverse-resolving a MAL id to a MangaDex manga id.
+enum ReverseResolution: Codable, Equatable {
+    case resolved(mangaDexId: String)   // Cached indefinitely.
+    case unresolved(checkedAt: Date)    // A miss; re-attempt once older than `missTTL`.
+
+    /// Whether this entry should still be trusted (vs. re-attempted). Hits are always
+    /// fresh; a miss is fresh until it passes the TTL. Mirrors `MALResolution.isFresh`.
+    func isFresh(now: Date = Date()) -> Bool {
+        switch self {
+        case .resolved:
+            return true
+        case .unresolved(let checkedAt):
+            return now.timeIntervalSince(checkedAt) < EntityResolutionStore.missTTL
+        }
+    }
+}
+
 @MainActor
 final class EntityResolutionStore: ObservableObject {
     /// Source-qualified key ("{sourceId}:{mangaId}") → outcome.
     @Published private(set) var cache: [String: MALResolution] = [:]
 
+    /// MAL id (as `String(malId)`) → reverse-resolution outcome.
+    @Published private(set) var reverseCache: [String: ReverseResolution] = [:]
+
+    /// App-wide instance so the forward and reverse caches persist across detail-page
+    /// opens. Tests still construct isolated instances via `init(defaults:)`.
+    static let shared = EntityResolutionStore()
+
     /// How long a miss is trusted before it's re-attempted.
     nonisolated static let missTTL: TimeInterval = 14 * 24 * 60 * 60   // 14 days
 
     private let cacheKey = "entityResolution.cache"
+    private let reverseCacheKey = "entityResolution.reverseCache"
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -53,18 +78,32 @@ final class EntityResolutionStore: ObservableObject {
         save()
     }
 
+    func reverseResolution(malId: Int) -> ReverseResolution? {
+        reverseCache[String(malId)]
+    }
+
+    func recordReverse(malId: Int, _ resolution: ReverseResolution) {
+        reverseCache[String(malId)] = resolution
+        save()
+    }
+
     private static func key(_ sourceId: String, _ mangaId: String) -> String {
         "\(sourceId):\(mangaId)"
     }
 
     private func save() {
         if let data = try? JSONEncoder().encode(cache) { defaults.set(data, forKey: cacheKey) }
+        if let data = try? JSONEncoder().encode(reverseCache) { defaults.set(data, forKey: reverseCacheKey) }
     }
 
     private func load() {
         if let data = defaults.data(forKey: cacheKey),
            let value = try? JSONDecoder().decode([String: MALResolution].self, from: data) {
             cache = value
+        }
+        if let data = defaults.data(forKey: reverseCacheKey),
+           let value = try? JSONDecoder().decode([String: ReverseResolution].self, from: data) {
+            reverseCache = value
         }
     }
 }

@@ -1905,6 +1905,43 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(reloaded.resolution(sourceId: "s", mangaId: "m"), .resolved(malId: 7))
     }
 
+    // MARK: - EntityResolutionStore reverse cache
+
+    @MainActor func testReverseCacheRoundTripsAndKeysByMalId() {
+        let defaults = UserDefaults(suiteName: "test.reverse.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        store.recordReverse(malId: 42, .resolved(mangaDexId: "md-abc"))
+        XCTAssertEqual(store.reverseResolution(malId: 42), .resolved(mangaDexId: "md-abc"))
+        XCTAssertNil(store.reverseResolution(malId: 99))
+    }
+
+    @MainActor func testReverseCacheDoesNotCollideWithForwardCache() {
+        let defaults = UserDefaults(suiteName: "test.reverse.\(UUID().uuidString)")!
+        let store = EntityResolutionStore(defaults: defaults)
+        // Forward map keyed "{sourceId}:{mangaId}"; reverse keyed String(malId). Same
+        // numeric value must not bleed across the two maps.
+        store.record(sourceId: "mangadex", mangaId: "7", .resolved(malId: 7))
+        store.recordReverse(malId: 7, .resolved(mangaDexId: "md-7"))
+        XCTAssertEqual(store.resolution(sourceId: "mangadex", mangaId: "7"), .resolved(malId: 7))
+        XCTAssertEqual(store.reverseResolution(malId: 7), .resolved(mangaDexId: "md-7"))
+    }
+
+    func testReverseResolutionIsFreshHonorsMissTTL() {
+        let now = Date()
+        let fresh = ReverseResolution.unresolved(checkedAt: now.addingTimeInterval(-EntityResolutionStore.missTTL + 1))
+        let stale = ReverseResolution.unresolved(checkedAt: now.addingTimeInterval(-EntityResolutionStore.missTTL - 1))
+        XCTAssertTrue(fresh.isFresh(now: now))
+        XCTAssertFalse(stale.isFresh(now: now))
+        XCTAssertTrue(ReverseResolution.resolved(mangaDexId: "x").isFresh(now: now))
+    }
+
+    @MainActor func testReverseCachePersistsAcrossInstances() {
+        let defaults = UserDefaults(suiteName: "test.reverse.\(UUID().uuidString)")!
+        EntityResolutionStore(defaults: defaults).recordReverse(malId: 11, .resolved(mangaDexId: "md-11"))
+        let reloaded = EntityResolutionStore(defaults: defaults)
+        XCTAssertEqual(reloaded.reverseResolution(malId: 11), .resolved(mangaDexId: "md-11"))
+    }
+
     // MARK: - MALEntityResolver
 
     @MainActor func testResolverFastPathReturnsMangaMalIdWithoutTouchingStore() async {
