@@ -2045,4 +2045,29 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(MoreLikeThisProvider.topRecommendations(recs, limit: 8).map { $0.node.id }, [1])
     }
 
+    // MARK: - chapterPreview (detail-page truncation)
+
+    func testChapterPreviewReturnsNewestFirstCapped() {
+        let chapters = [
+            Chapter(id: "a", number: "1", title: nil),
+            Chapter(id: "b", number: "2", title: nil),
+            Chapter(id: "c", number: "3", title: nil),
+            Chapter(id: "d", number: "4", title: nil),
+            Chapter(id: "e", number: "5", title: nil),
+            Chapter(id: "f", number: "6", title: nil),
+        ]
+        let preview = chapterPreview(chapters, limit: 5)
+        XCTAssertEqual(preview.map(\.id), ["f", "e", "d", "c", "b"])
+        XCTAssertEqual(preview.count, 5)
+    }
+
+    func testChapterPreviewShorterThanLimitReturnsAll() {
+        let chapters = [
+            Chapter(id: "a", number: "1", title: nil),
+            Chapter(id: "b", number: "2", title: nil),
+        ]
+        let preview = chapterPreview(chapters, limit: 5)
+        XCTAssertEqual(preview.map(\.id), ["b", "a"])
+    }
+
 }

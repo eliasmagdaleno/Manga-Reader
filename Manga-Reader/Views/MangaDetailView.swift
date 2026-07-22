@@ -13,9 +13,6 @@ struct MangaDetailView: View {
     @EnvironmentObject private var tasteProfile: TasteProfileStore
     @StateObject private var moreLikeThis = MoreLikeThisViewModel()
     @State private var synopsisExpanded = false
-    @State private var chaptersDescending = true
-    @State private var isSelecting = false
-    @State private var selectedChapterIDs: Set<String> = []
     @State private var showingWebPage = false
 
     init(manga: Manga) {
@@ -59,25 +56,7 @@ struct MangaDetailView: View {
             guard manga.sourceId == "mangadex", !tags.isEmpty else { return }
             tasteProfile.recordTags(mangaId: manga.id, tags: tags)
         }
-        // Hide the tab bar while selecting so the bottom-bar batch actions
-        // (Select All / Mark Read / Mark Unread) aren't obscured behind it.
-        .toolbar(isSelecting ? .hidden : .automatic, for: .tabBar)
         .toolbar {
-            if isSelecting {
-                ToolbarItemGroup(placement: .bottomBar) {
-                    Button(allChaptersSelected ? "Deselect All" : "Select All") {
-                        withAnimation(.snappy(duration: 0.2)) {
-                            selectedChapterIDs = allChaptersSelected ? [] : Set(vm.chapters.map(\.id))
-                        }
-                    }
-                    Spacer()
-                    Button("Mark Unread") { markSelected(read: false) }
-                        .disabled(selectedChapterIDs.isEmpty)
-                    Button("Mark Read") { markSelected(read: true) }
-                        .disabled(selectedChapterIDs.isEmpty)
-                        .fontWeight(.semibold)
-                }
-            }
             ToolbarItem(placement: .topBarTrailing) {
                 if let url = mangaWebURL {
                     Button {
@@ -355,51 +334,8 @@ struct MangaDetailView: View {
 
     private var chapters: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                InkSectionHeader("Chapters", eyebrow: "\(vm.chapters.count) available")
-                Spacer()
-                if isSelecting {
-                    Button {
-                        withAnimation(.snappy(duration: 0.2)) {
-                            isSelecting = false
-                            selectedChapterIDs.removeAll()
-                        }
-                    } label: {
-                        Text("CANCEL")
-                            .font(.inkMono(11, weight: .semibold))
-                            .tracking(0.5)
-                            .foregroundStyle(Ink.seal)
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    HStack(spacing: 16) {
-                        if !vm.chapters.isEmpty {
-                            Button {
-                                withAnimation(.snappy(duration: 0.2)) { isSelecting = true }
-                            } label: {
-                                Text("SELECT")
-                                    .font(.inkMono(11, weight: .semibold))
-                                    .tracking(0.5)
-                                    .foregroundStyle(Ink.seal)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                        Button {
-                            withAnimation(.snappy(duration: 0.2)) { chaptersDescending.toggle() }
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.up.arrow.down")
-                                Text(chaptersDescending ? "NEWEST" : "OLDEST")
-                            }
-                            .font(.inkMono(11, weight: .semibold))
-                            .tracking(0.5)
-                            .foregroundStyle(Ink.seal)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .padding(.trailing, Gutter.page)
+            InkSectionHeader("Chapters", eyebrow: "\(vm.chapters.count) available")
+                .padding(.trailing, Gutter.page)
 
             if let error = vm.errorMessage, vm.chapters.isEmpty {
                 InkNotice(error)
@@ -411,62 +347,48 @@ struct MangaDetailView: View {
                     .padding(.horizontal, Gutter.page)
             } else {
                 VStack(spacing: 0) {
-                    ForEach(sortChapters(vm.chapters, descending: chaptersDescending)) { chapter in
-                        if isSelecting {
+                    ForEach(chapterPreview(vm.chapters, limit: 5)) { chapter in
+                        NavigationLink {
+                            ReaderView(manga: manga, chapter: chapter)
+                        } label: {
+                            ChapterRow(chapter: chapter)
+                        }
+                        .buttonStyle(.plain)
+                        .contextMenu {
+                            let read = history.isRead(chapterId: chapter.id)
                             Button {
-                                toggleSelection(chapter.id)
+                                history.toggleRead(manga: manga, chapter: chapter)
                             } label: {
-                                ChapterRow(chapter: chapter, selecting: true,
-                                           selected: selectedChapterIDs.contains(chapter.id))
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            NavigationLink {
-                                ReaderView(manga: manga, chapter: chapter)
-                            } label: {
-                                ChapterRow(chapter: chapter)
-                            }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                let read = history.isRead(chapterId: chapter.id)
-                                Button {
-                                    history.toggleRead(manga: manga, chapter: chapter)
-                                } label: {
-                                    Label(read ? "Mark as unread" : "Mark as read",
-                                          systemImage: read ? "circle" : "checkmark.circle")
-                                }
+                                Label(read ? "Mark as unread" : "Mark as read",
+                                      systemImage: read ? "circle" : "checkmark.circle")
                             }
                         }
                         Divider().overlay(Ink.hairline)
                             .padding(.leading, Gutter.page)
                     }
+
+                    if vm.chapters.count > 5 {
+                        NavigationLink {
+                            ChapterListView(manga: manga, chapters: vm.chapters)
+                        } label: {
+                            HStack {
+                                Text("Show all \(vm.chapters.count) chapters")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Ink.seal)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(Ink.tertiary)
+                            }
+                            .padding(.horizontal, Gutter.page)
+                            .padding(.vertical, 16)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("showAllChaptersButton")
+                    }
                 }
             }
-        }
-    }
-
-    private var allChaptersSelected: Bool {
-        !vm.chapters.isEmpty && selectedChapterIDs.count == vm.chapters.count
-    }
-
-    private func toggleSelection(_ id: String) {
-        if selectedChapterIDs.contains(id) {
-            selectedChapterIDs.remove(id)
-        } else {
-            selectedChapterIDs.insert(id)
-        }
-    }
-
-    private func markSelected(read: Bool) {
-        let chapters = vm.chapters.filter { selectedChapterIDs.contains($0.id) }
-        if read {
-            history.markRead(manga: manga, chapters: chapters)
-        } else {
-            history.markUnread(manga: manga, chapters: chapters)
-        }
-        withAnimation(.snappy(duration: 0.2)) {
-            isSelecting = false
-            selectedChapterIDs.removeAll()
         }
     }
 

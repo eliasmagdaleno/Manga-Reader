@@ -30,6 +30,13 @@ func sortChapters(_ chapters: [Chapter], descending: Bool) -> [Chapter] {
     }.map(\.element)
 }
 
+/// The chapters shown in the detail-page preview: newest-first, capped at `limit`.
+/// Truncation lives here (pure) so the detail view stays declarative and this is
+/// unit-tested independently of SwiftUI.
+func chapterPreview(_ chapters: [Chapter], limit: Int) -> [Chapter] {
+    Array(sortChapters(chapters, descending: true).prefix(limit))
+}
+
 /// The chapter immediately after `number` in ascending numeric order.
 func nextChapter(after number: String, in ascending: [Chapter]) -> Chapter? {
     guard let value = numericChapterValue(number) else { return nil }

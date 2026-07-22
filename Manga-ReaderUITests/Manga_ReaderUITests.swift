@@ -377,4 +377,95 @@ final class Manga_ReaderUITests: XCTestCase {
         XCTAssertTrue(card.waitForExistence(timeout: 10),
                       "at least one More Like This card should render")
     }
+
+    /// The detail page shows a truncated chapter preview, so the bottom-of-page
+    /// "More Like This" rail is reachable in a few swipes instead of scrolling past
+    /// the entire chapter list. Opens the first Home title and asserts the rail header
+    /// appears within a small number of swipes.
+    func testChapterPreviewKeepsRailReachable() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let firstCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
+        XCTAssertTrue(firstCard.waitForExistence(timeout: 20), "a cover card should load on Home")
+        let libraryToggle = app.buttons["Add to Library"]
+        let removeToggle = app.buttons["Remove from Library"]
+        firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        if !libraryToggle.waitForExistence(timeout: 8) && !removeToggle.exists {
+            firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        }
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15) || removeToggle.exists,
+                      "should have opened a manga detail page")
+
+        XCTAssertTrue(app.staticTexts["Chapters"].waitForExistence(timeout: 15),
+                      "the Chapters section should render")
+
+        // Rail must be reachable within a handful of swipes (previously required
+        // scrolling past the full list). Allow time for the async MAL/MangaDex rail load.
+        let header = app.staticTexts["More Like This"]
+        var reached = false
+        for _ in 0..<8 where !reached {
+            if header.exists { reached = true; break }
+            app.swipeUp(velocity: .fast)
+            usleep(500_000)
+        }
+        XCTAssertTrue(reached,
+                      "the More Like This rail should be reachable within a few swipes of a truncated chapter list")
+    }
+
+    /// "Show all N chapters" opens the full-list screen, where sort and multi-select
+    /// live. Taps through, toggles sort, then marks a chapter read via select mode.
+    func testShowAllChaptersOpensFullListWithSortAndSelect() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let firstCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
+        XCTAssertTrue(firstCard.waitForExistence(timeout: 20), "a cover card should load on Home")
+        let libraryToggle = app.buttons["Add to Library"]
+        let removeToggle = app.buttons["Remove from Library"]
+        firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        if !libraryToggle.waitForExistence(timeout: 8) && !removeToggle.exists {
+            firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        }
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15) || removeToggle.exists,
+                      "should have opened a manga detail page")
+
+        // The "Show all" row only exists for titles with > 5 chapters. Scroll it into
+        // view; popular Home titles reliably qualify. (If the first title has ≤ 5
+        // chapters the button is legitimately absent — re-run against a longer title.)
+        let showAll = app.buttons["showAllChaptersButton"]
+        var foundShowAll = false
+        for _ in 0..<10 where !foundShowAll {
+            if showAll.exists { foundShowAll = true; break }
+            app.swipeUp(velocity: .fast)
+            usleep(500_000)
+        }
+        XCTAssertTrue(foundShowAll, "a long title should show the 'Show all N chapters' row")
+        showAll.tap()
+
+        // Full-list screen: assert it appeared, exercise the sort toggle, then select-mode.
+        XCTAssertTrue(app.otherElements["chapterListScreen"].waitForExistence(timeout: 8)
+                      || app.navigationBars["Chapters"].waitForExistence(timeout: 8),
+                      "the full chapter-list screen should open")
+
+        let newest = app.buttons["NEWEST"]
+        if newest.waitForExistence(timeout: 5) {
+            newest.tap()
+            XCTAssertTrue(app.buttons["OLDEST"].waitForExistence(timeout: 5),
+                          "the sort toggle should flip to OLDEST")
+        }
+
+        let select = app.buttons["SELECT"]
+        XCTAssertTrue(select.waitForExistence(timeout: 5), "SELECT should be available on the full list")
+        select.tap()
+        XCTAssertTrue(app.buttons["Select All"].waitForExistence(timeout: 5),
+                      "entering select mode should reveal the batch-action bar")
+        app.buttons["Select All"].tap()
+        let markRead = app.buttons["Mark Read"]
+        XCTAssertTrue(markRead.waitForExistence(timeout: 5))
+        markRead.tap()
+        // Select mode dismisses after a batch action.
+        XCTAssertTrue(select.waitForExistence(timeout: 5),
+                      "select mode should exit after Mark Read")
+    }
 }
