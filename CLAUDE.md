@@ -92,9 +92,12 @@ Key conventions worth preserving:
 
 ## Adding files to the project
 
-`Models/`, `Services/`, and `Components/` are Xcode 16 **synchronized root groups**
+`Models/`, `Services/`, and `Components/` are Xcode 16 **synchronized groups**
 (`PBXFileSystemSynchronizedRootGroup`) — new files dropped in them are compiled
-automatically. **`Views/` is NOT synchronized:** new files there must be added to
+automatically. Note `Components/` is synchronized but lives **nested under `Views/`** on
+disk (`Manga-Reader/Views/Components/`), so a shared UI component goes there and needs no
+`project.pbxproj` edit. **`Views/` itself is NOT synchronized:** new files directly in it
+must be added to
 `project.pbxproj` explicitly (a `PBXFileReference`, a `PBXBuildFile`, a child entry in the
 `Views` `PBXGroup`, and an entry in the target's `Sources` build phase). Adding the file
 in Xcode does this for you; when editing `pbxproj` by hand, mirror an existing `Views`
