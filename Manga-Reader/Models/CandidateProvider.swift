@@ -78,3 +78,57 @@ struct TagCandidateProvider: CandidateProvider {
             }
     }
 }
+
+/// Collaborative candidates: for each of the profile's seeds, fetch MAL "more like this"
+/// (already reverse-resolved to openable MangaDex titles) and score each result by
+/// position × the seed's engagement weight, summed across seeds. Network-tolerant — an
+/// empty seed result just contributes nothing.
+struct MALCandidateProvider: CandidateProvider {
+    let similar: SimilarTitlesProviding
+    var perSeedLimit: Int = 8
+
+    func candidates(for profile: TasteProfile,
+                    excluding: Set<String>,
+                    limit: Int) async throws -> [ScoredManga] {
+        let seeds = profile.seeds
+        guard !seeds.isEmpty else { return [] }
+
+        // Per-seed recommendation lists, concurrently (bounded by seed count, ≤5).
+        let lists: [(seed: SeedManga, recs: [Manga])] =
+            await withTaskGroup(of: (SeedManga, [Manga]).self) { group in
+                for seed in seeds {
+                    let provider = similar
+                    let per = perSeedLimit
+                    group.addTask {
+                        let recs = await provider.recommendations(for: seed.manga, limit: per)
+                        return (seed, recs)
+                    }
+                }
+                var out: [(SeedManga, [Manga])] = []
+                for await r in group { out.append(r) }
+                return out
+            }
+
+        var scores: [String: Double] = [:]
+        var mangaById: [String: Manga] = [:]
+        var bestSeed: [String: (weight: Double, title: String)] = [:]
+
+        for (seed, recs) in lists {
+            for (i, m) in recs.enumerated() where !excluding.contains(m.id) {
+                scores[m.id, default: 0] += seed.weight * (1.0 / Double(1 + i))
+                if mangaById[m.id] == nil { mangaById[m.id] = m }
+                if (bestSeed[m.id]?.weight ?? -1) < seed.weight {
+                    bestSeed[m.id] = (seed.weight, seed.manga.title)
+                }
+            }
+        }
+
+        return scores.sorted { $0.value > $1.value }
+            .prefix(limit)
+            .compactMap { id, score in
+                guard let m = mangaById[id] else { return nil }
+                let reason = bestSeed[id].map { "Because you read \($0.title)" } ?? "Recommended"
+                return ScoredManga(manga: m, score: score, reason: reason)
+            }
+    }
+}

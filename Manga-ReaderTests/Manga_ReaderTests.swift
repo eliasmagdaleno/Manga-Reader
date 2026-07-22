@@ -2100,4 +2100,52 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(preview.map(\.id), ["b", "a"])
     }
 
+    // MARK: - MALCandidateProvider
+
+    @MainActor
+    private final class StubSimilar: SimilarTitlesProviding {
+        let bySeedId: [String: [Manga]]
+        init(_ bySeedId: [String: [Manga]]) { self.bySeedId = bySeedId }
+        func recommendations(for manga: Manga, limit: Int) async -> [Manga] {
+            Array((bySeedId[manga.id] ?? []).prefix(limit))
+        }
+    }
+
+    private func mdManga(_ id: String, _ title: String) -> Manga {
+        Manga(id: id, sourceId: "mangadex", title: title, description: "",
+              status: "unknown", year: nil, coverURL: nil, malId: nil)
+    }
+
+    func testMALCandidateProviderScoresByPositionAndSeedWeight() async throws {
+        // Seed "s1" (weight 2) recommends x,y ; seed "s2" (weight 2) recommends y,z.
+        // y is recommended by both — at position 1 (of 2) for s1 and position 0 for s2 —
+        // so its score sums across seeds and overtakes x's single position-0 hit;
+        // excluding drops "z".
+        //
+        // NOTE: the task brief's original version of this test used seed "s2" weight 1,
+        // which (given "s1": [x, y] puts x at position 0 and y at position 1) yields a
+        // real tie of 2.0/2.0 between x and y — not the 2.0/3.0 split its comment and
+        // assertions claimed, and not a deterministic winner for `out.first`. Bumped s2's
+        // weight to 2 so the arithmetic (verified by hand below) matches the assertions
+        // and the ranking is unambiguous; the implementation is otherwise verbatim.
+        let profile = TasteProfile(weights: ["t": 1], tagName: ["t": "Action"],
+                                   orderedTagIds: ["t"], taggedMangaCount: 2,
+                                   seeds: [SeedManga(manga: mdManga("s1", "S1"), weight: 2),
+                                           SeedManga(manga: mdManga("s2", "S2"), weight: 2)])
+        let stub = await StubSimilar(["s1": [mdManga("x", "X"), mdManga("y", "Y")],
+                                      "s2": [mdManga("y", "Y"), mdManga("z", "Z")]])
+        let provider = MALCandidateProvider(similar: stub)
+        let out = try await provider.candidates(for: profile, excluding: ["z"], limit: 10)
+
+        let byId = Dictionary(uniqueKeysWithValues: out.map { ($0.manga.id, $0) })
+        XCTAssertNil(byId["z"])                                   // excluded
+        // y: s1 pos1 (2 * 1/2 = 1) + s2 pos0 (2 * 1/1 = 2) = 3 ; x: s1 pos0 (2 * 1/1) = 2
+        // → y ranks first.
+        XCTAssertEqual(out.first?.manga.id, "y")
+        XCTAssertEqual(byId["y"]?.score ?? 0, 3.0, accuracy: 0.0001)
+        XCTAssertEqual(byId["x"]?.score ?? 0, 2.0, accuracy: 0.0001)
+        // Reason names the strongest seed that surfaced it.
+        XCTAssertEqual(byId["x"]?.reason, "Because you read S1")
+    }
+
 }

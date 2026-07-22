@@ -138,3 +138,11 @@ final class MoreLikeThisProvider {
         return resolved
     }
 }
+
+/// The one capability MALCandidateProvider needs — injectable so tests can stub it.
+@MainActor
+protocol SimilarTitlesProviding {
+    func recommendations(for manga: Manga, limit: Int) async -> [Manga]
+}
+
+extension MoreLikeThisProvider: SimilarTitlesProviding {}
