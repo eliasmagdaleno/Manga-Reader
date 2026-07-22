@@ -276,4 +276,105 @@ final class Manga_ReaderUITests: XCTestCase {
             }
         }
     }
+
+    /// Throwaway live-verification for the More Like This provider via the debug screen:
+    /// Settings → "MyAnimeList Client" → type a well-known title → "Find similar" → assert
+    /// at least one resolved MangaDex recommendation row appears (proves forward resolution
+    /// + MAL recommendations + reverse resolution against the real APIs). Retired with the
+    /// debug screen once the real detail-page rail is proven (see the rail test below).
+    func testMoreLikeThisDebugProbeLiveVerification() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        // Settings tab (retry — a busy Home can swallow the first tap).
+        let settingsNavTitle = app.navigationBars["Settings"]
+        var reachedSettings = false
+        for _ in 0..<3 {
+            app.tabBars.buttons["Settings"].tap()
+            if settingsNavTitle.waitForExistence(timeout: 8) { reachedSettings = true; break }
+        }
+        XCTAssertTrue(reachedSettings, "should have navigated to the Settings tab")
+
+        let malRow = app.buttons["malClientRow"]
+        XCTAssertTrue(malRow.waitForExistence(timeout: 10),
+                      "the DEBUG 'MyAnimeList Client' row should be on Settings")
+
+        let mltField = app.textFields["mltField"]
+        var reachedDebugScreen = false
+        for _ in 0..<3 {
+            malRow.tap()
+            if mltField.waitForExistence(timeout: 8) { reachedDebugScreen = true; break }
+        }
+        XCTAssertTrue(reachedDebugScreen, "the More Like This probe field should be present")
+
+        // Focus + type (retry — typeText fails if the tap didn't land while busy).
+        var focused = false
+        for _ in 0..<3 {
+            mltField.tap()
+            if app.keyboards.element.waitForExistence(timeout: 5) { focused = true; break }
+        }
+        XCTAssertTrue(focused, "the probe field should have keyboard focus before typing")
+        mltField.typeText("Berserk")
+
+        let button = app.buttons["mltButton"]
+        XCTAssertTrue(button.exists)
+        button.tap()
+
+        // Ground truth: at least one resolved MangaDex recommendation row. Poll generously
+        // — this hits MAL search + detail + several MangaDex searches serially/concurrently.
+        let firstResult = app.staticTexts.matching(
+            NSPredicate(format: "identifier BEGINSWITH 'mltResultRow_'")
+        ).firstMatch
+        var appeared = false
+        let deadline = Date().addingTimeInterval(120)
+        while Date() < deadline {
+            if firstResult.exists { appeared = true; break }
+            usleep(500_000)
+        }
+        XCTAssertTrue(appeared, "at least one More Like This recommendation should resolve from the live APIs")
+    }
+
+    /// Permanent live-verification of the real detail-page rail: open a popular Home title,
+    /// scroll to the bottom, and assert the "More Like This" header plus at least one card
+    /// appear — end-to-end against the real MAL + MangaDex APIs.
+    func testMoreLikeThisDetailRailLiveVerification() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        // Home: wait for the first cover card, then open it (retry once — a LazyVStack
+        // re-layout while covers stream in can swallow the first tap).
+        let firstCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
+        XCTAssertTrue(firstCard.waitForExistence(timeout: 20), "a cover card should load on Home")
+        let libraryToggle = app.buttons["Add to Library"]
+        let removeToggle = app.buttons["Remove from Library"]
+        firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        if !libraryToggle.waitForExistence(timeout: 8) && !removeToggle.exists {
+            firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+        }
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15) || removeToggle.exists,
+                      "should have opened a manga detail page")
+
+        // The rail loads async (MAL + MangaDex round-trips) and sits at the very bottom.
+        // Poll: swipe up, check for the header, repeat until it appears or we give up.
+        let header = app.staticTexts["More Like This"]
+        var railAppeared = false
+        let deadline = Date().addingTimeInterval(120)
+        while Date() < deadline {
+            if header.exists { railAppeared = true; break }
+            app.swipeUp(velocity: .fast)
+            usleep(700_000)
+        }
+        XCTAssertTrue(railAppeared,
+                      "the 'More Like This' header should appear at the bottom of the detail page")
+
+        // And at least one recommendation card under it. Query at app level rather than
+        // scoping through `otherElements["moreLikeThisSection"]`: a plain VStack carrying
+        // only an accessibilityIdentifier does not reliably surface as a queryable container
+        // element, so the scoped `.buttons` query finds nothing even though the cards exist.
+        // On the detail page the rail is the only source of `mangaCoverCard`s, so an
+        // app-level query is equivalent (and mirrors the header assertion above).
+        let card = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 10),
+                      "at least one More Like This card should render")
+    }
 }

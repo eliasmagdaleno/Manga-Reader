@@ -16,6 +16,8 @@ struct MyAnimeListDebugView: View {
     @State private var isLoading = false
     @State private var resolveQuery = ""
     @State private var resolvedText: String?
+    @State private var mltQuery = ""
+    @State private var mltResults: [Manga] = []
 
     var body: some View {
         List {
@@ -38,6 +40,19 @@ struct MyAnimeListDebugView: View {
                 if let resolvedText {
                     Text(resolvedText)
                         .accessibilityIdentifier("malResolveResult")
+                }
+            }
+
+            Section("More Like This") {
+                TextField("Title", text: $mltQuery)
+                    .accessibilityIdentifier("mltField")
+                    .onSubmit { moreLikeThis() }
+                Button("Find similar") { moreLikeThis() }
+                    .accessibilityIdentifier("mltButton")
+                    .disabled(mltQuery.isEmpty || isLoading)
+                ForEach(mltResults, id: \.id) { manga in
+                    Text(manga.title)
+                        .accessibilityIdentifier("mltResultRow_\(manga.id)")
                 }
             }
 
@@ -129,6 +144,21 @@ struct MyAnimeListDebugView: View {
             } else {
                 resolvedText = "No confident match"
             }
+        }
+    }
+
+    /// Runs a synthetic MangaDex manga (no malId) through the full More Like This pipeline
+    /// — forward-resolve the typed title → MAL id, MAL recommendations, reverse-resolve
+    /// each back to MangaDex — so the end-to-end path can be verified against the live APIs.
+    private func moreLikeThis() {
+        mltResults = []
+        isLoading = true
+        let manga = Manga(id: "mlt-\(UUID().uuidString)", sourceId: "mangadex",
+                          title: mltQuery, description: "", status: "unknown",
+                          year: nil, coverURL: nil, malId: nil)
+        Task {
+            defer { isLoading = false }
+            mltResults = await MoreLikeThisProvider().recommendations(for: manga)
         }
     }
 
