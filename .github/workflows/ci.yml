@@ -18,6 +18,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Static analysis / style. Runs in parallel with the tests as its own check,
+  # so you can see at a glance whether it was code or style that failed.
+  lint:
+    name: SwiftLint
+    runs-on: macos-15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v5
+
+      # SwiftLint is preinstalled on the macOS runner image; fall back to brew
+      # if a future image drops it. `.swiftlint.yml` at the repo root is the
+      # config. `--reporter github-actions-logging` surfaces each violation as
+      # an inline annotation on the PR. Exit is non-zero only on error-severity
+      # violations, so warnings inform without blocking the merge.
+      - name: Run SwiftLint
+        run: |
+          swiftlint version || brew install swiftlint
+          swiftlint lint --reporter github-actions-logging
+
   unit-tests:
     name: Build & unit tests
     # Pinned image: macos-15 ships Xcode 16 (matches this project's file format,

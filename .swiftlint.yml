@@ -1,0 +1,42 @@
+# SwiftLint configuration for Manga-Reader.
+# A linter config is this project's coding conventions, made machine-checkable.
+# Rules that clash with deliberate style choices are relaxed here; rules that
+# catch genuine bugs or sloppiness are kept.
+
+# Only lint our own source — not build output or dependencies.
+included:
+  - Manga-Reader
+  - Manga-ReaderTests
+  - Manga-ReaderUITests
+
+# Rules turned off because they fight intentional, established style in this codebase:
+disabled_rules:
+  - identifier_name              # short local names (p, l, r, c, id) are used on purpose
+  - trailing_comma               # multiline literals keep trailing commas (cleaner diffs)
+  - implicit_optional_initialization  # explicit `= nil` is used deliberately in places
+  - non_optional_string_data_conversion  # existing String(data:encoding:) usage; revisit later
+  - todo                         # don't fail CI on TODO/FIXME comments
+  - type_name                    # Xcode's target names are forced to underscores (Manga_ReaderApp) — unavoidable
+
+# Relax length limits: SwiftUI view bodies and descriptive lines run long here.
+line_length:
+  warning: 140
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+# Size rules are warning-only: they nudge (e.g. the large test file is a real
+# split candidate) but never fail CI — file size isn't a bug.
+file_length:
+  warning: 2200
+
+type_body_length:
+  warning: 1800
+
+function_body_length:
+  warning: 120
+  error: 250
+
+large_tuple:
+  warning: 3
+  error: 4
