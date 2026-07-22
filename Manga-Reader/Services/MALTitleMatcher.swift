@@ -35,7 +35,7 @@ struct MALTitleMatcher {
     /// Lowercase, strip diacritics, replace every non-alphanumeric with a space, drop
     /// noise tokens, and collapse/trim whitespace.
     static func normalize(_ title: String) -> String {
-        let folded = title.folding(options: .diacriticInsensitive, locale: .current).lowercased()
+        let folded = title.folding(options: .diacriticInsensitive, locale: Locale(identifier: "en_US_POSIX")).lowercased()
         let spacedScalars = folded.unicodeScalars.map { scalar -> Character in
             CharacterSet.alphanumerics.contains(scalar) ? Character(scalar) : " "
         }
@@ -87,6 +87,7 @@ struct MALTitleMatcher {
             .sorted { $0.score > $1.score }
 
         guard let best = scored.first, best.score >= acceptanceThreshold else { return .noMatch }
+        // Ambiguity guard rejects even exact matches (1.0) if the runner-up is too close.
         if scored.count >= 2, best.score - scored[1].score < ambiguityMargin {
             return .noMatch   // too close to call — precision over recall
         }
