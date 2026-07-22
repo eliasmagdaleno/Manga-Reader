@@ -1940,4 +1940,49 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(id)   // fresh miss short-circuits before any network call
     }
 
+    // MARK: - MoreLikeThis.pickMatch
+
+    /// Minimal `Manga` for pure MoreLikeThis tests. `Manga`'s memberwise init is internal,
+    /// reachable here via `@testable import Manga_Reader`.
+    private func mlManga(id: String, title: String, malId: Int?) -> Manga {
+        Manga(id: id, sourceId: "mangadex", title: title, description: "",
+              status: "unknown", year: nil, coverURL: nil, malId: malId)
+    }
+
+    func testPickMatchPrefersExactMalIdOverCloserTitle() {
+        // A candidate carrying the target malId wins even though a DIFFERENT candidate
+        // has an identical title (which fuzzy matching would otherwise prefer).
+        let candidates = [
+            mlManga(id: "md-decoy", title: "Berserk", malId: 999),
+            mlManga(id: "md-real", title: "Beruseruku", malId: 42),
+        ]
+        let match = MoreLikeThis.pickMatch(targetMalId: 42, malTitle: "Berserk", candidates: candidates)
+        XCTAssertEqual(match?.id, "md-real")
+    }
+
+    func testPickMatchFallsBackToFuzzyTitleWhenNoCandidateCarriesId() {
+        let candidates = [
+            mlManga(id: "md-1", title: "Vinland Saga", malId: nil),
+            mlManga(id: "md-2", title: "Totally Other Thing", malId: nil),
+        ]
+        let match = MoreLikeThis.pickMatch(targetMalId: 777, malTitle: "Vinland Saga", candidates: candidates)
+        XCTAssertEqual(match?.id, "md-1")
+    }
+
+    func testPickMatchReturnsNilWhenAmbiguousOrBelowThreshold() {
+        // Ambiguous: two identical titles, neither carries the id.
+        let ambiguous = [
+            mlManga(id: "md-1", title: "Hero", malId: nil),
+            mlManga(id: "md-2", title: "Hero", malId: nil),
+        ]
+        XCTAssertNil(MoreLikeThis.pickMatch(targetMalId: 5, malTitle: "Hero", candidates: ambiguous))
+        // Below threshold: nothing close enough.
+        let unrelated = [mlManga(id: "md-1", title: "Completely Different Story", malId: nil)]
+        XCTAssertNil(MoreLikeThis.pickMatch(targetMalId: 5, malTitle: "Berserk", candidates: unrelated))
+    }
+
+    func testPickMatchReturnsNilForEmptyCandidates() {
+        XCTAssertNil(MoreLikeThis.pickMatch(targetMalId: 5, malTitle: "Berserk", candidates: []))
+    }
+
 }
