@@ -11,6 +11,7 @@ struct MangaDetailView: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
     @EnvironmentObject private var tasteProfile: TasteProfileStore
+    @StateObject private var moreLikeThis = MoreLikeThisViewModel()
     @State private var synopsisExpanded = false
     @State private var chaptersDescending = true
     @State private var isSelecting = false
@@ -46,12 +47,14 @@ struct MangaDetailView: View {
                 if !vm.tags.isEmpty { tags }
                 if !vm.description.isEmpty || vm.isLoading { description }
                 chapters
+                if !moreLikeThis.items.isEmpty { moreLikeThisRail }
             }
             .padding(.bottom, 40)
         }
         .background(Ink.background)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { vm.load() }
+        .task { await moreLikeThis.load(for: manga) }
         .onChange(of: vm.detailTags) { _, tags in
             guard manga.sourceId == "mangadex", !tags.isEmpty else { return }
             tasteProfile.recordTags(mangaId: manga.id, tags: tags)
@@ -336,6 +339,16 @@ struct MangaDetailView: View {
             }
             .padding(.horizontal, Gutter.page)
         }
+    }
+
+    // MARK: More Like This — MAL-sourced cross-source recommendations, bottom of page.
+
+    private var moreLikeThisRail: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            InkSectionHeader("More Like This", eyebrow: "Similar titles")
+            MangaRail(items: moreLikeThis.items)
+        }
+        .accessibilityIdentifier("moreLikeThisSection")
     }
 
     // MARK: Chapters
