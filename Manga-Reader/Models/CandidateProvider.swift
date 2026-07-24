@@ -141,9 +141,14 @@ struct CompositeCandidateProvider: CandidateProvider {
     let tag: CandidateProvider
     let mal: CandidateProvider
 
-    private let wTag = 1.0
-    private let wMal = 0.85
-    private let overlapBonus = 0.25
+    // Tuning constants. Non-private and injectable (the memberwise init defaults them, so
+    // `CompositeCandidateProvider(tag:mal:)` still reads the same) for two reasons: the golden
+    // harness in RecommendationGoldenTests reads them so its per-column breakdown stays correct
+    // when they change, and an alternative weighting can be compared in a test without editing
+    // this file. Defaults are the shipping values.
+    var wTag = 1.0
+    var wMal = 0.85
+    var overlapBonus = 0.25
 
     func candidates(for profile: TasteProfile,
                     excluding: Set<String>,
