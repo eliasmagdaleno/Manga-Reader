@@ -12,6 +12,7 @@
 		AD1157092EA0000500CF2434 /* MyAnimeListDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1157092EA0000400CF2434 /* MyAnimeListDebugView.swift */; };
 		AD5501012E0000010000000A /* RecommendationGoldenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5501012E0000010000000B /* RecommendationGoldenTests.swift */; };
 		AD5501022E0000010000000A /* AniListAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5501022E0000010000000B /* AniListAPITests.swift */; };
+		AD5501032E0000010000000A /* WorkStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5501032E0000010000000B /* WorkStoreTests.swift */; };
 		ADCA7E112EC7000100CF2434 /* CategoryGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCA7E102EC7000100CF2434 /* CategoryGridView.swift */; };
 		ADDACC8C2EC6AC370026FBAE /* MangaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDACC8B2EC6AC2D0026FBAE /* MangaDetailView.swift */; };
 		ADDACC9B2EC6AC370026FBAE /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDACC9A2EC6AC2D0026FBAE /* ReaderView.swift */; };
@@ -53,6 +54,7 @@
 		AD1157092EA0000600CF2434 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AD5501012E0000010000000B /* RecommendationGoldenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendationGoldenTests.swift; sourceTree = "<group>"; };
 		AD5501022E0000010000000B /* AniListAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AniListAPITests.swift; sourceTree = "<group>"; };
+		AD5501032E0000010000000B /* WorkStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkStoreTests.swift; sourceTree = "<group>"; };
 		ADCA7E102EC7000100CF2434 /* CategoryGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryGridView.swift; sourceTree = "<group>"; };
 		ADDACC8B2EC6AC2D0026FBAE /* MangaDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MangaDetailView.swift; sourceTree = "<group>"; };
 		ADDACC9A2EC6AC2D0026FBAE /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
@@ -153,6 +155,7 @@
 				ADE549352C0A9CCD007AE172 /* Manga_ReaderTests.swift */,
 				AD5501012E0000010000000B /* RecommendationGoldenTests.swift */,
 				AD5501022E0000010000000B /* AniListAPITests.swift */,
+				AD5501032E0000010000000B /* WorkStoreTests.swift */,
 			);
 			path = "Manga-ReaderTests";
 			sourceTree = "<group>";
@@ -341,6 +344,7 @@
 				ADE549362C0A9CCD007AE172 /* Manga_ReaderTests.swift in Sources */,
 				AD5501012E0000010000000A /* RecommendationGoldenTests.swift in Sources */,
 				AD5501022E0000010000000A /* AniListAPITests.swift in Sources */,
+				AD5501032E0000010000000A /* WorkStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
