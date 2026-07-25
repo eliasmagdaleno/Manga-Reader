@@ -11,6 +11,8 @@ import SwiftUI
 struct HistoryView: View {
     @EnvironmentObject private var history: HistoryStore
 
+    @State private var showingClearConfirmation = false
+
     var body: some View {
         NavigationStack {
             Group {
@@ -39,8 +41,20 @@ struct HistoryView: View {
             .toolbar {
                 if !history.entries.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Clear", role: .destructive) { history.clear() }
+                        Button("Clear", role: .destructive) { showingClearConfirmation = true }
                             .foregroundStyle(Ink.seal)
+                            .confirmationDialog(
+                                "Clear Reading History?",
+                                isPresented: $showingClearConfirmation,
+                                titleVisibility: .visible
+                            ) {
+                                Button("Clear All History", role: .destructive) {
+                                    history.clear()
+                                }
+                                Button("Cancel", role: .cancel) {}
+                            } message: {
+                                Text("This will remove all chapters from your history tab, but your read progress will be preserved.")
+                            }
                     }
                 }
             }
@@ -78,16 +92,32 @@ struct HistoryView: View {
             .padding(.vertical, 4)
         }
         .listRowBackground(Ink.background)
+        .contextMenu {
+            NavigationLink {
+                MangaDetailView(manga: entry.asManga)
+            } label: {
+                Label("View Manga Details", systemImage: "book")
+            }
+            
+            Button(role: .destructive) {
+                history.delete(entry)
+            } label: {
+                Label("Delete from History", systemImage: "trash")
+            }
+        }
     }
 
-    /// Entries grouped by relative day, preserving recency order of groups.
     private var groupedEntries: [(key: String, value: [ReadingEntry])] {
         var order: [String] = []
         var buckets: [String: [ReadingEntry]] = [:]
         for entry in history.entries {
             let key = Self.dayLabel(entry.updatedAt)
             if buckets[key] == nil { buckets[key] = []; order.append(key) }
-            buckets[key]?.append(entry)
+            
+            // Only add the first (most recent) entry per manga for the given day
+            if !(buckets[key]?.contains(where: { $0.mangaId == entry.mangaId }) ?? false) {
+                buckets[key]?.append(entry)
+            }
         }
         return order.map { ($0, buckets[$0]!) }
     }

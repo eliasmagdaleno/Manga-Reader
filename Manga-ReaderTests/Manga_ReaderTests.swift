@@ -314,6 +314,80 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(decoded.sourceId, "weebcentral")
     }
 
+    @MainActor func testLibraryDefaultCollectionsInitialized() {
+        let suite = UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!
+        let store = LibraryStore(defaults: suite)
+        XCTAssertEqual(store.collections.count, 4)
+        XCTAssertEqual(store.collections.map(\.id), ["reading", "on_hold", "planned", "dropped"])
+    }
+
+    func testLibraryItemMigrationDefaultsToReadingCollection() throws {
+        // Simulates legacy LibraryItem JSON without collectionIds field
+        let json = """
+        {"id": "m1", "title": "Test Manga", "coverURL": null}
+        """.data(using: .utf8)!
+        let item = try JSONDecoder().decode(LibraryItem.self, from: json)
+        XCTAssertEqual(item.collectionIds, Set([LibraryCollection.readingID]))
+    }
+
+    @MainActor func testLibraryToggleCollectionAndMultiAssignment() {
+        let suite = UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!
+        let store = LibraryStore(defaults: suite)
+        let manga = sampleManga("m1", sourceId: "mangadex")
+
+        // Toggle collection adds to reading first by default
+        store.toggle(manga)
+        XCTAssertTrue(store.isManga("m1", in: LibraryCollection.readingID))
+
+        // Add to on_hold collection as well (multi-assignment)
+        store.toggleCollection(for: manga, collectionId: LibraryCollection.onHoldID)
+        XCTAssertTrue(store.isManga("m1", in: LibraryCollection.readingID))
+        XCTAssertTrue(store.isManga("m1", in: LibraryCollection.onHoldID))
+        XCTAssertEqual(store.items(in: LibraryCollection.onHoldID).count, 1)
+
+        // Toggling reading collection removes it from reading but leaves on_hold intact
+        store.toggleCollection(for: manga, collectionId: LibraryCollection.readingID)
+        XCTAssertFalse(store.isManga("m1", in: LibraryCollection.readingID))
+        XCTAssertTrue(store.isManga("m1", in: LibraryCollection.onHoldID))
+        XCTAssertTrue(store.contains("m1"))
+
+        // Removing from on_hold leaves 0 collections, so item is removed from library
+        store.toggleCollection(for: manga, collectionId: LibraryCollection.onHoldID)
+        XCTAssertFalse(store.contains("m1"))
+    }
+
+    @MainActor func testLibraryCustomCollectionCRUD() {
+        let suite = UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!
+        let store = LibraryStore(defaults: suite)
+
+        // Add custom collection
+        store.addCustomCollection(name: "Favorites")
+        XCTAssertEqual(store.collections.count, 5)
+        guard let custom = store.collections.last else {
+            XCTFail("Custom collection not found")
+            return
+        }
+        XCTAssertEqual(custom.name, "Favorites")
+        XCTAssertFalse(custom.isSystem)
+
+        // Rename custom collection
+        store.renameCustomCollection(id: custom.id, newName: "Top Favorites")
+        XCTAssertEqual(store.collections.first(where: { $0.id == custom.id })?.name, "Top Favorites")
+
+        // Disable collection
+        store.setCollectionEnabled(id: custom.id, isEnabled: false)
+        XCTAssertFalse(store.enabledCollections.contains(where: { $0.id == custom.id }))
+
+        // Delete custom collection cleans up item assignments
+        let manga = sampleManga("m2", sourceId: "mangadex")
+        store.setCollections(for: manga, collectionIds: [custom.id])
+        XCTAssertTrue(store.contains("m2"))
+
+        store.deleteCustomCollection(id: custom.id)
+        XCTAssertNil(store.collections.first(where: { $0.id == custom.id }))
+        XCTAssertFalse(store.contains("m2"))
+    }
+
     // MARK: - Source abstraction
 
     /// Minimal in-memory `MangaSource` proving the protocol is mockable / bridge-friendly.
