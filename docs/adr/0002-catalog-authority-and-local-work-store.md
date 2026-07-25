@@ -1,7 +1,8 @@
 # ADR-0002 — The catalog is a local Work store; MAL and AniList are metadata *providers*
 
-- **Status:** Accepted (2026-07-24)
-- **Related:** ADR-0001 (Work vs Listing), ADR-0004 (fulfillment routing)
+- **Status:** Accepted (2026-07-24); **amended by ADR-0007 (2026-07-25)**
+- **Related:** ADR-0001 (Work vs Listing), ADR-0004 (fulfillment routing),
+  ADR-0007 (Work shape and lifecycle)
 
 ## Context
 
@@ -69,8 +70,16 @@ Three consequences of that shape, decided here:
 (Note: "use GraphQL" describes how the app *talks to AniList* — a query protocol for a remote
 API. It says nothing about on-device storage, which is this separate decision.)
 
-The sizing question decides it. **Works are created only on resolution** — something read, saved,
-or recommended — so the count is bounded by *usage*, not by the size of any source's catalog.
+The sizing question decides it. **Works are created only on user commitment** — read, saved, or
+marked *Not interested* / *More like this* — so the count is bounded by *usage*, not by the size of
+any source's catalog.
+
+> **Amended by ADR-0007.** This originally read "something read, saved, **or recommended**". That
+> clause contradicted the sizing argument it was supporting: candidate pools are 40 titles per rail
+> refresh, so minting per recommendation grows the store with *browsing*. Minting is now tied to
+> commitment only. ADR-0007 also moves the per-Listing chapter counts **out** of this store — hot,
+> disposable, TTL'd data must not share a file with authoritative identity, or every count refresh
+> rewrites the whole store and reproduces the very I/O pattern rejected just below.
 Low thousands over years, not tens of thousands. At that scale, filtering an in-memory array of
 structs takes microseconds: the store does not need a query engine, it needs sane I/O.
 

@@ -1,7 +1,9 @@
 # ADR-0004 — Fulfillment: most complete English chapter run wins; MangaDex breaks ties
 
 - **Status:** Accepted, with a required fallback (2026-07-24)
-- **Related:** ADR-0001 (Work vs Listing), ADR-0002 (catalog), ADR-0005 (manual link override)
+- **Related:** ADR-0001 (Work vs Listing), ADR-0002 (catalog), ADR-0005 (manual link override),
+  ADR-0007 (Work shape — the cached counts this ADR ranks on live in a separate, evictable store;
+  a missing count means *unknown*, never zero)
 
 ## Context
 
