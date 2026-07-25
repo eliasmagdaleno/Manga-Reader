@@ -30,6 +30,10 @@ final class RecommendationEngine: ObservableObject {
     private let history: HistoryStore
     private let library: LibraryStore
     private let profileStore: TasteProfileStore
+    /// Explicit feedback is a commitment, so it mints a Work (ADR-0007).
+    /// `TasteProfileStore` can't do this itself — it only ever receives a bare
+    /// `mangaId`, and minting needs the whole Listing.
+    private let workStore: WorkStore?
     private let mangaDexSource: MangaSource
     private let makeProvider: (MangaSource) -> CandidateProvider
     private let now: () -> Date
@@ -46,6 +50,7 @@ final class RecommendationEngine: ObservableObject {
     init(history: HistoryStore,
          library: LibraryStore,
          profileStore: TasteProfileStore,
+         workStore: WorkStore? = nil,
          mangaDexSource: MangaSource = MangaDexSource(),
          makeProvider: @escaping (MangaSource) -> CandidateProvider = { @MainActor source in
              CompositeCandidateProvider(
@@ -57,6 +62,7 @@ final class RecommendationEngine: ObservableObject {
         self.history = history
         self.library = library
         self.profileStore = profileStore
+        self.workStore = workStore
         self.mangaDexSource = mangaDexSource
         self.makeProvider = makeProvider
         self.now = now
@@ -79,11 +85,15 @@ final class RecommendationEngine: ObservableObject {
     }
 
     func markNotInterested(_ manga: Manga) {
+        // Minted so the dismissal can eventually suppress this manga on *every*
+        // source, not just the one it was dismissed from (ADR-0007).
+        _ = workStore?.mint(from: manga)
         profileStore.markNotInterested(mangaId: manga.id)
         recommendations.removeAll { $0.manga.id == manga.id }
     }
 
     func markMoreLikeThis(_ manga: Manga) {
+        _ = workStore?.mint(from: manga)
         profileStore.markMoreLikeThis(mangaId: manga.id)
         Task { await rebuild() }
     }
