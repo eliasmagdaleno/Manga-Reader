@@ -83,9 +83,14 @@ final class LibraryStore: ObservableObject {
     private let itemsKey = "library.items"
     private let collectionsKey = "library.collections"
     private let defaults: UserDefaults
+    /// Saving is a commitment, so it mints a Work (ADR-0007). Optional because the
+    /// library predates the Work store and most tests have no interest in it; the
+    /// app wires it in `Manga_ReaderApp`.
+    private let works: WorkStore?
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, works: WorkStore? = nil) {
         self.defaults = defaults
+        self.works = works
         loadCollections()
         loadItems()
     }
@@ -127,8 +132,10 @@ final class LibraryStore: ObservableObject {
     /// Toggle manga in/out of library: if present, removes from all collections; if absent, adds to default primary collection.
     func toggle(_ manga: Manga) {
         if contains(manga.id) {
+            // Unsaving is not an anti-commitment: the Work stays (ADR-0007).
             items.removeAll { $0.id == manga.id }
         } else {
+            _ = works?.mint(from: manga)
             let primaryCollectionId = enabledCollections.first?.id ?? LibraryCollection.readingID
             items.insert(
                 LibraryItem(
@@ -156,10 +163,12 @@ final class LibraryStore: ObservableObject {
                     items[idx] = updated
                 }
             } else {
+                _ = works?.mint(from: manga)
                 updated.collectionIds.insert(collectionId)
                 items[idx] = updated
             }
         } else {
+            _ = works?.mint(from: manga)
             items.insert(
                 LibraryItem(
                     id: manga.id,
@@ -177,8 +186,13 @@ final class LibraryStore: ObservableObject {
     /// Explicitly update the set of collection IDs for a manga.
     func setCollections(for manga: Manga, collectionIds: Set<String>) {
         if collectionIds.isEmpty {
+            // Clearing every collection is a removal — nothing to mint.
             items.removeAll { $0.id == manga.id }
-        } else if let idx = items.firstIndex(where: { $0.id == manga.id }) {
+            saveItems()
+            return
+        }
+        _ = works?.mint(from: manga)
+        if let idx = items.firstIndex(where: { $0.id == manga.id }) {
             items[idx].collectionIds = collectionIds
         } else {
             items.insert(

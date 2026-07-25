@@ -92,21 +92,25 @@ final class WorkStore: ObservableObject {
     /// and it is precision-biased for a reason (ADR-0005).
     func mint(from listing: Manga) -> WorkID {
         loadIfNeeded()
-        defer { markDirty() }
         let key = ListingKey(listing)
         let ids = ExternalIDs(mal: listing.malId, anilist: nil)
 
-        // Already minted from this exact Listing.
+        // Already minted from this exact Listing. **Only a mint that actually learns
+        // something marks the store dirty** — this runs on every page turn, and
+        // re-arming the debounce each time would defer the write for as long as the
+        // user keeps reading.
         if let existing = listingIndex[key] {
-            absorb(ids, into: existing, title: listing.title)
+            if absorb(ids, into: existing, title: listing.title) { markDirty() }
             return existing
         }
         // Known under an external id this Listing publishes — the free dedupe path.
         if let existing = workId(externalId: ids) {
-            link(key, to: existing, title: listing.title)
-            absorb(ids, into: existing, title: listing.title)
+            let linked = link(key, to: existing, title: listing.title)
+            let absorbed = absorb(ids, into: existing, title: listing.title)
+            if linked || absorbed { markDirty() }
             return existing
         }
+        markDirty()
 
         var work = Work(id: WorkID(),
                         displayTitle: listing.title,
@@ -211,20 +215,37 @@ final class WorkStore: ObservableObject {
 
     // MARK: - Private
 
-    private func link(_ key: ListingKey, to id: WorkID, title: String) {
-        guard var work = works[id] else { return }
-        if !work.listings.contains(key) { work.listings.append(key) }
+    /// Returns whether anything changed, so callers on the hot path can skip
+    /// re-arming the debounced save.
+    @discardableResult
+    private func link(_ key: ListingKey, to id: WorkID, title: String) -> Bool {
+        guard var work = works[id] else { return false }
+        let titleCount = work.knownTitles.count
+        var changed = false
+        if !work.listings.contains(key) {
+            work.listings.append(key)
+            changed = true
+        }
         work.noteTitle(title)
+        changed = changed || work.knownTitles.count != titleCount
+        guard changed else { return false }
         works[id] = work
         listingIndex[key] = id
+        return true
     }
 
-    private func absorb(_ ids: ExternalIDs, into id: WorkID, title: String) {
-        guard var work = works[id] else { return }
+    /// Returns whether anything changed. See `link`.
+    @discardableResult
+    private func absorb(_ ids: ExternalIDs, into id: WorkID, title: String) -> Bool {
+        guard var work = works[id] else { return false }
+        let knownIds = work.externalIds
+        let titleCount = work.knownTitles.count
         work.externalIds.absorb(ids)
         work.noteTitle(title)
+        guard work.externalIds != knownIds || work.knownTitles.count != titleCount else { return false }
         works[id] = work
         reindexExternalIds(of: id)
+        return true
     }
 
     private func reindexExternalIds(of id: WorkID) {

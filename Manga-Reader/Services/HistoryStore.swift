@@ -43,9 +43,14 @@ final class HistoryStore: ObservableObject {
     private let marksKey = "history.readMarks"
     private let defaults: UserDefaults
     private let cap = 500
+    /// Reading is a commitment, so it mints a Work (ADR-0007). Optional because
+    /// history predates the Work store and most tests have no interest in it; the
+    /// app wires it in `Manga_ReaderApp`.
+    private let works: WorkStore?
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, works: WorkStore? = nil) {
         self.defaults = defaults
+        self.works = works
         load()
     }
 
@@ -54,6 +59,10 @@ final class HistoryStore: ObservableObject {
     /// chapter read previously) prepend a brand-new entry so the log stays a
     /// full chronological history of reading sessions.
     func record(manga: Manga, chapter: Chapter, page: Int, pageCount: Int) {
+        // Reading is the strongest commitment signal there is. Minting is local and
+        // network-free, so it is safe on this path — it runs on every page turn.
+        _ = works?.mint(from: manga)
+
         if var first = entries.first, first.mangaId == manga.id, first.chapterId == chapter.id {
             first.page = max(first.page, page)   // furthest page reached
             first.pageCount = pageCount

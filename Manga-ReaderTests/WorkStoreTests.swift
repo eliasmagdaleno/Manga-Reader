@@ -281,6 +281,27 @@ final class WorkStoreTests: XCTestCase {
         XCTAssertEqual(reloaded.work(loser)?.id, winner, "a merged-away id must still resolve after relaunch")
     }
 
+    /// Slice 3 put `mint` on the read path, where it runs on **every page turn**.
+    /// A re-mint that learns nothing must therefore not re-arm the debounce: if it
+    /// does, each page turn pushes the write further out and a long reading session
+    /// never persists at all — the write is deferred for as long as the user reads.
+    @MainActor func testAReMintThatLearnsNothingDoesNotDeferThePendingSave() async throws {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("WorkStoreTests-\(UUID().uuidString)")
+        let store = WorkStore(directory: dir, saveDebounce: 0.2)
+        let solo = listing("md-1", title: "Solo Leveling")
+        _ = store.mint(from: solo)              // arms a save for t ≈ 0.2
+
+        for _ in 0..<4 {                        // "page turns" at 0.15s intervals
+            try await Task.sleep(nanoseconds: 150_000_000)
+            _ = store.mint(from: solo)
+        }
+
+        // t ≈ 0.6, so the save armed by the first mint is long overdue.
+        XCTAssertTrue(FileManager.default.fileExists(atPath: dir.appendingPathComponent("works.json").path),
+                      "re-minting an unchanged Listing kept rescheduling the debounced save")
+    }
+
     @MainActor func testAnEmptyDirectoryLoadsAsAnEmptyStore() {
         let store = makeStore()
 

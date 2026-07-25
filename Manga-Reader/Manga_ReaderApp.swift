@@ -17,16 +17,22 @@ struct Manga_ReaderApp: App {
     @StateObject private var library: LibraryStore
     @StateObject private var history: HistoryStore
     @StateObject private var taste: TasteProfileStore
+    @StateObject private var works: WorkStore
     @StateObject private var engine: RecommendationEngine
 
     init() {
-        let lib = LibraryStore()
-        let hist = HistoryStore()
+        // Built first: the three commitment paths below (read, save, feedback) all
+        // mint into it, so they must share this one instance (ADR-0007).
+        let wk = WorkStore()
+        let lib = LibraryStore(works: wk)
+        let hist = HistoryStore(works: wk)
         let ts = TasteProfileStore()
         _library = StateObject(wrappedValue: lib)
         _history = StateObject(wrappedValue: hist)
         _taste = StateObject(wrappedValue: ts)
-        _engine = StateObject(wrappedValue: RecommendationEngine(history: hist, library: lib, profileStore: ts))
+        _works = StateObject(wrappedValue: wk)
+        _engine = StateObject(wrappedValue: RecommendationEngine(history: hist, library: lib,
+                                                                profileStore: ts, workStore: wk))
     }
 
     private var appearance: AppearanceMode {
@@ -40,6 +46,7 @@ struct Manga_ReaderApp: App {
                 .environmentObject(library)
                 .environmentObject(history)
                 .environmentObject(taste)
+                .environmentObject(works)
                 .environmentObject(engine)
                 .preferredColorScheme(appearance.colorScheme)
         }
