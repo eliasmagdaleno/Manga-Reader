@@ -9,11 +9,42 @@ if a type, variable, or doc comment means one of these, it should say this word.
 external ids, and the metadata the recommender ranks on. *No Swift type for this yet* — see
 [ADR-0001](adr/0001-work-vs-listing-identity.md).
 
+**Work id** — the app's own opaque, locally-minted identifier for a Work. **Immutable for the
+life of the Work**, and never derived from an external id: a provider id may arrive long after
+the Work exists, or not at all.
+_Avoid_: canonical id, manga id.
+
 **Listing** — one source's copy of a Work: a source id, that source's manga id, its chapters,
 its cover. The existing `Manga` struct is a Listing, despite the name.
 
+**Display title** — the title a Work shows the user: the Listing title it was **minted from**, set
+once and **never overwritten by a provider**. Sticky on purpose — a provider's canonical title is
+often the romaji one, so letting the snapshot win would rename *Attack on Titan* to *Shingeki no
+Kyojin* as a delayed side effect of a background fetch. On merge the surviving Work keeps its own.
+
+**Known titles** — every title a Work has ever been known by: the mint-time title of each linked
+Listing plus the provider's romaji / english / native / synonyms. Accumulates like external ids
+and never shrinks. This is matcher fuel — it raises recall without loosening
+`MALTitleMatcher`'s precision-biased threshold — and it is what the manual-link UI shows the user
+when nothing matched.
+
+**Listing key** — the `(sourceId, mangaId)` pair identifying a Listing. This, *not* the Work id,
+is what history, library, and taste feedback persist — Works are resolved from it at the seam
+where the recommender reads them.
+_Avoid_: manga key, composite id.
+
 **External id** — an id assigned by a metadata provider: `malId` (MyAnimeList), potentially
 `anilistId`. A Work may have several, or none.
+
+**External-id index** — the lookup from an external id to a Work id. Because the Work id is
+opaque, this index — not the id's spelling — is what makes arriving at the same Work twice
+resolve to one Work.
+
+**Mint** — to create a Work. Happens **only on user commitment** — read, save, *Not interested*,
+*More like this*, manual link — never on browsing, searching, or appearing in a candidate pool.
+Always **synchronous, local, and network-free**: a Work is minted from the Listing alone with a
+provisional snapshot, because minting sits on the path where the user just opened a chapter.
+Browsing must not grow the store, or the Work count stops being bounded by usage.
 
 **Resolution** — establishing the Work ↔ Listing link. Free when the source publishes an
 external id (MangaDex exposes `attributes.links.mal`); otherwise fuzzy title matching via
@@ -32,9 +63,44 @@ Source: a provider tells you *about* a manga, a Source *serves its pages*. AniLi
 where both know a Work — better manhwa/manhua coverage, ranked tags, and its `Media.idMal` hands
 over the MAL id for free.
 
+**Metadata snapshot** — a Work's genres, ranked tags, status and chapter total, all taken from
+**one** authoritative provider, stamped with which one and when. Never merged field-by-field
+across providers, so "where did this tag come from?" always has a single answer. **External ids
+are the exception**: they accumulate and are never replaced.
+
+**Provisional snapshot** — a metadata snapshot built from the Listing's own tags rather than a
+provider — in practice MangaDex's, which arrive free with the detail fetch the UI already makes.
+Costs no request, carries no tag rank, and is replaced wholesale once a provider is queried.
+
+**Upgrade queue** — the single serial queue that turns provisional snapshots into provider ones.
+It owns the whole AniList request budget (**30/min, measured — not the 90 the docs claim**), so
+provider access goes through it and never straight from a view model. Ordered by **engagement
+weight**, so the Works that move the profile are upgraded first and a negligible tail may stay
+provisional indefinitely.
+
+**Snapshot TTL** — how long a provider snapshot is trusted, derived from the Work's own
+publication status rather than a guessed constant: a `FINISHED` Work is **terminal** (its chapter
+total will never change again), while a `RELEASING` Work is **known-incomplete** — its
+`chapters` is `null` by definition — and re-checked on a ~14-day cycle.
+
 **Work store** — the local, app-owned catalog of Works. Its persistence technology is still
 undecided (see ADR-0002); "GraphQL" describes how the app *talks to AniList*, not how the store
 saves to disk.
+
+**Work merge** — collapsing two Works discovered to be the same manga, which happens whenever an
+external id or a manual link arrives after both already exist. The losing Work id is **aliased,
+never erased**: it stays resolvable to the winner forever, so a stale id redirects instead of
+resolving to nothing.
+_Avoid_: dedupe, collapse.
+
+**Queryable tag** — a coarse tag name a Source can actually browse by (`mangaByTag` takes a
+*display name*). AniList's 19 `genres` and the searchable half of MangaDex's 77 tags live here.
+This axis drives candidate **generation**.
+
+**Ranked tag** — a fine-grained tag carrying a **tag rank**, from AniList's 425-tag vocabulary
+(`Dungeon: 95`, `Male Protagonist: 93`). Only 32 of MangaDex's 77 tag names exist in that
+vocabulary at all, so this axis is **not searchable** and is used for **scoring and re-ranking**
+candidates already retrieved — never as a search key.
 
 **Tag rank** — AniList's 0–100 per-title tag relevance (`Solo Leveling` → `Dungeon: 95`,
 `Marriage: 20`). Real evidence of how much a tag characterizes a title, as opposed to
@@ -57,6 +123,11 @@ storage). A forever-contract: once extensions exist in the wild, breaking it bre
 **Fulfillment** — choosing *which* Listing to actually read a Work from, when several sources
 have it. Ranked by English chapter completeness, MangaDex breaking ties — see
 [ADR-0004](adr/0004-fulfillment-routing.md).
+
+**Count cache** — the evictable `(sourceId, mangaId) → (English chapter count, fetchedAt)` cache
+that fulfillment ranks on. **Disposable by design**: deleting it costs one default route until the
+background refresh repopulates, so it lives apart from the Work store — hot, TTL'd, losable data
+must not share a file with authoritative identity. A missing entry means *unknown*, never zero.
 
 **Chapter frontier** — the most chapters any installed source has for a Work. The fallback
 reference for completeness when the metadata providers don't know the true total, which is the

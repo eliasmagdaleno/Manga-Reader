@@ -2,8 +2,9 @@
 
 - **Status:** Accepted (2026-07-24)
 - **Supersedes:** nothing
-- **Related:** ADR-0002 (catalog authority, open), ADR-0003 (extension substrate, open),
-  ADR-0004 (fulfillment routing, open)
+- **Related:** ADR-0002 (catalog authority), ADR-0003 (extension substrate),
+  ADR-0004 (fulfillment routing), ADR-0007 (Work shape and lifecycle — resolves this ADR's
+  open "move to the Work key *or carry a mapping*": the edges stay Listing-keyed)
 
 ## Context
 
