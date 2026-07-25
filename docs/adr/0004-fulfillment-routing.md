@@ -52,10 +52,20 @@ The provider total therefore *refines* the ranking when available; it is never r
 
 ## Consequences and open questions
 
-- **Cost.** Counting chapters per Listing means asking every candidate source for a chapter list.
-  With many installed extensions that is N network round-trips before a detail page can render.
-  **Lazy (on detail open, with a spinner) vs eager (background, cached) is undecided** and is a
-  latency decision users feel directly. A cached count with a TTL is the likely answer.
+- **Counting strategy: optimistic render, then reconcile.** Counting chapters per Listing means
+  asking every candidate source for a chapter list — N network round-trips, where the slowest
+  source (a Cloudflare/WebView fetch) sets the wait. Neither pure strategy is acceptable: *eager*
+  background-refresh of everything in library + history burns network, battery, and rate limit on
+  works the user never opens; *lazy* counting on open puts a spinner in front of every detail page.
+
+  So: choose the Listing immediately from cached counts (or the MangaDex-first default when
+  nothing is cached), render at once, then refresh counts in the background and update the source
+  picker if a better Listing appears. Counts cache with a ~24h TTL. **First paint never blocks on
+  N sources.**
+
+  Two things make this safe rather than sloppy: it is the same shape as
+  `LibraryStore.refresh(history:)`, so it introduces no new pattern; and because the user can
+  switch source from the detail page, a briefly-stale auto-pick costs a tap rather than a bug.
 - **Counts are not trustworthy across sources, and that risk is accepted.** Sources split
   chapters differently, host duplicate uploads, and mix languages, so a source that lists every
   chapter three times can win a route it shouldn't. Cross-source count *normalization* is

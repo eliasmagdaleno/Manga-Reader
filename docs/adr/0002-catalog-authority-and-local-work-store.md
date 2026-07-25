@@ -64,13 +64,34 @@ Three consequences of that shape, decided here:
 - A Work known to no provider can still exist (local-only, no tags, no recommendations).
 - One more network dependency, and AniList's rate limits now matter.
 
-## Not decided here
+## Persistence: a JSON file in Application Support
 
-**Local persistence technology.** "Use GraphQL" describes how the app *talks to AniList* — it is
-a query protocol for a remote API, not a storage engine. How the Work store persists on device
-is a separate, still-open choice: a UserDefaults-backed JSON store (matching `HistoryStore`,
-`LibraryStore`, `TasteProfileStore`, and `EntityResolutionStore` — consistent, zero new
-dependencies, but the app's largest store by far), or SwiftData/Core Data (real queries and
-relations, iOS 17.5-compatible, but a new persistence paradigm in a codebase that has none).
-Decide before implementation; the Work store is the first thing here big enough that
-UserDefaults is genuinely questionable.
+(Note: "use GraphQL" describes how the app *talks to AniList* — a query protocol for a remote
+API. It says nothing about on-device storage, which is this separate decision.)
+
+The sizing question decides it. **Works are created only on resolution** — something read, saved,
+or recommended — so the count is bounded by *usage*, not by the size of any source's catalog.
+Low thousands over years, not tens of thousands. At that scale, filtering an in-memory array of
+structs takes microseconds: the store does not need a query engine, it needs sane I/O.
+
+**Decision: Codable structs persisted to a JSON file in Application Support**, loaded lazily on
+first use and written with debounced saves.
+
+Rejected, with reasons:
+
+- **UserDefaults + Codable** (what `HistoryStore`, `LibraryStore`, `TasteProfileStore`, and
+  `EntityResolutionStore` all do). Consistent and zero-concept, but the I/O is all-or-nothing:
+  every mutation re-encodes and rewrites the whole dataset, and UserDefaults is a *preferences*
+  store whose plist stays resident in memory. At ~0.5–1 KB of JSON per Work, a few thousand Works
+  is megabytes re-serialized on every write and resident from launch. `HistoryStore`'s 500-entry
+  cap exists for exactly this reason; the Work store has no natural cap.
+- **SwiftData.** Real fetches, predicates, indexes, and relationships — Work ↔ Listing genuinely
+  *is* a to-many relation. But `@Model` types are classes, and this codebase is deliberately
+  value-typed (`TasteProfile` is documented as "Pure value type — no I/O — so it's trivially
+  testable"). Adopting it means either reference semantics in the domain layer or a mapping layer,
+  plus a new concurrency model (`ModelActor`) and new test setup, in a codebase with no
+  persistence framework at all.
+
+**Trigger to revisit:** adopt SwiftData when there's a query that cannot be answered by filtering
+the loaded array — e.g. "all Works with tag X above rank 80" across a store too large to hold —
+or when whole-file rewrites become perceptible. Not before; until then it is cost with no benefit.
