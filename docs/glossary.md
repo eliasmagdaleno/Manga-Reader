@@ -86,9 +86,12 @@ summed over every query that surfaced the title. Multi-query overlap falls out f
 added. Buys comparability, **destroys confidence**: a pool's top item is always exactly `1.0`
 whether the pool was strong or garbage.
 
-**Agreement bonus** — the extra credit a title gets for appearing in both pools. Currently a
-flat `+0.25`; a geometric-mean form `k·√(tag·mal)` is under consideration, which rewards the
-*strength* of agreement and needs no special-casing for non-overlap.
+**Agreement bonus** — the extra credit a title gets for appearing in both pools:
+`agreementBonus · √(tag · mal)`, the geometric mean of the two normalized scores. Tracks the
+**weaker** signal, so topping both pools earns the full bonus while incidental co-occurrence deep
+in both earns almost nothing; it is zero when either pool omits the title, so non-overlap needs no
+special case. Replaced a flat `+0.25`, under which a title at ~40% of top strength in both pools
+outranked the best recommendation either signal had on its own.
 
 **Exploration** — the seeded reshuffle in `RecommendationEngine.compose` that mixes lower-ranked
 tail candidates into the rail so it moves between sessions. Deliberately non-deterministic
@@ -97,3 +100,14 @@ across sessions, which is why golden-file testing targets the *pool*, not the ra
 **Golden file** — a committed, deterministic snapshot of ranked output used to make ranking
 changes reviewable as a diff. The project has no labeled relevance data, so this is the only
 available evidence that a tuning change did what was intended.
+
+## Library & Collections
+
+**Collection** (`LibraryCollection`) — a named group for organizing saved manga. May be a system default collection or user-created custom collection.
+
+**System Collection** — built-in default collection (`Reading`, `On Hold`, `Planned`, `Dropped`). Cannot be deleted or renamed; can be enabled/disabled and reordered.
+
+**Custom Collection** — user-created collection. Can be created, renamed, reordered, enabled/disabled, and deleted.
+
+**Collection Multi-assignment** — ability for a single saved manga item (`LibraryItem`) to belong to multiple collections simultaneously (e.g. `Reading` and `Favorites`).
+

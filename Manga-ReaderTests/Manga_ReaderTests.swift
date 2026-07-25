@@ -2155,7 +2155,7 @@ final class Manga_ReaderTests: XCTestCase {
         func candidates(for profile: TasteProfile, excluding: Set<String>, limit: Int) async throws -> [ScoredManga] { out }
     }
 
-    func testCompositeBlendsNormalizesAndBoostsOverlap() async throws {
+    func testCompositeBlendsNormalizesAndBoostsAgreement() async throws {
         let profile = TasteProfile(weights: [:], tagName: [:], orderedTagIds: [],
                                    taggedMangaCount: 0, seeds: [])
         // Tag pool (raw scores 10, 5); MAL pool (raw scores 100, 50). "y" is in both.
@@ -2168,11 +2168,14 @@ final class Manga_ReaderTests: XCTestCase {
         let byId = Dictionary(uniqueKeysWithValues: out.map { ($0.manga.id, $0) })
 
         // Normalized: x=1.0,y_tag=0.5 (tag) ; y_mal=1.0,z=0.5 (mal).
-        // final: y = 1.0*0.5 + 0.85*1.0 + 0.25(overlap) = 1.60 ; x = 1.0 ; z = 0.85*0.5 = 0.425
-        XCTAssertEqual(byId["y"]?.score ?? 0, 1.60, accuracy: 0.0001)
+        // Agreement is the geometric mean of the two normalized scores, so it tracks the WEAKER
+        // signal: y agrees at 0.5/1.0, earning 0.25*sqrt(0.5*1.0) = 0.1768 rather than the flat
+        // 0.25 the old rule gave for any overlap at all.
+        // final: y = 1.0*0.5 + 0.85*1.0 + 0.1768 = 1.5268 ; x = 1.0 ; z = 0.85*0.5 = 0.425
+        XCTAssertEqual(byId["y"]?.score ?? 0, 1.5268, accuracy: 0.0001)
         XCTAssertEqual(byId["x"]?.score ?? 0, 1.00, accuracy: 0.0001)
         XCTAssertEqual(byId["z"]?.score ?? 0, 0.425, accuracy: 0.0001)
-        XCTAssertEqual(out.first?.manga.id, "y")                    // overlap leads
+        XCTAssertEqual(out.first?.manga.id, "y")                    // strong agreement still leads
         XCTAssertEqual(byId["y"]?.reason, "Because you read S")     // MAL reason preferred when MAL contributed
     }
 
@@ -2195,7 +2198,7 @@ final class Manga_ReaderTests: XCTestCase {
                                      ScoredManga(manga: mdManga("q", "Q"), score: 20, reason: "Because you read S")])
         let out = try await CompositeCandidateProvider(tag: tag, mal: mal)
             .candidates(for: profile, excluding: [], limit: 10)
-        XCTAssertEqual(out.map(\.manga.id), ["p", "q"])            // exactly the MAL ranking, no overlap bonus
+        XCTAssertEqual(out.map(\.manga.id), ["p", "q"])            // exactly the MAL ranking, no agreement bonus
         XCTAssertEqual(out.first?.reason, "Because you read S")
     }
 
