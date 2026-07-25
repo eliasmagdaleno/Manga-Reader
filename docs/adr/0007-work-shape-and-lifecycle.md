@@ -76,9 +76,17 @@ Cost is two UUIDs per merge, and merges are rare.
 
 ### Two tag axes, not one merged set
 
-- **`genres: [String]`** — the coarse, **searchable** axis. AniList `genres` and the searchable
-  MangaDex tags both land here, matched on normalized name. **This is what drives candidate
-  generation.**
+- **`genres: [QueryableTag]`** — the coarse, **searchable** axis. AniList `genres` and the
+  searchable MangaDex tags both land here, matched on normalized name. **This is what drives
+  candidate generation.**
+
+  > **Amended 2026-07-25, during slice 2.** This originally read `genres: [String]`. Bare strings
+  > discard MangaDex's tag **group** (genre / theme / format / content), which
+  > `TasteProfile.groupWeight` still uses to weight genre above theme above format
+  > (`TasteProfile.swift:33`) — so shipping strings would have silently flattened the existing
+  > recommender for every MangaDex-sourced Work. The element is therefore
+  > `QueryableTag { name: String, group: String? }`, with `group == nil` for AniList genres, which
+  > are all genre-level anyway. The axis distinction the decision rests on is unchanged.
 - **`tags: [(name, rank: Int?)]`** — the fine, **ranked, unsearchable** axis. AniList's 425 with
   their 0–100 rank; MangaDex tags land here too with `rank == nil`. Used for **scoring and
   re-ranking candidates already retrieved.**

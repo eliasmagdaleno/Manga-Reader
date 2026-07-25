@@ -93,9 +93,11 @@ never erased**: it stays resolvable to the winner forever, so a stale id redirec
 resolving to nothing.
 _Avoid_: dedupe, collapse.
 
-**Queryable tag** — a coarse tag name a Source can actually browse by (`mangaByTag` takes a
-*display name*). AniList's 19 `genres` and the searchable half of MangaDex's 77 tags live here.
-This axis drives candidate **generation**.
+**Queryable tag** (`QueryableTag`) — a coarse tag name a Source can actually browse by
+(`mangaByTag` takes a *display name*). AniList's 19 `genres` and the searchable half of MangaDex's
+77 tags live here. This axis drives candidate **generation**. Carries MangaDex's **group**
+(genre / theme / format / content) when known, `nil` for AniList genres — dropping it would
+flatten `TasteProfile.groupWeight`.
 
 **Ranked tag** — a fine-grained tag carrying a **tag rank**, from AniList's 425-tag vocabulary
 (`Dungeon: 95`, `Male Protagonist: 93`). Only 32 of MangaDex's 77 tag names exist in that
