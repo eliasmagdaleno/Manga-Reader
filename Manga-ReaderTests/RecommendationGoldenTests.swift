@@ -5,7 +5,7 @@
 //  A golden-file harness for the "For You" blend.
 //
 //  WHY THIS EXISTS
-//  The blend has tuning constants (wTag, wMal, overlapBonus in CompositeCandidateProvider;
+//  The blend has tuning constants (wTag, wMal, agreementBonus in CompositeCandidateProvider;
 //  seed cap; perSeedLimit) that were chosen a priori and have never been validated. There is
 //  no labeled relevance data for this app — one user, no ground truth — so we cannot *prove*
 //  a ranking change is an improvement. What we can do is make every ranking change show up as
@@ -64,12 +64,20 @@ final class RecommendationGoldenTests: XCTestCase {
         "Action":  ["A", "B", "C", "D", "Z"],
         "Romance": ["C", "E", "F"],
         "Isekai":  ["B", "G"],
+        // Tie-break fixtures, used only by the tie-break tests — never queried by the main
+        // profile, which has only the three tags above. Deliberately listed b-then-a so that
+        // "id ascending" is not the same as "insertion order".
+        "TieX":    ["tie-b"],
+        "TieY":    ["tie-a"],
     ]
 
     /// Per-seed MAL recommendation lists, in rank order.
     private static let malRecs: [String: [String]] = [
         "seed-berserk": ["C", "H", "A"],
         "seed-vinland": ["I", "C"],
+        // Tie-break fixtures; not reachable from the main profile's two seeds.
+        "seed-tie-1":   ["tie-b"],
+        "seed-tie-2":   ["tie-a"],
     ]
 
     /// Display titles, so the golden reads like a rail and not like a hash dump.
@@ -78,6 +86,7 @@ final class RecommendationGoldenTests: XCTestCase {
         "D": "Dawnbreaker",       "E": "Everlight",       "F": "Fallow Season",
         "G": "Gilded Cage",       "H": "Hollow Court",    "I": "Ivory Requiem",
         "Z": "Zenith (excluded)",
+        "tie-a": "Tie Alpha",     "tie-b": "Tie Beta",
     ]
 
     // swiftlint:enable colon comma
@@ -148,8 +157,88 @@ final class RecommendationGoldenTests: XCTestCase {
         try assertMatchesGolden(rendered, named: "foryou-ranking.txt")
     }
 
-    /// Guards the fixture invariant the golden's stability depends on. If this fails, the
-    /// golden test above may flake rather than fail honestly.
+    // MARK: - Agreement semantics
+
+    /// A pool of pre-scored candidates, for asserting blend behaviour directly.
+    private struct StubPool: CandidateProvider {
+        let items: [ScoredManga]
+        func candidates(for profile: TasteProfile,
+                        excluding: Set<String>, limit: Int) async throws -> [ScoredManga] { items }
+    }
+
+    /// The point of the geometric agreement term: a title ranked mid-pack in *both* pools must
+    /// not outrank a title ranked at the top of *one*. Under the flat `+0.25` this failed —
+    /// "mid" scored 0.37 + 0.85·0.37 + 0.25 = 0.9345 and came second, ahead of "maltop" at 0.85,
+    /// because a flat 0.25 is enormous against scores that live in [0, 1]. With
+    /// 0.25·sqrt(0.37·0.37) = 0.0925 it scores 0.7770 and lands where its strength says it should.
+    ///
+    /// This is deliberately a behaviour test rather than a golden: the main fixture has no title
+    /// sitting in the window where the old rule flipped an ordering, so its golden shows the
+    /// change in margins but not in rank.
+    @MainActor
+    func testAgreementDoesNotPromoteMidRankedTitleOverStrongSingleSignal() async throws {
+        func scored(_ id: String, _ score: Double) -> ScoredManga {
+            ScoredManga(manga: Self.manga(id, title: id), score: score, reason: "r")
+        }
+        let composite = CompositeCandidateProvider(
+            tag: StubPool(items: [scored("strong", 1.0), scored("mid", 0.37)]),
+            mal: StubPool(items: [scored("maltop", 1.0), scored("mid", 0.37)]))
+
+        let blended = try await composite.candidates(
+            for: Self.makeProfile(), excluding: [], limit: 10)
+
+        XCTAssertEqual(blended.map(\.manga.id), ["strong", "maltop", "mid"])
+        XCTAssertEqual(blended[2].score, 0.7770, accuracy: 1e-4)
+    }
+
+    // MARK: - Tie-break regression tests
+    //
+    // The sub-providers now break exactly-tied scores on manga id, matching what
+    // CompositeCandidateProvider has done since 5fb47f9. Without it, tied candidates come out in
+    // whatever order Swift's (unstable) sort produced from a dictionary whose iteration order is
+    // randomized per process — so the rail could reorder between launches, and a tie straddling
+    // `limit` could change which titles were in the pool at all.
+
+    /// Two tags of equal weight, each surfacing one distinct title at position 0, produce two
+    /// exactly-tied scores. The tie must resolve id-ascending, every time.
+    @MainActor
+    func testTagProviderBreaksTiesOnIdAscending() async throws {
+        let profile = TasteProfile(
+            weights: ["t-x": 1.0, "t-y": 1.0],
+            tagName: ["t-x": "TieX", "t-y": "TieY"],
+            orderedTagIds: ["t-x", "t-y"],
+            taggedMangaCount: 3,
+            seeds: []
+        )
+        let pool = try await tagProvider().candidates(for: profile, excluding: [], limit: 10)
+
+        XCTAssertEqual(pool.map(\.manga.id), ["tie-a", "tie-b"])
+        XCTAssertEqual(pool[0].score, pool[1].score, accuracy: 1e-12,
+                       "fixture bug: these candidates are supposed to tie")
+    }
+
+    /// Same property for the MAL pool: two equally-weighted seeds each recommending one distinct
+    /// title at position 0.
+    @MainActor
+    func testMALProviderBreaksTiesOnIdAscending() async throws {
+        let profile = TasteProfile(
+            weights: ["t-x": 1.0], tagName: ["t-x": "TieX"], orderedTagIds: ["t-x"],
+            taggedMangaCount: 3,
+            seeds: [
+                SeedManga(manga: Self.manga("seed-tie-1", title: "Tie Seed One"), weight: 2.0),
+                SeedManga(manga: Self.manga("seed-tie-2", title: "Tie Seed Two"), weight: 2.0),
+            ]
+        )
+        let pool = try await malProvider().candidates(for: profile, excluding: [], limit: 10)
+
+        XCTAssertEqual(pool.map(\.manga.id), ["tie-a", "tie-b"])
+        XCTAssertEqual(pool[0].score, pool[1].score, accuracy: 1e-12,
+                       "fixture bug: these candidates are supposed to tie")
+    }
+
+    /// Guards the main fixture's no-ties invariant. Now that ties are broken deterministically
+    /// this is belt-and-braces rather than load-bearing, but a tied main fixture would still make
+    /// the golden depend on tie-break behaviour instead of on the blend it is meant to document.
     @MainActor
     func testFixtureProducesNoTiedScores() async throws {
         let tagPool = try await tagProvider().candidates(for: Self.makeProfile(),
@@ -201,11 +290,11 @@ final class RecommendationGoldenTests: XCTestCase {
         TEST_RUNNER_REGENERATE_GOLDENS=1 and read the diff.
 
         weights: wTag=\(fmt(composite.wTag)) wMal=\(fmt(composite.wMal)) \
-        overlapBonus=\(fmt(composite.overlapBonus))
+        agreementBonus=\(fmt(composite.agreementBonus))
           (read off the provider under test, so this line can never disagree with the code)
 
         tagNorm / malNorm : each pool's score divided by that pool's own maximum.
-        agree             : the bonus actually applied for appearing in both pools.
+        agree             : the agreement bonus actually applied, agreementBonus·sqrt(tag·mal).
         final             : CompositeCandidateProvider's output score.
 
 

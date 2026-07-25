@@ -65,11 +65,22 @@ struct TagCandidateProvider: CandidateProvider {
             for (i, m) in list.enumerated() where !excluding.contains(m.id) {
                 scores[m.id, default: 0] += w * (1.0 / Double(1 + i))   // rating-desc: earlier = better
                 if mangaById[m.id] == nil { mangaById[m.id] = m }
-                if (bestTag[m.id]?.weight ?? -1) < w { bestTag[m.id] = (w, name) }
+                // Highest-weighted tag wins the reason string; equal weights break on name so
+                // the reason doesn't depend on which task group task happened to finish first.
+                if let best = bestTag[m.id] {
+                    if w > best.weight || (w == best.weight && name < best.name) {
+                        bestTag[m.id] = (w, name)
+                    }
+                } else {
+                    bestTag[m.id] = (w, name)
+                }
             }
         }
 
-        return scores.sorted { $0.value > $1.value }
+        // Secondary sort on id, matching CompositeCandidateProvider: Swift's sort is not stable,
+        // so without this two exactly-tied candidates can swap between runs — and a tie
+        // straddling `limit` can change which titles are in the pool at all.
+        return scores.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
             .prefix(limit)
             .compactMap { id, score in
                 guard let m = mangaById[id] else { return nil }
@@ -117,13 +128,22 @@ struct MALCandidateProvider: CandidateProvider {
             for (i, m) in recs.enumerated() where !excluding.contains(m.id) {
                 scores[m.id, default: 0] += seed.weight * (1.0 / Double(1 + i))
                 if mangaById[m.id] == nil { mangaById[m.id] = m }
-                if (bestSeed[m.id]?.weight ?? -1) < seed.weight {
-                    bestSeed[m.id] = (seed.weight, seed.manga.title)
+                // Same determinism fix as bestTag: equal seed weights break on title.
+                let title = seed.manga.title
+                if let best = bestSeed[m.id] {
+                    if seed.weight > best.weight || (seed.weight == best.weight && title < best.title) {
+                        bestSeed[m.id] = (seed.weight, title)
+                    }
+                } else {
+                    bestSeed[m.id] = (seed.weight, title)
                 }
             }
         }
 
-        return scores.sorted { $0.value > $1.value }
+        // Secondary sort on id, matching CompositeCandidateProvider: Swift's sort is not stable,
+        // so without this two exactly-tied candidates can swap between runs — and a tie
+        // straddling `limit` can change which titles are in the pool at all.
+        return scores.sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
             .prefix(limit)
             .compactMap { id, score in
                 guard let m = mangaById[id] else { return nil }
@@ -134,9 +154,22 @@ struct MALCandidateProvider: CandidateProvider {
 }
 
 /// Blends two candidate pools (tag + MAL). Each pool is normalized to [0, 1] (÷ its own
-/// max) so the two signals are comparable, then combined `W_TAG·tag + W_MAL·mal`; a title
-/// in BOTH pools gets an extra OVERLAP_BONUS so agreement leads. Empty MAL pool ⇒ exactly
-/// the tag ranking (graceful degradation).
+/// max) so the two signals are comparable, then combined `W_TAG·tag + W_MAL·mal` plus an
+/// agreement bonus of `AGREEMENT_BONUS · √(tag · mal)`. Empty MAL pool ⇒ exactly the tag
+/// ranking (graceful degradation).
+///
+/// The agreement term is the geometric mean of the two normalized scores, which tracks the
+/// **weaker** of the two signals: two pools agreeing at the top of both earns close to the
+/// full bonus, while incidental co-occurrence deep in both earns almost nothing. It is also
+/// zero whenever either pool omits the title, so non-overlap needs no special case — the
+/// loop below runs over the intersection purely as an optimization.
+///
+/// This replaced a flat `+0.25` for any overlap at all. Under the flat bonus a title ranked
+/// ~40% of top strength in *both* pools outranked the single best recommendation either
+/// signal had, because 0.25 is large against scores that live in [0, 1]. The two rules are
+/// both defensible — "agreement wins" vs "strength wins, agreement breaks ties" — but they
+/// are different products, and the second is the one chosen. See
+/// Manga-ReaderTests/__Goldens__/foryou-ranking.txt for the effect on a worked example.
 struct CompositeCandidateProvider: CandidateProvider {
     let tag: CandidateProvider
     let mal: CandidateProvider
@@ -148,7 +181,11 @@ struct CompositeCandidateProvider: CandidateProvider {
     // this file. Defaults are the shipping values.
     var wTag = 1.0
     var wMal = 0.85
-    var overlapBonus = 0.25
+    /// Scales the geometric-mean agreement term. Deliberately left at the flat bonus's old
+    /// value so the formula change could be evaluated on its own — note the geometric bonus is
+    /// always ≤ the flat one it replaced, reaching 0.25 only when a title tops both pools, so
+    /// this constant is a candidate for retuning *after* the shape change has been judged.
+    var agreementBonus = 0.25
 
     func candidates(for profile: TasteProfile,
                     excluding: Set<String>,
@@ -176,9 +213,11 @@ struct CompositeCandidateProvider: CandidateProvider {
             reason[c.manga.id] = c.reason      // MAL reason preferred when MAL contributed
             score[c.manga.id, default: 0] += wMal * (malNorm[c.manga.id] ?? 0)
         }
-        // Gold-star: present in both pools.
-        let both = Set(tagNorm.keys).intersection(malNorm.keys)
-        for id in both { score[id, default: 0] += overlapBonus }
+        // Agreement: proportional to the geometric mean of the two normalized scores.
+        for id in Set(tagNorm.keys).intersection(malNorm.keys) {
+            let agreement = ((tagNorm[id] ?? 0) * (malNorm[id] ?? 0)).squareRoot()
+            score[id, default: 0] += agreementBonus * agreement
+        }
 
         // Secondary sort on id keeps the order stable for exactly-tied scores, so the
         // "See all" grid (which uses the straight ranking) doesn't reshuffle between opens.
