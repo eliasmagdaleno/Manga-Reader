@@ -156,18 +156,48 @@ struct MangaDetailView: View {
                 libraryToggle
             } else {
                 // No readable chapters — the library toggle gets its words back.
-                Button {
-                    withAnimation(.snappy(duration: 0.2)) { library.toggle(manga) }
+                let inLibrary = library.contains(manga.id)
+                let assignedIds = library.collectionIds(for: manga.id)
+                Menu {
+                    Section {
+                        Button {
+                            withAnimation(.snappy(duration: 0.2)) { library.toggle(manga) }
+                        } label: {
+                            Label(
+                                inLibrary ? "Remove from Library" : "Quick Add to Library",
+                                systemImage: inLibrary ? "trash" : "bookmark"
+                            )
+                        }
+                    }
+                    Section("Collections") {
+                        ForEach(library.enabledCollections) { collection in
+                            let isInCollection = assignedIds.contains(collection.id)
+                            Button {
+                                withAnimation(.snappy(duration: 0.2)) {
+                                    library.toggleCollection(for: manga, collectionId: collection.id)
+                                }
+                            } label: {
+                                Label(
+                                    collection.name,
+                                    systemImage: isInCollection ? "checkmark.square.fill" : "square"
+                                )
+                            }
+                        }
+                    }
                 } label: {
-                    let inLibrary = library.contains(manga.id)
                     HStack(spacing: 8) {
                         Image(systemName: inLibrary ? "bookmark.fill" : "bookmark")
                         Text(inLibrary ? "In Library" : "Add to Library")
+                        Image(systemName: "chevron.down")
+                            .font(.caption)
+                            .opacity(0.7)
                     }
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .foregroundStyle(inLibrary ? Ink.seal : Color.white)
                     .background(RoundedRectangle(cornerRadius: 12).fill(inLibrary ? Ink.sealSoft : Ink.seal))
+                } primaryAction: {
+                    withAnimation(.snappy(duration: 0.2)) { library.toggle(manga) }
                 }
                 .buttonStyle(.plain)
             }
@@ -185,7 +215,7 @@ struct MangaDetailView: View {
 
     private func continueLink(_ action: ResumeAction, progress: Double?) -> some View {
         NavigationLink {
-            ReaderView(manga: manga, chapter: action.chapter, initialPage: action.startPage)
+            ReaderView(manga: manga, chapter: action.chapter, initialPage: action.startPage, chapters: vm.chapters)
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: 12).fill(Ink.seal)
@@ -229,8 +259,34 @@ struct MangaDetailView: View {
 
     private var libraryToggle: some View {
         let inLibrary = library.contains(manga.id)
-        return Button {
-            withAnimation(.snappy(duration: 0.2)) { library.toggle(manga) }
+        let assignedIds = library.collectionIds(for: manga.id)
+
+        return Menu {
+            Section {
+                Button {
+                    withAnimation(.snappy(duration: 0.2)) { library.toggle(manga) }
+                } label: {
+                    Label(
+                        inLibrary ? "Remove from Library" : "Quick Add to Library",
+                        systemImage: inLibrary ? "trash" : "bookmark"
+                    )
+                }
+            }
+            Section("Collections") {
+                ForEach(library.enabledCollections) { collection in
+                    let isInCollection = assignedIds.contains(collection.id)
+                    Button {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            library.toggleCollection(for: manga, collectionId: collection.id)
+                        }
+                    } label: {
+                        Label(
+                            collection.name,
+                            systemImage: isInCollection ? "checkmark.square.fill" : "square"
+                        )
+                    }
+                }
+            }
         } label: {
             Image(systemName: inLibrary ? "bookmark.fill" : "bookmark")
                 .font(.system(size: 17, weight: .semibold))
@@ -241,9 +297,11 @@ struct MangaDetailView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .strokeBorder(inLibrary ? Ink.seal : Ink.hairline, lineWidth: inLibrary ? 1.5 : 1)
                 )
+        } primaryAction: {
+            withAnimation(.snappy(duration: 0.2)) { library.toggle(manga) }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(inLibrary ? "Remove from Library" : "Add to Library")
+        .accessibilityLabel(inLibrary ? "Manage Library Collections" : "Add to Library")
     }
 
     // MARK: Tags
@@ -349,7 +407,7 @@ struct MangaDetailView: View {
                 VStack(spacing: 0) {
                     ForEach(chapterPreview(vm.chapters, limit: 5)) { chapter in
                         NavigationLink {
-                            ReaderView(manga: manga, chapter: chapter)
+                            ReaderView(manga: manga, chapter: chapter, chapters: vm.chapters)
                         } label: {
                             ChapterRow(chapter: chapter)
                         }
@@ -361,6 +419,15 @@ struct MangaDetailView: View {
                             } label: {
                                 Label(read ? "Mark as unread" : "Mark as read",
                                       systemImage: read ? "circle" : "checkmark.circle")
+                            }
+                            
+                            Button {
+                                let sorted = sortChapters(vm.chapters, descending: true)
+                                if let idx = sorted.firstIndex(where: { $0.id == chapter.id }) {
+                                    history.markRead(manga: manga, chapters: Array(sorted[idx...]))
+                                }
+                            } label: {
+                                Label("Mark all below as read", systemImage: "arrow.down.to.line")
                             }
                         }
                         Divider().overlay(Ink.hairline)

@@ -2,8 +2,8 @@
 //  LibraryStore.swift
 //  Manga-Reader
 //
-//  A lightweight, persisted "Library" of saved manga. Stores just enough
-//  (id, title, cover) to render cards and re-open detail, backed by UserDefaults.
+//  A lightweight, persisted "Library" of saved manga with multi-collection support.
+//  Stores item metadata and collection assignments, backed by UserDefaults.
 //
 
 import SwiftUI
@@ -15,6 +15,54 @@ struct LibraryItem: Codable, Identifiable, Hashable {
     let coverURL: URL?
     var chapterNumbers: [String]? = nil   // deduped chapter numbers from last refresh; nil = never refreshed
     var sourceId: String? = nil   // nil = saved before multi-source; treat as MangaDex
+    var collectionIds: Set<String> = [LibraryCollection.readingID]
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, coverURL, chapterNumbers, sourceId, collectionIds
+    }
+
+    init(
+        id: String,
+        title: String,
+        coverURL: URL?,
+        chapterNumbers: [String]? = nil,
+        sourceId: String? = nil,
+        collectionIds: Set<String> = [LibraryCollection.readingID]
+    ) {
+        self.id = id
+        self.title = title
+        self.coverURL = coverURL
+        self.chapterNumbers = chapterNumbers
+        self.sourceId = sourceId
+        self.collectionIds = collectionIds.isEmpty ? [LibraryCollection.readingID] : collectionIds
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        coverURL = try container.decodeIfPresent(URL.self, forKey: .coverURL)
+        chapterNumbers = try container.decodeIfPresent([String].self, forKey: .chapterNumbers)
+        sourceId = try container.decodeIfPresent(String.self, forKey: .sourceId)
+
+        if let decodedCollectionIds = try container.decodeIfPresent(Set<String>.self, forKey: .collectionIds),
+           !decodedCollectionIds.isEmpty {
+            collectionIds = decodedCollectionIds
+        } else {
+            // Default legacy items without collectionIds to the primary "reading" collection
+            collectionIds = [LibraryCollection.readingID]
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(coverURL, forKey: .coverURL)
+        try container.encodeIfPresent(chapterNumbers, forKey: .chapterNumbers)
+        try container.encodeIfPresent(sourceId, forKey: .sourceId)
+        try container.encode(collectionIds, forKey: .collectionIds)
+    }
 }
 
 extension LibraryItem {
@@ -29,33 +77,181 @@ extension LibraryItem {
 @MainActor
 final class LibraryStore: ObservableObject {
     @Published private(set) var items: [LibraryItem] = []
+    @Published private(set) var collections: [LibraryCollection] = []
     @Published private(set) var isRefreshing = false
 
-    private let key = "library.items"
+    private let itemsKey = "library.items"
+    private let collectionsKey = "library.collections"
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        load()
+        loadCollections()
+        loadItems()
     }
+
+    // MARK: - Querying Items & Collections
 
     func contains(_ id: String) -> Bool {
         items.contains { $0.id == id }
     }
 
-    /// Add the manga if absent, remove it if already saved.
+    func item(for id: String) -> LibraryItem? {
+        items.first { $0.id == id }
+    }
+
+    /// Active enabled collections sorted by `sortOrder`.
+    var enabledCollections: [LibraryCollection] {
+        collections.filter(\.isEnabled).sorted(by: { $0.sortOrder < $1.sortOrder })
+    }
+
+    /// Returns saved items filtered by collection ID.
+    /// If `collectionId` is nil or "all", returns all saved items.
+    func items(in collectionId: String?) -> [LibraryItem] {
+        guard let collectionId, collectionId != "all" else { return items }
+        return items.filter { $0.collectionIds.contains(collectionId) }
+    }
+
+    /// Returns whether a manga belongs to a specific collection ID.
+    func isManga(_ mangaId: String, in collectionId: String) -> Bool {
+        item(for: mangaId)?.collectionIds.contains(collectionId) ?? false
+    }
+
+    /// Returns the collection IDs assigned to a given manga.
+    func collectionIds(for mangaId: String) -> Set<String> {
+        item(for: mangaId)?.collectionIds ?? []
+    }
+
+    // MARK: - Managing Items & Collection Membership
+
+    /// Toggle manga in/out of library: if present, removes from all collections; if absent, adds to default primary collection.
     func toggle(_ manga: Manga) {
         if contains(manga.id) {
             items.removeAll { $0.id == manga.id }
         } else {
+            let primaryCollectionId = enabledCollections.first?.id ?? LibraryCollection.readingID
             items.insert(
-                LibraryItem(id: manga.id, title: manga.title, coverURL: manga.coverURL,
-                            sourceId: manga.sourceId),
+                LibraryItem(
+                    id: manga.id,
+                    title: manga.title,
+                    coverURL: manga.coverURL,
+                    sourceId: manga.sourceId,
+                    collectionIds: [primaryCollectionId]
+                ),
                 at: 0
             )
         }
-        save()
+        saveItems()
     }
+
+    /// Toggle a specific collection membership for a manga.
+    func toggleCollection(for manga: Manga, collectionId: String) {
+        if let idx = items.firstIndex(where: { $0.id == manga.id }) {
+            var updated = items[idx]
+            if updated.collectionIds.contains(collectionId) {
+                updated.collectionIds.remove(collectionId)
+                if updated.collectionIds.isEmpty {
+                    items.remove(at: idx)
+                } else {
+                    items[idx] = updated
+                }
+            } else {
+                updated.collectionIds.insert(collectionId)
+                items[idx] = updated
+            }
+        } else {
+            items.insert(
+                LibraryItem(
+                    id: manga.id,
+                    title: manga.title,
+                    coverURL: manga.coverURL,
+                    sourceId: manga.sourceId,
+                    collectionIds: [collectionId]
+                ),
+                at: 0
+            )
+        }
+        saveItems()
+    }
+
+    /// Explicitly update the set of collection IDs for a manga.
+    func setCollections(for manga: Manga, collectionIds: Set<String>) {
+        if collectionIds.isEmpty {
+            items.removeAll { $0.id == manga.id }
+        } else if let idx = items.firstIndex(where: { $0.id == manga.id }) {
+            items[idx].collectionIds = collectionIds
+        } else {
+            items.insert(
+                LibraryItem(
+                    id: manga.id,
+                    title: manga.title,
+                    coverURL: manga.coverURL,
+                    sourceId: manga.sourceId,
+                    collectionIds: collectionIds
+                ),
+                at: 0
+            )
+        }
+        saveItems()
+    }
+
+    // MARK: - Managing Collections CRUD
+
+    func addCustomCollection(name: String) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let maxOrder = collections.map(\.sortOrder).max() ?? -1
+        let newCollection = LibraryCollection(
+            id: UUID().uuidString,
+            name: trimmed,
+            isSystem: false,
+            isEnabled: true,
+            sortOrder: maxOrder + 1
+        )
+        collections.append(newCollection)
+        saveCollections()
+    }
+
+    func renameCustomCollection(id: String, newName: String) {
+        guard let idx = collections.firstIndex(where: { $0.id == id && !$0.isSystem }) else { return }
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        collections[idx].name = trimmed
+        saveCollections()
+    }
+
+    func setCollectionEnabled(id: String, isEnabled: Bool) {
+        guard let idx = collections.firstIndex(where: { $0.id == id }) else { return }
+        collections[idx].isEnabled = isEnabled
+        saveCollections()
+    }
+
+    func deleteCustomCollection(id: String) {
+        guard let idx = collections.firstIndex(where: { $0.id == id && !$0.isSystem }) else { return }
+        collections.remove(at: idx)
+        saveCollections()
+
+        // Clean up items that belonged to the deleted custom collection
+        var updatedItems: [LibraryItem] = []
+        for var item in items {
+            item.collectionIds.remove(id)
+            if !item.collectionIds.isEmpty {
+                updatedItems.append(item)
+            }
+        }
+        items = updatedItems
+        saveItems()
+    }
+
+    func moveCollection(fromOffsets source: IndexSet, toOffset destination: Int) {
+        collections.move(fromOffsets: source, toOffset: destination)
+        for idx in collections.indices {
+            collections[idx].sortOrder = idx
+        }
+        saveCollections()
+    }
+
+    // MARK: - Refreshing
 
     /// Refresh every saved manga's full chapter-number list concurrently. Best-effort:
     /// per-item failures leave that item's existing `chapterNumbers` untouched.
@@ -65,9 +261,6 @@ final class LibraryStore: ObservableObject {
         defer { isRefreshing = false }
 
         let current = items
-        // Capture the source as a value here (MainActor) so the off-actor refresh tasks
-        // below don't touch MainActor-isolated registry state. LibraryItem doesn't yet
-        // carry a sourceId, so saved manga refresh against the active source for now.
         let source = SourceRegistry.shared.active
         let maxConcurrent = 4
         let results: [(String, [String])] = await withTaskGroup(
@@ -99,18 +292,41 @@ final class LibraryStore: ObservableObject {
             updated[idx].chapterNumbers = numbers
         }
         items = updated
-        save()
+        saveItems()
     }
 
-    private func save() {
+    // MARK: - Persistence
+
+    private func saveItems() {
         guard let data = try? JSONEncoder().encode(items) else { return }
-        defaults.set(data, forKey: key)
+        defaults.set(data, forKey: itemsKey)
     }
 
-    private func load() {
-        guard let data = defaults.data(forKey: key),
+    private func loadItems() {
+        guard let data = defaults.data(forKey: itemsKey),
               let decoded = try? JSONDecoder().decode([LibraryItem].self, from: data)
         else { return }
         items = decoded
+    }
+
+    private func saveCollections() {
+        guard let data = try? JSONEncoder().encode(collections) else { return }
+        defaults.set(data, forKey: collectionsKey)
+    }
+
+    private func loadCollections() {
+        if let data = defaults.data(forKey: collectionsKey),
+           let decoded = try? JSONDecoder().decode([LibraryCollection].self, from: data) {
+            var merged = decoded
+            // Ensure any missing system collection exists
+            for sys in LibraryCollection.defaultCollections {
+                if !merged.contains(where: { $0.id == sys.id }) {
+                    merged.append(sys)
+                }
+            }
+            collections = merged.sorted(by: { $0.sortOrder < $1.sortOrder })
+        } else {
+            collections = LibraryCollection.defaultCollections
+        }
     }
 }

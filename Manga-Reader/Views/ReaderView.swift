@@ -46,19 +46,29 @@ enum ReadingMode: String, CaseIterable, Identifiable {
 
 struct ReaderView: View {
     let manga: Manga
-    let chapter: Chapter
     let initialPage: Int
+    let chapters: [Chapter]
 
-    init(manga: Manga, chapter: Chapter, initialPage: Int = 0) {
+    init(manga: Manga, chapter: Chapter, initialPage: Int = 0, chapters: [Chapter] = []) {
         self.manga = manga
-        self.chapter = chapter
         self.initialPage = initialPage
+        self.chapters = chapters
+        _currentChapter = State(initialValue: chapter)
+        _startPageRequest = State(initialValue: .exact(initialPage))
+    }
+
+    enum StartPageRequest {
+        case exact(Int)
+        case last
     }
 
     @AppStorage("readingMode") private var mode: ReadingMode = .rightToLeft
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var history: HistoryStore
 
+    @State private var currentChapter: Chapter
+    @State private var loadedChapters: [Chapter]? = nil
+    @State private var startPageRequest: StartPageRequest
     @State private var pages: [URL] = []
     @State private var currentPage = 0
     @State private var furthestPage = 0
@@ -66,6 +76,26 @@ struct ReaderView: View {
     @State private var isLoading = false
     @State private var errorMessage: String? = nil
     @State private var showChrome = false
+
+    private var effectiveChapters: [Chapter] { loadedChapters ?? chapters }
+
+    private var nextChapter: Chapter? {
+        let chaps = effectiveChapters
+        guard !chaps.isEmpty else { return nil }
+        let sorted = chaps.sorted { (Double($0.number) ?? 0) < (Double($1.number) ?? 0) }
+        guard let idx = sorted.firstIndex(where: { $0.id == currentChapter.id }) else { return nil }
+        let nextIdx = idx + 1
+        return sorted.indices.contains(nextIdx) ? sorted[nextIdx] : nil
+    }
+
+    private var previousChapter: Chapter? {
+        let chaps = effectiveChapters
+        guard !chaps.isEmpty else { return nil }
+        let sorted = chaps.sorted { (Double($0.number) ?? 0) < (Double($1.number) ?? 0) }
+        guard let idx = sorted.firstIndex(where: { $0.id == currentChapter.id }) else { return nil }
+        let prevIdx = idx - 1
+        return sorted.indices.contains(prevIdx) ? sorted[prevIdx] : nil
+    }
 
     var body: some View {
         ZStack {
@@ -93,17 +123,49 @@ struct ReaderView: View {
         .task { await loadAndBegin() }
     }
 
-    /// Fetch the chapter's pages and, on success, seed reading progress. Also
-    /// invoked by the retry button after a failed load.
     private func loadAndBegin() async {
+        if effectiveChapters.isEmpty {
+            let src = SourceRegistry.shared.source(for: manga)
+            if let fetched = try? await src.chapters(mangaId: manga.id) {
+                loadedChapters = fetched
+            }
+        }
+        
         await load()
-        guard !pages.isEmpty else { return }   // load failed → don't record progress
-        let start = min(max(initialPage, 0), pages.count - 1)
+        guard !pages.isEmpty else { return }
+        
+        let start: Int
+        switch startPageRequest {
+        case .exact(let p): start = min(max(p, 0), pages.count - 1)
+        case .last: start = pages.count - 1
+        }
+        
         currentPage = start
         advanceProgress(to: start)
     }
 
-    /// Whole-chapter failure (the page list couldn't be fetched): notice + retry.
+    private func loadNextChapter() async {
+        guard let next = nextChapter else { return }
+        currentChapter = next
+        pages = []
+        startPageRequest = .exact(0)
+        currentPage = 0
+        furthestPage = 0
+        hasRecordedProgress = false
+        await loadAndBegin()
+    }
+
+    private func loadPreviousChapter() async {
+        guard let prev = previousChapter else { return }
+        currentChapter = prev
+        pages = []
+        startPageRequest = .last
+        currentPage = 0
+        furthestPage = 0
+        hasRecordedProgress = false
+        await loadAndBegin()
+    }
+
     private func errorState(_ message: String) -> some View {
         VStack(spacing: 16) {
             InkNotice(message)
@@ -131,12 +193,11 @@ struct ReaderView: View {
     }
 
     private func advanceProgress(to index: Int) {
-        guard !pages.isEmpty else { return }
-        // Only persist when reaching a new furthest page (or on the first record).
+        guard !pages.isEmpty, index >= 0, index < pages.count else { return }
         guard index > furthestPage || !hasRecordedProgress else { return }
         furthestPage = max(furthestPage, index)
         hasRecordedProgress = true
-        history.record(manga: manga, chapter: chapter, page: furthestPage, pageCount: pages.count)
+        history.record(manga: manga, chapter: currentChapter, page: furthestPage, pageCount: pages.count)
     }
 
     // MARK: Content per mode
@@ -150,35 +211,47 @@ struct ReaderView: View {
         }
     }
 
-    /// Paged reader. RTL is achieved by laying pages out in reversed order —
-    /// page i+1 sits to the LEFT of page i, so the story advances with a
-    /// rightward swipe — while every page (including its embedded UIScrollView
-    /// zoom layer) stays in a plain, un-mirrored coordinate space. The old
-    /// mirror-the-pager `scaleEffect(x: -1)` approach inverted horizontal pan
-    /// translations for gestures inside the page.
     private var pagedReader: some View {
         TabView(selection: $currentPage) {
             ForEach(pageOrder, id: \.self) { index in
-                ZoomablePage(url: pages[index], index: index, currentIndex: currentPage,
-                             onTap: toggleChrome)
-                    .tag(index)
+                if index == -1, let prev = previousChapter {
+                    InterstitialPage(chapter: prev, isNext: false)
+                        .tag(index)
+                } else if index >= 0, index < pages.count {
+                    ZoomablePage(url: pages[index], index: index, currentIndex: currentPage,
+                                 onTap: toggleChrome)
+                        .tag(index)
+                } else if index == pages.count, let next = nextChapter {
+                    InterstitialPage(chapter: next, isNext: true)
+                        .tag(index)
+                } else {
+                    Color.clear
+                        .tag(index)
+                }
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .ignoresSafeArea()
-        // Rebuild the pager when the direction flips — reordering live pages
-        // inside a paged TabView is glitch-prone. Selection is restored from
-        // `currentPage` (tags are logical page indices in both orders).
         .id(mode)
-        .onChange(of: currentPage) { _, newValue in advanceProgress(to: newValue) }
+        .onChange(of: currentPage) { _, newValue in
+            if newValue >= 0, newValue < pages.count {
+                advanceProgress(to: newValue)
+            } else if newValue == pages.count + 1 {
+                Task { await loadNextChapter() }
+            } else if newValue == -2 {
+                Task { await loadPreviousChapter() }
+            }
+        }
     }
 
-    /// Layout order of the page indices: natural for LTR, reversed for RTL.
     private var pageOrder: [Int] {
-        mode == .rightToLeft ? Array(pages.indices.reversed()) : Array(pages.indices)
+        let prevExtra = previousChapter != nil ? 2 : 0
+        let nextExtra = nextChapter != nil ? 2 : 0
+        let count = pages.count + nextExtra
+        let range = -prevExtra..<count
+        return mode == .rightToLeft ? Array(range.reversed()) : Array(range)
     }
 
-    /// Continuous vertical scroll — the webtoon / long-strip layout.
     private var verticalReader: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -188,7 +261,19 @@ struct ReaderView: View {
                             .id(index)
                             .onAppear { advanceProgress(to: index) }
                     }
-                    if !pages.isEmpty && !isLoading { endMark }
+                    if !pages.isEmpty && !isLoading {
+                        if let next = nextChapter {
+                            InterstitialPage(chapter: next, isNext: true)
+                                .frame(height: UIScreen.main.bounds.height * 0.8)
+                            
+                            Color.clear.frame(height: 50)
+                                .onAppear {
+                                    Task { await loadNextChapter() }
+                                }
+                        } else {
+                            endMark
+                        }
+                    }
                 }
                 .contentShape(Rectangle())
                 .onTapGesture(perform: toggleChrome)
@@ -209,6 +294,20 @@ struct ReaderView: View {
             Button { dismiss() } label: {
                 chromeIcon("xmark", tint: Ink.primary)
             }
+            Spacer()
+            
+            VStack(spacing: 2) {
+                Text("Chapter \(currentChapter.number)")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Ink.primary)
+                if let title = currentChapter.title, !title.isEmpty {
+                    Text(title)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Ink.secondary)
+                        .lineLimit(1)
+                }
+            }
+            
             Spacer()
             Menu {
                 Picker("Reading Mode", selection: $mode) {
@@ -235,7 +334,7 @@ struct ReaderView: View {
     }
 
     private var pageIndicator: some View {
-        Text("\(min(currentPage + 1, pages.count)) · \(pages.count)")
+        Text("\(min(max(currentPage + 1, 1), pages.count)) · \(pages.count)")
             .font(.inkMono(12, weight: .semibold))
             .tracking(1)
             .foregroundStyle(Ink.primary)
@@ -278,7 +377,7 @@ struct ReaderView: View {
         errorMessage = nil
         do {
             let src = SourceRegistry.shared.source(for: manga)
-            pages = try await src.pageURLs(chapterId: chapter.id, preferDataSaver: true)
+            pages = try await src.pageURLs(chapterId: currentChapter.id, preferDataSaver: true)
             ImageCache.shared.prefetch(pages, maxConcurrent: src.imagePrefetchConcurrency)
         } catch {
             errorMessage = error.localizedDescription
@@ -303,7 +402,11 @@ private struct ZoomablePage: View {
     @State private var reloadToken = 0
 
     var body: some View {
-        ZoomableContainer(isActive: index == currentIndex, onSingleTap: onTap) {
+        ZoomableContainer(
+            isActive: index == currentIndex,
+            contentID: "\(url.absoluteString)-\(reloadToken)",
+            onSingleTap: onTap
+        ) {
             CachedAsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let img):
@@ -377,5 +480,41 @@ private struct PageRetry: View {
             .foregroundStyle(Ink.secondary)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Interstitial Page
+
+private struct InterstitialPage: View {
+    let chapter: Chapter
+    let isNext: Bool
+
+    var body: some View {
+        VStack(spacing: 24) {
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(Ink.seal)
+                .frame(width: 32, height: 4)
+
+            VStack(spacing: 8) {
+                Text(isNext ? "NEXT CHAPTER" : "PREVIOUS CHAPTER")
+                    .font(.inkMono(12, weight: .bold))
+                    .tracking(2)
+                    .foregroundStyle(Ink.tertiary)
+
+                Text("Chapter \(chapter.number)")
+                    .font(.inkDisplay(32))
+                    .foregroundStyle(Ink.primary)
+
+                if let title = chapter.title, !title.isEmpty {
+                    Text(title)
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(Ink.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Ink.background)
     }
 }

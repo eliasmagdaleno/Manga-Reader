@@ -31,7 +31,7 @@ struct ChapterListView: View {
                         .buttonStyle(.plain)
                     } else {
                         NavigationLink {
-                            ReaderView(manga: manga, chapter: chapter)
+                            ReaderView(manga: manga, chapter: chapter, chapters: chapters)
                         } label: {
                             ChapterRow(chapter: chapter)
                         }
@@ -43,6 +43,15 @@ struct ChapterListView: View {
                             } label: {
                                 Label(read ? "Mark as unread" : "Mark as read",
                                       systemImage: read ? "circle" : "checkmark.circle")
+                            }
+                            
+                            Button {
+                                let sorted = sortChapters(chapters, descending: descending)
+                                if let idx = sorted.firstIndex(where: { $0.id == chapter.id }) {
+                                    history.markRead(manga: manga, chapters: Array(sorted[idx...]))
+                                }
+                            } label: {
+                                Label("Mark all below as read", systemImage: "arrow.down.to.line")
                             }
                         }
                     }

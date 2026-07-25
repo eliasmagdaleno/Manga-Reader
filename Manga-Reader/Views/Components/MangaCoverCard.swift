@@ -13,6 +13,7 @@ struct MangaCoverCard: View {
     let coverURL: URL?         // Remote cover URL (may be nil)
     var stamp: String? = nil   // Optional metadata stamp, e.g. "CH·012" or "NEW"
     var stampTinted = false    // Draw the stamp in the seal color
+    var badge: String? = nil   // Top-left corner badge overlay, e.g. unread count "403"
     var fill = false           // Fill the grid cell's width (3-up grid) vs. fixed 128pt rail card
 
     var body: some View {
@@ -40,6 +41,21 @@ struct MangaCoverCard: View {
                     RoundedRectangle(cornerRadius: Gutter.cardRadius)
                         .strokeBorder(Ink.hairline, lineWidth: 1)
                 )
+                .overlay(alignment: .topLeading) {
+                    if let badge {
+                        Text(badge)
+                            .font(.inkMono(10, weight: .bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(
+                                Capsule()
+                                    .fill(Ink.seal)
+                            )
+                            .shadow(color: Color.black.opacity(0.3), radius: 4, x: 0, y: 2)
+                            .padding(6)
+                    }
+                }
                 .shadow(color: Color.black.opacity(0.10), radius: 6, x: 0, y: 3)
 
             // Title — always reserves two lines so the stamp below aligns

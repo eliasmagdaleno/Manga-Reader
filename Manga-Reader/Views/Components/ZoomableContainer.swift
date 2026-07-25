@@ -36,6 +36,7 @@ struct ZoomableContainer<Content: View>: UIViewRepresentable {
     /// Whether this page is the pager's current selection. Zoom resets the
     /// moment this turns false, so a page is always back at 1× on return.
     let isActive: Bool
+    let contentID: String
     let onSingleTap: () -> Void
     @ViewBuilder let content: () -> Content
 
@@ -49,11 +50,10 @@ struct ZoomableContainer<Content: View>: UIViewRepresentable {
 
         let hosting = UIHostingController(rootView: hostedRoot(coordinator))
         hosting.view.backgroundColor = .clear
-        // The page sits edge-to-edge under an `ignoresSafeArea` pager; without
-        // this the hosting view would re-apply the screen's safe-area insets,
-        // shifting both the content layout and the tap coordinates.
         hosting.safeAreaRegions = []
         coordinator.hostingController = hosting
+        coordinator.lastContentID = contentID
+        coordinator.lastIsActive = isActive
 
         let scrollView = ZoomHostScrollView()
         scrollView.hostedView = hosting.view
@@ -61,9 +61,9 @@ struct ZoomableContainer<Content: View>: UIViewRepresentable {
         scrollView.minimumZoomScale = 1
         scrollView.maximumZoomScale = Self.maximumZoom
         scrollView.bouncesZoom = true                // native pinch overshoot
-        scrollView.bounces = true                    // rubber-band while zoomed…
-        scrollView.alwaysBounceHorizontal = false    // …but never at 1×, so the
-        scrollView.alwaysBounceVertical = false      // pan fails → pager swipes
+        scrollView.bounces = false                   // toggled on during zoom
+        scrollView.alwaysBounceHorizontal = false
+        scrollView.alwaysBounceVertical = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.showsVerticalScrollIndicator = false
         scrollView.contentInsetAdjustmentBehavior = .never
@@ -78,10 +78,16 @@ struct ZoomableContainer<Content: View>: UIViewRepresentable {
     func updateUIView(_ scrollView: UIScrollView, context: Context) {
         let coordinator = context.coordinator
         coordinator.onSingleTap = onSingleTap
-        // Re-assign the root so content-identity changes made by the parent
-        // (e.g. the reader's reload token) propagate into the hosted tree.
-        coordinator.hostingController?.rootView = hostedRoot(coordinator)
-        if !isActive { coordinator.resetZoom() }
+        
+        if coordinator.lastContentID != contentID {
+            coordinator.hostingController?.rootView = hostedRoot(coordinator)
+            coordinator.lastContentID = contentID
+        }
+        
+        if coordinator.lastIsActive != isActive {
+            coordinator.lastIsActive = isActive
+            if !isActive { coordinator.resetZoom() }
+        }
     }
 
     private func hostedRoot(_ coordinator: Coordinator) -> ZoomableContent<Content> {
@@ -98,9 +104,16 @@ struct ZoomableContainer<Content: View>: UIViewRepresentable {
         fileprivate var hostingController: UIHostingController<ZoomableContent<Content>>?
         weak var scrollView: UIScrollView?
         var onSingleTap: () -> Void = {}
+        var lastContentID: String = ""
+        var lastIsActive: Bool = false
 
         func viewForZooming(in scrollView: UIScrollView) -> UIView? {
             hostingController?.view
+        }
+
+        func scrollViewDidZoom(_ scrollView: UIScrollView) {
+            // Disable bounces when at 1x zoom so it doesn't conflict with TabView pan.
+            scrollView.bounces = scrollView.zoomScale > scrollView.minimumZoomScale + 0.01
         }
 
         /// Double-tap: zoom into the tapped point (Photos-style) or, if
@@ -126,6 +139,7 @@ struct ZoomableContainer<Content: View>: UIViewRepresentable {
             guard let scrollView, scrollView.zoomScale != scrollView.minimumZoomScale else { return }
             scrollView.setZoomScale(scrollView.minimumZoomScale, animated: false)
             scrollView.contentOffset = .zero
+            scrollView.bounces = false
         }
     }
 }

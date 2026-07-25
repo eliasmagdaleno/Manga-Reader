@@ -9,11 +9,36 @@ struct SettingsView: View {
     @AppStorage(appearanceStorageKey) private var appearanceRaw = AppearanceMode.system.rawValue
     @AppStorage("settings.showAdultSources") private var showAdultSources = false
     @ObservedObject private var registry = SourceRegistry.shared
+    @State private var showingCollectionsSheet = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Gutter.section) {
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        InkSectionHeader("Library", eyebrow: "Organization")
+                        Button {
+                            showingCollectionsSheet = true
+                        } label: {
+                            HStack {
+                                Text("Manage Collections")
+                                    .font(.subheadline)
+                                    .foregroundStyle(Ink.primary)
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(Ink.tertiary)
+                            }
+                            .contentShape(Rectangle())
+                            .padding(.horizontal, Gutter.page)
+                            .padding(.vertical, 15)
+                        }
+                        .buttonStyle(.plain)
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Ink.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Ink.hairline, lineWidth: 1))
+                        .padding(.horizontal, Gutter.page)
+                    }
 
                     VStack(alignment: .leading, spacing: 14) {
                         InkSectionHeader("Appearance", eyebrow: "Theme")
@@ -99,6 +124,9 @@ struct SettingsView: View {
             }
             .background(Ink.background)
             .navigationTitle("Settings")
+            .sheet(isPresented: $showingCollectionsSheet) {
+                CollectionManagementView()
+            }
         }
     }
 
