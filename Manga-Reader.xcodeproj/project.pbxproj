@@ -14,6 +14,7 @@
 		AD5501022E0000010000000A /* AniListAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5501022E0000010000000B /* AniListAPITests.swift */; };
 		AD5501032E0000010000000A /* WorkStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5501032E0000010000000B /* WorkStoreTests.swift */; };
 		AD5501042E0000010000000A /* WorkMintingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5501042E0000010000000B /* WorkMintingTests.swift */; };
+		AD5501052E0000010000000A /* TasteProfileGoldenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5501052E0000010000000B /* TasteProfileGoldenTests.swift */; };
 		ADCA7E112EC7000100CF2434 /* CategoryGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADCA7E102EC7000100CF2434 /* CategoryGridView.swift */; };
 		ADDACC8C2EC6AC370026FBAE /* MangaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDACC8B2EC6AC2D0026FBAE /* MangaDetailView.swift */; };
 		ADDACC9B2EC6AC370026FBAE /* ReaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADDACC9A2EC6AC2D0026FBAE /* ReaderView.swift */; };
@@ -57,6 +58,7 @@
 		AD5501022E0000010000000B /* AniListAPITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AniListAPITests.swift; sourceTree = "<group>"; };
 		AD5501032E0000010000000B /* WorkStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkStoreTests.swift; sourceTree = "<group>"; };
 		AD5501042E0000010000000B /* WorkMintingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkMintingTests.swift; sourceTree = "<group>"; };
+		AD5501052E0000010000000B /* TasteProfileGoldenTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasteProfileGoldenTests.swift; sourceTree = "<group>"; };
 		ADCA7E102EC7000100CF2434 /* CategoryGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryGridView.swift; sourceTree = "<group>"; };
 		ADDACC8B2EC6AC2D0026FBAE /* MangaDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MangaDetailView.swift; sourceTree = "<group>"; };
 		ADDACC9A2EC6AC2D0026FBAE /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
@@ -159,6 +161,7 @@
 				AD5501022E0000010000000B /* AniListAPITests.swift */,
 				AD5501032E0000010000000B /* WorkStoreTests.swift */,
 				AD5501042E0000010000000B /* WorkMintingTests.swift */,
+				AD5501052E0000010000000B /* TasteProfileGoldenTests.swift */,
 			);
 			path = "Manga-ReaderTests";
 			sourceTree = "<group>";
@@ -349,6 +352,7 @@
 				AD5501022E0000010000000A /* AniListAPITests.swift in Sources */,
 				AD5501032E0000010000000A /* WorkStoreTests.swift in Sources */,
 				AD5501042E0000010000000A /* WorkMintingTests.swift in Sources */,
+				AD5501052E0000010000000A /* TasteProfileGoldenTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
