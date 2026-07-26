@@ -19,22 +19,17 @@ The output of this code review is saved to `.agy_code_review.md`.
 
 ## Commands
 
-Build for simulator (adjust the device name to one from `xcrun simctl list devices`):
+Two non-obvious requirements apply to **every** `xcodebuild` invocation here:
 
-```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' build
-```
-
-Run all tests:
-
-```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' test
-```
+- **Target the iPhone 17 simulator** (`-destination 'platform=iOS Simulator,name=iPhone 17'`).
+- **Always pass `-parallel-testing-enabled NO` to `test`.** Without it `xcodebuild` spawns
+  cloned simulator instances, which is unwanted here.
 
 Run a single test class or method (Swift Testing / XCTest via `xcodebuild`):
 
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' \
+xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -parallel-testing-enabled NO \
   test -only-testing:Manga-ReaderTests/Manga_ReaderTests/<testMethod>
 ```
 
@@ -47,41 +42,26 @@ MVVM over a source-abstraction layer. Data flows: `MangaSource` (protocol, netwo
 `@MainActor` `ObservableObject` view models → SwiftUI views. Nothing outside the source
 adapters calls `MangaDexAPI` directly.
 
-- **`Models/MangaSource.swift`** — the `MangaSource` protocol every source conforms to
-  (search / popular / newTitles / latestUpdates / mangaDetail / chapters / pageURLs).
-  Deliberately **bridge-friendly** (only `Int`/`String` params, value/Codable returns) so
-  a future dynamic-extension runtime can conform via a bridge. `newTitles`/`latestUpdates`
-  are optional capabilities with default impls that throw `SourceError.unsupported`.
-- **`Services/SourceRegistry.swift`** — `@MainActor` singleton (`.shared`, injectable init)
-  that owns the registered sources and the active browse source. Resolve a source with
-  `active`, `source(id:)`, or `source(for: manga)` (uses `manga.sourceId`). ViewModels/
-  Services fetch through this, never `MangaDexAPI`.
-- **`Models/MangaDexSource.swift`** — MangaDex as source #1: a thin adapter delegating to
-  the `MangaDexAPI` static methods. Owns `sourceID = "mangadex"`.
+- **`Models/MangaSource.swift`** — deliberately **bridge-friendly** (only `Int`/`String`
+  params, value/Codable returns) so a future dynamic-extension runtime can conform via a
+  bridge. `newTitles`/`latestUpdates` are optional capabilities whose default impls throw
+  `SourceError.unsupported`.
+- **`Services/SourceRegistry.swift`** — owns the registered sources and the active browse
+  source. ViewModels/Services fetch through this, **never** `MangaDexAPI`.
 - **`Services/WebViewService.swift`** + **`Services/SourceContext.swift`** — the host
-  capability layer for HTML-scraping sources. `WebViewService` (`@MainActor`, `.shared`)
-  loads pages in a shared off-screen `WKWebView` (persistent data store so Cloudflare's
-  `cf_clearance` survives; pinned UA), runs an injected JS script whose final expression is
-  a `JSON.stringify(...)` string, and decodes it into Codable DTOs. Interactive Cloudflare
-  challenges surface the WebView in a sheet (`Components/CloudflareChallengeView`, wired in
-  `ContentView`); declines are sticky for 30s and task cancellation is honored. Sources
-  receive it via `SourceContext` (`WebViewExtracting` protocol — mock it in tests).
-- **`Models/WeebCentralSource.swift`** — WeebCentral as source #2 (`sourceID =
-  "weebcentral"`): server-rendered HTML scraped via per-page JS extraction scripts
-  (co-located raw strings — the volatile part when the site redesigns). Browse feeds map
-  to `/search/data` sort modes; unit-tested against a `MockWebView`.
-- **`Models/MangaDexAPI.swift`** — the MangaDex networking implementation in one file.
-  `MangaDexAPI` is a namespace struct of `static` async methods over a single generic
-  `request<T: Decodable>(endpoint:queryItems:)` helper (uses `.convertFromSnakeCase`).
-  It also defines the app's domain types (`Manga`, `MangaUpdate`) and all the private
-  `Decodable` wire types (`MangaData`, `MangaAttributes`, `ChapterData`, etc.).
-  Raw API payloads are converted to domain types via `toManga(id:relationships:)`, which
-  stamps `Manga.sourceId` with the MangaDex source id.
-- **`Models/*ViewModel.swift`** — `@MainActor final class ... : ObservableObject` with
-  `@Published` state (`isLoading`, `errorMessage`, data arrays). They wrap the API's
-  `async` methods in `Task {}` and surface errors as `errorMessage` strings.
-- **`Views/`** — screens; **`Views/Components/`** — reusable cards/rails.
-- **`ContentView.swift`** — root `TabView` (Home / Bookmarks / Search / Settings).
+  capability layer for HTML-scraping sources. The shared off-screen `WKWebView` uses a
+  **persistent** data store so Cloudflare's `cf_clearance` survives, plus a **pinned UA**;
+  an injected JS script's final expression must be a `JSON.stringify(...)` string.
+  Interactive Cloudflare challenges surface the WebView in a sheet; declines are sticky for
+  30s and task cancellation is honored. Sources receive it via `SourceContext` — mock the
+  `WebViewExtracting` protocol in tests.
+- **`Models/WeebCentralSource.swift`** — the per-page JS extraction scripts are co-located
+  raw strings, and they are **the volatile part** when the site redesigns.
+- **`Models/MangaDexAPI.swift`** — decoding goes through one generic `request` helper using
+  `.convertFromSnakeCase`. `toManga(id:relationships:)` stamps `Manga.sourceId` with the
+  MangaDex source id — every conversion path must keep doing so.
+- **`Models/*ViewModel.swift`** — errors surface as `errorMessage` strings, never thrown
+  past the view model.
 
 Key conventions worth preserving:
 
@@ -102,44 +82,40 @@ Key conventions worth preserving:
 (`PBXFileSystemSynchronizedRootGroup`) — new files dropped in them are compiled
 automatically. Note `Components/` is synchronized but lives **nested under `Views/`** on
 disk (`Manga-Reader/Views/Components/`), so a shared UI component goes there and needs no
-`project.pbxproj` edit. **`Views/` itself is NOT synchronized:** new files directly in it
-must be added to
-`project.pbxproj` explicitly (a `PBXFileReference`, a `PBXBuildFile`, a child entry in the
-`Views` `PBXGroup`, and an entry in the target's `Sources` build phase). Adding the file
-in Xcode does this for you; when editing `pbxproj` by hand, mirror an existing `Views`
-file across all four sections.
+`project.pbxproj` edit.
+
+**`Views/` and `Manga-ReaderTests/` are NOT synchronized** — they are plain `PBXGroup`s, so
+a new file in either needs four `project.pbxproj` entries: a `PBXFileReference`, a
+`PBXBuildFile`, a child entry in the group, and an entry in the target's `Sources` build
+phase.
+
+Use **`xcp`** (`brew install xcp` — XcodeProjectCLI) rather than editing by hand; it writes
+all four:
+
+```sh
+xcp add-file "$PWD/Manga-Reader.xcodeproj" \
+  --file "$PWD/Manga-ReaderTests/NewTests.swift" --targets Manga-ReaderTests
+```
+
+`xcp delete-file` reverses it, and **also deletes the file from disk** unless you pass
+`--project-only`. `xcp list-targets Manga-Reader.xcodeproj` is a safe read-only check.
+Verified 2026-07-26 with xcp 1.2.1: the added file compiled and its test ran.
+
+**Caveat:** any `xcp` write reformats the three `PBXFileSystemSynchronizedRootGroup` entries
+from one line each to multi-line — semantically identical and Xcode accepts it, but it adds
+~27 lines of unrelated diff. Either keep the reformat or `git checkout` those hunks before
+committing.
+
+Adding the file in Xcode also does all four correctly. Hand-editing `pbxproj` is the last
+resort; if you must, mirror an existing entry across all four sections.
 
 ## Current state
 
-The app builds and the core reading loop is implemented:
+The app builds and the core reading loop is implemented.
 
-- **Tabs:** Home, Library, History, Search, Settings. Home, Library, and History each have
-  their own `NavigationStack`. `SearchView` is a debounced, source-scoped title search
-  (`SearchViewModel` + a shared `PagedMangaLoader` for infinite-scroll results). Settings wires the
-  appearance/dark-mode toggle plus the **source picker** ("Show adult sources" gating);
-  switching sources re-sources Home immediately (in-flight loads are cancelled so a slow
-  old source can't repaint the rails).
-- **Recommendations:** Home shows a personalized **"For You"** rail (`RecommendationEngine` +
-  `TasteProfile` + `TagCandidateProvider`, on-device, MangaDex-only) built from reading
-  history; `TasteProfileStore` caches read-manga tags and Not-interested / More-like-this
-  feedback. Rail #0 on Home with a "See all" grid; hidden until there's enough signal.
-- **Sources:** two registered — MangaDex and WeebCentral (Cloudflare-protected HTML,
-  fetched through `WebViewService`). Saved items reopen via their own source
-  (`SourceRegistry.source(for:)`); the detail page shows the originating source and can
-  open the manga's page in an in-app Safari sheet (`webURL(forManga:)`).
-- **Reading progress & history:** `Services/HistoryStore.swift` (`@MainActor`, UserDefaults)
-  is the reading-progress spine. `ReaderView(manga:chapter:initialPage:)` records the
-  furthest page reached; the detail screen's "Continue" button resumes there (Netflix-style
-  advance to the next chapter when the last page was finished), and the History tab is a full
-  chronological log that reopens any entry at its exact page.
-- **Library updates:** `LibraryStore.refresh(history:)` pulls each saved manga's latest
-  chapters (`MangaDexAPI.recentChapters`) and shows a "NEW · N" badge for genuinely-new,
-  unread chapters (reconciled against `HistoryStore`); pull-to-refresh + a toolbar button
-  drive it, and reading clears the badge.
-- **Reader:** three modes (L→R / R→L / webtoon), default right-to-left; chapter list defaults
-  to newest-first with a toggle. Paged zoom is `UIScrollView`-backed
-  (`Components/ZoomableContainer.swift`) for native pinch/pan physics; R→L is reversed page
-  order (NOT a mirror transform — a previous mirror-based approach inverted zoomed panning).
-- Design/spec/plan for the above live in `docs/superpowers/{specs,plans}/`.
+- **Reader:** R→L is implemented as **reversed page order — NOT a mirror transform.** A
+  previous mirror-based approach inverted zoomed panning. Paged zoom is `UIScrollView`-backed
+  (`Components/ZoomableContainer.swift`) for native pinch/pan physics.
+- Design/spec/plan for shipped work live in `docs/superpowers/{specs,plans}/`.
 
 Still minimal: no cross-device sync, no per-chapter read/unread marks, manual refresh only.
