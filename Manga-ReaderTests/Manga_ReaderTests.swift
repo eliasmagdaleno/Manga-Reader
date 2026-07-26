@@ -1400,36 +1400,44 @@ final class Manga_ReaderTests: XCTestCase {
         return TasteProfileStore(defaults: suite)
     }
 
-    @MainActor func testTasteStoreRecordsAndPersistsTags() throws {
+    /// Writes the pre-slice-3 `taste.tagCache` payload straight into a suite — the
+    /// only way to produce it now that nothing in the app writes that key.
+    @MainActor private func seedLegacyTagCache(_ suite: UserDefaults, _ cache: [String: [Tag]]) {
+        if let data = try? JSONEncoder().encode(cache) {
+            suite.set(data, forKey: "taste.tagCache")
+        }
+    }
+
+    @MainActor func testTasteStorePersistsFeedback() throws {
         let suite = UserDefaults(suiteName: "test.taste.\(UUID().uuidString)")!
         let store = TasteProfileStore(defaults: suite)
-        let tags = [Tag(id: "t1", name: "Action", group: "genre")]
-        store.recordTags(mangaId: "m1", tags: tags)
         store.markNotInterested(mangaId: "m2")
         store.markMoreLikeThis(mangaId: "m3")
 
         let reloaded = TasteProfileStore(defaults: suite)   // fresh instance, same suite
-        XCTAssertEqual(reloaded.tagCache["m1"], tags)
         XCTAssertTrue(reloaded.notInterested.contains("m2"))
         XCTAssertEqual(reloaded.moreLikeThis, ["m3"])
     }
 
-    @MainActor func testTasteStoreRecordTagsIgnoresEmpty() {
-        let store = makeTasteStore()
-        store.recordTags(mangaId: "m1", tags: [])
-        XCTAssertNil(store.tagCache["m1"])
-    }
+    /// The legacy cache is read-only: it loads, and saving feedback must not rewrite
+    /// it. If a `save()` ever re-encoded that key, the data this change retires would
+    /// keep resurrecting itself and the one-release deletion window would never close.
+    @MainActor func testLegacyTagCacheLoadsButIsNeverWrittenBack() throws {
+        let suite = UserDefaults(suiteName: "test.taste.\(UUID().uuidString)")!
+        let tags = [Tag(id: "t1", name: "Action", group: "genre")]
+        seedLegacyTagCache(suite, ["m1": tags])
 
-    @MainActor func testMangaIdsMissingTagsDedupesAndSkipsCached() {
-        let store = makeTasteStore()
-        store.recordTags(mangaId: "m1", tags: [Tag(id: "t1", name: "Action", group: "genre")])
-        let missing = store.mangaIdsMissingTags(readIds: ["m1", "m2", "m2", "m3"])
-        XCTAssertEqual(missing, ["m2", "m3"])   // m1 cached, m2 deduped, order preserved
+        let store = TasteProfileStore(defaults: suite)
+        XCTAssertEqual(store.legacyTagCache["m1"], tags)
+
+        suite.removeObject(forKey: "taste.tagCache")
+        store.markNotInterested(mangaId: "m2")     // triggers save()
+        XCTAssertNil(suite.data(forKey: "taste.tagCache"))
     }
 
     @MainActor func testTasteStoreDecodesAbsentKeysAsEmpty() {
         let store = TasteProfileStore(defaults: UserDefaults(suiteName: "test.taste.\(UUID().uuidString)")!)
-        XCTAssertTrue(store.tagCache.isEmpty)
+        XCTAssertTrue(store.legacyTagCache.isEmpty)
         XCTAssertTrue(store.notInterested.isEmpty)
         XCTAssertTrue(store.moreLikeThis.isEmpty)
     }
@@ -1637,14 +1645,28 @@ final class Manga_ReaderTests: XCTestCase {
 
     // MARK: - RecommendationEngine
 
-    @MainActor
-    private func makeEngine(history: HistoryStore, tasteStore: TasteProfileStore,
+    @MainActor private func makeWorkStore() -> WorkStore {
+        WorkStore(directory: URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("EngineTests-\(UUID().uuidString)"))
+    }
+
+    /// Gives a Work the provisional tags a detail-screen visit would have staged.
+    /// `noteListingTags` never mints, so the tags sit pending until the engine's
+    /// `resolveSignals` mints from history and consumes them — the real path.
+    @MainActor private func tagRead(_ works: WorkStore, _ history: HistoryStore,
+                                    _ id: String, _ tags: [Tag]) {
+        works.noteListingTags(tags, for: sampleManga(id))
+        history.record(manga: sampleManga(id), chapter: ch("1"), page: 9, pageCount: 10)
+    }
+
+    @MainActor private func makeEngine(history: HistoryStore, tasteStore: TasteProfileStore,
                             provider: CandidateProvider,
+                            workStore: WorkStore? = nil,
                             mangaDexSource: MangaSource = CannedTagSource(lists: [:], failTags: []),
                             now: Date = Date(), seed: UInt64 = 1)
         -> RecommendationEngine {
         let lib = LibraryStore(defaults: UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!)
-        let works = WorkStore(directory: URL(fileURLWithPath: NSTemporaryDirectory())
+        let works = workStore ?? WorkStore(directory: URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("EngineTests-\(UUID().uuidString)"))
         return RecommendationEngine(history: history, library: lib, profileStore: tasteStore,
                                     workStore: works,
@@ -1664,31 +1686,17 @@ final class Manga_ReaderTests: XCTestCase {
         ScoredManga(manga: sampleManga(id), score: 1, reason: "More Action")
     }
 
-    /// A source whose mangaDetail returns fixed tags — for backfill tests.
-    private struct DetailStubSource: MangaSource {
-        let id = "mangadex"; let name = "MangaDex"
-        let tags: [Tag]
-        func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
-        func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
-        func mangaByTag(tag: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
-        func mangaDetail(id: String) async throws -> MangaDetail {
-            MangaDetail(description: "", authors: [], tags: tags, contentRating: nil)
-        }
-        func chapters(mangaId: String) async throws -> [Chapter] { [] }
-        func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
-    }
-
     @MainActor func testEngineColdStartHidesRailBelowThreshold() async throws {
         let history = makeHistoryStore()
         let taste = makeTasteStore()
+        let works = makeWorkStore()
         // Only 2 tagged read manga — below the 3 threshold.
-        taste.recordTags(mangaId: "m1", tags: [Tag(id: "a", name: "A", group: "genre")])
-        taste.recordTags(mangaId: "m2", tags: [Tag(id: "b", name: "B", group: "genre")])
-        history.record(manga: sampleManga("m1"), chapter: ch("1"), page: 1, pageCount: 10)
-        history.record(manga: sampleManga("m2"), chapter: ch("1"), page: 1, pageCount: 10)
+        tagRead(works, history, "m1", [Tag(id: "a", name: "A", group: "genre")])
+        tagRead(works, history, "m2", [Tag(id: "b", name: "B", group: "genre")])
 
         let engine = makeEngine(history: history, tasteStore: taste,
-                                provider: FixedPoolProvider(pool: [scored("x")]))
+                                provider: FixedPoolProvider(pool: [scored("x")]),
+                                workStore: works)
         await engine.refresh()
         XCTAssertTrue(engine.recommendations.isEmpty)
     }
@@ -1696,12 +1704,13 @@ final class Manga_ReaderTests: XCTestCase {
     @MainActor func testEngineProducesRecommendationsAboveThreshold() async throws {
         let history = makeHistoryStore()
         let taste = makeTasteStore()
+        let works = makeWorkStore()
         for i in 1...3 {
-            taste.recordTags(mangaId: "m\(i)", tags: [Tag(id: "a", name: "Action", group: "genre")])
-            history.record(manga: sampleManga("m\(i)"), chapter: ch("1"), page: 9, pageCount: 10)
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
         }
         let engine = makeEngine(history: history, tasteStore: taste,
-                                provider: FixedPoolProvider(pool: [scored("rec1"), scored("rec2")]))
+                                provider: FixedPoolProvider(pool: [scored("rec1"), scored("rec2")]),
+                                workStore: works)
         await engine.refresh()
         XCTAssertEqual(Set(engine.recommendations.map(\.manga.id)), ["rec1", "rec2"])
     }
@@ -1709,13 +1718,14 @@ final class Manga_ReaderTests: XCTestCase {
     @MainActor func testEngineExcludesReadAndNotInterested() async throws {
         let history = makeHistoryStore()
         let taste = makeTasteStore()
+        let works = makeWorkStore()
         for i in 1...3 {
-            taste.recordTags(mangaId: "m\(i)", tags: [Tag(id: "a", name: "Action", group: "genre")])
-            history.record(manga: sampleManga("m\(i)"), chapter: ch("1"), page: 9, pageCount: 10)
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
         }
         taste.markNotInterested(mangaId: "rec2")
         let engine = makeEngine(history: history, tasteStore: taste,
-                                provider: FixedPoolProvider(pool: [scored("rec1"), scored("rec2"), scored("m1")]))
+                                provider: FixedPoolProvider(pool: [scored("rec1"), scored("rec2"), scored("m1")]),
+                                workStore: works)
         await engine.refresh()
         // rec2 = not interested, m1 = already read → both excluded.
         XCTAssertEqual(engine.recommendations.map(\.manga.id), ["rec1"])
@@ -1738,26 +1748,38 @@ final class Manga_ReaderTests: XCTestCase {
 
     @MainActor func testMarkNotInterestedRemovesFromRailAndPersists() async throws {
         let history = makeHistoryStore(); let taste = makeTasteStore()
+        let works = makeWorkStore()
         for i in 1...3 {
-            taste.recordTags(mangaId: "m\(i)", tags: [Tag(id: "a", name: "Action", group: "genre")])
-            history.record(manga: sampleManga("m\(i)"), chapter: ch("1"), page: 9, pageCount: 10)
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
         }
         let engine = makeEngine(history: history, tasteStore: taste,
-                                provider: FixedPoolProvider(pool: [scored("rec1"), scored("rec2")]))
+                                provider: FixedPoolProvider(pool: [scored("rec1"), scored("rec2")]),
+                                workStore: works)
         await engine.refresh()
         engine.markNotInterested(sampleManga("rec1"))
         XCTAssertFalse(engine.recommendations.contains { $0.manga.id == "rec1" })
         XCTAssertTrue(taste.notInterested.contains("rec1"))
     }
 
-    @MainActor func testBackfillRecordsTagsFromDetailSource() async throws {
-        let taste = makeTasteStore()
-        let detailSource = DetailStubSource(tags: [Tag(id: "a", name: "Action", group: "genre")])
-        let engine = makeEngine(history: makeHistoryStore(), tasteStore: taste,
-                                provider: FixedPoolProvider(pool: []), mangaDexSource: detailSource)
-        await engine.backfill(ids: ["m1", "m2"])
-        XCTAssertNotNil(taste.tagCache["m1"])
-        XCTAssertNotNil(taste.tagCache["m2"])
+    /// The migration that makes retiring the tag cache safe: a user upgrading across
+    /// this change has tags only in the legacy UserDefaults key, and `resolveSignals`
+    /// must copy them onto Works or their profile comes back empty on first launch.
+    /// **This is the last thing reading `legacyTagCache`** — when it goes, so does it.
+    @MainActor func testLegacyTagCacheSeedsWorksSoTheProfileSurvivesUpgrade() async throws {
+        let history = makeHistoryStore()
+        let suite = UserDefaults(suiteName: "test.taste.\(UUID().uuidString)")!
+        let action = [Tag(id: "a", name: "Action", group: "genre")]
+        seedLegacyTagCache(suite, ["m1": action, "m2": action, "m3": action])
+        let taste = TasteProfileStore(defaults: suite)
+
+        // History only — no Works, no provisional snapshots. Exactly a pre-slice-3 user.
+        for i in 1...3 {
+            history.record(manga: sampleManga("m\(i)"), chapter: ch("1"), page: 9, pageCount: 10)
+        }
+        let engine = makeEngine(history: history, tasteStore: taste,
+                                provider: FixedPoolProvider(pool: [scored("rec1")]))
+        await engine.refresh()
+        XCTAssertEqual(engine.recommendations.map(\.manga.id), ["rec1"])
     }
 
     @MainActor func testRankedRecommendationsEmptyOnColdStart() async {
@@ -1769,12 +1791,13 @@ final class Manga_ReaderTests: XCTestCase {
 
     @MainActor func testRankedRecommendationsReturnsRankedMangaWithoutShuffle() async {
         let history = makeHistoryStore(); let taste = makeTasteStore()
+        let works = makeWorkStore()
         for i in 1...3 {
-            taste.recordTags(mangaId: "m\(i)", tags: [Tag(id: "a", name: "Action", group: "genre")])
-            history.record(manga: sampleManga("m\(i)"), chapter: ch("1"), page: 9, pageCount: 10)
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
         }
         let engine = makeEngine(history: history, tasteStore: taste,
-                                provider: FixedPoolProvider(pool: [scored("r1"), scored("r2"), scored("m1")]))
+                                provider: FixedPoolProvider(pool: [scored("r1"), scored("r2"), scored("m1")]),
+                                workStore: works)
         let out = await engine.rankedRecommendations(limit: 50)
         // Straight ranking order, read manga (m1) excluded, no exploration reshuffle.
         XCTAssertEqual(out.map(\.id), ["r1", "r2"])
@@ -2256,9 +2279,9 @@ final class Manga_ReaderTests: XCTestCase {
                                    taggedMangaCount: 0, seeds: [])
         // Tag pool (raw scores 10, 5); MAL pool (raw scores 100, 50). "y" is in both.
         let tag = StubProvider(out: [ScoredManga(manga: mdManga("x", "X"), score: 10, reason: "More Action"),
-                                     ScoredManga(manga: mdManga("y", "Y"), score: 5,  reason: "More Action")])
+                                     ScoredManga(manga: mdManga("y", "Y"), score: 5, reason: "More Action")])
         let mal = StubProvider(out: [ScoredManga(manga: mdManga("y", "Y"), score: 100, reason: "Because you read S"),
-                                     ScoredManga(manga: mdManga("z", "Z"), score: 50,  reason: "Because you read S")])
+                                     ScoredManga(manga: mdManga("z", "Z"), score: 50, reason: "Because you read S")])
         let composite = CompositeCandidateProvider(tag: tag, mal: mal)
         let out = try await composite.candidates(for: profile, excluding: [], limit: 10)
         let byId = Dictionary(uniqueKeysWithValues: out.map { ($0.manga.id, $0) })
@@ -2279,7 +2302,7 @@ final class Manga_ReaderTests: XCTestCase {
         let profile = TasteProfile(weights: [:], tagName: [:], orderedTagKeys: [],
                                    taggedMangaCount: 0, seeds: [])
         let tag = StubProvider(out: [ScoredManga(manga: mdManga("x", "X"), score: 10, reason: "More Action"),
-                                     ScoredManga(manga: mdManga("y", "Y"), score: 5,  reason: "More Action")])
+                                     ScoredManga(manga: mdManga("y", "Y"), score: 5, reason: "More Action")])
         let mal = StubProvider(out: [])
         let out = try await CompositeCandidateProvider(tag: tag, mal: mal)
             .candidates(for: profile, excluding: [], limit: 10)

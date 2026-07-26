@@ -10,7 +10,6 @@ struct MangaDetailView: View {
     @StateObject private var vm: MangaDetailViewModel
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
-    @EnvironmentObject private var tasteProfile: TasteProfileStore
     @EnvironmentObject private var works: WorkStore
     @StateObject private var moreLikeThis = MoreLikeThisViewModel()
     @State private var synopsisExpanded = false
@@ -57,10 +56,6 @@ struct MangaDetailView: View {
             // Ungated: every source has tags, and this is what makes non-MangaDex
             // reading count (ADR-0007 slice 3). Never mints — see `noteListingTags`.
             works.noteListingTags(tags, for: manga)
-            // The old MangaDex-only path, still the recommender's actual input until
-            // TasteProfile.build reads through Works (step 3), which is what retires it.
-            guard manga.sourceId == "mangadex", !tags.isEmpty else { return }
-            tasteProfile.recordTags(mangaId: manga.id, tags: tags)
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -426,7 +421,7 @@ struct MangaDetailView: View {
                                 Label(read ? "Mark as unread" : "Mark as read",
                                       systemImage: read ? "circle" : "checkmark.circle")
                             }
-                            
+
                             Button {
                                 let sorted = sortChapters(vm.chapters, descending: true)
                                 if let idx = sorted.firstIndex(where: { $0.id == chapter.id }) {
