@@ -30,6 +30,7 @@
 		ADEF83D02E8F329200CF2434 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83CF2E8F329200CF2434 /* BookmarksView.swift */; };
 		ADEF83D22E8F32A500CF2434 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83D12E8F32A500CF2434 /* SearchView.swift */; };
 		ADEF83D42E8F32B300CF2434 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADEF83D32E8F32B300CF2434 /* SettingsView.swift */; };
+		B6789B3D65FC89884B2C4DB2 /* UpgradeAttemptMemoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FDBB47532459A9B7F65F5D3 /* UpgradeAttemptMemoryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +51,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		3FDBB47532459A9B7F65F5D3 /* UpgradeAttemptMemoryTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = UpgradeAttemptMemoryTests.swift; sourceTree = "<group>"; };
 		A7F1E11DDAC54DA6929F8EB2 /* ChapterListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChapterListView.swift; sourceTree = "<group>"; };
 		AD1157092EA0000100CF2434 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		AD1157092EA0000300CF2434 /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
@@ -165,6 +167,7 @@
 				AD5501042E0000010000000B /* WorkMintingTests.swift */,
 				AD5501052E0000010000000B /* TasteProfileGoldenTests.swift */,
 				AD5501062E0000010000000B /* TasteProfileTests.swift */,
+				3FDBB47532459A9B7F65F5D3 /* UpgradeAttemptMemoryTests.swift */,
 			);
 			path = "Manga-ReaderTests";
 			sourceTree = "<group>";
@@ -357,6 +360,7 @@
 				AD5501042E0000010000000A /* WorkMintingTests.swift in Sources */,
 				AD5501052E0000010000000A /* TasteProfileGoldenTests.swift in Sources */,
 				AD5501062E0000010000000A /* TasteProfileTests.swift in Sources */,
+				B6789B3D65FC89884B2C4DB2 /* UpgradeAttemptMemoryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
