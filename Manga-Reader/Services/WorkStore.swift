@@ -23,6 +23,10 @@ final class WorkStore: ObservableObject {
     /// Merged-away Work id → its survivor. Grows by one entry per merge and is never
     /// pruned: that is the point.
     private var aliases: [WorkID: WorkID] = [:]
+    /// Tags seen on a detail screen for a Listing with no Work yet. **In-memory and
+    /// session-scoped on purpose** — browsing must not write to the store (ADR-0007),
+    /// so these are staged, not persisted, and only survive as far as a mint.
+    private var pendingTags: [ListingKey: [Tag]] = [:]
 
     private let directory: URL
     private let saveDebounce: TimeInterval
@@ -101,6 +105,7 @@ final class WorkStore: ObservableObject {
         // user keeps reading.
         if let existing = listingIndex[key] {
             if absorb(ids, into: existing, title: listing.title) { markDirty() }
+            applyPendingTags(for: key, to: existing)
             return existing
         }
         // Known under an external id this Listing publishes — the free dedupe path.
@@ -108,6 +113,7 @@ final class WorkStore: ObservableObject {
             let linked = link(key, to: existing, title: listing.title)
             let absorbed = absorb(ids, into: existing, title: listing.title)
             if linked || absorbed { markDirty() }
+            applyPendingTags(for: key, to: existing)
             return existing
         }
         markDirty()
@@ -122,18 +128,50 @@ final class WorkStore: ObservableObject {
         works[work.id] = work
         listingIndex[key] = work.id
         reindexExternalIds(of: work.id)
+        applyPendingTags(for: key, to: work.id)
         return work.id
     }
 
     // MARK: - Metadata snapshots
+
+    /// Records the tags a detail screen just loaded. Every source has tags, so this
+    /// is where non-MangaDex reading stops being invisible (ADR-0001's bug).
+    ///
+    /// **Viewing a detail page is not a commitment**, so this never mints. When the
+    /// Work doesn't exist yet the tags are staged in memory instead: the real flow is
+    /// open-the-page-then-tap-a-chapter, and dropping them would leave the *first*
+    /// read of every manga with no signal until the user happened to come back.
+    func noteListingTags(_ tags: [Tag], for listing: Manga, now: Date = Date()) {
+        guard !tags.isEmpty else { return }
+        loadIfNeeded()
+        let key = ListingKey(listing)
+        if let existing = listingIndex[key] {
+            applyProvisionalSnapshot(tags: tags, to: existing, now: now)
+        } else {
+            pendingTags[key] = tags
+        }
+    }
+
+    /// Applies and **consumes** tags staged before the Work existed. One-shot by
+    /// construction: `mint` runs on every page turn, and re-applying would re-arm
+    /// the debounced save every time.
+    private func applyPendingTags(for key: ListingKey, to id: WorkID) {
+        guard let tags = pendingTags.removeValue(forKey: key) else { return }
+        applyProvisionalSnapshot(tags: tags, to: id)
+    }
 
     /// The provisional tier: a snapshot built from the Listing's own tags. Costs no
     /// request — MangaDex's tags arrive with the detail fetch the UI already makes —
     /// so the recommender has signal from launch, before any provider is queried.
     func applyProvisionalSnapshot(tags: [Tag], to id: WorkID, now: Date = Date()) {
         loadIfNeeded()
-        defer { markDirty() }
         guard let resolved = resolve(id), var work = works[resolved] else { return }
+        // The provisional tier is a **floor, not an overwrite**. A real provider's
+        // snapshot outranks the Listing's own tags, so re-opening a detail page for
+        // an already-resolved Work must not drag it back down — that would undo a
+        // fetch and make a Work's provider depend on which screen was last visited.
+        guard work.snapshot == nil || work.snapshot?.provider == .mangadex else { return }
+        defer { markDirty() }
         work.snapshot = MetadataSnapshot(
             provider: .mangadex,
             fetchedAt: now,
