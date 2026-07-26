@@ -102,9 +102,17 @@ xcp add-file "$PWD/Manga-Reader.xcodeproj" \
 Verified 2026-07-26 with xcp 1.2.1: the added file compiled and its test ran.
 
 **Caveat:** any `xcp` write reformats the three `PBXFileSystemSynchronizedRootGroup` entries
-from one line each to multi-line — semantically identical and Xcode accepts it, but it adds
-~27 lines of unrelated diff. Either keep the reformat or `git checkout` those hunks before
-committing.
+from one line each to multi-line — semantically identical and Xcode accepts it, but it turns a
+4-line change into ~31 insertions / 3 deletions. Either keep the reformat or `git checkout`
+those hunks before committing.
+
+**The reformat can vanish on its own, which makes `git diff` right after `xcp` untrustworthy.**
+If Xcode has the project open it rewrites `project.pbxproj` back to one-line form on its own
+schedule — so the same `xcp add-file` shows 31 insertions immediately and 4 insertions some
+minutes later, with nothing in between having touched the file. Verified 2026-07-26 with xcp
+1.2.1: neither `xcodebuild build` nor `xcodebuild test` does this; only Xcode itself. **Check
+`git diff --stat` immediately before `git add`, not right after `xcp`** — and don't conclude
+from one clean diff that the caveat above no longer applies.
 
 Adding the file in Xcode also does all four correctly. Hand-editing `pbxproj` is the last
 resort; if you must, mirror an existing entry across all four sections.
