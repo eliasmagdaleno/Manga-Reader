@@ -2,9 +2,14 @@
 //  RecommendationEngine.swift
 //  Manga-Reader
 //
-//  Orchestrates the "For You" rail: builds a TasteProfile from reading history,
-//  asks a CandidateProvider for ranked candidates, mixes in seeded exploration so
-//  the rail moves between sessions, and back-fills tags for older reads. MangaDex-only.
+//  Orchestrates the "For You" rail: builds a TasteProfile from reading history
+//  resolved through the Work store, asks a CandidateProvider for ranked candidates,
+//  and mixes in seeded exploration so the rail moves between sessions.
+//
+//  It no longer back-fills tags. That job — fetching metadata for Works that lack it —
+//  belongs to the upgrade queue (ADR-0008), which owns the provider budget and can
+//  serve non-MangaDex Works. The old `scheduleBackfill` could only ever have fetched
+//  MangaDex ids anyway.
 //
 
 import SwiftUI
@@ -41,7 +46,6 @@ final class RecommendationEngine: ObservableObject {
     private let minTaggedManga = 3
     private let poolLimit = 40
     private let coreFraction = 0.8
-    private let backfillBatch = 8
 
     private var seed: UInt64
     private var loadTask: Task<Void, Never>?
@@ -99,8 +103,6 @@ final class RecommendationEngine: ObservableObject {
     }
 
     private func rebuild() async {
-        scheduleBackfill()   // fills future builds; never blocks this one
-
         guard let (profile, excluding) = profileAndExclusions() else {
             recommendations = []
             return
@@ -165,7 +167,7 @@ final class RecommendationEngine: ObservableObject {
             entriesByWork[id, default: []].append(entry)
 
             if workStore.work(id)?.snapshot == nil,
-               let cached = profileStore.tagCache[entry.mangaId], !cached.isEmpty {
+               let cached = profileStore.legacyTagCache[entry.mangaId], !cached.isEmpty {
                 workStore.applyProvisionalSnapshot(tags: cached, to: id)
             }
         }
@@ -191,23 +193,4 @@ final class RecommendationEngine: ObservableObject {
         return combined
     }
 
-    private func scheduleBackfill() {
-        // Only MangaDex reads (nil sourceId = legacy MangaDex) can be back-filled here.
-        let readIds = history.entries
-            .filter { ($0.sourceId ?? "mangadex") == "mangadex" }
-            .map(\.mangaId)
-        let missing = profileStore.mangaIdsMissingTags(readIds: readIds)
-        guard !missing.isEmpty else { return }
-        Task { await backfill(ids: Array(missing.prefix(backfillBatch))) }
-    }
-
-    /// Best-effort: fetch detail for a few read manga and cache their tags. Per-item
-    /// failures are swallowed (matches LibraryStore.refresh).
-    func backfill(ids: [String]) async {
-        for id in ids {
-            if let detail = try? await mangaDexSource.mangaDetail(id: id) {
-                profileStore.recordTags(mangaId: id, tags: detail.tags)
-            }
-        }
-    }
 }

@@ -2,24 +2,37 @@
 //  TasteProfileStore.swift
 //  Manga-Reader
 //
-//  Persists the raw signal the recommendation engine learns from: the tags of
-//  manga the user has read (captured when a MangaDex detail loads, or back-filled),
-//  plus explicit "not interested" / "more like this" feedback. UserDefaults-backed,
-//  mirroring HistoryStore / LibraryStore.
+//  Persists the user's explicit "not interested" / "more like this" feedback.
+//  UserDefaults-backed, mirroring HistoryStore / LibraryStore.
+//
+//  It used to own the taste signal itself — a MangaDex-only tag cache. Tags now
+//  live on the Work (ADR-0007), so all that remains of the cache is a **read-only**
+//  copy kept alive for one release to migrate existing users. See `legacyTagCache`.
 //
 
 import SwiftUI
 
 @MainActor
 final class TasteProfileStore: ObservableObject {
-    /// MangaDex tags per read manga id — the taste signal.
-    @Published private(set) var tagCache: [String: [Tag]] = [:]
     /// Manga the user explicitly dismissed; never recommended again.
     @Published private(set) var notInterested: Set<String> = []
     /// Manga the user explicitly boosted; their tags count double.
     @Published private(set) var moreLikeThis: [String] = []
 
-    private let cacheKey = "taste.tagCache"
+    /// Pre-slice-3 tags per manga id. **Loaded once and never written.**
+    ///
+    /// This is a migration, not a cache: `RecommendationEngine.resolveSignals`
+    /// copies it onto Works so a user upgrading across this change doesn't lose
+    /// their profile. Retiring the write path is the point — the key is a bare
+    /// `mangaId` with no `sourceId`, a cross-source collision that was only ever
+    /// dormant because tag recording was MangaDex-gated.
+    ///
+    /// **Delete this, its UserDefaults key, and the seeding branch that reads it
+    /// after one release** — by then every active user has been migrated, and
+    /// deleting it sooner would strand anyone who skipped a version.
+    private(set) var legacyTagCache: [String: [Tag]] = [:]
+
+    private let legacyCacheKey = "taste.tagCache"
     private let notInterestedKey = "taste.notInterested"
     private let moreLikeThisKey = "taste.moreLikeThis"
     private let defaults: UserDefaults
@@ -27,14 +40,6 @@ final class TasteProfileStore: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         load()
-    }
-
-    /// Cache a read manga's tags. No-op for an empty tag list so a failed/partial
-    /// fetch never overwrites good data with nothing.
-    func recordTags(mangaId: String, tags: [Tag]) {
-        guard !tags.isEmpty else { return }
-        tagCache[mangaId] = tags
-        save()
     }
 
     func markNotInterested(mangaId: String) {
@@ -47,21 +52,16 @@ final class TasteProfileStore: ObservableObject {
         save()
     }
 
-    /// Read manga ids with no cached tags — the backfill queue. Deduped, order preserved.
-    func mangaIdsMissingTags(readIds: [String]) -> [String] {
-        var seen = Set<String>()
-        return readIds.filter { seen.insert($0).inserted && tagCache[$0] == nil }
-    }
-
+    /// Deliberately does not write `legacyCacheKey`: the legacy cache is read-only,
+    /// and rewriting it here would keep resurrecting data this change retires.
     private func save() {
-        if let d = try? JSONEncoder().encode(tagCache) { defaults.set(d, forKey: cacheKey) }
         if let d = try? JSONEncoder().encode(notInterested) { defaults.set(d, forKey: notInterestedKey) }
         if let d = try? JSONEncoder().encode(moreLikeThis) { defaults.set(d, forKey: moreLikeThisKey) }
     }
 
     private func load() {
-        if let d = defaults.data(forKey: cacheKey),
-           let v = try? JSONDecoder().decode([String: [Tag]].self, from: d) { tagCache = v }
+        if let d = defaults.data(forKey: legacyCacheKey),
+           let v = try? JSONDecoder().decode([String: [Tag]].self, from: d) { legacyTagCache = v }
         if let d = defaults.data(forKey: notInterestedKey),
            let v = try? JSONDecoder().decode(Set<String>.self, from: d) { notInterested = v }
         if let d = defaults.data(forKey: moreLikeThisKey),
