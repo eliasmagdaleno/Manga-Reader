@@ -166,6 +166,69 @@ final class WorkStoreTests: XCTestCase {
         XCTAssertEqual(snapshot?.fetchedAt, noon)
     }
 
+    // MARK: - Tags seen on a detail screen (slice 3, step 2)
+
+    /// Tags only ever exist on the detail screen, and every source has them — this
+    /// is the half of the ADR-0001 bug that made non-MangaDex reading contribute no
+    /// tag signal at all.
+    @MainActor func testDetailTagsLandOnAWorkTheUserHasAlreadyCommittedTo() {
+        let store = makeStore()
+        let orv = listing("wc-1", source: "weebcentral", title: "Omniscient Reader")
+        let id = store.mint(from: orv)
+
+        store.noteListingTags(mangaDexTags, for: orv, now: noon)
+
+        XCTAssertEqual(store.work(id)?.snapshot?.genres.map(\.name),
+                       ["Action", "Isekai", "Long Strip"])
+    }
+
+    /// **Browsing must not mint** (ADR-0007): opening a detail page is not a
+    /// commitment, and minting per detail view would grow the store with browsing.
+    @MainActor func testDetailTagsAloneDoNotMintAWork() {
+        let store = makeStore()
+
+        store.noteListingTags(mangaDexTags, for: listing("wc-2", source: "weebcentral"), now: noon)
+
+        XCTAssertNil(store.workId(for: ListingKey(sourceId: "weebcentral", mangaId: "wc-2")))
+    }
+
+    /// The flow that actually happens: open the detail page, then tap a chapter
+    /// seconds later. The tags were on screen before the Work existed, and dropping
+    /// them would leave the first read of every manga with no signal until the user
+    /// happened to revisit the page.
+    @MainActor func testDetailTagsSeenBeforeCommitmentAreAppliedWhenTheWorkIsMinted() {
+        let store = makeStore()
+        let orv = listing("wc-3", source: "weebcentral", title: "Omniscient Reader")
+
+        store.noteListingTags(mangaDexTags, for: orv, now: noon)
+        let id = store.mint(from: orv)
+
+        XCTAssertEqual(store.work(id)?.snapshot?.genres.map(\.name),
+                       ["Action", "Isekai", "Long Strip"])
+    }
+
+    /// The provisional tier is a *floor*, not an overwrite. Re-opening a detail page
+    /// for a Work the upgrade queue has already resolved must not drag it back down
+    /// to MangaDex tags — that would silently undo a real fetch and make the
+    /// snapshot's provider depend on which screen the user last visited.
+    @MainActor func testDetailTagsDoNotDowngradeAProviderSnapshot() {
+        let store = makeStore()
+        let solo = listing("md-1", title: "Solo Leveling", malId: 121_496)
+        let id = store.mint(from: solo)
+        store.apply(AniListWork(anilistId: 105_398, malId: 121_496,
+                                knownTitles: ["Solo Leveling"],
+                                genres: ["Action", "Adventure", "Fantasy"],
+                                tags: [RankedTag(name: "Dungeon", rank: 95)],
+                                publicationStatus: .finished, chapterTotal: 201),
+                    to: id, now: noon)
+
+        store.noteListingTags(mangaDexTags, for: solo, now: noon)
+
+        XCTAssertEqual(store.work(id)?.snapshot?.provider, .anilist)
+        XCTAssertEqual(store.work(id)?.snapshot?.genres.map(\.name),
+                       ["Action", "Adventure", "Fantasy"])
+    }
+
     /// An AniList snapshot **replaces** the provisional one wholesale — one
     /// authority per Work, never a per-field merge — but external ids accumulate.
     @MainActor func testAniListSnapshotReplacesTheProvisionalOneAndAccumulatesIds() {
