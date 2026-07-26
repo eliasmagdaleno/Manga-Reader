@@ -2168,6 +2168,107 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(id)   // fresh miss short-circuits before any network call
     }
 
+    // MARK: - MALEntityResolver, Work-level (ADR-0008/0009)
+
+    private func work(_ titles: [String],
+                      mal: Int? = nil,
+                      listings: [ListingKey] = []) -> Work {
+        Work(id: WorkID(), displayTitle: titles.first ?? "",
+             knownTitles: titles, externalIds: ExternalIDs(mal: mal, anilist: nil),
+             listings: listings, snapshot: nil)
+    }
+
+    /// The payoff ADR-0007 built `knownTitles` for: only the *second* Listing's spelling
+    /// retrieves anything from MAL, and the Work resolves anyway. A per-Listing resolver
+    /// asked about the scraped title alone gets nothing.
+    @MainActor func testWorkResolutionMatchesUsingASecondListingsTitle() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { title in
+            title == "Solo Leveling" ? [MALCandidate(malId: 121, titles: ["Solo Leveling"])] : []
+        })
+
+        let id = try await resolver.malId(for: work(["Only I Level Up", "Solo Leveling"]))
+
+        XCTAssertEqual(id, 121)
+        XCTAssertTrue(store.cache.isEmpty,
+                      "a Work-level answer has no single Listing to key on (ADR-0008)")
+    }
+
+    /// The two failures are different records in the queue's attempt memory — nothing at
+    /// all for a transient failure, `.unmatched` for a real miss — so they cannot both be
+    /// `nil`. An outage must not be remembered as "MAL doesn't have this".
+    @MainActor func testWorkResolutionThrowsWhenEverySearchFailed() async {
+        struct Boom: Error {}
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { _ in throw Boom() })
+
+        do {
+            _ = try await resolver.malId(for: work(["Berserk"]))
+            XCTFail("a transient failure must not be reported as a miss")
+        } catch {}
+    }
+
+    /// Partial failure: a match stands on its own. The search that failed could only have
+    /// added candidates, and extra candidates are evidence *against* via the ambiguity
+    /// guard — never for. Throwing away a confident match here would buy nothing.
+    @MainActor func testWorkResolutionKeepsAMatchFoundDespiteAFailedSearch() async throws {
+        struct Boom: Error {}
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { title in
+            if title == "Only I Level Up" { throw Boom() }
+            return [MALCandidate(malId: 121, titles: ["Solo Leveling"])]
+        })
+
+        let id = try await resolver.malId(for: work(["Only I Level Up", "Solo Leveling"]))
+
+        XCTAssertEqual(id, 121)
+    }
+
+    /// The genuine miss: MAL answered, nothing cleared the threshold. This is the one the
+    /// queue records as `.unmatched(knownTitlesCount)`.
+    @MainActor func testWorkResolutionReturnsNilWhenSearchesSucceedButNothingMatches() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { _ in
+            [MALCandidate(malId: 9, titles: ["Completely Different Story"])]
+        })
+
+        let id = try await resolver.malId(for: work(["Berserk"]))
+
+        XCTAssertNil(id)
+    }
+
+    /// ADR-0008 rejected `EntityResolutionStore` as the *home* of Work-level answers, not
+    /// as a source of them: a hit recorded by a detail-page open is a valid answer for any
+    /// Work containing that Listing, and costs no request.
+    @MainActor func testWorkResolutionReusesAListingLevelHitWithoutSearching() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        store.record(sourceId: "weebcentral", mangaId: "x", .resolved(malId: 55))
+        let resolver = MALEntityResolver(store: store, search: { _ in
+            XCTFail("a cached Listing hit must answer without touching MAL")
+            return []
+        })
+
+        let id = try await resolver.malId(
+            for: work(["Whatever"],
+                      listings: [ListingKey(sourceId: "weebcentral", mangaId: "x")]))
+
+        XCTAssertEqual(id, 55)
+    }
+
+    /// The fan-out is capped, so a heavily-merged Work cannot issue one search per title
+    /// forever. Asserted behaviourally: with a limit of one, the *second* title — the only
+    /// one MAL would answer — is never searched, so the Work does not resolve.
+    @MainActor func testWorkResolutionSearchesAtMostTheTitleLimit() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, titleSearchLimit: 1, search: { title in
+            title == "Solo Leveling" ? [MALCandidate(malId: 121, titles: ["Solo Leveling"])] : []
+        })
+
+        let id = try await resolver.malId(for: work(["Only I Level Up", "Solo Leveling"]))
+
+        XCTAssertNil(id)
+    }
+
     // MARK: - MoreLikeThis.pickMatch
 
     /// Minimal `Manga` for pure MoreLikeThis tests. `Manga`'s memberwise init is internal,
