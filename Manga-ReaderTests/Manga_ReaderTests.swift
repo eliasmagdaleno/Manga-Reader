@@ -2018,6 +2018,48 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(matcher.bestMatch(sourceTitle: "", candidates: [(id: 1, titles: ["Berserk"])]))
     }
 
+    /// Resolution runs at the **Work** level, so the source side is the Work's whole
+    /// `knownTitles` set and each candidate scores over the title cross-product
+    /// (ADR-0008). This is the recall ADR-0007 built `knownTitles` for and never
+    /// collected: one Listing's spelling misses, a second Listing's finds it.
+    func testMALBestMatchScoresOverTheWholeSourceTitleSet() {
+        let matcher = MALTitleMatcher()
+        let candidates: [(id: Int, titles: [String])] = [(id: 25, titles: ["Solo Leveling"])]
+
+        XCTAssertNil(matcher.bestMatch(sourceTitle: "Only I Level Up", candidates: candidates),
+                     "the scraped source's spelling alone does not reach the threshold")
+        XCTAssertEqual(matcher.bestMatch(sourceTitles: ["Only I Level Up", "Solo Leveling"],
+                                         candidates: candidates), 25)
+    }
+
+    /// The property the cross-product exists to preserve, and the reason ADR-0008
+    /// rejected "run the single-title matcher per title and take the best": each source
+    /// title here matches a *different* candidate exactly, so N independent passes would
+    /// each report a confident winner and the max would pick one arbitrarily. One ranked
+    /// list sees two 1.0 scores and refuses. Precision over recall.
+    func testMALCrossProductMatchingStillRejectsAmbiguity() {
+        let matcher = MALTitleMatcher()
+        let candidates: [(id: Int, titles: [String])] = [
+            (id: 1, titles: ["Solo Leveling"]),
+            (id: 2, titles: ["Only I Level Up"]),
+        ]
+        XCTAssertNil(matcher.bestMatch(sourceTitles: ["Solo Leveling", "Only I Level Up"],
+                                       candidates: candidates))
+    }
+
+    /// `knownTitles` accumulates from whatever Listings supply, so blanks are a real
+    /// input rather than a hypothetical. They must drop out instead of scoring 0 and
+    /// dragging a candidate down.
+    func testMALPluralBestMatchDropsBlankSourceTitles() {
+        let matcher = MALTitleMatcher()
+        let candidates: [(id: Int, titles: [String])] = [(id: 1, titles: ["Berserk"])]
+
+        XCTAssertEqual(matcher.bestMatch(sourceTitles: ["", "   ", "Berserk"],
+                                         candidates: candidates), 1)
+        XCTAssertNil(matcher.bestMatch(sourceTitles: [], candidates: candidates))
+        XCTAssertNil(matcher.bestMatch(sourceTitles: ["", "  "], candidates: candidates))
+    }
+
     // MARK: - EntityResolutionStore
 
     @MainActor func testEntityResolutionRecordsAndReadsBack() {
