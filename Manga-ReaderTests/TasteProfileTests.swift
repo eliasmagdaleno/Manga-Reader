@@ -134,6 +134,64 @@ final class TasteProfileTests: XCTestCase {
         XCTAssertEqual(profile.orderedTagKeys, ["action", "romance"])
     }
 
+    // MARK: - Engagement weight, exposed (ADR-0009)
+
+    /// The population split. A Work that has been *read* but never had a detail page
+    /// opened carries no tags — yet it is the highest-value thing the upgrade queue can
+    /// fetch, since it is proven demand contributing literally nothing. So it must be
+    /// orderable. Before this, `build` skipped it before any weight was computed.
+    func testAnUntaggedWorkWithReadingHistoryStillGetsAWeight() throws {
+        let untagged = signal([entry("wc-1")], tags: [])
+        let profile = TasteProfile.build(signals: [untagged],
+                                         savedIds: [], moreLikeThis: [], now: now)
+
+        XCTAssertGreaterThan(try XCTUnwrap(profile.workWeights[untagged.workId]), 0)
+    }
+
+    /// **One** definition of engagement (ADR-0008): the number the upgrade queue orders
+    /// on is the same number that ranks seeds. A queue computing its own recency×chapters
+    /// score would diverge silently the first time either was tuned. Green on arrival —
+    /// this guards the property rather than driving it.
+    func testAWorkWeightIsTheSameNumberThatRanksItsSeed() throws {
+        let read = signal([entry("wc-1", chapter: "1"), entry("wc-1", chapter: "2")],
+                          tags: [QueryableTag(name: "Action", group: "genre")])
+        let profile = TasteProfile.build(signals: [read],
+                                         savedIds: [], moreLikeThis: [], now: now)
+
+        XCTAssertEqual(try XCTUnwrap(profile.workWeights[read.workId]),
+                       try XCTUnwrap(profile.seeds.first).weight, accuracy: 1e-9)
+    }
+
+    /// The residual tail: a Work minted from a save or a *Not interested* has no reading
+    /// history, so there is nothing to weight it by. It is absent rather than zero, and
+    /// the queue sorts these last by `WorkID` (ADR-0009).
+    func testAWorkWithNoReadingHistoryHasNoWeight() {
+        let saved = signal([], tags: [QueryableTag(name: "Action", group: "genre")])
+        let profile = TasteProfile.build(signals: [saved],
+                                         savedIds: [], moreLikeThis: [], now: now)
+
+        XCTAssertNil(profile.workWeights[saved.workId])
+    }
+
+    /// The trap ADR-0009 names: `weighted` feeds `makeSeeds`, and seeds are the queries
+    /// sent to MyAnimeList. Weighting untagged Works must not leak into that array, or
+    /// exposing the queue's ordering would silently change what the recommender asks for.
+    func testWeightingUntaggedWorksLeavesSeedsAndTheColdStartGateAlone() {
+        let tagged = signal([entry("md-1", source: "mangadex")],
+                            tags: [QueryableTag(name: "Action", group: "genre")])
+        let untagged = signal([entry("wc-1")], tags: [])
+
+        let alone = TasteProfile.build(signals: [tagged],
+                                       savedIds: [], moreLikeThis: [], now: now)
+        let withUntagged = TasteProfile.build(signals: [tagged, untagged],
+                                              savedIds: [], moreLikeThis: [], now: now)
+
+        XCTAssertEqual(withUntagged.taggedMangaCount, alone.taggedMangaCount)
+        XCTAssertEqual(withUntagged.seeds.map(\.manga.id), alone.seeds.map(\.manga.id))
+        XCTAssertEqual(withUntagged.weights, alone.weights)
+        XCTAssertEqual(withUntagged.workWeights.count, 2, "but both Works are orderable")
+    }
+
     /// A Work with no snapshot yet — minted from a scraped source the upgrade queue
     /// hasn't reached — contributes nothing and must not be counted as tagged.
     func testAWorkWithNoTagsContributesNothing() {
