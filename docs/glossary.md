@@ -49,7 +49,11 @@ Browsing must not grow the store, or the Work count stops being bounded by usage
 **Resolution** — establishing the Work ↔ Listing link. Free when the source publishes an
 external id (MangaDex exposes `attributes.links.mal`); otherwise fuzzy title matching via
 `MALTitleMatcher`. **Precision-biased**: no confident match yields `nil` rather than a guess,
-so failures are silent omissions, never wrong links.
+so failures are silent omissions, never wrong links. Runs at the **Work** level — the matcher
+takes the Work's whole `knownTitles` set as its source side, scoring each candidate over the
+title cross-product so there is still one ranked list and one ambiguity guard
+([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md)). Always goes through MyAnimeList;
+AniList is a lookup-by-id provider and is never asked to search.
 
 **Reverse resolution** — the other direction: external id → a Listing you can actually open.
 Currently MangaDex-only.
@@ -72,11 +76,28 @@ are the exception**: they accumulate and are never replaced.
 provider — in practice MangaDex's, which arrive free with the detail fetch the UI already makes.
 Costs no request, carries no tag rank, and is replaced wholesale once a provider is queried.
 
-**Upgrade queue** — the single serial queue that turns provisional snapshots into provider ones.
-It owns the whole AniList request budget (**30/min, measured — not the 90 the docs claim**), so
-provider access goes through it and never straight from a view model. Ordered by **engagement
-weight**, so the Works that move the profile are upgraded first and a negligible tail may stay
-provisional indefinitely.
+**Upgrade queue** — the single serial queue that turns provisional snapshots into provider ones,
+resolving a Work to an external id first when it has none. It owns the whole AniList request
+budget (**30/min, measured — not the 90 the docs claim**), so provider access goes through it and
+never straight from a view model. Ordered by **engagement weight** descending, with untagged Works
+after every weighted one; a negligible tail may stay provisional indefinitely. **Drains while the
+app is foregrounded and idles when nothing is stale** — not batched on rail build, which fires once
+a session and so never runs during a long read. Its own service, not the recommender's: the
+recommender is one consumer of Work metadata, not its owner. **Its output is not visible until the
+next rail build** (pull-to-refresh or relaunch), deliberately: a rail that rearranges itself while
+being looked at is worse than one that is a session stale
+([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md)).
+
+**Attempt memory** — the queue's per-Work record of what already failed, in a file it owns. Not in
+the Work store: it passes the delete test (losing it costs one redundant pass), and data with
+different answers to that test must not share a file. Records an **outcome**, not just a timestamp,
+because the two stages fail differently: `.unmatched(knownTitlesCount)` (MAL had candidates, none
+cleared the threshold) is reopened as soon as the title count grows — sound because `knownTitles` is
+**monotonic**, it only ever appends — while `.absentFromProvider(malId)` (resolution worked, AniList
+has no such entry) can only be reopened by its 14-day TTL, since re-matching yields the same id
+forever. Without that second outcome the fetch stage would have no memory at all and would
+re-request every 404ing Work on every drain. Transient failures are never recorded, so an outage
+cannot poison it for the TTL.
 
 **Snapshot TTL** — how long a provider snapshot is trusted, derived from the Work's own
 publication status rather than a guessed constant: a `FINISHED` Work is **terminal** (its chapter
