@@ -137,6 +137,105 @@ final class WorkStoreTests: XCTestCase {
         XCTAssertEqual(store.work(third)?.listings.count, 3)
     }
 
+    // MARK: - Learning an external id after mint (ADR-0009)
+
+    /// ADR-0008's trace, which the pre-fix store gets wrong. Work-level resolution is the
+    /// first thing that ever learns an external id *after* mint, so this collision was
+    /// unreachable until the upgrade queue — which is why slice 2 shipped without it.
+    /// Before the fix, `externalIdIndex["mal:123"]` simply flipped to the newly-resolved
+    /// Work and the incumbent survived unreachable by external id, splitting engagement
+    /// across two Works for one manga.
+    @MainActor func testLearningAnExternalIdAnotherWorkOwnsMergesRatherThanStealingTheIndex() {
+        let store = makeStore()
+        // Read on WeebCentral first: nothing to dedupe on, so a Work is minted bare.
+        let scraped = store.mint(from: listing("wc-solo", source: "weebcentral",
+                                               title: "Only I Level Up"))
+        // Then on MangaDex: a different Listing key, and the scraped Work has no id to
+        // match on, so a second Work is minted. Expected — this is what merge exists for.
+        let canonical = store.mint(from: listing("md-solo", title: "Solo Leveling", malId: 123))
+        XCTAssertNotEqual(scraped, canonical)
+
+        // The queue resolves the scraped Work by title and learns the same id.
+        store.setExternalIds(ExternalIDs(mal: 123, anilist: nil), on: scraped)
+
+        XCTAssertEqual(store.work(scraped)?.id, canonical, "the incumbent index owner survives")
+        XCTAssertEqual(store.workId(externalId: ExternalIDs(mal: 123, anilist: nil)), canonical)
+        XCTAssertEqual(store.work(canonical)?.listings.count, 2, "both Listings on one Work")
+        XCTAssertEqual(store.workId(for: ListingKey(sourceId: "weebcentral", mangaId: "wc-solo")),
+                       canonical)
+    }
+
+    /// Identity and metadata are decided by different rules. The incumbent wins identity,
+    /// but the snapshot goes to whichever ranks higher — otherwise the Work the user
+    /// actually read hands its tags to a bare mint and the reading is wasted.
+    @MainActor func testAMergeKeepsTheBetterSnapshotNotTheSurvivorsOwn() {
+        let store = makeStore()
+        let scraped = store.mint(from: listing("wc-solo", source: "weebcentral",
+                                               title: "Only I Level Up"))
+        store.applyProvisionalSnapshot(tags: [Tag(id: "t1", name: "Action", group: "genre")],
+                                       to: scraped)
+        let canonical = store.mint(from: listing("md-solo", title: "Solo Leveling", malId: 123))
+        XCTAssertNil(store.work(canonical)?.snapshot, "the MangaDex mint carries nothing")
+
+        store.setExternalIds(ExternalIDs(mal: 123, anilist: nil), on: scraped)
+
+        XCTAssertEqual(store.work(canonical)?.snapshot?.genres.map(\.name), ["Action"])
+    }
+
+    /// …and not the other way round: a real provider's snapshot outranks a provisional
+    /// one, so a merge must never drag a resolved Work back down to Listing tags.
+    @MainActor func testAMergeDoesNotDowngradeAProviderSnapshotToAProvisionalOne() {
+        let store = makeStore()
+        let winner = store.mint(from: listing("md-solo", title: "Solo Leveling"))
+        store.apply(AniListWork(anilistId: 1, malId: nil, knownTitles: [],
+                                genres: ["Fantasy"], tags: [],
+                                publicationStatus: .releasing, chapterTotal: nil),
+                    to: winner)
+        let loser = store.mint(from: listing("wc-solo", source: "weebcentral", title: "Only I"))
+        store.applyProvisionalSnapshot(tags: [Tag(id: "t1", name: "Action", group: "genre")],
+                                       to: loser)
+
+        store.merge(loser, into: winner)
+
+        XCTAssertEqual(store.work(winner)?.snapshot?.provider, .anilist)
+        XCTAssertEqual(store.work(winner)?.snapshot?.genres.map(\.name), ["Fantasy"])
+    }
+
+    /// A merge reindexes the winner, so the winner of one merge can become the loser of
+    /// the next when it absorbs an id a third Work already owns. Consistent with
+    /// incumbent-survives, and bounded: every merge removes one Work.
+    /// It takes two *providers* to build the chain: `ExternalIDs.absorb` never overwrites
+    /// a known id, so one Work can only ever hold one MAL id. AniList supplies the second
+    /// axis — one `apply` yields both `id` and `idMal`, which is why it was chosen.
+    @MainActor func testAbsorbingAThirdPartysIdChainsTheMerge() {
+        let store = makeStore()
+        let third = store.mint(from: listing("md-a", title: "A"))
+        store.setExternalIds(ExternalIDs(mal: nil, anilist: 456), on: third)
+        let incumbent = store.mint(from: listing("md-b", title: "B", malId: 123))
+        let newcomer = store.mint(from: listing("wc-c", source: "weebcentral", title: "C"))
+
+        // Resolution finds mal:123 → the newcomer merges into `incumbent`.
+        store.setExternalIds(ExternalIDs(mal: 123, anilist: nil), on: newcomer)
+        // AniList then hands back anilist:456, which `third` already owns → `incumbent`,
+        // the winner of the first merge, becomes the loser of the second.
+        store.setExternalIds(ExternalIDs(mal: nil, anilist: 456), on: newcomer)
+
+        XCTAssertEqual(store.work(newcomer)?.id, third)
+        XCTAssertEqual(store.work(incumbent)?.id, third)
+        XCTAssertEqual(store.work(third)?.listings.count, 3)
+    }
+
+    /// The upgrade queue scans this. Merged-away losers must not appear, or the queue
+    /// would spend budget resolving Works that no longer exist.
+    @MainActor func testAllWorkIdsReturnsOnlyLiveWorks() {
+        let store = makeStore()
+        let loser = store.mint(from: listing("md-1", title: "A"))
+        let winner = store.mint(from: listing("wc-2", source: "weebcentral", title: "B"))
+        store.merge(loser, into: winner)
+
+        XCTAssertEqual(store.allWorkIds(), [winner])
+    }
+
     // MARK: - Metadata snapshots
 
     private let noon = Date(timeIntervalSince1970: 1_800_000_000)
@@ -381,4 +480,50 @@ final class WorkStoreTests: XCTestCase {
         XCTAssertEqual(store.work(id)?.listings.count, 1)
         XCTAssertEqual(store.work(id)?.displayTitle, "Solo Leveling")
     }
+
+    /// A `works.json` from a build without the reindex fix: two Works, one manga, both
+    /// claiming `mal:123`. This file *will* exist in the wild — it is precisely what
+    /// shipping the queue without the fix produces. Loading it faithfully would preserve
+    /// the split, so the load path repairs it instead (ADR-0009).
+    @MainActor func testLoadingAStoreThatAlreadySplitOneMangaRepairsIt() throws {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("WorkStoreTests-\(UUID().uuidString)")
+        let ids = ExternalIDs(mal: 123, anilist: nil)
+        let canonical = Work(id: WorkID(), displayTitle: "Solo Leveling",
+                             knownTitles: ["Solo Leveling"], externalIds: ids,
+                             listings: [ListingKey(sourceId: "mangadex", mangaId: "md-solo")],
+                             snapshot: nil)
+        let scraped = Work(id: WorkID(), displayTitle: "Only I Level Up",
+                           knownTitles: ["Only I Level Up"], externalIds: ids,
+                           listings: [ListingKey(sourceId: "weebcentral", mangaId: "wc-solo")],
+                           snapshot: MetadataSnapshot(
+                            provider: .mangadex, fetchedAt: noon,
+                            genres: [QueryableTag(name: "Action", group: "genre")],
+                            tags: [], publicationStatus: .unknown, chapterTotal: nil))
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try JSONEncoder().encode(PersistedFixture(works: [canonical, scraped], aliases: []))
+            .write(to: dir.appendingPathComponent("works.json"))
+
+        let store = WorkStore(directory: dir)
+
+        XCTAssertEqual(store.allWorkIds(), [canonical.id], "first indexed is the incumbent")
+        XCTAssertEqual(store.work(scraped.id)?.id, canonical.id, "the stale id redirects")
+        XCTAssertEqual(store.work(canonical.id)?.listings.count, 2)
+        XCTAssertEqual(store.work(canonical.id)?.snapshot?.genres.map(\.name), ["Action"],
+                       "the reading that produced these tags is not thrown away")
+    }
+}
+
+// MARK: - On-disk fixture
+
+/// The store's on-disk shape, mirrored so a test can plant a file the fixed code would
+/// never write. File-scope rather than nested in the test class so `Alias` stays one
+/// level deep — the same reason `WorkStore.swift` keeps `Persisted` out of the class.
+private struct PersistedFixture: Codable {
+    struct Alias: Codable {
+        let from: WorkID
+        let to: WorkID
+    }
+    var works: [Work]
+    var aliases: [Alias]
 }

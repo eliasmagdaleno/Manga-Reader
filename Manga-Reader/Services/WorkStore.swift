@@ -85,6 +85,20 @@ final class WorkStore: ObservableObject {
         return Self.indexKeys(for: ids).lazy.compactMap { self.externalIdIndex[$0] }.first
     }
 
+    /// Every live Work id. The upgrade queue scans these; it applies its **own**
+    /// eligibility predicate, because half of that predicate — the attempt memory — lives
+    /// in a file the store knows nothing about, so a filter here could only ever be
+    /// re-filtered (ADR-0009).
+    ///
+    /// This does not weaken the no-public-dictionary rule above: that rule exists so
+    /// every lookup follows merge aliases, and merged-away losers are removed from
+    /// `works`, so every id returned is already resolved. **Order is unspecified** —
+    /// dictionary key order is randomized per process, and ordering is the caller's job.
+    func allWorkIds() -> [WorkID] {
+        loadIfNeeded()
+        return Array(works.keys)
+    }
+
     // MARK: - Minting
 
     /// Creates a Work from a Listing, or returns the existing one.
@@ -242,6 +256,14 @@ final class WorkStore: ObservableObject {
         for key in losing.listings where !surviving.listings.contains(key) {
             surviving.listings.append(key)
         }
+        // Identity and metadata are decided by different rules (ADR-0009). Identity goes
+        // to the incumbent, but the snapshot goes to whichever ranks higher — otherwise
+        // the WeebCentral Work the user actually read loses its provisional tags to a
+        // MangaDex mint carrying nothing, which is the concrete case ADR-0008's own trace
+        // produces.
+        if Self.rank(losing.snapshot) > Self.rank(surviving.snapshot) {
+            surviving.snapshot = losing.snapshot
+        }
 
         works[winnerId] = surviving
         works[loserId] = nil
@@ -286,11 +308,39 @@ final class WorkStore: ObservableObject {
         return true
     }
 
+    /// Points every one of a Work's external ids at it — **unless another live Work
+    /// already owns one**, in which case the two are the same manga and must merge
+    /// rather than fight over the index (ADR-0008). The **incumbent survives**: chosen
+    /// for stability, since aliasing keeps the loser resolvable either way, so the only
+    /// user-visible consequence is which `displayTitle` persists — and the id that
+    /// arrived first is the one already on screen.
+    ///
+    /// This also repairs a store that already contains the split, because
+    /// `loadIfNeeded` reindexes every Work. A `works.json` holding two Works for one
+    /// external id is in exactly the broken state the index exists to prevent, so a
+    /// repairing launch is better than a faithful one (ADR-0009).
     private func reindexExternalIds(of id: WorkID) {
         guard let work = works[id] else { return }
         for key in Self.indexKeys(for: work.externalIds) {
+            if let incumbent = externalIdIndex[key],
+               let live = resolve(incumbent), live != id {
+                merge(id, into: live)
+                // `id` no longer exists. The merge reindexed the winner, which absorbed
+                // the remaining keys — continuing would iterate a deleted Work and
+                // mutually recurse through `merge`. Termination is guaranteed because
+                // every merge removes one Work from `works`.
+                return
+            }
             externalIdIndex[key] = id
         }
+    }
+
+    /// `nil` < provisional < a real provider. The precedence `applyProvisionalSnapshot`
+    /// already enforces as a floor (see above), reused so the store has **one** ordering
+    /// of metadata authority rather than two that can disagree.
+    private static func rank(_ snapshot: MetadataSnapshot?) -> Int {
+        guard let snapshot else { return 0 }
+        return snapshot.provider == .mangadex ? 1 : 2
     }
 
     // MARK: - Persistence
