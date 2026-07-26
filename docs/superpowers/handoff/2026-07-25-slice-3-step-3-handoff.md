@@ -9,11 +9,11 @@ API facts, and gotchas all still stand and are **not** repeated here.
 | | state |
 |---|---|
 | **Step 1** — mint at the commitment points | **merged**, PR #18 → `main` at `8a114da` |
-| **Step 2** — detail tags onto the Work, all sources | **PR #19 open**, branch `slice-3-provisional-snapshots`, CI green at time of writing |
-| **Step 3** — resolve at the seam in `TasteProfile.build` | **designed, not started**, branch `slice-3-work-aware-profile` cut from step 2's tip |
+| **Step 2** — detail tags onto the Work, all sources | **merged**, PR #19 |
+| **Step 3** — resolve at the seam in `TasteProfile.build` | **implemented** on `slice-3-work-aware-profile`; the three findings below are what it acted on |
 | Steps 4–5 | untouched |
 
-215 unit tests green on the step-2 branch (201 baseline + 10 + 4).
+224 unit tests green with step 3 in place (201 baseline + 10 + 4 + 9).
 
 ### What shipped in steps 1–2
 
@@ -31,7 +31,9 @@ API facts, and gotchas all still stand and are **not** repeated here.
 The MangaDex-gated `tasteProfile.recordTags` call in `MangaDetailView` is **still there on
 purpose** — dual-write. Step 3 flips the read, step 4 deletes the write.
 
-## Step 3 — three findings that change the plan
+## Step 3 — three findings that changed the plan
+
+*(All three were acted on. Kept here because the reasoning is not recoverable from the diff.)*
 
 ### 1. The golden file cannot show this change
 

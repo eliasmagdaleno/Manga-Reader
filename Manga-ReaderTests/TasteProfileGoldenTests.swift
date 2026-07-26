@@ -82,11 +82,25 @@ final class TasteProfileGoldenTests: XCTestCase {
     /// Saved to the library — an engagement bonus in `build`.
     private static let savedIds: Set<String> = ["md-solo"]
 
-    /// Tags the app actually managed to record, i.e. the MangaDex-only gate as shipped.
-    /// **This is the line slice 3 moves.**
-    private static func recordedTags() -> [String: [Tag]] {
-        tagTable.filter { key, _ in
-            reads.first { $0.mangaId == key }?.sourceId == "mangadex"
+    /// The tags that actually reach the profile. **This is the line slice 3 moves:** it
+    /// used to filter `tagTable` down to the MangaDex subset, mirroring the
+    /// `sourceId == "mangadex"` gate in `MangaDetailView`. Now every source's tags land
+    /// on the Work, so the whole table gets through.
+    private static func reachableTags() -> [String: [Tag]] { tagTable }
+
+    /// One Work per manga, which is what the store produces for Listings nothing has
+    /// linked. Cross-source merging has its own unit tests; keeping it out here means
+    /// the golden diff shows one change, not two.
+    private static func signals() -> [TasteProfile.WorkSignal] {
+        var byManga: [String: [ReadingEntry]] = [:]
+        for e in history() { byManga[e.mangaId, default: []].append(e) }
+        let reachable = reachableTags()
+        return reads.map { fixture in
+            TasteProfile.WorkSignal(
+                workId: WorkID(),
+                entries: byManga[fixture.mangaId] ?? [],
+                tags: (reachable[fixture.mangaId] ?? [])
+                    .map { QueryableTag(name: $0.name, group: $0.group) })
         }
     }
 
@@ -114,9 +128,8 @@ final class TasteProfileGoldenTests: XCTestCase {
     // MARK: - The golden test
 
     func testTasteProfileConstructionGolden() throws {
-        let profile = TasteProfile.build(history: Self.history(),
+        let profile = TasteProfile.build(signals: Self.signals(),
                                          savedIds: Self.savedIds,
-                                         tagCache: Self.recordedTags(),
                                          moreLikeThis: [],
                                          now: Self.now,
                                          libraryItems: [],
@@ -154,7 +167,7 @@ final class TasteProfileGoldenTests: XCTestCase {
 
         out += pad("weight", 10) + pad("name", 14) + "key\n"
         out += String(repeating: "-", count: 44) + "\n"
-        // Sorted here rather than trusting `orderedTagIds`, so a change in the profile's own
+        // Sorted here rather than trusting `orderedTagKeys`, so a change in the profile's own
         // ordering shows up as moved *values* instead of silently reshuffling every row.
         let ordered = profile.weights.sorted {
             $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key

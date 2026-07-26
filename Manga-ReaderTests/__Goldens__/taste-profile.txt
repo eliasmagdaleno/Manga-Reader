@@ -13,16 +13,20 @@ mangadex      md-solo     Solo Leveling       3         yes       2d ago
 weebcentral   wc-orv      Omniscient Reader   4         yes       5d ago
 weebcentral   wc-tower    Tower of God        2         no        11d ago
 
-taggedMangaCount: 2   (manga contributing tag signal — the rest are invisible to the recommender)
+taggedMangaCount: 4   (manga contributing tag signal — the rest are invisible to the recommender)
 
 weight    name          key
 --------------------------------------------
-1.0000    Action        t-action
-0.6081    Isekai        t-isekai
-0.2606    Long Strip    t-longstrip
-0.0919    Drama         t-drama
+1.0000    Action        action
+0.6093    Fantasy       fantasy
+0.3555    Isekai        isekai
+0.1939    Adventure     adventure
+0.1524    Long Strip    long strip
+0.0537    Drama         drama
 
 seeds (highest engagement first — these are the MAL recommendation seeds)
 --------------------------------------------
 5.2516    Solo Leveling         mangadex
+4.2958    Omniscient Reader     weebcentral
+2.0048    Tower of God          weebcentral
 0.7937    Berserk               mangadex

@@ -104,7 +104,7 @@ final class RecommendationGoldenTests: XCTestCase {
         return TasteProfile(
             weights: weights,
             tagName: names,
-            orderedTagIds: weights.sorted { $0.value > $1.value }.map(\.key),
+            orderedTagKeys: weights.sorted { $0.value > $1.value }.map(\.key),
             taggedMangaCount: 6,
             seeds: [
                 SeedManga(manga: manga("seed-berserk", title: "Berserk"), weight: 3.0),
@@ -206,7 +206,7 @@ final class RecommendationGoldenTests: XCTestCase {
         let profile = TasteProfile(
             weights: ["t-x": 1.0, "t-y": 1.0],
             tagName: ["t-x": "TieX", "t-y": "TieY"],
-            orderedTagIds: ["t-x", "t-y"],
+            orderedTagKeys: ["t-x", "t-y"],
             taggedMangaCount: 3,
             seeds: []
         )
@@ -222,7 +222,7 @@ final class RecommendationGoldenTests: XCTestCase {
     @MainActor
     func testMALProviderBreaksTiesOnIdAscending() async throws {
         let profile = TasteProfile(
-            weights: ["t-x": 1.0], tagName: ["t-x": "TieX"], orderedTagIds: ["t-x"],
+            weights: ["t-x": 1.0], tagName: ["t-x": "TieX"], orderedTagKeys: ["t-x"],
             taggedMangaCount: 3,
             seeds: [
                 SeedManga(manga: Self.manga("seed-tie-1", title: "Tie Seed One"), weight: 2.0),
