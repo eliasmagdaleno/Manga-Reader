@@ -34,7 +34,7 @@ struct TagCandidateProvider: CandidateProvider {
     func candidates(for profile: TasteProfile,
                     excluding: Set<String>,
                     limit: Int) async throws -> [ScoredManga] {
-        let tagIds = Array(profile.orderedTagIds.prefix(topK))
+        let tagIds = Array(profile.orderedTagKeys.prefix(topK))
         guard !tagIds.isEmpty else { return [] }
 
         // Fetch each tag feed concurrently; a failing feed is skipped, not fatal.

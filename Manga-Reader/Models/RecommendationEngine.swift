@@ -30,10 +30,10 @@ final class RecommendationEngine: ObservableObject {
     private let history: HistoryStore
     private let library: LibraryStore
     private let profileStore: TasteProfileStore
-    /// Explicit feedback is a commitment, so it mints a Work (ADR-0007).
-    /// `TasteProfileStore` can't do this itself — it only ever receives a bare
-    /// `mangaId`, and minting needs the whole Listing.
-    private let workStore: WorkStore?
+    /// Required, unlike `HistoryStore`'s and `LibraryStore`'s optional references: the
+    /// profile is now *built* through the Work store, so an engine without one would
+    /// silently recommend nothing rather than degrade.
+    private let workStore: WorkStore
     private let mangaDexSource: MangaSource
     private let makeProvider: (MangaSource) -> CandidateProvider
     private let now: () -> Date
@@ -50,7 +50,7 @@ final class RecommendationEngine: ObservableObject {
     init(history: HistoryStore,
          library: LibraryStore,
          profileStore: TasteProfileStore,
-         workStore: WorkStore? = nil,
+         workStore: WorkStore,
          mangaDexSource: MangaSource = MangaDexSource(),
          makeProvider: @escaping (MangaSource) -> CandidateProvider = { @MainActor source in
              CompositeCandidateProvider(
@@ -87,13 +87,13 @@ final class RecommendationEngine: ObservableObject {
     func markNotInterested(_ manga: Manga) {
         // Minted so the dismissal can eventually suppress this manga on *every*
         // source, not just the one it was dismissed from (ADR-0007).
-        _ = workStore?.mint(from: manga)
+        _ = workStore.mint(from: manga)
         profileStore.markNotInterested(mangaId: manga.id)
         recommendations.removeAll { $0.manga.id == manga.id }
     }
 
     func markMoreLikeThis(_ manga: Manga) {
-        _ = workStore?.mint(from: manga)
+        _ = workStore.mint(from: manga)
         profileStore.markMoreLikeThis(mangaId: manga.id)
         Task { await rebuild() }
     }
@@ -131,15 +131,50 @@ final class RecommendationEngine: ObservableObject {
             Manga(id: item.id, sourceId: item.sourceId ?? "mangadex", title: item.title,
                  description: "", status: "unknown", year: nil, coverURL: item.coverURL, malId: nil)
         }
-        let profile = TasteProfile.build(history: history.entries,
+        let profile = TasteProfile.build(signals: resolveSignals(),
                                          savedIds: savedIds,
-                                         tagCache: profileStore.tagCache,
                                          moreLikeThis: Set(profileStore.moreLikeThis),
                                          now: now(),
                                          libraryItems: libraryManga)
         guard profile.taggedMangaCount >= minTaggedManga, !profile.isEmpty else { return nil }
         let readIds = Set(history.entries.map(\.mangaId))
         return (profile, readIds.union(savedIds).union(profileStore.notInterested))
+    }
+
+    /// Groups reading history by Work — the seam where Listing-keyed edges meet Work
+    /// identity (ADR-0007). **This mutates the store**, deliberately, in two ways:
+    ///
+    /// 1. It mints for entries that have none. All history written before slice 3
+    ///    predates minting, so without this an existing user's profile would come back
+    ///    empty on first launch after the update. Reading *is* a commitment, so minting
+    ///    here is the same rule applied retroactively — and `mint` is idempotent and,
+    ///    since it only marks the store dirty when it learns something, cheap to repeat.
+    /// 2. It seeds a Work that has no snapshot from the pre-slice-3 tag cache. That is
+    ///    the migration which makes retiring `taste.tagCache` safe (step 4); until this
+    ///    runs, those tags exist only in a Listing-keyed cache no one will read.
+    private func resolveSignals() -> [TasteProfile.WorkSignal] {
+        var entriesByWork: [WorkID: [ReadingEntry]] = [:]
+        var order: [WorkID] = []                       // newest-read first, as history is
+
+        for entry in history.entries {
+            let listing = Manga(id: entry.mangaId, sourceId: entry.sourceId ?? "mangadex",
+                                title: entry.mangaTitle, description: "", status: "unknown",
+                                year: nil, coverURL: entry.coverURL, malId: nil)
+            let id = workStore.mint(from: listing)
+            if entriesByWork[id] == nil { order.append(id) }
+            entriesByWork[id, default: []].append(entry)
+
+            if workStore.work(id)?.snapshot == nil,
+               let cached = profileStore.tagCache[entry.mangaId], !cached.isEmpty {
+                workStore.applyProvisionalSnapshot(tags: cached, to: id)
+            }
+        }
+
+        return order.map { id in
+            TasteProfile.WorkSignal(workId: id,
+                                    entries: entriesByWork[id] ?? [],
+                                    tags: workStore.work(id)?.snapshot?.genres ?? [])
+        }
     }
 
     /// Mostly top matches, plus a seeded sample from the lower-ranked tail (adjacent

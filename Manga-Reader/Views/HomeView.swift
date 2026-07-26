@@ -195,9 +195,12 @@ struct InkNotice: View {
     let library = LibraryStore()
     let history = HistoryStore()
     let taste = TasteProfileStore()
+    let works = WorkStore()
     return HomeView()
         .environmentObject(library)
         .environmentObject(history)
         .environmentObject(taste)
-        .environmentObject(RecommendationEngine(history: history, library: library, profileStore: taste))
+        .environmentObject(works)
+        .environmentObject(RecommendationEngine(history: history, library: library,
+                                                profileStore: taste, workStore: works))
 }

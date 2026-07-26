@@ -1444,15 +1444,34 @@ final class Manga_ReaderTests: XCTestCase {
                      updatedAt: now.addingTimeInterval(-daysAgo * 86_400), sourceId: "mangadex")
     }
 
+    /// Bridges these per-Listing fixtures to the Work-aggregated `build`: one Work per
+    /// manga id, which is what the store produces for Listings that were never linked.
+    private func signals(history: [ReadingEntry],
+                         tagCache: [String: [Tag]]) -> [TasteProfile.WorkSignal] {
+        var byManga: [String: [ReadingEntry]] = [:]
+        var order: [String] = []
+        for e in history {
+            if byManga[e.mangaId] == nil { order.append(e.mangaId) }
+            byManga[e.mangaId, default: []].append(e)
+        }
+        return order.map { id in
+            TasteProfile.WorkSignal(
+                workId: WorkID(),
+                entries: byManga[id] ?? [],
+                tags: (tagCache[id] ?? []).map { QueryableTag(name: $0.name, group: $0.group) })
+        }
+    }
+
     func testProfileWeightsGenreAboveFormatForEqualEngagement() {
         let now = Date()
         let tagCache = ["m1": [Tag(id: "g", name: "Action", group: "genre"),
                                Tag(id: "f", name: "Oneshot", group: "format")]]
         let history = [entry("m1", chapter: "1", page: 9, pageCount: 10, daysAgo: 0, now: now)]
-        let p = TasteProfile.build(history: history, savedIds: [], tagCache: tagCache,
-                                   moreLikeThis: [], now: now)
-        XCTAssertEqual(p.orderedTagIds.first, "g")               // genre outranks format
-        XCTAssertGreaterThan(p.weights["g"]!, p.weights["f"]!)
+        let p = TasteProfile.build(signals: signals(history: history, tagCache: tagCache),
+                                   savedIds: [], moreLikeThis: [], now: now)
+        // Keyed by normalized tag name now — a Work's snapshot has no tag id.
+        XCTAssertEqual(p.orderedTagKeys.first, "action")          // genre outranks format
+        XCTAssertGreaterThan(p.weights["action"]!, p.weights["oneshot"]!)
         XCTAssertEqual(p.weights.values.max()!, 1.0, accuracy: 1e-9)   // normalized to max 1
     }
 
@@ -1464,8 +1483,8 @@ final class Manga_ReaderTests: XCTestCase {
             entry("recent", chapter: "1", page: 0, pageCount: 10, daysAgo: 0, now: now),
             entry("old", chapter: "1", page: 0, pageCount: 10, daysAgo: 30, now: now),
         ]
-        let p = TasteProfile.build(history: history, savedIds: [], tagCache: tagCache,
-                                   moreLikeThis: [], now: now)
+        let p = TasteProfile.build(signals: signals(history: history, tagCache: tagCache),
+                                   savedIds: [], moreLikeThis: [], now: now)
         // Same engagement, but "old" is one 30-day half-life back → half the weight.
         XCTAssertEqual(p.weights["b"]! / p.weights["a"]!, 0.5, accuracy: 0.02)
     }
@@ -1480,9 +1499,9 @@ final class Manga_ReaderTests: XCTestCase {
             entry("boost", chapter: "1", page: 9, pageCount: 10, daysAgo: 0, now: now),   // finished
             entry("bare", chapter: "1", page: 3, pageCount: 10, daysAgo: 0, now: now),   // unfinished
         ]
-        let p = TasteProfile.build(history: history, savedIds: ["boost"], tagCache: tagCache,
-                                   moreLikeThis: [], now: now)
-        XCTAssertEqual(p.orderedTagIds.first, "b")
+        let p = TasteProfile.build(signals: signals(history: history, tagCache: tagCache),
+                                   savedIds: ["boost"], moreLikeThis: [], now: now)
+        XCTAssertEqual(p.orderedTagKeys.first, "b")
         XCTAssertGreaterThan(p.weights["b"]!, p.weights["p"]!)
     }
 
@@ -1494,15 +1513,15 @@ final class Manga_ReaderTests: XCTestCase {
             entry("seed", chapter: "1", page: 3, pageCount: 10, daysAgo: 0, now: now),
             entry("plain", chapter: "1", page: 3, pageCount: 10, daysAgo: 0, now: now),
         ]
-        let p = TasteProfile.build(history: history, savedIds: [], tagCache: tagCache,
-                                   moreLikeThis: ["seed"], now: now)
+        let p = TasteProfile.build(signals: signals(history: history, tagCache: tagCache),
+                                   savedIds: [], moreLikeThis: ["seed"], now: now)
         // Identical engagement; seed's ×2 boost makes it the top tag at exactly 2× "plain".
-        XCTAssertEqual(p.orderedTagIds.first, "s")
+        XCTAssertEqual(p.orderedTagKeys.first, "s")
         XCTAssertEqual(p.weights["n"]! / p.weights["s"]!, 0.5, accuracy: 1e-9)
     }
 
     func testProfileEmptyWhenNoTaggedHistory() {
-        let p = TasteProfile.build(history: [], savedIds: [], tagCache: [:], moreLikeThis: [], now: Date())
+        let p = TasteProfile.build(signals: [], savedIds: [], moreLikeThis: [], now: Date())
         XCTAssertTrue(p.isEmpty)
         XCTAssertEqual(p.taggedMangaCount, 0)
     }
@@ -1515,9 +1534,9 @@ final class Manga_ReaderTests: XCTestCase {
             entry("fin", chapter: "1", page: 9, pageCount: 10, daysAgo: 0, now: now),   // finished
             entry("unf", chapter: "1", page: 2, pageCount: 10, daysAgo: 0, now: now),   // abandoned
         ]
-        let p = TasteProfile.build(history: history, savedIds: [], tagCache: tagCache,
-                                   moreLikeThis: [], now: now)
-        XCTAssertEqual(p.orderedTagIds.first, "f")
+        let p = TasteProfile.build(signals: signals(history: history, tagCache: tagCache),
+                                   savedIds: [], moreLikeThis: [], now: now)
+        XCTAssertEqual(p.orderedTagKeys.first, "f")
         XCTAssertGreaterThan(p.weights["f"]!, p.weights["u"]!)
     }
 
@@ -1537,8 +1556,8 @@ final class Manga_ReaderTests: XCTestCase {
                        seedEntry("b", title: "B", updated: now),
                        seedEntry("c", title: "C", updated: now)]
         let profile = TasteProfile.build(
-            history: history, savedIds: ["b"],
-            tagCache: ["a": tag, "b": tag, "c": tag],
+            signals: signals(history: history, tagCache: ["a": tag, "b": tag, "c": tag]),
+            savedIds: ["b"],
             moreLikeThis: ["c"], now: now,
             libraryItems: [Manga(id: "b", sourceId: "mangadex", title: "B", description: "",
                                  status: "unknown", year: nil, coverURL: nil, malId: 42)],
@@ -1577,7 +1596,7 @@ final class Manga_ReaderTests: XCTestCase {
         var weights: [String: Double] = [:]; var names: [String: String] = [:]
         for p in pairs { weights[p.id] = p.weight; names[p.id] = p.name }
         let ordered = weights.sorted { $0.value > $1.value }.map(\.key)
-        return TasteProfile(weights: weights, tagName: names, orderedTagIds: ordered, taggedMangaCount: 5, seeds: [])
+        return TasteProfile(weights: weights, tagName: names, orderedTagKeys: ordered, taggedMangaCount: 5, seeds: [])
     }
 
     func testCandidateInTwoTagFeedsOutscoresOne() async throws {
@@ -1625,7 +1644,10 @@ final class Manga_ReaderTests: XCTestCase {
                             now: Date = Date(), seed: UInt64 = 1)
         -> RecommendationEngine {
         let lib = LibraryStore(defaults: UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!)
+        let works = WorkStore(directory: URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("EngineTests-\(UUID().uuidString)"))
         return RecommendationEngine(history: history, library: lib, profileStore: tasteStore,
+                                    workStore: works,
                                     mangaDexSource: mangaDexSource,
                                     makeProvider: { _ in provider }, now: { now }, seed: seed)
     }
@@ -2203,7 +2225,7 @@ final class Manga_ReaderTests: XCTestCase {
         // weight to 2 so the arithmetic (verified by hand below) matches the assertions
         // and the ranking is unambiguous; the implementation is otherwise verbatim.
         let profile = TasteProfile(weights: ["t": 1], tagName: ["t": "Action"],
-                                   orderedTagIds: ["t"], taggedMangaCount: 2,
+                                   orderedTagKeys: ["t"], taggedMangaCount: 2,
                                    seeds: [SeedManga(manga: mdManga("s1", "S1"), weight: 2),
                                            SeedManga(manga: mdManga("s2", "S2"), weight: 2)])
         let stub = await StubSimilar(["s1": [mdManga("x", "X"), mdManga("y", "Y")],
@@ -2230,7 +2252,7 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     func testCompositeBlendsNormalizesAndBoostsAgreement() async throws {
-        let profile = TasteProfile(weights: [:], tagName: [:], orderedTagIds: [],
+        let profile = TasteProfile(weights: [:], tagName: [:], orderedTagKeys: [],
                                    taggedMangaCount: 0, seeds: [])
         // Tag pool (raw scores 10, 5); MAL pool (raw scores 100, 50). "y" is in both.
         let tag = StubProvider(out: [ScoredManga(manga: mdManga("x", "X"), score: 10, reason: "More Action"),
@@ -2254,7 +2276,7 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     func testCompositeDegradesToTagOnlyWhenMALEmpty() async throws {
-        let profile = TasteProfile(weights: [:], tagName: [:], orderedTagIds: [],
+        let profile = TasteProfile(weights: [:], tagName: [:], orderedTagKeys: [],
                                    taggedMangaCount: 0, seeds: [])
         let tag = StubProvider(out: [ScoredManga(manga: mdManga("x", "X"), score: 10, reason: "More Action"),
                                      ScoredManga(manga: mdManga("y", "Y"), score: 5,  reason: "More Action")])
@@ -2265,7 +2287,7 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     func testCompositeDegradesToMALOnlyWhenTagEmpty() async throws {
-        let profile = TasteProfile(weights: [:], tagName: [:], orderedTagIds: [],
+        let profile = TasteProfile(weights: [:], tagName: [:], orderedTagKeys: [],
                                    taggedMangaCount: 0, seeds: [])
         let tag = StubProvider(out: [])
         let mal = StubProvider(out: [ScoredManga(manga: mdManga("p", "P"), score: 40, reason: "Because you read S"),
