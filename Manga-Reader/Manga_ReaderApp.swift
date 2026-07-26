@@ -12,6 +12,8 @@ struct Manga_ReaderApp: App {
     // Persisted appearance choice; drives the whole app's color scheme.
     @AppStorage(appearanceStorageKey) private var appearanceRaw = AppearanceMode.system.rawValue
 
+    @Environment(\.scenePhase) private var scenePhase
+
     // App-wide stores + the recommendation engine, all owned here so the engine shares
     // the exact same store instances the rest of the app writes to.
     @StateObject private var library: LibraryStore
@@ -49,6 +51,12 @@ struct Manga_ReaderApp: App {
                 .environmentObject(works)
                 .environmentObject(engine)
                 .preferredColorScheme(appearance.colorScheme)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // `WorkStore` debounces its saves, and `mint` runs on every page turn —
+            // so a reading session that ends by backgrounding the app would otherwise
+            // lose whatever the pending timer hadn't written yet (ADR-0007).
+            if phase == .background { works.flush() }
         }
     }
 }
