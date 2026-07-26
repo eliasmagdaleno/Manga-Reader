@@ -1,6 +1,6 @@
 # ADR-0007 — The Work's shape and lifecycle
 
-- **Status:** Accepted (2026-07-25)
+- **Status:** Accepted (2026-07-25); **amended by ADR-0009 (2026-07-26)** — merge metadata semantics
 - **Amends:** ADR-0002 (its sizing argument — see "Minting", below)
 - **Related:** ADR-0001 (Work vs Listing), ADR-0004 (fulfillment routing), ADR-0005 (manual link)
 
@@ -73,6 +73,11 @@ when a background reconcile merged underneath it (ADR-0004 makes that routine) �
 **nothing**, and a `nil` Work degrades exactly like the bug this whole line of work fixes: no tags,
 no engagement weight, invisible to the recommender. Under aliasing it resolves to the right Work.
 Cost is two UUIDs per merge, and merges are rare.
+
+> **Amended by ADR-0009.** This said nothing about the loser's *metadata*, and the implementation
+> silently discarded it. The surviving Work now keeps the **better** snapshot rather than its own,
+> by `applyProvisionalSnapshot`'s existing precedence (`nil` < provisional < provider) — otherwise
+> a merge can hand the store the empty Work and throw away the tags reading actually produced.
 
 ### Two tag axes, not one merged set
 

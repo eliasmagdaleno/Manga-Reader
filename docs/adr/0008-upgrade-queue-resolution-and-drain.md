@@ -1,8 +1,9 @@
 # ADR-0008 — The upgrade queue: resolution, ordering, and drain
 
-- **Status:** Accepted (2026-07-26)
+- **Status:** Accepted (2026-07-26); **amended by ADR-0009 (2026-07-26)**
 - **Amends:** ADR-0007 (its "Upgrade queue" decision — trigger and ordering, below)
-- **Related:** ADR-0001 (Work vs Listing), ADR-0004 (fulfillment routing), ADR-0005 (manual link)
+- **Related:** ADR-0001 (Work vs Listing), ADR-0004 (fulfillment routing), ADR-0005 (manual link),
+  ADR-0009 (queue construction)
 
 ## Context
 
@@ -138,6 +139,12 @@ inside `build`, the `weighted` array is private, and `guard !signal.tags.isEmpty
 (`TasteProfile.swift:82`) means it is never computed at all for an untagged Work. Letting the queue
 compute its own recency×chapters score was rejected — two formulas for "engagement" will silently
 diverge the first time either is tuned, and this one is already load-bearing for seeds.
+
+> **Amended by ADR-0009.** "By mint recency" is unimplementable — no `mintedAt` exists on `Work`,
+> `LibraryItem`, or in `works.json`. ADR-0009 also splits the population: a Work that has been
+> *read* but never had a detail page opened does have a computable weight, and now gets one. The
+> tail below is therefore Works with **no reading history**, ordered arbitrarily but stably by
+> `WorkID`. ADR-0009 also pins where the queue gets `workWeights` from — the recommender pushes it.
 
 **Untagged Works sort after every weighted Work, by mint recency.** These are Works minted from a
 save where no detail page was ever opened, so they carry no tags and no weight by construction. The

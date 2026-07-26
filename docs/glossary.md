@@ -49,11 +49,15 @@ Browsing must not grow the store, or the Work count stops being bounded by usage
 **Resolution** — establishing the Work ↔ Listing link. Free when the source publishes an
 external id (MangaDex exposes `attributes.links.mal`); otherwise fuzzy title matching via
 `MALTitleMatcher`. **Precision-biased**: no confident match yields `nil` rather than a guess,
-so failures are silent omissions, never wrong links. Runs at the **Work** level — the matcher
-takes the Work's whole `knownTitles` set as its source side, scoring each candidate over the
-title cross-product so there is still one ranked list and one ambiguity guard
-([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md)). Always goes through MyAnimeList;
-AniList is a lookup-by-id provider and is never asked to search.
+so failures are silent omissions, never wrong links. Runs at the **Work** level — MyAnimeList is
+searched **once per known title** (capped, display title first) and the results are unioned into
+**one** candidate pool, which the matcher scores over the title cross-product. N searches, one
+ranked list, one ambiguity guard — never N matches and a maximum, which would have no runner-up to
+guard against ([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md),
+[ADR-0009](adr/0009-upgrade-queue-construction.md)). Always goes through MyAnimeList; AniList is a
+lookup-by-id provider and is never asked to search. A confident id is written to the Work
+**immediately**, before the metadata fetch — otherwise a transient provider failure rewinds the
+Work to an unresolved one and re-searches forever.
 
 **Reverse resolution** — the other direction: external id → a Listing you can actually open.
 Currently MangaDex-only.
@@ -79,14 +83,19 @@ Costs no request, carries no tag rank, and is replaced wholesale once a provider
 **Upgrade queue** — the single serial queue that turns provisional snapshots into provider ones,
 resolving a Work to an external id first when it has none. It owns the whole AniList request
 budget (**30/min, measured — not the 90 the docs claim**), so provider access goes through it and
-never straight from a view model. Ordered by **engagement weight** descending, with untagged Works
-after every weighted one; a negligible tail may stay provisional indefinitely. **Drains while the
-app is foregrounded and idles when nothing is stale** — not batched on rail build, which fires once
-a session and so never runs during a long read. Its own service, not the recommender's: the
-recommender is one consumer of Work metadata, not its owner. **Its output is not visible until the
-next rail build** (pull-to-refresh or relaunch), deliberately: a rail that rearranges itself while
-being looked at is worse than one that is a session stale
-([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md)).
+never straight from a view model. Ordered by **engagement weight** descending, which the
+recommender **pushes** to it on each rail build — the queue never reaches back for it, because
+assembling that input mints Works as a side effect. Works with **no reading history** sort after
+every weighted one; a negligible tail may stay provisional indefinitely. **Drains while the app is
+foregrounded and idles when nothing is stale** — not batched on rail build, which fires once a
+session and so never runs during a long read. It **polls** (a scan, then a 60s sleep when the scan
+is empty) rather than waiting on a signal: the only honest signal site is `mint`, which runs on
+every page turn, and a missed poll self-heals where a missed poke wedges forever. Its own service,
+not the recommender's: the recommender is one consumer of Work metadata, not its owner. **Its
+output is not visible until the next rail build** (pull-to-refresh or relaunch), deliberately: a
+rail that rearranges itself while being looked at is worse than one that is a session stale
+([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md),
+[ADR-0009](adr/0009-upgrade-queue-construction.md)).
 
 **Attempt memory** — the queue's per-Work record of what already failed, in a file it owns. Not in
 the Work store: it passes the delete test (losing it costs one redundant pass), and data with
@@ -111,7 +120,11 @@ saves to disk.
 **Work merge** — collapsing two Works discovered to be the same manga, which happens whenever an
 external id or a manual link arrives after both already exist. The losing Work id is **aliased,
 never erased**: it stays resolvable to the winner forever, so a stale id redirects instead of
-resolving to nothing.
+resolving to nothing. Identity and metadata are decided by different rules: the **incumbent**
+external-id owner survives as the Work (the id that arrived first is the one already on screen),
+but the survivor keeps whichever **snapshot** ranks higher — `nil` < provisional < provider — so a
+merge can never discard the tags reading actually produced
+([ADR-0009](adr/0009-upgrade-queue-construction.md)).
 _Avoid_: dedupe, collapse.
 
 **Queryable tag** (`QueryableTag`) — a coarse tag name a Source can actually browse by
@@ -165,10 +178,15 @@ reading history. Pure value type, no I/O.
 **Seed** (`SeedManga`) — a highly-engaged manga used to ask an external catalog "what's like
 this?" Top 5 by engagement weight.
 
-**Engagement weight** — per-manga signal strength: recency (30-day half-life) × (chapters read
-+ finished bonus + saved bonus), doubled by *More like this*. Computed in `TasteProfile.build`.
-**Only computed for manga that have cached tags** — the root of the cross-source invisibility
-described in ADR-0001.
+**Engagement weight** — per-**Work** signal strength: recency (30-day half-life) × (chapters read
++ finished bonus + saved bonus), doubled by *More like this*. Computed in `TasteProfile.build` and
+exposed as `workWeights`, which is **pushed to the upgrade queue** on every rail build — one
+definition of engagement, never a second one computed by whoever needs it
+([ADR-0009](adr/0009-upgrade-queue-construction.md)). Computed for **every Work with reading
+history**, tagged or not: an untagged read Work is the highest-value thing the queue can upgrade,
+so it must be orderable. Two things stay tag-gated — a Work's *contribution* to the tag vector
+(nothing to contribute) and **seed** selection (seeds are catalog queries, and an untagged Work is
+a worse question to ask).
 
 **Candidate pool** — one provider's ranked output (`[ScoredManga]`). Two exist: the *tag pool*
 (`TagCandidateProvider`) and the *MAL pool* (`MALCandidateProvider`).
