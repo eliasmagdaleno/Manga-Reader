@@ -3,6 +3,16 @@
 **Audience:** a fresh session finishing the upgrade queue. Supersedes
 `2026-07-26-adr-0009-steps-1-5-handoff.md`, whose steps 1–5 are all on this branch.
 
+> **RESOLVED the same day, in the same session — step 7 shipped as `276abad`.** This file is
+> kept as the record of *why* step 7 looks the way it does; everything below describes the state
+> before that commit. Two things below are now known to be wrong:
+>
+> - **"Step 7 — not started"** is stale. It is done, with three tests in `Manga_ReaderTests.swift`
+>   ("Engagement weight push"). It was built as written, with no deviations.
+> - **The UI test is not a suspect.** `testChapterPreviewKeepsRailReachable` passes on this
+>   branch (73.8s, 0 failures) *with the queue wired in*. The earlier failure was flaky. Treat
+>   that test as a weak signal generally — it drives live MangaDex data over the network.
+
 ## State
 
 | | |
@@ -77,6 +87,12 @@ Tests worth having: the push fires only above the gate; `.inactive` does not sto
 first is a `RecommendationEngine` test with a spy closure; the second may not be worth testing
 through SwiftUI at all — judgement call.
 
+**How it was settled:** the spy-closure tests were written (three of them, including one pinning
+that "See all" pushes too, which is what holds the call in `profileAndExclusions` rather than
+`rebuild`). The `scenePhase` behaviour was **not** tested — driving SwiftUI lifecycle from a unit
+test buys a test of SwiftUI, not of us. `start()`'s idempotency, the part that actually matters
+there, is already covered by `testStartingTwiceRunsOneLoop`.
+
 ## Gotchas
 
 - **`agy` post-commit hook makes `git commit` take >2 minutes.** Use `run_in_background: true`.
@@ -97,6 +113,11 @@ two merge tests are the exception: they passed on first run because `drainOnce` 
 ADR-0010's order of operations from batch 1. They were earned by **mutation** instead — changing
 `live.id` back to `work.id` fails exactly `testAnOutcomeAfterAMergeIsRecordedAgainstTheSurvivingWork`
 and nothing else. If you touch that path, re-run that mutation.
+
+Step 7 had the same shape once: `testAColdStartProfilePushesNothing` passed on its first run,
+because at that moment nothing pushed at all — a test that cannot tell "correctly suppressed"
+from "feature absent" is not yet a test. Its mutation is **moving `pushPriority(...)` above the
+gate** in `profileAndExclusions()`; that fails it, and only it. Re-run it if you touch that guard.
 
 ## Not done, deliberately
 
