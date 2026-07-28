@@ -208,8 +208,7 @@ final class WorkStore: ObservableObject {
         // nothing on the searchable axis doesn't get to discard one that has content.
         // The ids below still accumulate: learning the AniList id is worth keeping
         // even when the metadata behind it isn't.
-        let hasContent = !provider.genres.isEmpty || !provider.tags.isEmpty
-        if hasContent || work.snapshot == nil {
+        if provider.hasContent || work.snapshot == nil {
             work.snapshot = MetadataSnapshot(
                 provider: .anilist,
                 fetchedAt: now,
