@@ -1660,10 +1660,11 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     @MainActor private func makeEngine(history: HistoryStore, tasteStore: TasteProfileStore,
-                            provider: CandidateProvider,
-                            workStore: WorkStore? = nil,
-                            mangaDexSource: MangaSource = CannedTagSource(lists: [:], failTags: []),
-                            now: Date = Date(), seed: UInt64 = 1)
+                                       provider: CandidateProvider,
+                                       workStore: WorkStore? = nil,
+                                       mangaDexSource: MangaSource = CannedTagSource(lists: [:], failTags: []),
+                                       now: Date = Date(), seed: UInt64 = 1,
+                                       pushPriority: @escaping RecommendationEngine.PriorityPush = { _ in })
         -> RecommendationEngine {
         let lib = LibraryStore(defaults: UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!)
         let works = workStore ?? WorkStore(directory: URL(fileURLWithPath: NSTemporaryDirectory())
@@ -1671,7 +1672,8 @@ final class Manga_ReaderTests: XCTestCase {
         return RecommendationEngine(history: history, library: lib, profileStore: tasteStore,
                                     workStore: works,
                                     mangaDexSource: mangaDexSource,
-                                    makeProvider: { _ in provider }, now: { now }, seed: seed)
+                                    makeProvider: { _ in provider }, now: { now }, seed: seed,
+                                    pushPriority: pushPriority)
     }
 
     /// A provider returning a fixed ranked pool, ignoring the profile.
@@ -1729,6 +1731,76 @@ final class Manga_ReaderTests: XCTestCase {
         await engine.refresh()
         // rec2 = not interested, m1 = already read → both excluded.
         XCTAssertEqual(engine.recommendations.map(\.manga.id), ["rec1"])
+    }
+
+    // MARK: - Engagement weight push (ADR-0010)
+
+    /// The recommender pushes; the queue never pulls. Pulling would mean the queue
+    /// building a profile of its own, and `TasteProfile.build` mints Works as a side
+    /// effect — a background loop would then mint from browsing (ADR-0009).
+    @MainActor func testBuildingAProfilePushesItsWorkWeights() async throws {
+        let history = makeHistoryStore()
+        let taste = makeTasteStore()
+        let works = makeWorkStore()
+        for i in 1...3 {
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
+        }
+        var pushed: [[WorkID: Double]] = []
+
+        let engine = makeEngine(history: history, tasteStore: taste,
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works,
+                                pushPriority: { pushed.append($0) })
+        await engine.refresh()
+
+        let weights = try XCTUnwrap(pushed.last)
+        let expected = try (1...3).map {
+            try XCTUnwrap(works.workId(for: ListingKey(sourceId: "mangadex", mangaId: "m\($0)")))
+        }
+        XCTAssertEqual(Set(weights.keys), Set(expected))
+        XCTAssertTrue(weights.values.allSatisfy { $0 > 0 })
+    }
+
+    /// The push is below the cold-start gate on purpose. Pushing an empty map from a
+    /// profile that was rejected would overwrite a good ordering the queue is already
+    /// draining against, and hand it a blank one (ADR-0010).
+    @MainActor func testAColdStartProfilePushesNothing() async throws {
+        let history = makeHistoryStore()
+        let taste = makeTasteStore()
+        let works = makeWorkStore()
+        tagRead(works, history, "m1", [Tag(id: "a", name: "A", group: "genre")])
+        tagRead(works, history, "m2", [Tag(id: "b", name: "B", group: "genre")])
+        var pushed: [[WorkID: Double]] = []
+
+        let engine = makeEngine(history: history, tasteStore: taste,
+                                provider: FixedPoolProvider(pool: [scored("x")]),
+                                workStore: works,
+                                pushPriority: { pushed.append($0) })
+        await engine.refresh()
+
+        XCTAssertTrue(pushed.isEmpty, "a rejected profile is not an ordering")
+    }
+
+    /// Pins that the push lives in `profileAndExclusions`, not in `rebuild`: "See all"
+    /// builds the same profile without touching the rail, and that is just as good a
+    /// signal about what the user cares about.
+    @MainActor func testTheSeeAllGridPushesToo() async throws {
+        let history = makeHistoryStore()
+        let taste = makeTasteStore()
+        let works = makeWorkStore()
+        for i in 1...3 {
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
+        }
+        var pushed: [[WorkID: Double]] = []
+
+        let engine = makeEngine(history: history, tasteStore: taste,
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works,
+                                pushPriority: { pushed.append($0) })
+        _ = await engine.rankedRecommendations()
+
+        XCTAssertEqual(pushed.count, 1)
+        XCTAssertEqual(pushed.first?.count, 3)
     }
 
     @MainActor func testComposeIsDeterministicForASeed() {
@@ -2018,6 +2090,48 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(matcher.bestMatch(sourceTitle: "", candidates: [(id: 1, titles: ["Berserk"])]))
     }
 
+    /// Resolution runs at the **Work** level, so the source side is the Work's whole
+    /// `knownTitles` set and each candidate scores over the title cross-product
+    /// (ADR-0008). This is the recall ADR-0007 built `knownTitles` for and never
+    /// collected: one Listing's spelling misses, a second Listing's finds it.
+    func testMALBestMatchScoresOverTheWholeSourceTitleSet() {
+        let matcher = MALTitleMatcher()
+        let candidates: [(id: Int, titles: [String])] = [(id: 25, titles: ["Solo Leveling"])]
+
+        XCTAssertNil(matcher.bestMatch(sourceTitle: "Only I Level Up", candidates: candidates),
+                     "the scraped source's spelling alone does not reach the threshold")
+        XCTAssertEqual(matcher.bestMatch(sourceTitles: ["Only I Level Up", "Solo Leveling"],
+                                         candidates: candidates), 25)
+    }
+
+    /// The property the cross-product exists to preserve, and the reason ADR-0008
+    /// rejected "run the single-title matcher per title and take the best": each source
+    /// title here matches a *different* candidate exactly, so N independent passes would
+    /// each report a confident winner and the max would pick one arbitrarily. One ranked
+    /// list sees two 1.0 scores and refuses. Precision over recall.
+    func testMALCrossProductMatchingStillRejectsAmbiguity() {
+        let matcher = MALTitleMatcher()
+        let candidates: [(id: Int, titles: [String])] = [
+            (id: 1, titles: ["Solo Leveling"]),
+            (id: 2, titles: ["Only I Level Up"]),
+        ]
+        XCTAssertNil(matcher.bestMatch(sourceTitles: ["Solo Leveling", "Only I Level Up"],
+                                       candidates: candidates))
+    }
+
+    /// `knownTitles` accumulates from whatever Listings supply, so blanks are a real
+    /// input rather than a hypothetical. They must drop out instead of scoring 0 and
+    /// dragging a candidate down.
+    func testMALPluralBestMatchDropsBlankSourceTitles() {
+        let matcher = MALTitleMatcher()
+        let candidates: [(id: Int, titles: [String])] = [(id: 1, titles: ["Berserk"])]
+
+        XCTAssertEqual(matcher.bestMatch(sourceTitles: ["", "   ", "Berserk"],
+                                         candidates: candidates), 1)
+        XCTAssertNil(matcher.bestMatch(sourceTitles: [], candidates: candidates))
+        XCTAssertNil(matcher.bestMatch(sourceTitles: ["", "  "], candidates: candidates))
+    }
+
     // MARK: - EntityResolutionStore
 
     @MainActor func testEntityResolutionRecordsAndReadsBack() {
@@ -2124,6 +2238,107 @@ final class Manga_ReaderTests: XCTestCase {
                           description: "", status: "unknown", year: nil, coverURL: nil, malId: nil)
         let id = await resolver.malId(for: manga)
         XCTAssertNil(id)   // fresh miss short-circuits before any network call
+    }
+
+    // MARK: - MALEntityResolver, Work-level (ADR-0008/0009)
+
+    private func work(_ titles: [String],
+                      mal: Int? = nil,
+                      listings: [ListingKey] = []) -> Work {
+        Work(id: WorkID(), displayTitle: titles.first ?? "",
+             knownTitles: titles, externalIds: ExternalIDs(mal: mal, anilist: nil),
+             listings: listings, snapshot: nil)
+    }
+
+    /// The payoff ADR-0007 built `knownTitles` for: only the *second* Listing's spelling
+    /// retrieves anything from MAL, and the Work resolves anyway. A per-Listing resolver
+    /// asked about the scraped title alone gets nothing.
+    @MainActor func testWorkResolutionMatchesUsingASecondListingsTitle() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { title in
+            title == "Solo Leveling" ? [MALCandidate(malId: 121, titles: ["Solo Leveling"])] : []
+        })
+
+        let id = try await resolver.malId(for: work(["Only I Level Up", "Solo Leveling"]))
+
+        XCTAssertEqual(id, 121)
+        XCTAssertTrue(store.cache.isEmpty,
+                      "a Work-level answer has no single Listing to key on (ADR-0008)")
+    }
+
+    /// The two failures are different records in the queue's attempt memory — nothing at
+    /// all for a transient failure, `.unmatched` for a real miss — so they cannot both be
+    /// `nil`. An outage must not be remembered as "MAL doesn't have this".
+    @MainActor func testWorkResolutionThrowsWhenEverySearchFailed() async {
+        struct Boom: Error {}
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { _ in throw Boom() })
+
+        do {
+            _ = try await resolver.malId(for: work(["Berserk"]))
+            XCTFail("a transient failure must not be reported as a miss")
+        } catch {}
+    }
+
+    /// Partial failure: a match stands on its own. The search that failed could only have
+    /// added candidates, and extra candidates are evidence *against* via the ambiguity
+    /// guard — never for. Throwing away a confident match here would buy nothing.
+    @MainActor func testWorkResolutionKeepsAMatchFoundDespiteAFailedSearch() async throws {
+        struct Boom: Error {}
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { title in
+            if title == "Only I Level Up" { throw Boom() }
+            return [MALCandidate(malId: 121, titles: ["Solo Leveling"])]
+        })
+
+        let id = try await resolver.malId(for: work(["Only I Level Up", "Solo Leveling"]))
+
+        XCTAssertEqual(id, 121)
+    }
+
+    /// The genuine miss: MAL answered, nothing cleared the threshold. This is the one the
+    /// queue records as `.unmatched(knownTitlesCount)`.
+    @MainActor func testWorkResolutionReturnsNilWhenSearchesSucceedButNothingMatches() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { _ in
+            [MALCandidate(malId: 9, titles: ["Completely Different Story"])]
+        })
+
+        let id = try await resolver.malId(for: work(["Berserk"]))
+
+        XCTAssertNil(id)
+    }
+
+    /// ADR-0008 rejected `EntityResolutionStore` as the *home* of Work-level answers, not
+    /// as a source of them: a hit recorded by a detail-page open is a valid answer for any
+    /// Work containing that Listing, and costs no request.
+    @MainActor func testWorkResolutionReusesAListingLevelHitWithoutSearching() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        store.record(sourceId: "weebcentral", mangaId: "x", .resolved(malId: 55))
+        let resolver = MALEntityResolver(store: store, search: { _ in
+            XCTFail("a cached Listing hit must answer without touching MAL")
+            return []
+        })
+
+        let id = try await resolver.malId(
+            for: work(["Whatever"],
+                      listings: [ListingKey(sourceId: "weebcentral", mangaId: "x")]))
+
+        XCTAssertEqual(id, 55)
+    }
+
+    /// The fan-out is capped, so a heavily-merged Work cannot issue one search per title
+    /// forever. Asserted behaviourally: with a limit of one, the *second* title — the only
+    /// one MAL would answer — is never searched, so the Work does not resolve.
+    @MainActor func testWorkResolutionSearchesAtMostTheTitleLimit() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, titleSearchLimit: 1, search: { title in
+            title == "Solo Leveling" ? [MALCandidate(malId: 121, titles: ["Solo Leveling"])] : []
+        })
+
+        let id = try await resolver.malId(for: work(["Only I Level Up", "Solo Leveling"]))
+
+        XCTAssertNil(id)
     }
 
     // MARK: - MoreLikeThis.pickMatch

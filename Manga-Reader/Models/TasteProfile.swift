@@ -38,6 +38,20 @@ struct TasteProfile {
     let taggedMangaCount: Int
     /// Top read/saved manga (materialized), highest engagement first — MAL rec seeds.
     let seeds: [SeedManga]
+    /// Engagement weight per Work, which the upgrade queue orders on (ADR-0008). Exposed
+    /// so there is **one** definition of engagement: a queue computing its own
+    /// recency×chapters score would diverge from this one the first time either is tuned.
+    ///
+    /// Covers every Work with reading history, **tagged or not** (ADR-0009). An untagged
+    /// read Work contributes nothing to `weights` but is the highest-value thing the queue
+    /// can fetch, so it still has to be orderable. Works with no history are absent, and
+    /// the queue sorts them last.
+    ///
+    /// `var` with a default purely so the memberwise init keeps it optional — the tests
+    /// that build a profile from literal weights to isolate *ranking* have no Works at
+    /// all, and `[:]` is the honest value there. Never mutated. (`LibraryItem` uses the
+    /// same idiom.)
+    var workWeights: [WorkID: Double] = [:]
 
     var isEmpty: Bool { weights.isEmpty }
 
@@ -73,15 +87,10 @@ struct TasteProfile {
         var raw: [String: Double] = [:]
         var names: [String: String] = [:]
         var weighted: [(signal: WorkSignal, weight: Double)] = []
+        var workWeights: [WorkID: Double] = [:]
         var taggedCount = 0
 
         for signal in signals where !signal.entries.isEmpty {
-            // A Work the upgrade queue hasn't reached has no tags yet. It contributes
-            // nothing, exactly as an untagged manga did before — but now that is a
-            // temporary state per Work rather than a permanent one per source.
-            guard !signal.tags.isEmpty else { continue }
-            taggedCount += 1
-
             let entries = signal.entries
             // Chapter numbering is per-source (ADR-0004 accepts this), so merging
             // across Listings can under-count. Accepted: this is a heuristic weight.
@@ -97,6 +106,14 @@ struct TasteProfile {
                                + (finished ? 1.5 : 0.0)
                                + (isSaved ? 1.0 : 0.0))
             if entries.contains(where: { moreLikeThis.contains($0.mangaId) }) { w *= 2.0 }
+            // Every read Work is orderable for the upgrade queue, tagged or not (ADR-0009).
+            workWeights[signal.workId] = w
+
+            // A Work the upgrade queue hasn't reached has no tags yet, so it contributes
+            // nothing to the tag vector and is not a seed — seeds are catalog queries, and
+            // an untagged Work is a worse question to ask. It still has a weight above.
+            guard !signal.tags.isEmpty else { continue }
+            taggedCount += 1
             weighted.append((signal, w))
 
             for t in signal.tags {
@@ -113,7 +130,8 @@ struct TasteProfile {
 
         guard let maxW = raw.values.max(), maxW > 0 else {
             return TasteProfile(weights: [:], tagName: [:], orderedTagKeys: [],
-                                taggedMangaCount: taggedCount, seeds: seeds)
+                                taggedMangaCount: taggedCount, seeds: seeds,
+                                workWeights: workWeights)
         }
         let normalized = raw.mapValues { $0 / maxW }
         // Ties break on the key: without it, equally-weighted tags come out in
@@ -122,7 +140,8 @@ struct TasteProfile {
             .sorted { $0.value != $1.value ? $0.value > $1.value : $0.key < $1.key }
             .map(\.key)
         return TasteProfile(weights: normalized, tagName: names, orderedTagKeys: ordered,
-                            taggedMangaCount: taggedCount, seeds: seeds)
+                            taggedMangaCount: taggedCount, seeds: seeds,
+                            workWeights: workWeights)
     }
 
     /// Top `limit` Works by engagement weight, each materialized to one representative

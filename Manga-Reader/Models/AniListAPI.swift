@@ -87,6 +87,15 @@ struct AniListWork: Equatable {
     /// `nil` for anything still releasing — AniList only knows a total once a
     /// series has finished. ADR-0004's routing fallback exists because of this.
     let chapterTotal: Int?
+
+    /// Whether this record carries anything worth replacing a snapshot with.
+    ///
+    /// Read by **two** callers on purpose (ADR-0010): `WorkStore.apply`, which refuses to
+    /// let an empty record discard a snapshot that has content, and the upgrade queue,
+    /// which must record an outcome when `apply` declines — otherwise the Work keeps its
+    /// unconditionally-stale provisional snapshot and is re-fetched forever. Two
+    /// hand-maintained copies of this expression is how that defect comes back.
+    var hasContent: Bool { !genres.isEmpty || !tags.isEmpty }
 }
 
 struct AniListAPI {

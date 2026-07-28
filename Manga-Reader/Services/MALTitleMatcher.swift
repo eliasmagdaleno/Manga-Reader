@@ -72,19 +72,29 @@ struct MALTitleMatcher {
         return previous[b.count]
     }
 
-    /// The id of the best-matching candidate for `sourceTitle`, or nil if no candidate
-    /// clears the acceptance threshold and the ambiguity guard. Generic over the id type
-    /// so it serves both MAL-id matching (forward) and MangaDex-id matching (reverse).
-    /// Precision-biased: any doubt resolves to nil rather than a wrong id.
-    func bestMatch<ID>(sourceTitle: String,
+    /// The id of the best-matching candidate for a **set** of source titles — a Work's
+    /// `knownTitles` — or nil if none clears the acceptance threshold and the ambiguity
+    /// guard. Generic over the id type so it serves both MAL-id matching (forward) and
+    /// MangaDex-id matching (reverse). Precision-biased: any doubt resolves to nil.
+    ///
+    /// Each candidate scores as the maximum similarity over the **title cross-product**,
+    /// which is symmetric with what this already did on the candidate side. That produces
+    /// **one** ranked list and therefore one ambiguity guard.
+    ///
+    /// This is deliberately not "run the single-title matcher per title and take the
+    /// best": a maximum across N independent ranked lists has no runner-up to compare
+    /// against, so it would raise recall and the false-match rate together. Running a
+    /// precision-biased matcher repeatedly does not preserve precision (ADR-0008).
+    func bestMatch<ID>(sourceTitles: [String],
                        candidates: [(id: ID, titles: [String])]) -> ID? {
-        let normSource = Self.normalize(sourceTitle)
-        guard !normSource.isEmpty, !candidates.isEmpty else { return nil }
+        let normSources = sourceTitles.map(Self.normalize).filter { !$0.isEmpty }
+        guard !normSources.isEmpty, !candidates.isEmpty else { return nil }
 
         let scored = candidates
             .map { candidate -> (id: ID, score: Double) in
-                let best = candidate.titles
-                    .map { Self.similarity(normSource, Self.normalize($0)) }
+                let normCandidates = candidate.titles.map(Self.normalize)
+                let best = normSources
+                    .flatMap { source in normCandidates.map { Self.similarity(source, $0) } }
                     .max() ?? 0
                 return (candidate.id, best)
             }
@@ -96,6 +106,13 @@ struct MALTitleMatcher {
             return nil   // too close to call — precision over recall
         }
         return best.id
+    }
+
+    /// Single-title matching, for callers that have one Listing rather than a Work.
+    /// Delegates, so there is one scoring path and the threshold has one definition.
+    func bestMatch<ID>(sourceTitle: String,
+                       candidates: [(id: ID, titles: [String])]) -> ID? {
+        bestMatch(sourceTitles: [sourceTitle], candidates: candidates)
     }
 
     /// Best MAL match for `sourceTitle` among `candidates`, or `.noMatch`. Delegates to

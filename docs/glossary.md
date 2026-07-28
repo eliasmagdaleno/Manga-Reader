@@ -95,7 +95,17 @@ not the recommender's: the recommender is one consumer of Work metadata, not its
 output is not visible until the next rail build** (pull-to-refresh or relaunch), deliberately: a
 rail that rearranges itself while being looked at is worse than one that is a session stale
 ([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md),
-[ADR-0009](adr/0009-upgrade-queue-construction.md)).
+[ADR-0009](adr/0009-upgrade-queue-construction.md),
+[ADR-0010](adr/0010-upgrade-queue-drain-loop-and-wiring.md)).
+
+**Drain pass** — the queue's unit of work between idles: it re-scans before **every** request, so a
+pass is a sequence of single upgrades rather than a batch under one frozen ordering. Re-scanning
+each time is what lets a Work minted mid-read, or a freshly pushed engagement weight, take effect at
+the next request instead of the next pass — and it costs nothing against a 2-second request floor. A
+pass ends when nothing is left eligible, or when three requests fail in a row. Works that failed
+*transiently* are skipped for the remainder of the pass and reconsidered in the next one, which is
+how the queue makes forward progress without recording a network blip as if it were an answer about
+a Work ([ADR-0010](adr/0010-upgrade-queue-drain-loop-and-wiring.md)).
 
 **Attempt memory** — the queue's per-Work record of what already failed, in a file it owns. Not in
 the Work store: it passes the delete test (losing it costs one redundant pass), and data with
@@ -103,10 +113,12 @@ different answers to that test must not share a file. Records an **outcome**, no
 because the two stages fail differently: `.unmatched(knownTitlesCount)` (MAL had candidates, none
 cleared the threshold) is reopened as soon as the title count grows — sound because `knownTitles` is
 **monotonic**, it only ever appends — while `.absentFromProvider(malId)` (resolution worked, AniList
-has no such entry) can only be reopened by its 14-day TTL, since re-matching yields the same id
-forever. Without that second outcome the fetch stage would have no memory at all and would
-re-request every 404ing Work on every drain. Transient failures are never recorded, so an outage
-cannot poison it for the TTL.
+has **nothing usable** for that id: either no entry at all, or an entry carrying neither genres nor
+tags) can only be reopened by its 14-day TTL, since re-matching yields the same id forever. Both
+shapes belong to one outcome because the enum's cases distinguish *what evidence reopens them*, not
+what caused them, and these reopen identically. Without that second outcome the fetch stage would
+have no memory at all and would re-request every empty-handed Work on every drain. Transient failures
+are never recorded, so an outage cannot poison it for the TTL.
 
 **Snapshot TTL** — how long a provider snapshot is trusted, derived from the Work's own
 publication status rather than a guessed constant: a `FINISHED` Work is **terminal** (its chapter

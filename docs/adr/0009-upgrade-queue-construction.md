@@ -1,9 +1,10 @@
 # ADR-0009 — Building the upgrade queue: ordering source, drain mechanism, and merge semantics
 
-- **Status:** Accepted (2026-07-26)
+- **Status:** Accepted (2026-07-26); **amended by ADR-0010 (2026-07-28)**
 - **Amends:** ADR-0008 (its ordering decision — "untagged Works sort last"), ADR-0007 (its merge
   semantics — the surviving Work's snapshot)
-- **Related:** ADR-0001 (Work vs Listing), ADR-0005 (manual link), ADR-0004 (fulfillment routing)
+- **Related:** ADR-0001 (Work vs Listing), ADR-0005 (manual link), ADR-0004 (fulfillment routing),
+  ADR-0010 (drain loop and wiring)
 
 ## Context
 
@@ -39,6 +40,12 @@ out to name values the code cannot currently supply or mechanisms it does not cu
 `RecommendationEngine.rebuild()` hands `profile.workWeights` to `queue.setPriority(_:)` on every
 rail build. The queue stores the last map it was given and orders on it. It holds no reference to
 history, library, or the taste store.
+
+> **Amended by ADR-0010.** The direction stands; the *site* moves down one level, to
+> `profileAndExclusions()` after its gate. That function is where the profile is actually built and
+> it has two callers — the rail and the See-all grid — so pushing from it is one call site instead of
+> two. The handoff is an injected closure defaulted to a no-op, not a queue reference, so no existing
+> engine construction site or test changes.
 
 Having the queue construct its own profile was rejected because `TasteProfile.build`'s inputs are
 reachable only through the engine, and the assembly step mutates the Work store: `resolveSignals()`
@@ -174,6 +181,13 @@ transient failure permanently.
 **This is also what makes the merge fix safe** — see below. Writing early puts any merge *before*
 the fetch result exists, so there is no snapshot to lose.
 
+> **Amended by ADR-0010.** This decision assumes the fetch either succeeds or throws. It can do
+> neither: `apply` writes a snapshot only when the provider record has content
+> (`WorkStore.swift:211-212`), so an AniList entry with no genres *and* no tags leaves a provisional
+> snapshot in place — unconditionally stale (`Work.swift:104`) — while the external id written here
+> short-circuits resolution. The Work is then re-fetched forever. ADR-0010 hoists `hasContent` onto
+> `AniListWork` and records `.absentFromProvider(malId:)` when it is false.
+
 ### `reindexExternalIds` merges, and bails out of its own loop
 
 Per ADR-0008 the incumbent index owner survives. The implementation detail that decision needs: on
@@ -187,6 +201,13 @@ keys, because the winner absorbed them (`:241`).
 The queue then needs no special case for the collision: `setExternalIds` → merge → `apply(..., to:
 originalId)`, and `apply`'s leading `resolve` (`:191`) follows the alias so the snapshot lands on
 the survivor.
+
+> **Amended by ADR-0010.** True for `apply`, false for everything else the queue does afterwards.
+> The merge deletes and aliases the loser (`WorkStore.swift:269-270`), so an attempt-memory record
+> or skip-set entry written against the original id is dead on arrival — `allWorkIds()` yields only
+> live ids — leaving the survivor unsuppressed and re-picked immediately, forever. The queue must
+> re-read `works.work(work.id)` after `setExternalIds` and target the survivor for every memory
+> write, and re-check eligibility before spending the request.
 
 ### A merge keeps the better snapshot, not the winner's
 

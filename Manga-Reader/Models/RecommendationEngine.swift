@@ -30,6 +30,11 @@ struct SeededRNG: RandomNumberGenerator {
 
 @MainActor
 final class RecommendationEngine: ObservableObject {
+    /// How engagement weights reach the upgrade queue. A closure rather than a
+    /// `MetadataUpgradeQueue` reference, because the dependency only ever runs one way:
+    /// the recommender must not be able to start, stop, or inspect the queue (ADR-0010).
+    typealias PriorityPush = ([WorkID: Double]) -> Void
+
     @Published private(set) var recommendations: [ScoredManga] = []
 
     private let history: HistoryStore
@@ -42,6 +47,7 @@ final class RecommendationEngine: ObservableObject {
     private let mangaDexSource: MangaSource
     private let makeProvider: (MangaSource) -> CandidateProvider
     private let now: () -> Date
+    private let pushPriority: PriorityPush
 
     private let minTaggedManga = 3
     private let poolLimit = 40
@@ -62,7 +68,10 @@ final class RecommendationEngine: ObservableObject {
                  mal: MALCandidateProvider(similar: MoreLikeThisProvider()))
          },
          now: @escaping () -> Date = Date.init,
-         seed: UInt64? = nil) {
+         seed: UInt64? = nil,
+         // Defaulted to a no-op so every existing construction site — previews,
+         // tests, the debug views — stays valid and stays silent.
+         pushPriority: @escaping PriorityPush = { _ in }) {
         self.history = history
         self.library = library
         self.profileStore = profileStore
@@ -70,6 +79,7 @@ final class RecommendationEngine: ObservableObject {
         self.mangaDexSource = mangaDexSource
         self.makeProvider = makeProvider
         self.now = now
+        self.pushPriority = pushPriority
         self.seed = seed ?? UInt64.random(in: .min ... .max)
     }
 
@@ -139,6 +149,11 @@ final class RecommendationEngine: ObservableObject {
                                          now: now(),
                                          libraryItems: libraryManga)
         guard profile.taggedMangaCount >= minTaggedManga, !profile.isEmpty else { return nil }
+        // AFTER the gate, deliberately: a rejected profile carries no ordering, and
+        // pushing its empty map would replace whatever the queue is already draining
+        // against with a cold-start blank (ADR-0010). Here rather than in `rebuild`
+        // because "See all" builds the same profile and is the same signal.
+        pushPriority(profile.workWeights)
         let readIds = Set(history.entries.map(\.mangaId))
         return (profile, readIds.union(savedIds).union(profileStore.notInterested))
     }
