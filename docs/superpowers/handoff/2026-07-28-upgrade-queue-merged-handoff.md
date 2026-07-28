@@ -60,10 +60,16 @@ genre the user has read four times?" Grill it before writing code; it likely ear
 2. ~~**Grill and decide the ranked-axis consumption** (→ ADR-0011)~~ — **done 2026-07-28**, ADR-0011
    accepted. What remains is implementing it, which is still gated on step 1: the AniList pool sits
    downstream of a queue that has never run live.
-3. **Retire `MyAnimeListDebugView`** + its 3 live UI tests. Owed since 2026-07-22, now that the
-   real rails are proven. Its resolver was fixed in `6708662` (it was building a private
-   `EntityResolutionStore`, frozen at launch, writing to a cache nothing read) — housekeeping
-   on a screen that should not outlive the feature it was built to prove.
+3. ~~**Retire `MyAnimeListDebugView`** + its 3 live UI tests~~ — **done 2026-07-28.** Removed the
+   view, its Settings `#if DEBUG` entry, and `testMyAnimeListDebugScreenLiveVerification` /
+   `testMALEntityResolutionLiveVerification` / `testMoreLikeThisDebugProbeLiveVerification`.
+   `testMoreLikeThisDetailRailLiveVerification` and `testChapterPreviewKeepsRailReachable` already
+   cover the same forward-resolve → MAL recommendations → reverse-resolve path through the real
+   rail, so nothing lost coverage. Unit suite still 270/0. Two XCUITest lessons that lived only in
+   the deleted comments were moved to the `ui-verification-technique` memory before deleting: an
+   `.accessibilityIdentifier` on a bare container (`Section` in a `List`, plain `VStack`) is not
+   reliably queryable, and unscrolled lazy rows are not materialized as XCUIElements at all — both
+   look like "the network call failed."
 
 ## Behaviour change now live on `main`
 
