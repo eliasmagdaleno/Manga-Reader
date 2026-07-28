@@ -1,6 +1,8 @@
 # ADR-0007 — The Work's shape and lifecycle
 
-- **Status:** Accepted (2026-07-25); **amended by ADR-0009 (2026-07-26)** — merge metadata semantics
+- **Status:** Accepted (2026-07-25); **amended by ADR-0009 (2026-07-26)** — merge metadata semantics;
+  **amended by ADR-0011 (2026-07-28)** — the ranked axis *can* drive search, on AniList; the budget
+  rule is one owner of the *limiter*
 - **Amends:** ADR-0002 (its sizing argument — see "Minting", below)
 - **Related:** ADR-0001 (Work vs Listing), ADR-0004 (fulfillment routing), ADR-0005 (manual link)
 
@@ -108,6 +110,14 @@ This also gives `TasteProfile.groupWeight`'s genre/theme/format heuristic (`Tast
 a principled successor **on the ranked axis only**, leaving generation untouched — so the change is
 one the golden file can adjudicate as a diff.
 
+> **Amended by ADR-0011.** "Never a search key" is true of `MangaSource.mangaByTag`, which takes a
+> MangaDex display name — it is *not* true of AniList, which searches its own 425-tag vocabulary
+> natively and filters on rank while doing it. The rule was about one API's capability and got
+> written down as a property of the data. The ranked axis therefore **does** drive generation, via
+> AniList tag-pair queries, and scoring-only was rejected on arithmetic: candidates carry no tags at
+> all (`MangaDexAPI.swift:13-22`), and the affordable substitute intersects with the ranked axis on
+> at most the 32 shared names — which exclude every load-bearing genre.
+
 **Accepted fuzziness:** MangaDex's `theme` group (38 of 77) is genuinely both searchable and
 fine-grained. All searchable MangaDex tags go on the `genres` axis; "genre" is then a slight
 misnomer, preferred over pushing the distinction into two booleans on every element.
@@ -147,6 +157,13 @@ on ~14 days, mirroring `EntityResolutionStore`'s miss TTL (`EntityResolutionStor
 **Consequence, and it is a real constraint:** this is the app's first rate-limited resource and the
 budget is global. **The AniList client must not be callable from view models — only through the
 queue.** That is the opposite of how `MangaDexAPI`'s statics are used everywhere today.
+
+> **Amended by ADR-0011**, which restates the rule as **one owner of the rate *limiter***. This was
+> written when every AniList call was per-Work, so an unbounded caller could starve the queue. A
+> candidate generator is O(seed pairs) per cache miss, and `AniListRateLimiter` uses slot
+> reservation precisely so concurrent callers stagger deterministically
+> (`AniListRateLimiter.swift:20-25`) — it was built for more than one caller. What the rule
+> protected is the 30/min budget, and the limiter protects it.
 
 ### Minting: user commitment only, synchronous and network-free — amends ADR-0002
 
