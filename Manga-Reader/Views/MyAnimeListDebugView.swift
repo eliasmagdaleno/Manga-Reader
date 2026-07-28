@@ -135,7 +135,12 @@ struct MyAnimeListDebugView: View {
         let manga = Manga(id: "debug-\(UUID().uuidString)", sourceId: "weebcentral",
                           title: resolveQuery, description: "", status: "unknown",
                           year: nil, coverURL: nil, malId: nil)
-        let resolver = MALEntityResolver(store: EntityResolutionStore())
+        // `.shared`, not a fresh instance: `EntityResolutionStore` reads UserDefaults once
+        // in `init` and never reloads, so a private one is frozen at its own construction
+        // and writes into a cache nothing else reads (ADR-0010). For a debug view that
+        // meant every resolve re-ran the live fuzzy path — the opposite of what this
+        // screen is for, since it could never show a cache hit.
+        let resolver = MALEntityResolver(store: .shared)
         Task {
             defer { isLoading = false }
             if let id = await resolver.malId(for: manga) {
