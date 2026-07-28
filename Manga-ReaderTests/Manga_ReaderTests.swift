@@ -1660,10 +1660,11 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     @MainActor private func makeEngine(history: HistoryStore, tasteStore: TasteProfileStore,
-                            provider: CandidateProvider,
-                            workStore: WorkStore? = nil,
-                            mangaDexSource: MangaSource = CannedTagSource(lists: [:], failTags: []),
-                            now: Date = Date(), seed: UInt64 = 1)
+                                       provider: CandidateProvider,
+                                       workStore: WorkStore? = nil,
+                                       mangaDexSource: MangaSource = CannedTagSource(lists: [:], failTags: []),
+                                       now: Date = Date(), seed: UInt64 = 1,
+                                       pushPriority: @escaping RecommendationEngine.PriorityPush = { _ in })
         -> RecommendationEngine {
         let lib = LibraryStore(defaults: UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!)
         let works = workStore ?? WorkStore(directory: URL(fileURLWithPath: NSTemporaryDirectory())
@@ -1671,7 +1672,8 @@ final class Manga_ReaderTests: XCTestCase {
         return RecommendationEngine(history: history, library: lib, profileStore: tasteStore,
                                     workStore: works,
                                     mangaDexSource: mangaDexSource,
-                                    makeProvider: { _ in provider }, now: { now }, seed: seed)
+                                    makeProvider: { _ in provider }, now: { now }, seed: seed,
+                                    pushPriority: pushPriority)
     }
 
     /// A provider returning a fixed ranked pool, ignoring the profile.
@@ -1729,6 +1731,76 @@ final class Manga_ReaderTests: XCTestCase {
         await engine.refresh()
         // rec2 = not interested, m1 = already read → both excluded.
         XCTAssertEqual(engine.recommendations.map(\.manga.id), ["rec1"])
+    }
+
+    // MARK: - Engagement weight push (ADR-0010)
+
+    /// The recommender pushes; the queue never pulls. Pulling would mean the queue
+    /// building a profile of its own, and `TasteProfile.build` mints Works as a side
+    /// effect — a background loop would then mint from browsing (ADR-0009).
+    @MainActor func testBuildingAProfilePushesItsWorkWeights() async throws {
+        let history = makeHistoryStore()
+        let taste = makeTasteStore()
+        let works = makeWorkStore()
+        for i in 1...3 {
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
+        }
+        var pushed: [[WorkID: Double]] = []
+
+        let engine = makeEngine(history: history, tasteStore: taste,
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works,
+                                pushPriority: { pushed.append($0) })
+        await engine.refresh()
+
+        let weights = try XCTUnwrap(pushed.last)
+        let expected = try (1...3).map {
+            try XCTUnwrap(works.workId(for: ListingKey(sourceId: "mangadex", mangaId: "m\($0)")))
+        }
+        XCTAssertEqual(Set(weights.keys), Set(expected))
+        XCTAssertTrue(weights.values.allSatisfy { $0 > 0 })
+    }
+
+    /// The push is below the cold-start gate on purpose. Pushing an empty map from a
+    /// profile that was rejected would overwrite a good ordering the queue is already
+    /// draining against, and hand it a blank one (ADR-0010).
+    @MainActor func testAColdStartProfilePushesNothing() async throws {
+        let history = makeHistoryStore()
+        let taste = makeTasteStore()
+        let works = makeWorkStore()
+        tagRead(works, history, "m1", [Tag(id: "a", name: "A", group: "genre")])
+        tagRead(works, history, "m2", [Tag(id: "b", name: "B", group: "genre")])
+        var pushed: [[WorkID: Double]] = []
+
+        let engine = makeEngine(history: history, tasteStore: taste,
+                                provider: FixedPoolProvider(pool: [scored("x")]),
+                                workStore: works,
+                                pushPriority: { pushed.append($0) })
+        await engine.refresh()
+
+        XCTAssertTrue(pushed.isEmpty, "a rejected profile is not an ordering")
+    }
+
+    /// Pins that the push lives in `profileAndExclusions`, not in `rebuild`: "See all"
+    /// builds the same profile without touching the rail, and that is just as good a
+    /// signal about what the user cares about.
+    @MainActor func testTheSeeAllGridPushesToo() async throws {
+        let history = makeHistoryStore()
+        let taste = makeTasteStore()
+        let works = makeWorkStore()
+        for i in 1...3 {
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
+        }
+        var pushed: [[WorkID: Double]] = []
+
+        let engine = makeEngine(history: history, tasteStore: taste,
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works,
+                                pushPriority: { pushed.append($0) })
+        _ = await engine.rankedRecommendations()
+
+        XCTAssertEqual(pushed.count, 1)
+        XCTAssertEqual(pushed.first?.count, 3)
     }
 
     @MainActor func testComposeIsDeterministicForASeed() {
