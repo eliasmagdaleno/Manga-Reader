@@ -9,12 +9,18 @@ queue looks the way it does; this file is the record of *where things stand*.
 
 | | |
 |---|---|
-| `main` | `566c636` — "Build the metadata upgrade queue (ADR-0009, ADR-0010) (#24)" |
+| `main` | `342514a` — "Retire MyAnimeListDebugView and its three throwaway live UI tests (#27)" |
 | Working tree | clean, in sync with origin, no open branch |
 | Unit tests | **270 pass, 0 failures** (iPhone 17, `-parallel-testing-enabled NO`) — was 248 |
-| ADRs | 0007–0010 all accepted; **next free number is 0011** |
+| ADRs | 0007–0011 all accepted; **next free number is 0012** |
 
-Everything ADR-0009 and ADR-0010 specified is shipped. There is no in-flight work.
+Everything ADR-0009 and ADR-0010 specified is shipped. **ADR-0011 is accepted but not built** —
+it is a decision only, and its implementation is gated on step 1 below. There is no in-flight work.
+
+Two later commits landed on top of the queue merge this file was originally written against:
+`804ebe6` (#25, ADR-0011 + the ADR-0007 and glossary amendments) and `342514a` (#27, the debug-view
+retirement). Both are docs-and-deletions; neither changed app behaviour, so the unit count is
+unmoved and the rest of this file still describes the running system accurately.
 
 ## The finding that should drive the next session
 
