@@ -1,5 +1,9 @@
 # Session Handoff — 2026-07-28: upgrade queue merged, ranked tag axis unspent
 
+> **Superseded by [`2026-07-29-anilist-pool-handoff.md`](2026-07-29-anilist-pool-handoff.md).**
+> Kept for the reasoning — the ranked-axis finding, the mutation table, and the account of the
+> livelock. Go to the newer file for current state.
+
 **Audience:** the next session picking up the recommender. Supersedes
 `2026-07-28-adr-0010-step-6-handoff.md` and `2026-07-26-adr-0009-steps-1-5-handoff.md`, both of
 which describe branch work that is now on `main`. Those two are kept as the record of *why* the
