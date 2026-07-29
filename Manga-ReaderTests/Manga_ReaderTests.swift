@@ -2001,6 +2001,26 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(manga.allTitles, ["Solo Leveling"])
     }
 
+    /// MAL rejects a `q` longer than 64 characters with HTTP 400. Verified live against
+    /// the real API 2026-07-28: 64 characters returns 200, 65 returns 400. Untruncated
+    /// queries are what stalled the upgrade queue on long doujinshi titles.
+    func testSearchQueryIsTruncatedToMALsSixtyFourCharacterLimit() {
+        let long = String(repeating: "a", count: 200)
+        XCTAssertEqual(MyAnimeListAPI.searchQuery(for: long).count, 64)
+        XCTAssertEqual(MyAnimeListAPI.searchQuery(for: "Berserk"), "Berserk",
+                       "anything within the limit is passed through untouched")
+    }
+
+    /// The limit counts characters, not UTF-8 bytes — also verified live: 64 multibyte
+    /// characters (192 bytes) returns 200. Truncating on bytes would needlessly cut
+    /// Japanese titles to a third of the usable length.
+    func testSearchQueryTruncationCountsCharactersNotBytes() {
+        let japanese = String(repeating: "ベ", count: 100)
+        let truncated = MyAnimeListAPI.searchQuery(for: japanese)
+        XCTAssertEqual(truncated.count, 64)
+        XCTAssertEqual(truncated.utf8.count, 192)
+    }
+
     func testMyAnimeListErrorDescriptions() {
         XCTAssertEqual(MyAnimeListError.missingClientID.errorDescription,
                        "Missing MyAnimeList API client ID. Set MAL_CLIENT_ID in Secrets.xcconfig.")

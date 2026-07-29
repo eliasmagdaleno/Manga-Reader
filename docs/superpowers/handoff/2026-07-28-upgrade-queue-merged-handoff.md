@@ -1,5 +1,9 @@
 # Session Handoff — 2026-07-28: upgrade queue merged, ranked tag axis unspent
 
+> **Superseded by [`2026-07-29-anilist-pool-handoff.md`](2026-07-29-anilist-pool-handoff.md).**
+> Kept for the reasoning — the ranked-axis finding, the mutation table, and the account of the
+> livelock. Go to the newer file for current state.
+
 **Audience:** the next session picking up the recommender. Supersedes
 `2026-07-28-adr-0010-step-6-handoff.md` and `2026-07-26-adr-0009-steps-1-5-handoff.md`, both of
 which describe branch work that is now on `main`. Those two are kept as the record of *why* the
@@ -60,9 +64,24 @@ genre the user has read four times?" Grill it before writing code; it likely ear
 
 ## Recommended order
 
-1. **Verify the queue against the live AniList API — do this first.** It has never run against
-   the real thing; every test stubs `AniListAPI.Transport`. One launch on a device with real
-   reading history is the whole test. Everything below assumes the queue works.
+1. ~~**Verify the queue against the live AniList API — do this first.**~~ — **done 2026-07-28.**
+   It works: Berserk resolved to AniList 30002 and came back with **66 ranked tags**, Omega Tribe
+   to 45284. A non-empty `snapshot.tags` is the proof, since MangaDex has no rank concept and
+   provisional snapshots write `tags: []`.
+
+   The launch also found a livelock, now fixed. Three Works with titles over **MAL's 64-character
+   `q` limit** (verified live: 64 → HTTP 200, 65 → 400, counted in characters not bytes) each
+   returned HTTP 400. The queue classified every resolver error as transient, so it recorded
+   nothing, tripped the breaker on the third, and `endPass` then cleared the skip set — the next
+   pass replayed the identical three, every 60s, forever. The fourth eligible Work was never
+   reached on any pass. Fixed by truncating `q` to 64 characters and by treating non-429 4xx as an
+   *answer* rather than an outage. Both are covered by tests, including a starvation regression.
+
+   **This was invisible until the queue got logging**, which it now has — filter on
+   `subsystem:Elias-Magdaleno.Manga-Reader category:UpgradeQueue`. The other durable observable is
+   the pair of files in the app's Application Support directory: `works.json` (what it learned) and
+   `upgrade-attempts.json` (what it decided not to retry). Read them **together** — a queue that has
+   answered everything and a queue that is stuck both report "0 eligible".
 2. ~~**Grill and decide the ranked-axis consumption** (→ ADR-0011)~~ — **done 2026-07-28**, ADR-0011
    accepted. What remains is implementing it, which is still gated on step 1: the AniList pool sits
    downstream of a queue that has never run live.
