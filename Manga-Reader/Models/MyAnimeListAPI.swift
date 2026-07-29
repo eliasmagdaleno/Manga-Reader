@@ -108,11 +108,27 @@ struct MyAnimeListAPI {                              // Namespace-style struct f
 
     /// Search MAL by title. What cross-source entity resolution will call for sources
     /// with no direct MAL id (MangaDex usually has one already via external links).
+    /// MAL's `q` accepts at most 64 characters and answers **HTTP 400** for anything
+    /// longer — verified live 2026-07-28: 64 returns 200, 65 returns 400, and the cap
+    /// counts characters rather than UTF-8 bytes (64 multibyte characters also returns
+    /// 200, so truncating on bytes would cut Japanese titles to a third of the length
+    /// MAL will actually take).
+    ///
+    /// A prefix is the right truncation rather than a rejection: MAL matches on prefixes,
+    /// so the first 64 characters of a long title still find the entry, and
+    /// `MALTitleMatcher` scores against the *full* title set afterwards regardless. Long
+    /// titles are not exotic — scanlation releases routinely carry group tags, language
+    /// markers and volume suffixes — and before this, every one of them 400'd, which
+    /// stalled the metadata upgrade queue outright.
+    static func searchQuery(for title: String) -> String {
+        String(title.prefix(64))
+    }
+
     static func searchManga(title: String, limit: Int = 10) async throws -> [MyAnimeListManga] {
         let response: MyAnimeListSearchResponse = try await request(
             path: "/manga",
             queryItems: [
-                URLQueryItem(name: "q", value: title),
+                URLQueryItem(name: "q", value: searchQuery(for: title)),
                 URLQueryItem(name: "limit", value: String(limit)),
                 URLQueryItem(name: "fields", value: "alternative_titles,main_picture"),
             ]

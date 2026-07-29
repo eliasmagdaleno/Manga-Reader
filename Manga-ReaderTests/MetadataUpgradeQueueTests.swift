@@ -233,6 +233,57 @@ final class MetadataUpgradeQueueTests: XCTestCase {
         XCTAssertEqual(second, .idle, "the recorded miss suppresses it")
     }
 
+    /// A 4xx is a statement about the *request*, not the network: reissuing it unchanged
+    /// returns the same thing forever, so it is an answer and belongs in attempt memory.
+    /// Observed live 2026-07-28 — MAL 400s on any `q` over 64 characters.
+    @MainActor func testAPermanentResolutionFailureIsRecordedRatherThanRetriedForever() async {
+        let works = makeStore()
+        let id = works.mint(from: listing("md-1"))
+        let queue = makeQueue(works: works,
+                              resolver: makeResolver(search: { _ in
+                                  throw MyAnimeListError.httpStatus(400)
+                              }))
+
+        let first = await queue.drainOnce(now: noon)
+        let second = await queue.drainOnce(now: noon)
+
+        XCTAssertEqual(first, .upgraded(id), "a recorded answer is forward progress")
+        XCTAssertEqual(second, .idle, "the recorded answer suppresses it")
+    }
+
+    /// The livelock this cost in production, as a regression test. Three unsearchable
+    /// Works sorted ahead of a good one used to fail transiently, trip the breaker on the
+    /// third, and end the pass — and because `endPass` clears the skip set, the next pass
+    /// replayed the identical three. The good Work was never reached, on any pass, ever.
+    @MainActor func testUnsearchableWorksDoNotStarveTheOnesBehindThem() async {
+        let works = makeStore()
+        let bad = (1...3).map {
+            works.mint(from: listing("md-bad-\($0)", title: "Unsearchable \($0)"))
+        }
+        let good = works.mint(from: listing("md-good", title: "Solo Leveling"))
+        let queue = makeQueue(works: works,
+                              resolver: makeResolver(search: { title in
+                                  guard !title.hasPrefix("Unsearchable") else {
+                                      throw MyAnimeListError.httpStatus(400)
+                                  }
+                                  return [MALCandidate(malId: 121_496, titles: [title])]
+                              }))
+        // Weights force the three bad Works to the front, which is the ordering that
+        // produced the livelock. Without them the tail order is by Work id, and the test
+        // would pass for the wrong reason whenever the good Work happened to sort first.
+        queue.setPriority([bad[0]: 3, bad[1]: 2, bad[2]: 1, good: 0.5])
+
+        var steps: [MetadataUpgradeQueue.DrainStep] = []
+        for _ in 0..<4 { steps.append(await queue.drainOnce(now: noon)) }
+
+        XCTAssertEqual(steps.last, .upgraded(good),
+                       "the good Work is reached on the turn after the three bad ones")
+        XCTAssertNotNil(works.work(good)?.snapshot,
+                        "and is actually upgraded, not merely visited")
+        XCTAssertFalse(steps.contains(.idle),
+                       "no breaker trip: none of the three 400s is a transient failure")
+    }
+
     /// The distinction the whole `UpgradeOutcome` enum exists for: a transient failure is
     /// **not** an answer, so recording it would poison the memory for fourteen days.
     @MainActor func testATransientResolutionFailureRecordsNothing() async {
