@@ -29,7 +29,9 @@ enum ReaderError: LocalizedError, ClassifiedFailure {
 @MainActor
 final class ReaderViewModel: ObservableObject {
 
-    /// Where the pager should open once pages arrive.
+    /// Which end of a chapter a load is heading for. Doubles as the record of *which way the
+    /// user was travelling*, which is what both the retreat target and the banner's wording
+    /// are derived from on failure (ADR-0013).
     enum Landing: Equatable {
         case exact(Int)
         case first
@@ -42,7 +44,25 @@ final class ReaderViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var failureIsTransient = true
     @Published private(set) var isLoading = false
-    @Published private(set) var landingPage = 0
+
+    /// Where the pager belongs **now**, whether or not the last load committed. On success
+    /// it is the page the chapter opens at; on a failed advance it retreats into the chapter
+    /// that survived, since the pager is otherwise stranded on the sentinel index that
+    /// requested the missing one. See ADR-0013.
+    @Published private(set) var pagerTarget = 0
+
+    /// The generation of the most recent load to *finish* and still be current. The view
+    /// repositions the pager when this changes.
+    ///
+    /// It cannot watch `pagerTarget` instead: `loadNext` targets page 0, so advancing from a
+    /// chapter opened at page 0 gives `0 → 0`, no `onChange` fires, and the pager stays on the
+    /// stale sentinel index — which immediately re-requests the next chapter. The common case
+    /// is the broken one, so position needs an *event*, not a value.
+    @Published private(set) var lastCompletedRequest = 0
+
+    /// Bumped when a load is *issued*. `lastCompletedRequest` records which issued generation
+    /// last completed, so the two can never disagree about what was asked for.
+    private var requestGeneration = 0
 
     private let manga: Manga
     private let source: MangaSource
@@ -112,24 +132,48 @@ final class ReaderViewModel: ObservableObject {
         await advance(to: previous, landing: .last)
     }
 
+    /// One load, start to finish. Two rules run through it (ADR-0013):
+    ///
+    /// **Load then commit.** Nothing is assigned until the pages are in hand, so a failure
+    /// leaves the chapter being read exactly as it was.
+    ///
+    /// **The newest request wins.** The pager stays on screen for the whole fetch now, so the
+    /// user can swipe again mid-load and start a second `advance`. Whichever was issued last
+    /// is the one the user wants; an older one that returns afterwards must commit nothing,
+    /// report nothing, and touch neither the loading flag nor the completion marker.
     private func advance(to chapter: Chapter, landing: Landing) async {
+        requestGeneration += 1
+        let mine = requestGeneration
+        let isCurrent = { [weak self] in mine == self?.requestGeneration }
+
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        defer {
+            if isCurrent() {
+                isLoading = false
+                // Set last, so the view sees the finished state when it reacts to this.
+                lastCompletedRequest = mine
+            }
+        }
 
         do {
-            // Nothing is mutated until this returns. A failure below therefore leaves the
-            // chapter being read exactly as it was, and surfaces as a banner over it
-            // rather than replacing it with an error screen.
             let fetched = try await fetchPages(for: chapter)
+            guard isCurrent() else { return }
 
             currentChapter = chapter
             pages = fetched
-            landingPage = Self.landingIndex(landing, pageCount: fetched.count)
+            pagerTarget = Self.landingIndex(landing, pageCount: fetched.count)
             prefetch(fetched, source.imagePrefetchConcurrency)
         } catch {
-            errorMessage = error.localizedDescription
+            guard isCurrent() else { return }
+
+            errorMessage = Self.failureMessage(error, landing: landing)
             failureIsTransient = isTransientFailure(error)
+            // The pager is sitting on the sentinel index that asked for the chapter that
+            // isn't there. Retreat into the one that survived.
+            if let retreat = Self.retreatIndex(landing, pageCount: pages.count) {
+                pagerTarget = retreat
+            }
         }
     }
 
@@ -147,6 +191,30 @@ final class ReaderViewModel: ObservableObject {
         case .exact(let page): return min(max(page, 0), pageCount - 1)
         case .first:           return 0
         case .last:            return pageCount - 1
+        }
+    }
+
+    /// Where the pager retreats to when an advance fails, derived from the direction the user
+    /// was travelling. `nil` for `.exact` — an initial load or a retry has nothing to retreat
+    /// into, and its failure renders full-screen anyway.
+    private static func retreatIndex(_ landing: Landing, pageCount: Int) -> Int? {
+        switch landing {
+        case .first: return max(pageCount - 1, 0)   // came forward; go back to where they were
+        case .last:  return 0                       // came backward; the near end of the chapter
+        case .exact: return nil
+        }
+    }
+
+    /// The banner needs a subject. Bare `localizedDescription` is fine on a full-screen error
+    /// and useless over content: the user swipes forward, is snapped back to the page they were
+    /// on, and reads a sentence that never says the swipe is why. `.exact` renders full-screen,
+    /// where the subject is unambiguous, so it carries no prefix.
+    private static func failureMessage(_ error: Error, landing: Landing) -> String {
+        let reason = readerFailureMessage(error)
+        switch landing {
+        case .first: return "Couldn't load the next chapter. \(reason)"
+        case .last:  return "Couldn't load the previous chapter. \(reason)"
+        case .exact: return reason
         }
     }
 }

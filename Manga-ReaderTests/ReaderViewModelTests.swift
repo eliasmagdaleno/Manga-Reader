@@ -66,6 +66,66 @@ final class ReaderViewModelTests: XCTestCase {
         }
     }
 
+    /// A source whose fetch for a chosen chapter id *suspends* until the test releases it,
+    /// so two advances can be interleaved deterministically — no sleeps, no timing luck.
+    ///
+    /// ADR-0013: the shipped reader could not be re-entered while loading because clearing
+    /// `pages` tore the pager down. Load-then-commit keeps the pager up for the whole fetch,
+    /// so a second swipe now reaches an `advance` that has already started.
+    private final class GatedSource: MangaSource {
+        let id = "stub"
+        let name = "Gated"
+
+        var pages: [String: Result<[URL], Error>] = [:]
+        /// Chapter ids whose fetch parks until `release(_:)`.
+        var gated: Set<String> = []
+
+        private var parked: [String: CheckedContinuation<Void, Never>] = [:]
+        private var arrivals: [String: CheckedContinuation<Void, Never>] = [:]
+        private var hasArrived: Set<String> = []
+
+        func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] {
+            if gated.contains(chapterId) {
+                await withCheckedContinuation { continuation in
+                    parked[chapterId] = continuation
+                    hasArrived.insert(chapterId)
+                    arrivals.removeValue(forKey: chapterId)?.resume()
+                }
+            }
+            switch pages[chapterId] {
+            case .success(let urls): return urls
+            case .failure(let error): throw error
+            case nil: return []
+            }
+        }
+
+        /// Suspends until the fetch for `chapterId` has actually been entered and parked.
+        func awaitArrival(_ chapterId: String) async {
+            guard !hasArrived.contains(chapterId) else { return }
+            await withCheckedContinuation { arrivals[chapterId] = $0 }
+        }
+
+        func release(_ chapterId: String) {
+            parked.removeValue(forKey: chapterId)?.resume()
+        }
+
+        func chapters(mangaId: String) async throws -> [Chapter] { [] }
+        func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func mangaDetail(id: String) async throws -> MangaDetail {
+            throw SourceError.unsupported("mangaDetail")
+        }
+    }
+
+    private func makeGatedVM(chapter: Chapter,
+                             configure: (GatedSource) -> Void) -> (ReaderViewModel, GatedSource) {
+        let source = GatedSource()
+        configure(source)
+        let vm = ReaderViewModel(manga: Self.manga, chapter: chapter, chapters: Self.three,
+                                 initialPage: 0, source: source, prefetch: { _, _ in })
+        return (vm, source)
+    }
+
     private func makeVM(chapter: Chapter,
                         chapters: [Chapter] = ReaderViewModelTests.three,
                         initialPage: Int = 0,
@@ -104,7 +164,7 @@ final class ReaderViewModelTests: XCTestCase {
         XCTAssertTrue(vm.pages.isEmpty)
         XCTAssertTrue(vm.presentation.chromeForced, "a failed load must stay escapable")
         XCTAssertEqual(vm.presentation.body,
-                       .error(message: MangaDexError.httpStatus(404).localizedDescription,
+                       .error(message: readerFailureMessage(MangaDexError.httpStatus(404)),
                               canRetry: false))
     }
 
@@ -168,14 +228,14 @@ final class ReaderViewModelTests: XCTestCase {
         XCTAssertEqual(bare.chapters.count, 3)
     }
 
-    // MARK: - Landing page
+    // MARK: - Pager target
 
     func testInitialPageIsClampedToTheChapterLength() async {
         let (vm, _) = makeVM(chapter: Self.chapter("1"), initialPage: 999) {
             $0.pages["ch1"] = .success(Self.urls(10))
         }
         await vm.begin()
-        XCTAssertEqual(vm.landingPage, 9)
+        XCTAssertEqual(vm.pagerTarget, 9)
     }
 
     func testMovingBackwardsLandsOnTheLastPage() async {
@@ -187,7 +247,116 @@ final class ReaderViewModelTests: XCTestCase {
         await vm.loadPrevious()
 
         XCTAssertEqual(vm.currentChapter.id, "ch1")
-        XCTAssertEqual(vm.landingPage, 11, "entering a chapter backwards opens at its end")
+        XCTAssertEqual(vm.pagerTarget, 11, "entering a chapter backwards opens at its end")
+    }
+
+    /// ADR-0013. A failed *forward* advance leaves the pager on the sentinel index that
+    /// requested the chapter, which renders nothing at all. The target retreats into the
+    /// chapter that survived, so the user lands on the page they were reading.
+    func testAFailedForwardAdvanceRetreatsToTheLastRealPage() async {
+        let (vm, _) = makeVM(chapter: Self.chapter("2")) {
+            $0.pages["ch2"] = .success(Self.urls(20))
+            $0.pages["ch3"] = .failure(MangaDexError.httpStatus(404))
+        }
+        await vm.begin()
+        await vm.loadNext()
+
+        XCTAssertEqual(vm.pagerTarget, 19, "the last page of the chapter that survived")
+    }
+
+    func testAFailedBackwardAdvanceRetreatsToTheFirstPage() async {
+        let (vm, _) = makeVM(chapter: Self.chapter("2")) {
+            $0.pages["ch2"] = .success(Self.urls(20))
+            $0.pages["ch1"] = .failure(MangaDexError.httpStatus(404))
+        }
+        await vm.begin()
+        await vm.loadPrevious()
+
+        XCTAssertEqual(vm.pagerTarget, 0)
+    }
+
+    /// A failed initial load has nothing to retreat into, so the target is left alone.
+    func testAFailedInitialLoadLeavesTheTargetAlone() async {
+        let (vm, _) = makeVM(chapter: Self.chapter("1"), initialPage: 4) {
+            $0.pages["ch1"] = .failure(MangaDexError.httpStatus(404))
+        }
+        await vm.begin()
+
+        XCTAssertEqual(vm.pagerTarget, 0)
+    }
+
+    // MARK: - Completion marker
+
+    /// The view repositions the pager on this marker rather than on `pagerTarget`'s value,
+    /// because consecutive chapters both landing on page 0 is the *common* case and an
+    /// unchanged value fires no `onChange` — leaving the pager on a stale sentinel index
+    /// that immediately re-requests the next chapter.
+    func testTheCompletionMarkerAdvancesOnEveryFinishedLoad() async {
+        let (vm, _) = makeVM(chapter: Self.chapter("1")) {
+            $0.pages["ch1"] = .success(Self.urls(10))
+            $0.pages["ch2"] = .success(Self.urls(10))
+            $0.pages["ch3"] = .failure(MangaDexError.httpStatus(404))
+        }
+        XCTAssertEqual(vm.lastCompletedRequest, 0, "nothing has completed yet")
+
+        await vm.begin()
+        let afterBegin = vm.lastCompletedRequest
+        XCTAssertGreaterThan(afterBegin, 0)
+
+        await vm.loadNext()
+        let afterAdvance = vm.lastCompletedRequest
+        XCTAssertGreaterThan(afterAdvance, afterBegin)
+        XCTAssertEqual(vm.pagerTarget, 0, "two consecutive chapters landing on the same page")
+
+        await vm.loadNext()   // ch3 fails
+        XCTAssertGreaterThan(vm.lastCompletedRequest, afterAdvance,
+                             "a failure completes too — the pager still has to move")
+    }
+
+    // MARK: - Failure copy
+
+    /// Bare `localizedDescription` is fine full-screen and useless in a banner: the user
+    /// swipes forward, is snapped back, and reads a sentence with no subject.
+    func testAFailedAdvanceNamesTheDirection() async {
+        let (vm, _) = makeVM(chapter: Self.chapter("2")) {
+            $0.pages["ch2"] = .success(Self.urls(20))
+            $0.pages["ch3"] = .failure(MangaDexError.httpStatus(404))
+            $0.pages["ch1"] = .failure(MangaDexError.httpStatus(404))
+        }
+        await vm.begin()
+
+        await vm.loadNext()
+        XCTAssertEqual(vm.presentation.banner?.hasPrefix("Couldn't load the next chapter."), true,
+                       "got: \(vm.presentation.banner ?? "nil")")
+
+        await vm.loadPrevious()
+        XCTAssertEqual(vm.presentation.banner?.hasPrefix("Couldn't load the previous chapter."), true,
+                       "got: \(vm.presentation.banner ?? "nil")")
+    }
+
+    /// The initial load and a retry render full-screen, where the subject is unambiguous,
+    /// so they carry no prefix.
+    func testAFailedInitialLoadCarriesNoDirectionPrefix() async {
+        let (vm, _) = makeVM(chapter: Self.chapter("1")) {
+            $0.pages["ch1"] = .failure(MangaDexError.httpStatus(404))
+        }
+        await vm.begin()
+
+        XCTAssertEqual(vm.errorMessage, readerFailureMessage(MangaDexError.httpStatus(404)))
+    }
+
+    /// The failed chapter's reason still has to reach the user, prefix or not.
+    func testTheDirectionPrefixKeepsTheUnderlyingReason() async {
+        let (vm, _) = makeVM(chapter: Self.chapter("2")) {
+            $0.pages["ch2"] = .success(Self.urls(20))
+            $0.pages["ch3"] = .success([])          // empty list ⇒ ReaderError.noPages
+        }
+        await vm.begin()
+        await vm.loadNext()
+
+        let banner = vm.presentation.banner ?? ""
+        XCTAssertTrue(banner.contains("Couldn't load the next chapter."))
+        XCTAssertTrue(banner.contains(ReaderError.noPages.localizedDescription))
     }
 
     // MARK: - Load-then-commit
@@ -234,7 +403,7 @@ final class ReaderViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.currentChapter.id, "ch3")
         XCTAssertEqual(vm.pages.count, 14)
-        XCTAssertEqual(vm.landingPage, 0)
+        XCTAssertEqual(vm.pagerTarget, 0)
         XCTAssertNil(vm.errorMessage)
         XCTAssertNil(vm.presentation.banner)
     }
@@ -266,5 +435,106 @@ final class ReaderViewModelTests: XCTestCase {
         XCTAssertEqual(vm.currentChapter.id, "ch3")
         XCTAssertEqual(vm.pages.count, 6)
         XCTAssertNil(vm.errorMessage)
+    }
+
+    // MARK: - Two advances at once (ADR-0013)
+
+    /// The user swipes forward, the fetch is slow, they swipe back before it returns. Both
+    /// requests are in flight and both would otherwise commit in whatever order the network
+    /// answers — so the user can land on the chapter they asked for *first*.
+    func testASupersededAdvanceCommitsNothing() async {
+        let (vm, source) = makeGatedVM(chapter: Self.chapter("2")) {
+            $0.pages["ch2"] = .success(Self.urls(20))
+            $0.pages["ch3"] = .success(Self.urls(14))
+            $0.pages["ch1"] = .success(Self.urls(7))
+            $0.gated = ["ch3"]
+        }
+        await vm.begin()
+
+        let forward = Task { await vm.loadNext() }
+        await source.awaitArrival("ch3")        // the forward fetch is genuinely in flight
+
+        await vm.loadPrevious()                 // supersedes it, and commits
+        XCTAssertEqual(vm.currentChapter.id, "ch1")
+
+        source.release("ch3")
+        await forward.value
+
+        XCTAssertEqual(vm.currentChapter.id, "ch1", "the newest request must win")
+        XCTAssertEqual(vm.pages.count, 7)
+        XCTAssertEqual(vm.pagerTarget, 6, "the target belongs to the request that won")
+    }
+
+    /// A superseded request that *fails* must stay silent: a banner about a chapter the user
+    /// has already navigated away from explains nothing.
+    func testASupersededFailureRaisesNoBanner() async {
+        let (vm, source) = makeGatedVM(chapter: Self.chapter("2")) {
+            $0.pages["ch2"] = .success(Self.urls(20))
+            $0.pages["ch3"] = .failure(MangaDexError.httpStatus(404))
+            $0.pages["ch1"] = .success(Self.urls(7))
+            $0.gated = ["ch3"]
+        }
+        await vm.begin()
+
+        let forward = Task { await vm.loadNext() }
+        await source.awaitArrival("ch3")
+
+        await vm.loadPrevious()
+        source.release("ch3")
+        await forward.value
+
+        XCTAssertNil(vm.presentation.banner, "the failure was superseded before it landed")
+        XCTAssertNil(vm.errorMessage)
+        XCTAssertEqual(vm.currentChapter.id, "ch1")
+    }
+
+    /// `defer { isLoading = false }` as shipped lets whichever request finishes first clear
+    /// the flag out from under one that is still running — so the spinner vanishes while a
+    /// chapter is still loading.
+    func testASupersededRequestDoesNotClearTheLoadingFlag() async {
+        let (vm, source) = makeGatedVM(chapter: Self.chapter("2")) {
+            $0.pages["ch2"] = .success(Self.urls(20))
+            $0.pages["ch3"] = .success(Self.urls(14))
+            $0.pages["ch1"] = .success(Self.urls(7))
+            $0.gated = ["ch3", "ch1"]
+        }
+        await vm.begin()
+
+        let forward = Task { await vm.loadNext() }
+        await source.awaitArrival("ch3")
+        let backward = Task { await vm.loadPrevious() }
+        await source.awaitArrival("ch1")
+
+        source.release("ch3")                   // the superseded one finishes first
+        await forward.value
+        XCTAssertTrue(vm.isLoading, "the newer request is still running")
+
+        source.release("ch1")
+        await backward.value
+        XCTAssertFalse(vm.isLoading)
+        XCTAssertEqual(vm.currentChapter.id, "ch1")
+    }
+
+    /// ...and a superseded request must not bump the completion marker either, or the view
+    /// repositions the pager for a load whose result was thrown away.
+    func testASupersededRequestDoesNotBumpTheCompletionMarker() async {
+        let (vm, source) = makeGatedVM(chapter: Self.chapter("2")) {
+            $0.pages["ch2"] = .success(Self.urls(20))
+            $0.pages["ch3"] = .success(Self.urls(14))
+            $0.pages["ch1"] = .success(Self.urls(7))
+            $0.gated = ["ch3"]
+        }
+        await vm.begin()
+
+        let forward = Task { await vm.loadNext() }
+        await source.awaitArrival("ch3")
+
+        await vm.loadPrevious()
+        let afterWinner = vm.lastCompletedRequest
+
+        source.release("ch3")
+        await forward.value
+
+        XCTAssertEqual(vm.lastCompletedRequest, afterWinner)
     }
 }

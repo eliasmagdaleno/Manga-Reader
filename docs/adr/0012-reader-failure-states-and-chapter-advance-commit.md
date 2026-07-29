@@ -1,7 +1,8 @@
 # ADR-0012 — Reader failure states and chapter-advance commit
 
-- **Status:** Accepted (2026-07-29)
-- **Related:** ADR-0008 (transient vs permanent, in the upgrade queue)
+- **Status:** Accepted (2026-07-29); **amended by ADR-0013 (2026-07-29)** — the landing-page seam,
+  settled in the view model's favour, plus the four protections load-then-commit removed by accident
+- **Related:** ADR-0008 (transient vs permanent, in the upgrade queue), ADR-0013 (the view layer)
 
 ## Context
 
@@ -192,6 +193,14 @@ afterwards.
 `initialPage` / `startPageRequest` and writes `currentPage` (`ReaderView.swift:137-144`). The
 decision depends on `pages.count` so it belongs in the view model, but the value it produces is UI
 state — a seam judgement that may need a second pass.
+
+> **Amended by ADR-0013.** That second pass happened the same day, and the seam lands in the view
+> model: `landingPage` becomes `pagerTarget`, meaning *where the pager belongs* rather than where a
+> successful load landed, and it is written on the failure path too. The view keeps `currentPage`
+> because the pager mutates it on every swipe. ADR-0013 also records that this decision removed four
+> protections that were holding only because `pages` was cleared before the await — the pager index
+> could not be stranded, re-entry was impossible, the loading spinner appeared for free, and the
+> progress counters were reset by whoever changed the chapter.
 
 **Verification of dismissal itself stays manual.** `chromeForced == true` proves the top bar renders;
 it does not prove `dismiss()` escapes a `NavigationLink` push with a hidden navigation bar. That is

@@ -166,4 +166,40 @@ final class ReaderPresentationTests: XCTestCase {
         XCTAssertTrue(isTransientFailure(SourceError.cloudflareUnsolved))
         XCTAssertTrue(isTransientFailure(SourceError.navigationFailed("connection lost")))
     }
+
+    // MARK: - Failure copy (ADR-0013)
+
+    /// `MangaDexError.httpStatus` is the one case whose `errorDescription` is written for
+    /// a developer ("Request failed with HTTP status 404.", `MangaDexAPI.swift:349`), and
+    /// it is the exact string the field report was about.
+    func testHTTPStatusIsRewrittenForHumans() {
+        let message = readerFailureMessage(MangaDexError.httpStatus(404))
+        XCTAssertFalse(message.contains("Request failed"), "the developer phrasing must be gone")
+        XCTAssertTrue(message.contains("isn't available"))
+    }
+
+    /// The code stays in the sentence. ADR-0012's first hazard is that a 404 from
+    /// `/at-home/server` may mean "externally hosted" rather than "gone", so the copy must
+    /// not claim the chapter does not exist — and in the field the code is what tells the
+    /// two apart.
+    func testHTTPStatusKeepsTheCodeVisible() {
+        XCTAssertTrue(readerFailureMessage(MangaDexError.httpStatus(404)).contains("404"))
+        XCTAssertTrue(readerFailureMessage(MangaDexError.httpStatus(503)).contains("503"))
+    }
+
+    /// Every other error type already reads as English, so the reader must not paraphrase
+    /// it — `SourceError` and `ReaderError` messages pass through untouched.
+    func testEveryOtherErrorPassesThroughUnchanged() {
+        for error in [SourceError.cloudflareUnsolved,
+                      SourceError.extractionFailed("no images found")] as [Error] {
+            XCTAssertEqual(readerFailureMessage(error), error.localizedDescription)
+        }
+        XCTAssertEqual(readerFailureMessage(ReaderError.noPages),
+                       ReaderError.noPages.localizedDescription)
+        XCTAssertEqual(readerFailureMessage(MangaDexError.rateLimited),
+                       MangaDexError.rateLimited.localizedDescription)
+
+        struct Mystery: Error {}
+        XCTAssertEqual(readerFailureMessage(Mystery()), Mystery().localizedDescription)
+    }
 }

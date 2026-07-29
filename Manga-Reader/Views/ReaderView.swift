@@ -7,11 +7,15 @@
 //    • Right → Left  — paged, manga order (swipe right to advance).
 //    • Webtoon       — continuous vertical scroll (manhwa / long-strip).
 //
-//  Paged pages zoom through the UIScrollView-backed `ZoomableContainer`
-//  (native pinch / pan physics, double-tap zooms into the tapped point). The
-//  chosen mode is persisted so it carries across chapters. Page URLs come from the manga's
-//  own `MangaSource` (resolved via `SourceRegistry`), which for MangaDex hits the
-//  At-Home server.
+//  Paged pages zoom through the UIScrollView-backed `ZoomableContainer` (native pinch /
+//  pan physics, double-tap zooms into the tapped point). The chosen mode is persisted so
+//  it carries across chapters.
+//
+//  Everything the reader *fetches* lives in `ReaderViewModel`; this view owns only UI
+//  state — the chrome toggle, the pager index, the reading mode, and progress recording.
+//  It renders `vm.presentation` rather than branching on loading/error itself, because the
+//  bug that split those apart was two branches disagreeing about whether the user could
+//  leave. See ADR-0012, and ADR-0013 for the wiring decisions below.
 //
 
 import SwiftUI
@@ -46,146 +50,135 @@ enum ReadingMode: String, CaseIterable, Identifiable {
 
 struct ReaderView: View {
     let manga: Manga
-    let initialPage: Int
-    let chapters: [Chapter]
+
+    @StateObject private var vm: ReaderViewModel
 
     init(manga: Manga, chapter: Chapter, initialPage: Int = 0, chapters: [Chapter] = []) {
         self.manga = manga
-        self.initialPage = initialPage
-        self.chapters = chapters
-        _currentChapter = State(initialValue: chapter)
-        _startPageRequest = State(initialValue: .exact(initialPage))
-    }
-
-    enum StartPageRequest {
-        case exact(Int)
-        case last
+        _vm = StateObject(wrappedValue: ReaderViewModel(manga: manga, chapter: chapter,
+                                                       chapters: chapters,
+                                                       initialPage: initialPage))
+        _progressChapterID = State(initialValue: chapter.id)
     }
 
     @AppStorage("readingMode") private var mode: ReadingMode = .rightToLeft
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var history: HistoryStore
 
-    @State private var currentChapter: Chapter
-    @State private var loadedChapters: [Chapter]? = nil
-    @State private var startPageRequest: StartPageRequest
-    @State private var pages: [URL] = []
     @State private var currentPage = 0
     @State private var furthestPage = 0
     @State private var hasRecordedProgress = false
-    @State private var isLoading = false
-    @State private var errorMessage: String? = nil
     @State private var showChrome = false
 
-    private var effectiveChapters: [Chapter] { loadedChapters ?? chapters }
+    /// The chapter the progress counters above belong to. The view model commits a chapter
+    /// change only on success, so a mismatch here is a reliable "we really moved".
+    @State private var progressChapterID: String
 
-    private var nextChapter: Chapter? {
-        let chaps = effectiveChapters
-        guard !chaps.isEmpty else { return nil }
-        let sorted = chaps.sorted { (Double($0.number) ?? 0) < (Double($1.number) ?? 0) }
-        guard let idx = sorted.firstIndex(where: { $0.id == currentChapter.id }) else { return nil }
-        let nextIdx = idx + 1
-        return sorted.indices.contains(nextIdx) ? sorted[nextIdx] : nil
-    }
+    /// Which failure the user has already seen. Compared against the view model's completion
+    /// marker rather than the message text, so an identical error twice in a row still shows
+    /// twice. Dismissal is UI state; the model is never mutated to hide a banner (ADR-0013).
+    @State private var acknowledgedRequest: Int?
 
-    private var previousChapter: Chapter? {
-        let chaps = effectiveChapters
-        guard !chaps.isEmpty else { return nil }
-        let sorted = chaps.sorted { (Double($0.number) ?? 0) < (Double($1.number) ?? 0) }
-        guard let idx = sorted.firstIndex(where: { $0.id == currentChapter.id }) else { return nil }
-        let prevIdx = idx - 1
-        return sorted.indices.contains(prevIdx) ? sorted[prevIdx] : nil
+    /// `showChrome` is the user's own toggle; a screen with nothing to read forces the bar
+    /// visible regardless, because the only dismiss control lives in it. Derived, never
+    /// assigned — see ADR-0012.
+    private var chromeVisible: Bool { showChrome || vm.presentation.chromeForced }
+
+    private var visibleBanner: String? {
+        guard acknowledgedRequest != vm.lastCompletedRequest else { return nil }
+        return vm.presentation.banner
     }
 
     var body: some View {
         ZStack {
             Ink.background.ignoresSafeArea()
 
-            if let errorMessage {
-                errorState(errorMessage)
-            } else if isLoading && pages.isEmpty {
+            switch vm.presentation.body {
+            case .error(let message, let canRetry):
+                errorState(message, canRetry: canRetry)
+            case .loading:
                 loadingState
-            } else {
+            case .content:
                 content
             }
         }
         .overlay(alignment: .top) {
-            if showChrome { topBar.transition(.move(edge: .top).combined(with: .opacity)) }
+            VStack(spacing: 10) {
+                if chromeVisible {
+                    topBar.transition(.move(edge: .top).combined(with: .opacity))
+                }
+                if let message = visibleBanner {
+                    banner(message).transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
         }
         .overlay(alignment: .bottom) {
-            if showChrome && mode.isPaged && !pages.isEmpty {
+            if chromeVisible && mode.isPaged && !vm.pages.isEmpty {
                 pageIndicator.transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .statusBarHidden(!showChrome)
+        .statusBarHidden(!chromeVisible)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
-        .task { await loadAndBegin() }
+        .task { await vm.begin() }
+        .onChange(of: vm.lastCompletedRequest) { _, _ in didCompleteLoad() }
     }
 
-    private func loadAndBegin() async {
-        if effectiveChapters.isEmpty {
-            let src = SourceRegistry.shared.source(for: manga)
-            if let fetched = try? await src.chapters(mangaId: manga.id) {
-                loadedChapters = fetched
-            }
+    /// Everything the view does after a load finishes, in one place and one order.
+    ///
+    /// The order is the point (ADR-0013): three separate `onChange` observers would leave
+    /// `advanceProgress` racing the counter reset, and if it lost, page 0 of a new chapter
+    /// would go unrecorded until the reader swiped. SwiftUI's observer ordering is not a
+    /// documented guarantee, so this does not depend on it.
+    private func didCompleteLoad() {
+        if vm.currentChapter.id != progressChapterID {
+            progressChapterID = vm.currentChapter.id
+            furthestPage = 0
+            hasRecordedProgress = false
         }
-        
-        await load()
-        guard !pages.isEmpty else { return }
-        
-        let start: Int
-        switch startPageRequest {
-        case .exact(let p): start = min(max(p, 0), pages.count - 1)
-        case .last: start = pages.count - 1
-        }
-        
-        currentPage = start
-        advanceProgress(to: start)
+        currentPage = vm.pagerTarget
+        advanceProgress(to: vm.pagerTarget)
     }
 
-    private func loadNextChapter() async {
-        guard let next = nextChapter else { return }
-        currentChapter = next
-        pages = []
-        startPageRequest = .exact(0)
-        currentPage = 0
-        furthestPage = 0
-        hasRecordedProgress = false
-        await loadAndBegin()
-    }
-
-    private func loadPreviousChapter() async {
-        guard let prev = previousChapter else { return }
-        currentChapter = prev
-        pages = []
-        startPageRequest = .last
-        currentPage = 0
-        furthestPage = 0
-        hasRecordedProgress = false
-        await loadAndBegin()
-    }
-
-    private func errorState(_ message: String) -> some View {
+    private func errorState(_ message: String, canRetry: Bool) -> some View {
         VStack(spacing: 16) {
             InkNotice(message)
-            Button {
-                Task { await loadAndBegin() }
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.clockwise")
-                    Text("Retry")
+
+            // Retry appears only when retrying could work. The way *out* is the ✕ in the top
+            // bar, which `chromeForced` guarantees is on screen whenever this state renders.
+            if canRetry {
+                Button {
+                    Task { await vm.retry() }
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Retry")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Ink.seal)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Ink.sealSoft))
+                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Ink.seal, lineWidth: 1.5))
                 }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Ink.seal)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(RoundedRectangle(cornerRadius: 12).fill(Ink.sealSoft))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Ink.seal, lineWidth: 1.5))
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(Gutter.page)
+    }
+
+    /// Auto-dismisses as well as being tappable: requiring a tap to clear an error the user
+    /// did not cause is poor manners, and swiping into the dead chapter again brings it back.
+    private func banner(_ message: String) -> some View {
+        ReaderBanner(message) { acknowledgeBanner() }
+            .task(id: vm.lastCompletedRequest) {
+                try? await Task.sleep(for: .seconds(5))
+                acknowledgeBanner()
+            }
+    }
+
+    private func acknowledgeBanner() {
+        withAnimation(.snappy(duration: 0.22)) { acknowledgedRequest = vm.lastCompletedRequest }
     }
 
     private func toggleChrome() {
@@ -193,11 +186,12 @@ struct ReaderView: View {
     }
 
     private func advanceProgress(to index: Int) {
-        guard !pages.isEmpty, index >= 0, index < pages.count else { return }
+        guard !vm.pages.isEmpty, index >= 0, index < vm.pages.count else { return }
         guard index > furthestPage || !hasRecordedProgress else { return }
         furthestPage = max(furthestPage, index)
         hasRecordedProgress = true
-        history.record(manga: manga, chapter: currentChapter, page: furthestPage, pageCount: pages.count)
+        history.record(manga: manga, chapter: vm.currentChapter,
+                       page: furthestPage, pageCount: vm.pages.count)
     }
 
     // MARK: Content per mode
@@ -214,18 +208,18 @@ struct ReaderView: View {
     private var pagedReader: some View {
         TabView(selection: $currentPage) {
             ForEach(pageOrder, id: \.self) { index in
-                if index == -1, let prev = previousChapter {
+                if index == -1, let prev = vm.previousChapter {
                     InterstitialPage(chapter: prev, isNext: false)
                         .tag(index)
-                } else if index >= 0, index < pages.count {
-                    ZoomablePage(url: pages[index], index: index, currentIndex: currentPage,
+                } else if index >= 0, index < vm.pages.count {
+                    ZoomablePage(url: vm.pages[index], index: index, currentIndex: currentPage,
                                  onTap: toggleChrome)
                         .tag(index)
-                } else if index == pages.count, let next = nextChapter {
+                } else if index == vm.pages.count, let next = vm.nextChapter {
                     InterstitialPage(chapter: next, isNext: true)
                         .tag(index)
                 } else {
-                    Color.clear
+                    advanceTriggerPage(at: index)
                         .tag(index)
                 }
             }
@@ -234,20 +228,36 @@ struct ReaderView: View {
         .ignoresSafeArea()
         .id(mode)
         .onChange(of: currentPage) { _, newValue in
-            if newValue >= 0, newValue < pages.count {
+            if newValue >= 0, newValue < vm.pages.count {
                 advanceProgress(to: newValue)
-            } else if newValue == pages.count + 1 {
-                Task { await loadNextChapter() }
+            } else if newValue == vm.pages.count + 1 {
+                Task { await vm.loadNext() }
             } else if newValue == -2 {
-                Task { await loadPreviousChapter() }
+                Task { await vm.loadPrevious() }
             }
         }
     }
 
+    /// The page whose only job is to *request* the adjacent chapter, and therefore the right
+    /// place to report on it.
+    ///
+    /// `pageOrder`'s extras are 0 or 2, so this branch is reached by exactly two indices —
+    /// `-2` and `pages.count + 1`, the two the pager treats as advance triggers. It used to
+    /// render `Color.clear`, which was invisible only because clearing `pages` first tore the
+    /// pager down and showed the full-screen spinner instead. Load-then-commit keeps the pager
+    /// up, so without this the user swipes onto a blank screen for the whole fetch (ADR-0013).
+    @ViewBuilder private func advanceTriggerPage(at index: Int) -> some View {
+        if let chapter = index < 0 ? vm.previousChapter : vm.nextChapter {
+            InterstitialPage(chapter: chapter, isNext: index > 0, isLoading: vm.isLoading)
+        } else {
+            Color.clear
+        }
+    }
+
     private var pageOrder: [Int] {
-        let prevExtra = previousChapter != nil ? 2 : 0
-        let nextExtra = nextChapter != nil ? 2 : 0
-        let count = pages.count + nextExtra
+        let prevExtra = vm.previousChapter != nil ? 2 : 0
+        let nextExtra = vm.nextChapter != nil ? 2 : 0
+        let count = vm.pages.count + nextExtra
         let range = -prevExtra..<count
         return mode == .rightToLeft ? Array(range.reversed()) : Array(range)
     }
@@ -256,19 +266,19 @@ struct ReaderView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    ForEach(Array(pages.enumerated()), id: \.offset) { index, url in
+                    ForEach(Array(vm.pages.enumerated()), id: \.offset) { index, url in
                         WebtoonPage(url: url, index: index)
                             .id(index)
                             .onAppear { advanceProgress(to: index) }
                     }
-                    if !pages.isEmpty && !isLoading {
-                        if let next = nextChapter {
+                    if !vm.pages.isEmpty && !vm.isLoading {
+                        if let next = vm.nextChapter {
                             InterstitialPage(chapter: next, isNext: true)
                                 .frame(height: UIScreen.main.bounds.height * 0.8)
-                            
+
                             Color.clear.frame(height: 50)
                                 .onAppear {
-                                    Task { await loadNextChapter() }
+                                    Task { await vm.loadNext() }
                                 }
                         } else {
                             endMark
@@ -279,9 +289,14 @@ struct ReaderView: View {
                 .onTapGesture(perform: toggleChrome)
             }
             .ignoresSafeArea()
-            .onChange(of: pages.count) { _, count in
-                guard count > 0, initialPage > 0 else { return }
-                proxy.scrollTo(min(initialPage, count - 1), anchor: .top)
+            // Restores position on a *commit* only. A failed advance leaves the reader at the
+            // bottom of a chapter that is still fully rendered — a legitimate place to be —
+            // so unlike the pager, nothing retreats here. This replaces an observer on
+            // `pages.count`, which no-opped whenever consecutive chapters were the same
+            // length and read a stale `initialPage` (ADR-0013).
+            .onChange(of: vm.lastCompletedRequest) { _, _ in
+                guard vm.errorMessage == nil else { return }
+                proxy.scrollTo(vm.pagerTarget, anchor: .top)
             }
         }
     }
@@ -295,19 +310,19 @@ struct ReaderView: View {
                 chromeIcon("xmark", tint: Ink.primary)
             }
             Spacer()
-            
+
             VStack(spacing: 2) {
-                Text("Chapter \(currentChapter.number)")
+                Text("Chapter \(vm.currentChapter.number)")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(Ink.primary)
-                if let title = currentChapter.title, !title.isEmpty {
+                if let title = vm.currentChapter.title, !title.isEmpty {
                     Text(title)
                         .font(.caption.weight(.medium))
                         .foregroundStyle(Ink.secondary)
                         .lineLimit(1)
                 }
             }
-            
+
             Spacer()
             Menu {
                 Picker("Reading Mode", selection: $mode) {
@@ -334,7 +349,7 @@ struct ReaderView: View {
     }
 
     private var pageIndicator: some View {
-        Text("\(min(max(currentPage + 1, 1), pages.count)) · \(pages.count)")
+        Text("\(min(max(currentPage + 1, 1), vm.pages.count)) · \(vm.pages.count)")
             .font(.inkMono(12, weight: .semibold))
             .tracking(1)
             .foregroundStyle(Ink.primary)
@@ -363,26 +378,13 @@ struct ReaderView: View {
             RoundedRectangle(cornerRadius: 1.5)
                 .fill(Ink.seal)
                 .frame(width: 28, height: 4)
-            Text("END · \(pages.count) PAGES")
+            Text("END · \(vm.pages.count) PAGES")
                 .font(.inkMono(11, weight: .semibold))
                 .tracking(1.5)
                 .foregroundStyle(Ink.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 36)
-    }
-
-    private func load() async {
-        isLoading = true
-        errorMessage = nil
-        do {
-            let src = SourceRegistry.shared.source(for: manga)
-            pages = try await src.pageURLs(chapterId: currentChapter.id, preferDataSaver: true)
-            ImageCache.shared.prefetch(pages, maxConcurrent: src.imagePrefetchConcurrency)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        isLoading = false
     }
 }
 
@@ -485,9 +487,12 @@ private struct PageRetry: View {
 
 // MARK: - Interstitial Page
 
+/// The card between two chapters. Also stands in for the advance trigger page, where it
+/// carries a spinner: that index is what requested the chapter being loaded (ADR-0013).
 private struct InterstitialPage: View {
     let chapter: Chapter
     let isNext: Bool
+    var isLoading: Bool = false
 
     var body: some View {
         VStack(spacing: 24) {
@@ -511,6 +516,16 @@ private struct InterstitialPage: View {
                         .foregroundStyle(Ink.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
+                }
+            }
+
+            if isLoading {
+                VStack(spacing: 8) {
+                    ProgressView().tint(Ink.seal)
+                    Text("FETCHING PAGES")
+                        .font(.inkMono(10, weight: .semibold))
+                        .tracking(1.5)
+                        .foregroundStyle(Ink.tertiary)
                 }
             }
         }

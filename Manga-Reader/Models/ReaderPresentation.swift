@@ -40,6 +40,27 @@ func isTransientFailure(_ error: Error) -> Bool {
     (error as? ClassifiedFailure)?.isTransient ?? true
 }
 
+/// What to *tell the user* about `error`. ADR-0013.
+///
+/// Almost every error the reader can see already reads as English — `SourceError`'s cases
+/// and `ReaderError.noPages` are plain sentences. `MangaDexError.httpStatus` is the one
+/// exception ("Request failed with HTTP status 404.", `MangaDexAPI.swift:349`), and it is
+/// the exact string the field report was about.
+///
+/// **The code stays in the sentence.** ADR-0012's first hazard is that MangaDex answers 404
+/// from `/at-home/server` for an *externally hosted* chapter as well as a missing one, so the
+/// copy can only claim the chapter is not available *here* — and when this shows up in the
+/// field the code is what distinguishes the two.
+///
+/// `MangaDexError.errorDescription` itself is deliberately left alone: those strings also
+/// surface on Home, Detail, Search and More Like This.
+func readerFailureMessage(_ error: Error) -> String {
+    if case .httpStatus(let code)? = error as? MangaDexError {
+        return "This chapter isn't available to read from this source. (HTTP \(code))"
+    }
+    return error.localizedDescription
+}
+
 extension MangaDexError: ClassifiedFailure {
     var isTransient: Bool {
         switch self {
