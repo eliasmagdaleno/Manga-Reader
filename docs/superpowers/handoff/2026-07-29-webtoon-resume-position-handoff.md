@@ -14,9 +14,9 @@ changed about the design*). Read the ADR, not a summary of it.
 | | |
 |---|---|
 | `main` | `bd0d678` — PR #30 merged, ADR-0012 + ADR-0013 |
-| Working branch | `webtoon-resume-position` at **`5cbd41d`**, steps 1–2 committed, **tree clean, nothing pushed** |
-| ADR | `docs/adr/0014-resuming-a-webtoon-where-the-reader-stopped.md`, 12 decisions |
-| Tests | **340 green, 0 failures** (329 unit + 11 UI), verified on the commit |
+| Working branch | `webtoon-resume-position` at **`87e36cc`**, steps 1–3 committed (**commit 1 of 3 done**), **tree clean, nothing pushed** |
+| ADR | `docs/adr/0014-…`, 12 decisions + six 2026-07-30 amendments |
+| Tests | **335 unit green, 0 failures** (329 + 6 new). UI tests last run green at `5cbd41d` (11) |
 | Next ADR number | 0015 |
 
 `5cbd41d` — *"Record a reading position, not just a page (ADR-0014, steps 1-2)"* — carries
@@ -241,10 +241,14 @@ Both are pre-existing, neither is a regression, and each fix is one line. **`Str
 
 Three commits, then hand-checks, then one PR. No stacking.
 
-**Commit 1 — plumbing.** (a) `landingPosition` + `.reread`, pure, red-green first. (b) plumb the type
-through `ReaderView.init`, `ReaderViewModel.init`, `Landing.exact`, `pagerTarget` and all four doors
-including the two row taps (decision 11) — expect ~13 `ReaderViewModelTests` assertions to change.
-(c) extract and test `continueProgress`.
+**Commit 1 — plumbing. DONE (`87e36cc`).** Type carried end to end; both row-tap doors resume;
+`.reread` payload gone; `continueProgress` extracted to `ReadingResume.swift` with four tests.
+Two real reds along the way: the clamp was written keeping the fraction first and failed exactly
+`testAClampedPositionLosesItsFraction`, and the progress rule was written with the old `page + 1`
+first and failed the two fraction-aware tests. One test asserts the *accepted cost* rather than the
+desired behaviour — `testTheFillRetreatsOnTheFirstScrollIntoAFreshlyOpenedChapter`, "documented, not
+desired". `ReaderView` still calls the old `advanceProgress(to: Int)`; the rename to `recordProgress`
+belongs to commit 2 with the paths that need it.
 
 **Commit 2 — capture.** TDD `WebtoonGeometry.stripPosition` including the three holes, *then* wire
 `PreferenceKey` + `StripMetrics` into the view, delete the `.onAppear` advance and the latch, add the
