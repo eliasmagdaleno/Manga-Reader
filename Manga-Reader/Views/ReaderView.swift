@@ -153,6 +153,24 @@ struct ReaderView: View {
     /// change only on success, so a mismatch here is a reliable "we really moved".
     @State private var progressChapterID: String
 
+    /// The load `didCompleteLoad` has already processed.
+    ///
+    /// Restore and `didCompleteLoad` are driven by the *same* marker, so this is the only
+    /// honest way for restore to know whether the state it reads — `currentPage`, `metrics` —
+    /// belongs to this load yet. `progressChapterID` cannot answer it: `init` seeds it with
+    /// the chapter id, so on a first open it matches before anything has run.
+    @State private var loadedRequest: Int?
+
+    /// The chapter the *scroll view* has been positioned for. A `ScrollView` keeps its
+    /// content offset when the pages under it are replaced, so this is what distinguishes
+    /// "already at the top of this chapter" from "still at the bottom of the last one".
+    @State private var scrolledChapterID: String?
+
+    /// The chapter whose next-chapter load has already been requested. Without it the loader
+    /// at the bottom of the strip re-fires as soon as it is on screen again, and the reader
+    /// skips through several chapters in a row.
+    @State private var advanceRequestedFor: String?
+
     /// Which failure the user has already seen. Compared against the view model's completion
     /// marker rather than the message text, so an identical error twice in a row still shows
     /// twice. Dismissal is UI state; the model is never mutated to hide a banner (ADR-0013).
@@ -216,11 +234,16 @@ struct ReaderView: View {
     /// would go unrecorded until the reader swiped. SwiftUI's observer ordering is not a
     /// documented guarantee, so this does not depend on it.
     private func didCompleteLoad() {
+        loadedRequest = vm.lastCompletedRequest
         if vm.currentChapter.id != progressChapterID {
             progressChapterID = vm.currentChapter.id
             // Strip indices overlap between chapters, so the old chapter's strip 3 would
             // otherwise answer for the new one's until the next layout pass replaced it.
             metrics.resetForNewChapter()
+        } else {
+            // A load that completed without moving chapter is a failed advance (or a retry),
+            // so let the reader ask again by scrolling back to the bottom.
+            advanceRequestedFor = nil
         }
         currentPage = vm.pagerTarget.page
         // The open-time record is what puts a chapter into History at all (`isRead` is "has
@@ -338,7 +361,7 @@ struct ReaderView: View {
     /// as the task that calls this, so on a chapter advance it may not have run yet. Until
     /// it has, `pagerTarget` is the only value that belongs to the new chapter.
     private var restoreTarget: ReadingPosition {
-        guard progressChapterID == vm.currentChapter.id else { return vm.pagerTarget }
+        guard loadedRequest == vm.lastCompletedRequest else { return vm.pagerTarget }
         return metrics.live ?? ReadingPosition(page: currentPage)
     }
 
@@ -349,8 +372,21 @@ struct ReaderView: View {
     /// every strip *above* the target grows too. The loop re-reads the real frames after
     /// each attempt (ADR-0014 decisions 9 and 10).
     private func restorePosition(using proxy: ScrollViewProxy) async {
-        let target = restoreTarget
-        guard target.page > 0 || target.fraction > 0 else { return }
+        let isNewChapter = scrolledChapterID != vm.currentChapter.id
+        let target: ReadingPosition
+        switch restorePlan(target: restoreTarget, isNewChapter: isNewChapter) {
+        case .none:
+            return
+        case .top:
+            // Arriving in a new chapter is a scroll, not a no-op: the scroll view is still
+            // holding the offset from the chapter the reader just left.
+            scrolledChapterID = vm.currentChapter.id
+            proxy.scrollTo(0, anchor: .top)
+            return
+        case .settle(let position):
+            scrolledChapterID = vm.currentChapter.id
+            target = position
+        }
 
         // Silences the recorder for the duration: the loop renders overshoots it then
         // rejects, and overshoot is the only transient the store's max would preserve.
@@ -488,8 +524,17 @@ struct ReaderView: View {
                             InterstitialPage(chapter: next, isNext: true)
                                 .frame(height: UIScreen.main.bounds.height * 0.8)
 
+                            // Latched per chapter. This trigger sits below an interstitial at
+                            // the bottom of the strip, and the chapter it loads replaces the
+                            // pages underneath a scroll view that keeps its offset — so
+                            // without the latch it comes straight back on screen and requests
+                            // the chapter after, and the reader skips several in a row.
+                            // Cleared by `didCompleteLoad` when the advance did not happen,
+                            // so a failed load can be retried by scrolling.
                             Color.clear.frame(height: 50)
                                 .onAppear {
+                                    guard advanceRequestedFor != vm.currentChapter.id else { return }
+                                    advanceRequestedFor = vm.currentChapter.id
                                     Task { await vm.loadNext() }
                                 }
                         } else {

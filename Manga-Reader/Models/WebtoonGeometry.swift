@@ -115,6 +115,32 @@ enum SettleStep: Equatable {
     case stop
 }
 
+/// What a completed load asks of the vertical reader's scroll position.
+enum RestorePlan: Equatable {
+    /// Nothing to do — the reader is already where it belongs.
+    case none
+    /// Put the reader at the top of the chapter.
+    case top
+    /// Run the settle loop at this position.
+    case settle(ReadingPosition)
+}
+
+/// Whether a completed load should scroll the vertical reader, and where.
+///
+/// The case that matters is `.top`, and it is not cosmetic. A `ScrollView` keeps its raw
+/// content offset when the pages underneath it are replaced, so arriving in a new chapter
+/// with "no saved position" is **not** the same as arriving at its top: the reader is still
+/// tens of thousands of points down the chapter they just left, which clamps to the bottom
+/// of the new one. That is what makes the end-of-chapter auto-advance chain — the loader at
+/// the bottom is immediately on screen again, and requests the chapter after.
+///
+/// A reload of the *same* chapter with nothing saved is left alone, because there the reader
+/// is exactly where they were and a scroll would be a yank.
+func restorePlan(target: ReadingPosition, isNewChapter: Bool) -> RestorePlan {
+    if target.page > 0 || target.fraction > 0 { return .settle(target) }
+    return isNewChapter ? .top : .none
+}
+
 /// One correction of the settle loop: where to aim next, given what the last one achieved.
 ///
 /// No strip has its real height when restore fires — every one is a 460pt placeholder

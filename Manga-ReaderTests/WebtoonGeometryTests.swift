@@ -110,6 +110,43 @@ final class WebtoonGeometryTests: XCTestCase {
         XCTAssertEqual(Int(fraction * Double(stripAnchorSlots)), stripAnchorSlots - 1)
     }
 
+    // MARK: - Restore: what a completed load should do
+
+    /// The bug this exists for: a `ScrollView` keeps its content offset when the pages under
+    /// it are replaced, so landing in a new chapter with nothing saved leaves the reader at
+    /// the bottom of the chapter they just left — which puts the end-of-chapter loader back
+    /// on screen and requests the chapter after. Arriving is a scroll, not a no-op.
+    func testANewChapterWithNothingSavedGoesToItsTop() {
+        XCTAssertEqual(restorePlan(target: ReadingPosition(page: 0), isNewChapter: true), .top)
+    }
+
+    func testASavedPositionSettles() {
+        let target = ReadingPosition(page: 3, fraction: 0.4)
+
+        XCTAssertEqual(restorePlan(target: target, isNewChapter: true), .settle(target))
+    }
+
+    /// A position inside the *first* strip is a real position. The guard this replaces was
+    /// `pagerTarget > 0`, which skipped restore for the whole of a one- or two-strip chapter.
+    func testAPositionInsideTheFirstStripStillSettles() {
+        let target = ReadingPosition(page: 0, fraction: 0.6)
+
+        XCTAssertEqual(restorePlan(target: target, isNewChapter: true), .settle(target))
+    }
+
+    /// A retry re-runs the load without changing chapter, and the reader has not moved — so
+    /// settling back to where they are is right, and it costs nothing when it is a no-op.
+    func testAReloadOfTheSameChapterSettlesBackToWhereTheReaderIs() {
+        let target = ReadingPosition(page: 6, fraction: 0.2)
+
+        XCTAssertEqual(restorePlan(target: target, isNewChapter: false), .settle(target))
+    }
+
+    /// But a reload with nothing to restore must not yank a reader who is sitting at the top.
+    func testAReloadOfTheSameChapterWithNothingSavedLeavesTheReaderAlone() {
+        XCTAssertEqual(restorePlan(target: ReadingPosition(page: 0), isNewChapter: false), .none)
+    }
+
     // MARK: - Restore: the settle loop's stopping rule
 
     /// The grid can only address multiples of a slot, so the first aim floors the fraction —
