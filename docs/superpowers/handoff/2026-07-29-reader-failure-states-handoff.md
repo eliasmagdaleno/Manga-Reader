@@ -1,7 +1,9 @@
-# Session Handoff — 2026-07-29: reader 404 trap fixed, hand-check outstanding
+# Session Handoff — 2026-07-29: reader 404 trap fixed and hand-verified
 
-**Audience:** the next session. The reader work is code-complete and green; what remains is a
-hand-check on the simulator that no automated test here can stand in for.
+**Audience:** the next session. The reader work is code-complete, green, and hand-checked on the
+simulator; PR #30 needs nothing further. What is left is follow-up work the hand-check turned up —
+chiefly that **reading progress is not saved in webtoon mode** (item 2), and that **externally hosted
+chapters are reported to the user as broken** (see hazards).
 
 Companion to `2026-07-29-anilist-pool-handoff.md`, which is **still current for the recommender**
 and untouched by this work. Its blocker stands: ADR-0011 needs 3 AniList-resolved Works and the
@@ -68,9 +70,12 @@ bar hidden (`ReaderView.swift`, `.toolbar(.hidden, for: .navigationBar)`).
 - [x] **2. Failed advance.** Read a healthy chapter, swipe into a dead next chapter → the chapter you
       were on survives, you land back on **its last page**, and the error appears as a banner that
       auto-clears after 5s. Verified by hand 2026-07-29.
-- [ ] **3. Normal open** still works and the top bar auto-hides once pages arrive.
-- [ ] **4. Webtoon mode once**, since its scroll restore changed from `pages.count` to the completion
-      marker.
+- [x] **3. Normal open** still works and the top bar auto-hides once pages arrive. Verified by hand
+      2026-07-29.
+- [x] **4. Webtoon mode**, since its scroll restore changed from `pages.count` to the completion
+      marker. Verified by hand 2026-07-29 — and it surfaced a separate defect, item 2 below.
+
+**All four pass. ADR-0012 and ADR-0013 are hand-verified; PR #30 needs nothing further.**
 
 **Reproduction for 2 and 4** (verified 2026-07-29; content, so it can rot): *Hidarikiki no Eren*,
 manga `672be603-c8f1-478b-866a-811652cffabc` — chapter 33 (22 pages) is immediately followed in the
@@ -80,7 +85,33 @@ Natteshimau*, manga `f5badc31-60a8-4a47-9ef8-cd40ba62e473`, has the same adjacen
 `/chapter?includeExternalUrl=1` for candidates, then look for a `pages > 0` entry followed by a
 `pages == 0` one in the same manga's English feed.
 
-### 2. Optional: the 5xx wording
+### 2. Reported 2026-07-29: reading progress is not saved in webtoon mode
+
+Found while hand-checking item 4. **Not a regression from this branch** — see below — so it does not
+block PR #30, but it is the next real reader defect.
+
+Two separate paths, and the fix depends on which one is at fault. The observation to make first is
+whether History holds *no useful entry* for the webtoon chapter, or holds one that simply does not
+resume you where you stopped.
+
+- **Recording** — `.onAppear { advanceProgress(to: index) }` on each `WebtoonPage`. Materially
+  unchanged by ADR-0013 (same call, same guard, only `pages` → `vm.pages`), so if nothing is written
+  at all it predates this work. Suspect the `LazyVStack` realization order or the
+  `index > furthestPage || !hasRecordedProgress` guard.
+- **Restore** — this branch replaced an observer on `pages.count` with one on the completion marker,
+  calling `proxy.scrollTo(vm.pagerTarget, anchor: .top)`. Stronger than what it replaced on a first
+  load, but `scrollTo` into a `LazyVStack` whose rows are not realized yet — and whose images are
+  unmeasured, since `WebtoonPage`'s placeholder is a fixed 460pt against strips that can be thousands
+  of points tall — can silently do nothing.
+
+**The likely root cause is conceptual, not a bug.** `ReadingEntry.page` is a *page index*
+(`HistoryStore.swift:22`), and a webtoon "page" is a long strip. A chapter of 8 strips has only 8
+resume points, so even a perfectly honored restore drops the reader at the top of the strip they were
+halfway down. Doing this properly means storing a fractional or offset-based position for vertical
+reading — a model change, and one that needs a decision about whether `ReadingEntry` grows a second
+notion of position or `page` becomes a `Double`. Worth an ADR if it is taken on.
+
+### 3. Optional: the 5xx wording
 
 `readerFailureMessage` rewrites *every* `MangaDexError.httpStatus` code to "This chapter isn't
 available to read from this source. (HTTP 503)" — and a 503 is transient, so that sentence can appear
