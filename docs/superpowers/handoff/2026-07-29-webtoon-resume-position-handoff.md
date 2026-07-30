@@ -185,21 +185,75 @@ rule tightens automatically.
 `Models/` is synchronized so it needs no `pbxproj` edit; its test file does, via `xcp`. The precedent
 is `Models/ReaderPresentation.swift` — the reader's pure pieces, lifted out of the view to be tested.
 
-### Still open — the grill stopped here
+### Decided later the same day — the rest of the grill
 
-- **Does `pagerTarget`'s retreat carry a fraction?** `retreatIndex` returns an `Int`
-  (`ReaderViewModel.swift:200-206`). Leaning: no — `ReadingPosition(page: retreat)`, fraction 0.
-  A failed advance never scrolls the vertical reader (`.task(id:)` is guarded on
-  `errorMessage == nil`), and restore prefers the live position anyway, so the fraction would be
-  unobservable.
-- **`continueProgress`'s exact formula** (ADR-0014 decision 12). `(page + fraction) / pageCount`
-  with a paged entry's `fraction == 0` treated as "page seen" — the entry does not record which mode
-  it was read in, so `fraction == 0` is genuinely ambiguous. Leaning:
-  `min(1, (Double(page) + (fraction > 0 ? fraction : 1)) / Double(pageCount))`.
-- **Does `didCompleteLoad` still call `record` after the latch is deleted?** It currently does
-  (`ReaderView.swift:140`), which is what records page 0 of a freshly opened chapter.
-- **Slicing and PR shape** for steps 3–5 — one PR with a commit per step is the assumption
-  (no stacked PRs), but the TDD order inside step 4/5 is not planned yet.
+**7. `pagerTarget`'s retreat carries fraction 0, and `retreatIndex` keeps returning `Int?`.** The
+caller wraps it. A failed advance never scrolls the vertical reader (`.task(id:)` is guarded on
+`errorMessage == nil`, `ReaderView.swift:305`) and restore prefers the live position anyway, so the
+retreat's fraction is unobservable in all three modes — widening a pure function whose domain
+genuinely *is* pages would add a field with no reachable meaning. Note that `didCompleteLoad` runs on
+failure too and records the retreated target; that writes nothing, because the store's max already
+holds the live position. Second place where correctness leans on `record` being cheap on a no-op.
+
+**8. `continueProgress` is `min(1, (Double(page) + (fraction > 0 ? fraction : 1)) / Double(pageCount))`,
+and it is extracted to `Models/ReadingResume.swift`** so the rule is testable — it is currently
+`private` in `MangaDetailView` (`:211-215`). **New hazard recorded in the ADR:** the bar *jumps
+backwards* when a webtoon chapter is opened and then scrolled — `(0,0)` reads as "page seen" (12.5% of
+8 strips), and the first scroll to `(0, 0.1)` drops it to 1.25%. Unavoidable while the entry does not
+record its reading mode, and a `max(f, ε)` at capture does not fix it because `didCompleteLoad` writes
+a real `(0,0)` from the vertical reader too.
+
+**9. `advanceProgress` becomes `recordProgress(_ position:)`, and the chapter guard moves inside it.**
+
+```swift
+private func recordProgress(_ position: ReadingPosition) {
+    guard progressChapterID == vm.currentChapter.id else { return }
+    guard !vm.pages.isEmpty, position.page >= 0, position.page < vm.pages.count else { return }
+    history.record(manga: manga, chapter: vm.currentChapter,
+                   position: position, pageCount: vm.pages.count)
+}
+```
+
+The **open-time record stays** (`didCompleteLoad` → `recordProgress(vm.pagerTarget)`): it is what puts
+a chapter into History at all (`isRead` is "has an entry", `HistoryStore.swift:180-183`) and what
+mints the Work. Without it, opening a chapter and leaving before any measurement lands records
+nothing — a real window in the vertical reader, where `onDisappear` would correctly find
+`metrics.live == nil`. The guard lives in the helper because decision 6's rule — only ever record
+against the chapter the view believes it is showing — holds for every caller (`didCompleteLoad` syncs
+`progressChapterID` *before* recording, `ReaderView.swift:134-140`), and leaving it at the call sites
+is decision 3's "one invariant in two places" all over again.
+
+**10. Mode switches carry position in both directions** → **corrects ADR-0014 decision 8**, which
+claimed to close ADR-0013's mode-switch hazard but closed half of it:
+
+- Restore aims at `metrics.live ?? ReadingPosition(page: currentPage)`, **not** `?? vm.pagerTarget`.
+  In a paged mode the live position is never written, and `pagerTarget` is where the chapter was
+  *entered* (assigned only on a completed load, `ReaderViewModel.swift:165`) — so paged page 5 →
+  Webtoon lands at page 0 today.
+- Switching *to* a paged mode sets `currentPage = metrics.live?.page ?? currentPage`; `currentPage`
+  is otherwise only assigned in `didCompleteLoad` (`ReaderView.swift:139`), so webtoon strip 5 →
+  paged lands on the opening page today.
+
+Both are pre-existing, neither is a regression, and each fix is one line. **`StripMetrics` is held by
+`ReaderView`, not `verticalReader`,** so it survives the mode switch these depend on.
+
+### The slice plan (confirmed)
+
+Three commits, then hand-checks, then one PR. No stacking.
+
+**Commit 1 — plumbing.** (a) `landingPosition` + `.reread`, pure, red-green first. (b) plumb the type
+through `ReaderView.init`, `ReaderViewModel.init`, `Landing.exact`, `pagerTarget` and all four doors
+including the two row taps (decision 11) — expect ~13 `ReaderViewModelTests` assertions to change.
+(c) extract and test `continueProgress`.
+
+**Commit 2 — capture.** TDD `WebtoonGeometry.stripPosition` including the three holes, *then* wire
+`PreferenceKey` + `StripMetrics` into the view, delete the `.onAppear` advance and the latch, add the
+throttle-with-trailing-fire and the `onDisappear` record. Its own commit because **this is where
+`finished` changes meaning for webtoons** (decision 7) — that deserves a reviewable unit rather than
+being buried in a rename sweep.
+
+**Commit 3 — restore.** TDD `settleStep` against the four pathological cases, *then* the anchor grid
+and the loop; delete the 50ms sleep and the `pagerTarget > 0` guard.
 
 ## Left to do, in order
 

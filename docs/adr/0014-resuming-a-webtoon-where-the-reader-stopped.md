@@ -1,8 +1,10 @@
 # ADR-0014 — Resuming a webtoon where the reader stopped
 
 - **Status:** Accepted (2026-07-29); **amended 2026-07-30** during implementation — decisions 4, 5,
-  8, 9 and 10 each carry a dated amendment below. Decision 5's is a *correction*: it described one
-  throttle shape for two layers, and the layer it got wrong is the one that loses data.
+  8, 9 and 10 each carry a dated amendment below, and one new hazard. Two of those are *corrections*
+  rather than refinements: decision 5 described one throttle shape for two layers, and the layer it
+  got wrong is the one that loses data; decision 8 claimed to close ADR-0013's mode-switch hazard
+  while closing half of it.
 - **Amends:** ADR-0013 — four of its decisions change here: the view-owned progress latch (its own
   "weakest of the eight decisions"), `pagerTarget`'s type, the fixed 50ms wait before `scrollTo`, and
   what the vertical restore aims at. It also closes three of its hazards — strip-granularity resume,
@@ -336,6 +338,36 @@ which is an honest limit of a page index rather than something this decision dro
 > SwiftUI discourages. The defence is that this is a *measurement cache*, not view state, and what
 > makes it allowed to be a reference is precisely that nothing renders from it — so if anything ever
 > does need to render from it, this decision has to be reopened rather than worked around.
+>
+> `StripMetrics` is held by `ReaderView`, not by `verticalReader`, so it survives a reading-mode
+> switch — which the amendment below depends on.
+
+> **Corrected 2026-07-30 — this decision claimed to close ADR-0013's mode-switch hazard, and it
+> closed half of it. The restore fallback is `currentPage`, not `pagerTarget`, and the paged modes
+> read the live position on the way in.**
+>
+> The live position is only ever written by the vertical capture, so **in a paged mode it is `nil`**
+> and restore falls through to `pagerTarget` — which is where the chapter was *entered*, not where the
+> pager is now: it is assigned only on a completed load (`ReaderViewModel.swift:165`). Swipe to page
+> 5, switch to Webtoon, and the reader lands back at page 0. This decision's accepted cost said that
+> case "lands at the top of the strip", which quietly assumed the page was right. It is not. The
+> reverse is the same story from the other side: `currentPage` is assigned only in `didCompleteLoad`
+> (`ReaderView.swift:139`), so switching to a paged mode after scrolling five strips puts the pager on
+> the page the chapter was opened at.
+>
+> - Restore aims at `metrics.live ?? ReadingPosition(page: currentPage)`. `currentPage` is the pager's
+>   live truth and equals `pagerTarget` immediately after a load, so nothing about a normal chapter
+>   open changes.
+> - Switching *to* a paged mode sets `currentPage = metrics.live?.page ?? currentPage`.
+>
+> Both cases predate this ADR — neither is a regression — but this is the first design in which the
+> reader holds the information to fix them, and each fix is one line. What makes it worth doing here
+> rather than deferring is that the two directions become symmetrical: **each mode reads the other's
+> live notion of position**, instead of one of them consulting a stale load-time value.
+>
+> **Beat:** leaving both, on the grounds that mid-chapter mode switching is rare. Rejected because
+> "rare, and lands you somewhere you have never been" is the same shape as the bug this whole ADR
+> exists to fix.
 
 ### 9. Restore is an anchor grid plus a settle loop — one path on both OS versions
 
@@ -500,6 +532,14 @@ only.
 - **The two persisted fields can drift.** `record` is the only writer today, but nothing in the type
   prevents a future writer from setting `page` without `fraction`. A stale pair resumes somewhere
   plausible and wrong, which is harder to notice than resuming at zero.
+- **The Continue bar jumps backwards when a webtoon chapter is opened and then scrolled.** Decision
+  12's rule reads `fraction == 0` as "page seen", so a freshly opened 8-strip chapter — entry
+  `(0, 0)` — shows 12.5%, and the first scroll to `(0, 0.1)` drops it to 1.25%. This is that
+  decision's accepted "under a strip of error" in its perceptible form, and it is unavoidable while
+  the entry does not record which *mode* it was read in: `fraction == 0` is genuinely ambiguous
+  between a paged reader on this page and a webtoon reader at this strip's top. A `max(f, ε)` at
+  capture would not fix it either — `didCompleteLoad` writes a real `(0, 0)` on chapter open from the
+  vertical reader too. The real fix is a persisted mode, which is a lot to spend on a 2pt hairline.
 - **A paged read leaves a stale fraction behind.** Reading page 5 in a paged mode records `(5, 0)`,
   and the lexicographic max keeps an earlier `(5, 0.8)` from a webtoon session. Switching back to
   webtoon then resumes 80% down strip 5 even though the paged reader was at its top. Harmless in
