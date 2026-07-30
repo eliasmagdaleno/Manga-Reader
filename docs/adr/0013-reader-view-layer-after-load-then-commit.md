@@ -174,6 +174,27 @@ The webtoon reader's scroll restore keys off `lastCompletedRequest` with an `err
 guard, inside the `ScrollViewReader` (the proxy is not reachable from the body-level handler), and
 scrolls to `vm.pagerTarget`.
 
+> **Amended 2026-07-29, same day, after hand-checking.** It must be `task(id:)`, not
+> `onChange(of:)` — and this ADR shipped the wrong one for a few hours.
+>
+> **The vertical reader is mounted late.** On a first open the body is `.loading` while pages are
+> empty, so the vertical reader does not exist when `advance` assigns pages, clears `isLoading` and
+> bumps the marker — all in one synchronous block — and only *then* does the body switch to
+> `.content` and mount it. `onChange` fires only for changes occurring while its view is present, so
+> a marker that moved 0 → 1 before the observer existed produced nothing: **webtoon resume never
+> restored position at all.** Not a regression — the `pages.count` observer this replaced was mounted
+> just as late, so it had never worked either. `task(id:)` runs on appearance as well as on change,
+> which is the whole difference.
+>
+> Chapter *advances* were unaffected and hand-checked fine, and load-then-commit is why: `pages` stays
+> populated across a commit, so the body stays `.content` and the reader stays mounted. Working
+> mid-session and dead on entry is what made the split visible.
+>
+> **Accepted cost: a 50ms sleep before the scroll.** `task` starts before the view has laid out and
+> the `LazyVStack` has realized no rows, so `scrollTo` has nothing to aim at yet. It is a magic
+> number and it is guarded on `pagerTarget > 0`, so a normal chapter open never waits — only an
+> actual resume does. See hazards.
+
 It replaces `.onChange(of: pages.count) { proxy.scrollTo(min(initialPage, count - 1)) }`
 (`ReaderView.swift:282-285`), which has **two live bugs today**, independent of this branch: it
 no-ops when consecutive chapters have equal page counts, leaving the reader scrolled partway into the
@@ -282,6 +303,18 @@ read it.
   interleaving bug silently — both guards are `guard mine == generation` and neither fails loudly.
 - **Nothing here addresses `.task` cancellation** (carried from ADR-0012). Latest-wins makes the
   *commit* correct; the work still runs.
+- **The webtoon restore waits a fixed 50ms for layout.** A magic number standing in for "one layout
+  pass", and there is no SwiftUI signal for that — `scrollTo` into a `LazyVStack` has nothing to aim
+  at before its rows are realized. On a slow first frame it can still miss. It only runs on an actual
+  resume (`pagerTarget > 0`), so the blast radius is one code path.
+- **Webtoon resume lands at the top of the right *strip*, not where the reader stopped.**
+  `ReadingEntry.page` is a page index (`HistoryStore.swift:22`) and a webtoon page is a long strip, so
+  a chapter of 8 strips offers 8 resume points. The restore now fires, which is a bug fixed; the
+  granularity is a model limitation and needs its own decision — whether `ReadingEntry` grows a
+  second notion of position or `page` becomes fractional.
+- **Switching reading mode mid-chapter does not carry position.** The `task(id:)` reruns on mount, so
+  switching into webtoon scrolls to the page the chapter was *entered* at rather than the one being
+  read. Before this change it scrolled nowhere at all; neither is right.
 - **An externally hosted chapter is reported as broken.** It is not a failure at all — the chapter
   exists and is published on the publisher's own site — but it reaches the user through the zero-pages
   path and reads *"This chapter has no pages to read."* The chapter list could rule this one out
@@ -297,5 +330,8 @@ read it.
   raises a banner.
 - If a third caller needs to know a load completed, promote `lastCompletedRequest` from "the thing
   that moves the pager" to a named domain event; three consumers of a bare `Int` is one too many.
+- If webtoon resume needs to land where the reader actually stopped rather than at the top of a strip,
+  that is a change to `ReadingEntry`'s notion of position, not to the scroll call — and it touches
+  history, resume and the progress display at once. Worth its own ADR.
 - If `MangaDexError`'s copy is ever fixed at source, delete `readerFailureMessage`'s `httpStatus`
   case rather than leaving two layers rewriting the same string.

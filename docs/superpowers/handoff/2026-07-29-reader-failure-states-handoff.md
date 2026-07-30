@@ -85,31 +85,35 @@ Natteshimau*, manga `f5badc31-60a8-4a47-9ef8-cd40ba62e473`, has the same adjacen
 `/chapter?includeExternalUrl=1` for candidates, then look for a `pages > 0` entry followed by a
 `pages == 0` one in the same manga's English feed.
 
-### 2. Reported 2026-07-29: reading progress is not saved in webtoon mode
+### 2. Webtoon resume — diagnosed and fixed 2026-07-29; one part remains
 
-Found while hand-checking item 4. **Not a regression from this branch** — see below — so it does not
-block PR #30, but it is the next real reader defect.
+Reported while hand-checking item 4: reading progress appeared not to be saved in webtoon mode.
+Recording was fine — History held an entry — so the fault was entirely in **restore**, and it was a
+mount-order bug:
 
-Two separate paths, and the fix depends on which one is at fault. The observation to make first is
-whether History holds *no useful entry* for the webtoon chapter, or holds one that simply does not
-resume you where you stopped.
+**The vertical reader is mounted late.** On a first open the body is `.loading` while pages are empty,
+so the vertical reader does not exist when `advance` assigns pages, clears `isLoading` and bumps the
+completion marker — all one synchronous block — and only then does the body switch to `.content` and
+mount it. `onChange` fires only for changes occurring while its view is present, so the marker moving
+0 → 1 produced nothing. Webtoon resume had therefore **never** worked: the `pages.count` observer this
+branch replaced was mounted just as late.
 
-- **Recording** — `.onAppear { advanceProgress(to: index) }` on each `WebtoonPage`. Materially
-  unchanged by ADR-0013 (same call, same guard, only `pages` → `vm.pages`), so if nothing is written
-  at all it predates this work. Suspect the `LazyVStack` realization order or the
-  `index > furthestPage || !hasRecordedProgress` guard.
-- **Restore** — this branch replaced an observer on `pages.count` with one on the completion marker,
-  calling `proxy.scrollTo(vm.pagerTarget, anchor: .top)`. Stronger than what it replaced on a first
-  load, but `scrollTo` into a `LazyVStack` whose rows are not realized yet — and whose images are
-  unmeasured, since `WebtoonPage`'s placeholder is a fixed 460pt against strips that can be thousands
-  of points tall — can silently do nothing.
+Fixed by using `task(id:)` instead, which runs on appearance as well as on change. Chapter advances
+were never affected — `pages` stays populated across a commit, so the reader stays mounted — which is
+why item 4 passed while resume failed, and what made the split visible at all.
 
-**The likely root cause is conceptual, not a bug.** `ReadingEntry.page` is a *page index*
-(`HistoryStore.swift:22`), and a webtoon "page" is a long strip. A chapter of 8 strips has only 8
-resume points, so even a perfectly honored restore drops the reader at the top of the strip they were
-halfway down. Doing this properly means storing a fractional or offset-based position for vertical
-reading — a model change, and one that needs a decision about whether `ReadingEntry` grows a second
-notion of position or `page` becomes a `Double`. Worth an ADR if it is taken on.
+**What remains is not a bug but a model limitation.** `ReadingEntry.page` is a *page index*
+(`HistoryStore.swift:22`) and a webtoon page is a long strip, so a chapter of 8 strips offers only 8
+resume points: the restore now fires, and it lands at the top of the strip the reader was partway
+down. Landing where they actually stopped means changing what `ReadingEntry` stores — a fractional
+`page`, or a second offset-based notion of position — which touches history, resume and the progress
+display together. **Worth its own ADR; do not bolt it onto the scroll call.**
+
+Also open, recorded as ADR-0013 hazards: the fix waits a fixed **50ms** for a layout pass before
+scrolling, because `scrollTo` into a `LazyVStack` has nothing to aim at until rows are realized and
+SwiftUI offers no signal for that. It is guarded on `pagerTarget > 0`, so only an actual resume waits.
+And **switching reading mode mid-chapter still does not carry position** — entering webtoon scrolls to
+the page the chapter was entered at, not the one being read.
 
 ### 3. Optional: the 5xx wording
 
@@ -182,6 +186,13 @@ model, ADR-0013 for the view. The ones most likely to be "simplified" back:
 
 ## Gotchas (carried forward, all still true)
 
+- **A stub `MangaSource` that the test *and* the code under test both touch must be `@MainActor`.**
+  `MangaSource`'s methods are nonisolated, so `await source.pageURLs(...)` from a `@MainActor` view
+  model runs off the main actor. A stub holding mutable state that the test also pokes is then being
+  mutated from two executors: `ReaderViewModelTests`' gated stub corrupted its own dictionaries and
+  crashed with `-[__NSCFNumber objectForKey:]: unrecognized selector` — **after passing twice.**
+  Isolating the stub fixes it and keeps the suspension points where the interleaving is wanted. The
+  other mocks get away with it only because they hold no state that is written during a fetch.
 - **SourceKit is unreliable here** — "No such module 'XCTest'", "Cannot find type 'Chapter' in scope"
   on files that compile and test clean. It was noisy through this whole session. Judge only by
   `xcodebuild`.

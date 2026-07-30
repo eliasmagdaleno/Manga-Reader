@@ -72,6 +72,15 @@ final class ReaderViewModelTests: XCTestCase {
     /// ADR-0013: the shipped reader could not be re-entered while loading because clearing
     /// `pages` tore the pager down. Load-then-commit keeps the pager up for the whole fetch,
     /// so a second swipe now reaches an `advance` that has already started.
+    ///
+    /// **`@MainActor` is load-bearing.** `MangaSource`'s methods are nonisolated, so an
+    /// `await source.pageURLs(...)` from the `@MainActor` view model runs off the main actor —
+    /// while the test drives `awaitArrival` / `release` on it. Without isolation those two
+    /// touch these dictionaries concurrently, which corrupts them: this crashed with
+    /// `-[__NSCFNumber objectForKey:]: unrecognized selector` after passing twice. Isolating
+    /// the whole stub serializes access and leaves the suspension points — the only places
+    /// interleaving is wanted — exactly where they were.
+    @MainActor
     private final class GatedSource: MangaSource {
         let id = "stub"
         let name = "Gated"

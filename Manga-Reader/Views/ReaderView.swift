@@ -291,11 +291,23 @@ struct ReaderView: View {
             .ignoresSafeArea()
             // Restores position on a *commit* only. A failed advance leaves the reader at the
             // bottom of a chapter that is still fully rendered — a legitimate place to be —
-            // so unlike the pager, nothing retreats here. This replaces an observer on
-            // `pages.count`, which no-opped whenever consecutive chapters were the same
-            // length and read a stale `initialPage` (ADR-0013).
-            .onChange(of: vm.lastCompletedRequest) { _, _ in
-                guard vm.errorMessage == nil else { return }
+            // so unlike the pager, nothing retreats here.
+            //
+            // `task(id:)` rather than `onChange(of:)`, because this view is mounted *late*: on
+            // the first open the body is `.loading` while pages are empty, so the vertical
+            // reader does not exist yet when the load completes and bumps the marker. An
+            // observer would never see that change and resume silently did nothing — the whole
+            // time, since the observer this replaced had the same flaw. `task(id:)` runs on
+            // appearance as well as on change, which is exactly the difference. Chapter
+            // advances were unaffected either way: `pages` stays populated across a commit, so
+            // the reader stays mounted.
+            .task(id: vm.lastCompletedRequest) {
+                guard vm.errorMessage == nil, vm.pagerTarget > 0 else { return }
+                // `task` starts before this view has laid out and the LazyVStack has realized
+                // no rows, so `scrollTo` has nothing to aim at until a layout pass has run.
+                // Guarded on a non-zero target above, so a normal chapter open never waits.
+                try? await Task.sleep(for: .milliseconds(50))
+                guard !Task.isCancelled else { return }
                 proxy.scrollTo(vm.pagerTarget, anchor: .top)
             }
         }
