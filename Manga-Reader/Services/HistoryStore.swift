@@ -23,6 +23,57 @@ struct ReadingEntry: Codable, Identifiable, Hashable {
     var pageCount: Int
     var updatedAt: Date
     var sourceId: String? = nil   // nil = saved before multi-source; treat as MangaDex
+    /// How far down `page` the reader had scrolled, 0..<1. Only ever non-zero in the
+    /// vertical mode, where a page is a long strip (ADR-0014). Flat rather than a nested
+    /// `ReadingPosition` so entries saved before it existed decode unchanged — the
+    /// default reads as "the top of `page`", which is exactly the old behaviour.
+    var fraction: Double = 0
+
+    /// The two fields as the one value the rest of the app passes around. They are
+    /// only meaningful together: a `fraction` belongs to the `page` it was captured on.
+    var position: ReadingPosition {
+        get { ReadingPosition(page: page, fraction: fraction) }
+        set { page = newValue.page; fraction = newValue.fraction }
+    }
+
+    init(id: UUID, mangaId: String, mangaTitle: String, coverURL: URL?, chapterId: String,
+         chapterNumber: String, page: Int, pageCount: Int, updatedAt: Date,
+         sourceId: String? = nil, fraction: Double = 0) {
+        self.id = id
+        self.mangaId = mangaId
+        self.mangaTitle = mangaTitle
+        self.coverURL = coverURL
+        self.chapterId = chapterId
+        self.chapterNumber = chapterNumber
+        self.page = page
+        self.pageCount = pageCount
+        self.updatedAt = updatedAt
+        self.sourceId = sourceId
+        self.fraction = fraction
+    }
+
+    /// Hand-written **only** to make `fraction` tolerate its own absence.
+    ///
+    /// A default value does *not* do that: Swift's synthesized `init(from:)` ignores
+    /// defaults for non-optional properties and throws `keyNotFound`, so every entry
+    /// saved before ADR-0014 would fail to decode and the entire history would read as
+    /// empty. `sourceId` got away with a bare default because `Optional` decodes via
+    /// `decodeIfPresent`; a `Double` does not. Every other key stays required — a
+    /// missing `page` or `chapterId` is corruption, not an older format.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        mangaId = try c.decode(String.self, forKey: .mangaId)
+        mangaTitle = try c.decode(String.self, forKey: .mangaTitle)
+        coverURL = try c.decodeIfPresent(URL.self, forKey: .coverURL)
+        chapterId = try c.decode(String.self, forKey: .chapterId)
+        chapterNumber = try c.decode(String.self, forKey: .chapterNumber)
+        page = try c.decode(Int.self, forKey: .page)
+        pageCount = try c.decode(Int.self, forKey: .pageCount)
+        updatedAt = try c.decode(Date.self, forKey: .updatedAt)
+        sourceId = try c.decodeIfPresent(String.self, forKey: .sourceId)
+        fraction = try c.decodeIfPresent(Double.self, forKey: .fraction) ?? 0
+    }
 }
 
 /// A chapter the user explicitly marked as read (or that was read but whose
@@ -48,9 +99,16 @@ final class HistoryStore: ObservableObject {
     /// app wires it in `Manga_ReaderApp`.
     private let works: WorkStore?
 
-    init(defaults: UserDefaults = .standard, works: WorkStore? = nil) {
+    /// How long a recorded position may sit unwritten. Only `record` waits — see
+    /// `saveSoon()`.
+    private let saveInterval: TimeInterval
+    private var pendingSave: Task<Void, Never>?
+
+    init(defaults: UserDefaults = .standard, works: WorkStore? = nil,
+         saveInterval: TimeInterval = 2) {
         self.defaults = defaults
         self.works = works
+        self.saveInterval = saveInterval
         load()
     }
 
@@ -58,13 +116,27 @@ final class HistoryStore: ObservableObject {
     /// manga + chapter, update it in place; otherwise (including re-opening a
     /// chapter read previously) prepend a brand-new entry so the log stays a
     /// full chronological history of reading sessions.
-    func record(manga: Manga, chapter: Chapter, page: Int, pageCount: Int) {
+    func record(manga: Manga, chapter: Chapter, position: ReadingPosition, pageCount: Int) {
         // Reading is the strongest commitment signal there is. Minting is local and
         // network-free, so it is safe on this path — it runs on every page turn.
         _ = works?.mint(from: manga)
 
         if var first = entries.first, first.mangaId == manga.id, first.chapterId == chapter.id {
-            first.page = max(first.page, page)   // furthest page reached
+            // Furthest position reached. `ReadingPosition` is ordered lexicographically,
+            // so this keeps the larger fraction within a page and takes the whole new
+            // pair on a higher one. Monotonicity is load-bearing: `page` is also the
+            // completion signal for Continue Reading, the in-progress badge and taste
+            // signals, so a backwards scroll must not walk it back (ADR-0014).
+            let advanced = position > first.position
+
+            // **A call that learns nothing changes nothing** — not the position, not the
+            // timestamp, and no write. The reader has no latch of its own any more, so it
+            // calls this on every throttled tick and every backwards scroll; `save()`
+            // re-encodes all 500 entries plus the read marks. Same bargain as
+            // `WorkStore.mint`, which is on this same page-turn path.
+            guard advanced || first.pageCount != pageCount else { return }
+
+            if advanced { first.position = position }
             first.pageCount = pageCount
             first.updatedAt = Date()
             entries[0] = first
@@ -72,14 +144,14 @@ final class HistoryStore: ObservableObject {
             entries.insert(
                 ReadingEntry(id: UUID(), mangaId: manga.id, mangaTitle: manga.title,
                              coverURL: manga.coverURL, chapterId: chapter.id,
-                             chapterNumber: chapter.number, page: page,
+                             chapterNumber: chapter.number, page: position.page,
                              pageCount: pageCount, updatedAt: Date(),
-                             sourceId: manga.sourceId),
+                             sourceId: manga.sourceId, fraction: position.fraction),
                 at: 0
             )
         }
         if entries.count > cap { entries.removeLast(entries.count - cap) }
-        save()
+        saveSoon()
     }
 
     func latestEntry(forManga id: String) -> ReadingEntry? {
@@ -164,7 +236,34 @@ final class HistoryStore: ObservableObject {
         save()
     }
 
+    /// Coalesce a write from the scroll path. **A throttle, not a debounce:** an already
+    /// scheduled write is left alone rather than pushed out, because every recorded
+    /// position carries new data and re-arming would defer the write for as long as the
+    /// reader keeps scrolling — which, in a webtoon, is the entire session (ADR-0014).
+    ///
+    /// Only `record` comes through here. Deliberate user actions — marking read, deleting,
+    /// clearing — write straight through, and in doing so satisfy whatever this had
+    /// pending.
+    private func saveSoon() {
+        guard pendingSave == nil else { return }
+        pendingSave = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(max(0, self?.saveInterval ?? 0) * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.flush()
+        }
+    }
+
+    /// Write anything the throttle is still holding. Call on backgrounding: a scheduled
+    /// write that never runs because the app was suspended is a lost reading position.
+    func flush() {
+        pendingSave?.cancel()
+        pendingSave = nil
+        save()
+    }
+
     private func save() {
+        pendingSave?.cancel()
+        pendingSave = nil
         if let data = try? JSONEncoder().encode(entries) {
             defaults.set(data, forKey: key)
         }

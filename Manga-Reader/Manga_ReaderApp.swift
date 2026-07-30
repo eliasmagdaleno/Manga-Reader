@@ -78,6 +78,10 @@ struct Manga_ReaderApp: App {
                 // lose whatever the pending timer hadn't written yet (ADR-0007).
                 works.flush()
                 queue.flush()
+                // Same reason, one layer up: reading position is throttled while scrolling,
+                // and a webtoon session that ends by backgrounding would lose the last
+                // couple of seconds of it (ADR-0014).
+                history.flush()
             default:
                 // `.inactive` is NOT a stop signal (ADR-0010). It arrives for a
                 // notification banner or the app switcher, and tearing the pass down

@@ -191,7 +191,7 @@ struct ReaderView: View {
         furthestPage = max(furthestPage, index)
         hasRecordedProgress = true
         history.record(manga: manga, chapter: vm.currentChapter,
-                       page: furthestPage, pageCount: vm.pages.count)
+                       position: ReadingPosition(page: furthestPage), pageCount: vm.pages.count)
     }
 
     // MARK: Content per mode

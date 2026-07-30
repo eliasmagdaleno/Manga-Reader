@@ -1,180 +1,151 @@
-# Session Handoff — 2026-07-29: webtoon resume position (ADR-0014, not yet written)
+# Session Handoff — 2026-07-29: webtoon resume position (ADR-0014 written, step 2 of 6 done)
 
-**Audience:** the next session, starting fresh on `webtoon-resume-position`.
+**Audience:** the next session, continuing on `webtoon-resume-position`.
 
-**Nothing is implemented yet.** All four design decisions were argued out in a grilling session and
-are recorded below with the alternative each one beat. The next step is to write **ADR-0014** from
-this, then implement. The reader work that precedes this is done and merged.
+**This file replaces the design handoff that was here.** The design now lives in **ADR-0014**, which
+is authoritative and contains one correction the old handoff got wrong (see *What implementation
+changed about the design*). Read the ADR, not a summary of it.
 
 ## State
 
 | | |
 |---|---|
-| `main` | `bd0d678` — PR #30 merged (`--squash --delete-branch`), ADR-0012 + ADR-0013 |
-| Working branch | `webtoon-resume-position`, cut from `main`, contains only this handoff |
-| ADRs | next free number is **0014** |
-| Tests | 317 green on `main` |
+| `main` | `bd0d678` — PR #30 merged, ADR-0012 + ADR-0013 |
+| Working branch | `webtoon-resume-position` at `0cf97eb`, **nothing committed yet** — all work below is uncommitted in the tree |
+| ADR | `docs/adr/0014-resuming-a-webtoon-where-the-reader-stopped.md`, 12 decisions |
+| Tests | **329 green, 0 failures** (317 on `main` + 12 new) |
+| Next ADR number | 0015 |
 
-## What prompted this
+Uncommitted files:
 
-Hand-checking ADR-0013 turned up that webtoon resume never restored position at all — the vertical
-reader was mounted too late for its `onChange` observer to see the load complete. That bug is fixed
-and merged (`task(id:)` instead of `onChange`). Resume now lands **close to** where the reader
-stopped, but not exactly, and the remaining error is a **model** limitation, not a scroll bug:
-
-`ReadingEntry.page` is a *page index* and a webtoon "page" is a long strip, so a chapter of 8 strips
-offers exactly 8 resume points. You land at the top of the strip you were partway down.
-
-The instinct to "add more resume points" is right, but only on the restore side — see the fourth
-decision. As a *storage* model it would bake the resolution into every saved entry.
+```
+new:  Manga-Reader/Models/ReadingPosition.swift
+new:  Manga-ReaderTests/ReadingPositionTests.swift          (12 tests)
+new:  docs/adr/0014-resuming-a-webtoon-where-the-reader-stopped.md
+mod:  Manga-Reader/Services/HistoryStore.swift              (the whole model change)
+mod:  Manga-Reader/Manga_ReaderApp.swift                    (history.flush() on .background)
+mod:  Manga-Reader/Views/ReaderView.swift                   (call site only — the view work is step 4)
+mod:  Manga-ReaderTests/{Manga_ReaderTests,WorkMintingTests}.swift  (23 record() call sites migrated)
+mod:  docs/adr/0013-…, docs/glossary.md                     (amendments + vocabulary)
+mod:  Manga-Reader.xcodeproj/project.pbxproj                (see the xcp note in Hazards)
+```
 
 ## The decision that constrains everything else
 
-**`entry.page` is not just a resume pointer — it is the completion signal for three other
-subsystems, one of which is the recommender.** Verified 2026-07-29:
+**`entry.page` is the completion signal for three subsystems, one of which is the recommender.**
+`finished = pageCount > 0 && page >= pageCount - 1` is computed independently at
+`ReadingResume.swift:68`, `TasteProfile.swift:99`, and inverted as `inProgress` at
+`ChapterRow.swift:23`. That is why recorded progress is monotonic. Do not make `page` a
+last-position pointer. ADR-0014's Context has the full verified list — *do not re-derive it*.
 
-- `ReadingResume.swift:68-71` — `finished = entry.pageCount > 0 && entry.page >= entry.pageCount - 1`,
-  which picks `.cont` vs `.reread` for Continue Reading.
-- `TasteProfile.swift:99` — the same computation, feeding taste signals.
-- `ChapterRow.swift:23` — `inProgress = pageCount > 0 && page < pageCount - 1`, the in-progress badge.
+## Done
 
-That is why `HistoryStore.record` does `first.page = max(first.page, page)`
-(`HistoryStore.swift:67`) — the monotonicity is **load-bearing, not incidental**. Repurposing `page`
-as a last-position pointer would let a backwards scroll un-finish a finished chapter, flip Continue
-Reading, resurrect a badge, and alter a recommender input. Do not do it.
+**Step 1 — ADR-0014, glossary, ADR-0013 amendments.** ADR-0013's header now reads
+`amended by ADR-0014`; three of its hazards and two of its revisit triggers are struck through with
+what resolved them. Glossary gained **Reading position**, **Strip**, **Anchor grid**, **Settle loop**,
+and **Pager target** was amended to say it is a `ReadingPosition` and is *not* monotonic.
 
-## Decisions (write these up as ADR-0014)
+**Step 2 — the model/store layer, TDD, five red-green slices.**
 
-### 1. `ReadingEntry` gains `fraction`; `page` stays an `Int`
+- `ReadingPosition { page: Int, fraction: Double }`, `Comparable` **lexicographically** — page
+  dominates, fraction breaks ties. `HistoryStore.record` takes `max()` over it, so the monotonicity
+  is visible at the point it is enforced.
+- `ReadingEntry.fraction` (flat) + a `position` computed property with a setter.
+- `record(manga:chapter:position:pageCount:)` — signature changed, all 24 call sites migrated.
+- **A `record` that advances nothing changes nothing**: no position write, no `updatedAt` bump, no
+  save. `furthestPage`/`hasRecordedProgress` in the view are now redundant (step 4 deletes them).
+- **Throttled save**: `saveInterval` (production default 2s, injected in tests), leading-edge
+  `saveSoon()` that does *not* re-arm, and a public `flush()` wired into `Manga_ReaderApp`'s
+  `.background` case beside `works.flush()`.
 
-`var fraction: Double = 0`, meaning "how far down `page` the reader had scrolled". Migration is free:
-the default fills in for every existing entry and reads as today's behaviour.
+Two judgment calls made inside the confirmed design:
 
-**Beat:** making `page` a `Double` (`5.6` = 60% down strip 5). One field, migration equally free,
-`max()` keeps working. Rejected because `page` is shared with the two *paged* modes, where it is a
-`TabView` selection and a fraction is meaningless — widening it would make the field lie for two of
-three reading modes to serve the third, and turn every progress comparison into floating point.
+- **Only `record` is throttled.** `markRead`/`markUnread`/`delete`/`clear` write straight through —
+  a manual mark surviving one relaunch but not another is worse than losing a fraction — and an
+  immediate `save()` cancels whatever the throttle had pending. Pinned by
+  `testMarkingReadWritesWithoutWaitingForTheThrottle`.
+- **The no-op guard exempts `pageCount`.** A corrected page count still lands even when the position
+  does not, so a chapter whose count was recorded wrong can fix itself without scrolling forward.
 
-**Accepted cost:** two fields that must stay consistent. A `fraction` is only meaningful against the
-`page` it was captured on, so anything writing one must write both; a stale pairing resumes at a
-plausible-looking wrong place. The `Double` option is immune to this by construction.
+## What implementation changed about the design
 
-### 2. The fraction attaches to `page`, and both stay monotonic
+**ADR-0014 decision 1 originally claimed "migration is free: the default fills in for every existing
+entry". That was false, and a test caught it.** Swift's synthesized `init(from:)` **ignores default
+values for non-optional properties** and throws `keyNotFound` — so every pre-ADR-0014 entry would have
+failed to decode and the entire History tab would have read as empty. `sourceId` migrated for free only
+because `Optional` decodes via `decodeIfPresent`.
 
-`record` takes `(page, fraction)` and applies a **lexicographic max**: same page, keep the larger
-fraction; higher page, take the new pair. Every completion consumer above is untouched.
+`ReadingEntry` now hand-writes `init(from:)`: `decodeIfPresent` for `fraction`, every other key still
+required, because a missing `page` is corruption rather than an old format. The ADR carries the
+correction inline, including the honest admission that the rejected `Double`-page alternative genuinely
+*would* have migrated for free (`"page":4` decodes into a `Double`) — it was still rejected, on the
+grounds that a decoder is a one-time cost in one file while a field that lies for two of three reading
+modes is paid at every read site forever.
 
-**Beat:** adding `resumePage` / `resumeFraction` as a true last-position pointer alongside the
-completion fields. Always exact, including the backwards-scroll case. Rejected for putting a second
-notion of position into a persisted type — two fields that look like the same thing, plus a rule
-about which one every future reader of `ReadingEntry` should consult, which is exactly the ambiguity
-that gets resolved wrongly in six months.
+**Generalise the lesson:** any future defaulted, non-optional field on a persisted type needs the same
+treatment, and a migration test is the only thing that will tell you.
 
-**Accepted cost:** scroll back to re-read, then exit, and you resume at your furthest point rather
-than where you were. **This is already true today in both reading modes**, so it is a case left
-unfixed rather than a regression. Revisit if it actually bothers anyone.
+## Left to do, in order
 
-### 3. Persist on scroll-idle debounce, plus disappear and scene-phase background
+3. **Plumbing** — carry `ReadingPosition` end to end, TDD where it is pure:
+   - `ResumeAction.cont`/`.reread` carry a position, not a page (`ReadingResume.swift:52`, `:69`)
+   - `ReaderView.init` and `ReaderViewModel.init` take a position instead of `initialPage`
+     (`ReaderView.swift:56`, `ReaderViewModel.swift:73`); `Landing.exact` carries one
+   - `pagerTarget` becomes a `ReadingPosition` (`ReaderViewModel.swift:52`) — expect ~13
+     `ReaderViewModelTests` assertions to need updating
+   - `HistoryView.swift:66` passes `entry.position`
+   - **the row-tap doors**: `ChapterListView.swift:34` and `MangaDetailView.swift:411` pass
+     `history.entry(forChapter:)?.position` (ADR-0014 decision 11)
+   - `continueProgress` → `(page + fraction) / pageCount`, treating a paged entry's `fraction == 0`
+     as "page seen" so paged progress does not shift down a page (`MangaDetailView.swift:211-215`)
+4. **Capture + live position in `verticalReader`** — `GeometryReader` per realized row, viewport-top
+   fraction clamped to `[0,1)`, ~1s **throttle** (not idle-debounce) feeding `record`, live position as
+   `@State`, pending update **dropped** on chapter change via `progressChapterID`
+   (`ReaderView.swift:134`). **Delete `advanceProgress`'s latch and the `.onAppear` advance for
+   `.vertical` only** (`ReaderView.swift:188-195`, `:272`) — paged modes keep `onChange(of: currentPage)`.
+5. **Restore** — anchor grid (`N = 50`, `Color.clear` slices, **`allowsHitTesting(false)`** or it eats
+   the chrome-toggle tap) + the settle loop. Its stopping rule is a **pure function, unit-tested**
+   against: strip shorter than viewport, fraction 0.99, measurement that never stabilises, target row
+   not realized. Replace the guard `vm.pagerTarget > 0` with `page > 0 || fraction > 0`
+   (`ReaderView.swift:305`) and **delete the 50ms sleep** (`:309`).
+6. **Hand-checks** — resume mid-strip; after rotation; images all disk-cached vs all cold (the two ends
+   of the settle loop's timing); mode switch mid-chapter; paged modes unaffected; row tap resumes.
 
-The live position lives in the view model; `HistoryStore` is written on a ~1s debounce of scroll idle,
-and unconditionally on disappear and on backgrounding.
+## Hazards
 
-**Why it matters:** `HistoryStore.save()` re-encodes the **entire** entries array — capped at 500
-(`HistoryStore.swift:45`) — *and* the read-marks array, to JSON, on every single `record` call
-(`:167-174`). Today `record` fires on page-appear, a few dozen times per chapter. Tracking a fraction
-continuously would make that a full re-encode per scroll frame.
-
-**Beat:** persisting only on disappear/background — zero write amplification and no debounce to own,
-but it loses position on a force-quit or crash. Reading a long webtoon is the longest single-screen
-session in the app and there is no other autosave anywhere, so that is the one failure mode users
-notice. Also beat: recording when the top-most strip changes, which has today's write frequency but
-stores only strip-boundary fractions — i.e. back to landing at the top of a strip.
-
-**Follow-on, not urgent:** `save()` should stop being an all-or-nothing re-encode. The debounce makes
-it survivable.
-
-### 4. Capture with a `GeometryReader` per row; restore with a sub-page anchor grid
-
-**Capture:** one `GeometryReader` per *realized* row, reporting the strip's frame in a named
-coordinate space; derive which strip covers the viewport top and how far into it. Only a handful of
-rows are realized in a `LazyVStack` at once. iOS 17's `.scrollPosition(id:)` gives the top visible
-strip more cleanly but no fraction, so it does not remove the need.
-
-**Restore:** overlay each `WebtoonPage` with a `VStack` of N `Color.clear` views carrying ids:
-
-```swift
-.overlay {
-    VStack(spacing: 0) {
-        ForEach(0..<slotCount, id: \.self) { slot in
-            Color.clear.id(StripAnchor(page: index, slot: slot))
-        }
-    }
-}
-```
-
-The overlay inherits the strip's measured height and `Color` is infinitely flexible, so the `VStack`
-divides it into N equal slices **with no height arithmetic**. Restore is then
-`scrollTo(StripAnchor(page: 5, slot: Int(0.62 * N)), anchor: .top)` — exact to 1/N of a strip, N a
-tunable constant (at N = 50 a 3000pt strip resolves to ~60pt).
-
-**Beat:** compensated anchor arithmetic — `anchor: UnitPoint(x: 0, y: f')` with
-`f' = f·pageH / (pageH − viewportH)`, derived from the fact that `scrollTo` aligns the *same* unit
-point on item and container. No extra views, and `pageH` is already available from the capture
-`GeometryReader`. Rejected because the denominator goes to zero for any strip shorter than the
-viewport, and `f'` exceeds 1 whenever `f > (pageH − viewportH)/pageH` — at pageH 2000, viewportH 800,
-f 0.9 it is 1.5, and what `scrollTo` does with an out-of-range unit point is unspecified. Clamping
-silently reintroduces "closer but not exact", which is the bug being fixed.
-
-**Accepted cost:** capture and restore deliberately use *different* mechanisms — measuring is cheap
-and wants precision, addressing wants stable identity — so the two halves are not symmetrical and a
-reader has to understand both. Restore precision is quantized at 1/N, but N is a rendering constant,
-not persisted, so it can be turned up later without touching saved data.
-
-**Escape hatch if precision still misses:** go `UIScrollView` via `UIViewRepresentable`, where
-`contentOffset` is exact. There is precedent — `Components/ZoomableContainer.swift` is UIScrollView-
-backed because SwiftUI's zoom physics were wrong, which is the same shape of problem. Not recommended
-now: a `LazyVStack` does not stay lazy inside a `UIScrollView`, so it means owning the lazy loading
-too.
-
-## Suggested order of work
-
-1. Write **ADR-0014** from the four decisions above, house format, `Related: ADR-0013`. The
-   `entry.page`-is-a-completion-signal finding belongs in its Context as a verified fact.
-2. `ReadingEntry.fraction` + the lexicographic max in `HistoryStore.record`, TDD — this part is pure
-   model and fully testable. Assert that a backwards scroll cannot reduce stored progress, and that
-   `finished` for all three consumers is unchanged by any fraction value.
-3. Capture in `verticalReader`, with the debounce. Persisting is view-adjacent, so keep the *decision*
-   about what to write in a testable place and the plumbing thin.
-4. Restore via the anchor grid, replacing the `scrollTo(vm.pagerTarget, anchor: .top)` that ADR-0013
-   put in the `task(id:)`.
-5. Hand-check: resume mid-strip, resume after a rotation, and confirm the paged modes are untouched.
-
-## Carried-forward hazards worth knowing
-
-- **The 50ms sleep in the webtoon restore.** ADR-0013 accepted a fixed wait before `scrollTo` because
-  `task` starts before layout and a `LazyVStack` has no realized rows to aim at. It is guarded on
-  `pagerTarget > 0`. The anchor grid does not remove the need for it.
-- **Switching reading mode mid-chapter does not carry position** — entering webtoon scrolls to the
-  page the chapter was *entered* at, not the one being read. Pre-existing; may be worth folding in.
-- **A stub `MangaSource` mutated by both the test and the code under test must be `@MainActor`.**
-  `MangaSource`'s methods are nonisolated, so `await source.pageURLs(...)` from a `@MainActor` view
-  model runs off the main actor. `ReaderViewModelTests`' gated stub corrupted its own dictionaries and
-  crashed with `-[__NSCFNumber objectForKey:]: unrecognized selector` — *after passing twice*.
-- **SourceKit is unreliable here** — "No such module 'XCTest'", "Cannot find type 'Chapter' in scope"
-  on files that compile and test clean. Judge only by `xcodebuild`.
+- **`xcp` reformatted `project.pbxproj` in the *opposite* direction to what CLAUDE.md documents.** This
+  time it **collapsed** the three `PBXFileSystemSynchronizedRootGroup` entries to one line each *and*
+  stripped `lastKnownFileType`/`name` from three unrelated `PBXFileReference` entries. Net 10
+  insertions / 30 deletions, of which only **4 lines** are the new test file. Decide before staging
+  whether to keep the noise or `git checkout -p` the unrelated hunks. The lesson from CLAUDE.md holds
+  and generalises: **inspect the pbxproj diff immediately before `git add`, and do not assume which
+  direction the reformat went.**
+- **The 5 remaining SourceKit errors are noise** — "No such module 'XCTest'", "Cannot find type
+  'Manga' in scope" on files that compile and test clean. Judge only by `xcodebuild`.
+- **`finished` changes meaning for webtoons in step 4** (viewport top *enters* the last strip, rather
+  than that strip *appearing*). It feeds the recommender via `TasteProfile.swift:99`. Nothing fails
+  loudly; the effect is different For You output later.
+- **A paged read leaves a stale fraction behind** — reading page 5 paged records `(5, 0)` and the max
+  keeps an earlier `(5, 0.8)`, so switching back to webtoon resumes 80% down a strip whose top the
+  paged reader was on. Harmless, invisible in the model, documented in ADR-0014's Hazards.
 - **The `agy` post-commit hook runs its own `xcodebuild`** and holds the DerivedData lock for 2+
   minutes; a concurrent build dies with "database is locked". Gate on
   `until ! pgrep -f "agy --model" >/dev/null; do sleep 15; done`.
+- **A stub `MangaSource` mutated by both the test and the code under test must be `@MainActor`** — its
+  methods are nonisolated, so `await source.pageURLs(...)` from a `@MainActor` view model runs off the
+  main actor. This crashed `ReaderViewModelTests` with `unrecognized selector` *after passing twice*.
 - **Do not stack PRs.** Merging a base with `--delete-branch` closes the child unrecoverably.
+- A full `xcodebuild test` cycle here is ~90s; budget for it in the red-green loop.
 
-## Also still open on the reader (separate, smaller)
+## Also still open on the reader (deliberately out of scope for this branch)
 
-- **Externally hosted chapters are reported to the user as broken.** They answer `/at-home/server`
-  with 200 and an empty file list, so they fail through the zero-pages path and read "This chapter has
-  no pages to read." Nothing is wrong — the chapter is published on the publisher's site. Cheap to
-  fix: they report `pages: 0` in the `/chapter` feed and `ChapterAttributes`
-  (`MangaDexAPI.swift:125-131`) does not decode `pages` yet, so one field would let the chapter list
-  mark or route the row before anyone opens it. **The most worthwhile reader follow-up.**
+- **Externally hosted chapters are reported as broken.** They answer `/at-home/server` with 200 and an
+  empty file list, so they fail through the zero-pages path and read "This chapter has no pages to
+  read." They report `pages: 0` in the `/chapter` feed and `ChapterAttributes`
+  (`MangaDexAPI.swift:125-131`) does not decode `pages` yet — one field would let the chapter list mark
+  or route the row before anyone opens it. **The most worthwhile reader follow-up.**
 - **The 5xx wording.** `readerFailureMessage` rewrites every `MangaDexError.httpStatus` to "This
   chapter isn't available to read from this source. (HTTP 503)", so a transient 503 gets that sentence
-  next to a Retry button. One branch keyed on the classification already computed fixes it.
+  next to a Retry button. One branch on the classification already computed fixes it.
+- **`HistoryStore.save()` is still an all-or-nothing re-encode** of 500 entries plus read marks
+  (`:167-174`). The throttle makes it survivable, not cheap. ADR-0014 Revisit triggers.
