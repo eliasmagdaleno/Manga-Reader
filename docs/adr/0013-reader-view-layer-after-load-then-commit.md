@@ -54,6 +54,20 @@ replace something the commit-ordering change silently took away.
 - **`PageRetry` is a `Button` on purpose** — "so its tap wins over the reader's chrome-toggle tap
   gesture" (`ReaderView.swift:466-467`). Any new tappable overlay in the reader inherits that
   requirement.
+- **An externally hosted chapter answers `/at-home/server` with 200 and an empty file list** — real
+  `baseUrl`, `data: []`, `dataSaver: []` — *not* the 404 ADR-0012 assumed (corrected there in place).
+  It therefore fails through the zero-pages decision, not the HTTP path. Such chapters also report
+  `pages: 0` in the `/chapter` feed, and the app's own chapter query returns them: it does not pass
+  `includeExternalUrl`, and the default includes them.
+- **A live reproduction of a failed chapter advance, for the hand-check** (verified 2026-07-29 against
+  the app's exact chapter query, ordering by `Double(number)` as the reader does):
+  *Hidarikiki no Eren*, manga `672be603-c8f1-478b-866a-811652cffabc`, where chapter 33
+  (`fc2f00c7-7a5c-44e9-9737-dc63f619688e`, 22 pages) is immediately followed in the sorted list by
+  chapter 207 (`ca930ad7-def4-4ecf-b206-6f316d7d1348`, externally hosted, 0 pages). *Yamero Suki ni
+  Natteshimau*, manga `f5badc31-60a8-4a47-9ef8-cd40ba62e473`, has the same adjacency six times over
+  (chapters 1–6 each precede a dead duplicate). These are content, so they can rot — but the search
+  above reproduces: query `/chapter?includeExternalUrl=1` for candidates, then look for a
+  `pages > 0` entry followed by a `pages == 0` one in the same manga's English feed.
 
 ## Decisions
 
@@ -268,8 +282,10 @@ read it.
   interleaving bug silently — both guards are `guard mine == generation` and neither fails loudly.
 - **Nothing here addresses `.task` cancellation** (carried from ADR-0012). Latest-wins makes the
   *commit* correct; the work still runs.
-- **The 404 hazard is unchanged.** An externally hosted MangaDex chapter and a missing one still
-  produce the same message, now a more polished one (`MangaDexAPI.swift:125-131`, `:156-167`).
+- **An externally hosted chapter is reported as broken.** It is not a failure at all — the chapter
+  exists and is published on the publisher's own site — but it reaches the user through the zero-pages
+  path and reads *"This chapter has no pages to read."* The chapter list could rule this one out
+  before the reader opens (see ADR-0012's corrected revisit trigger); the reader cannot.
 
 ## Revisit triggers
 

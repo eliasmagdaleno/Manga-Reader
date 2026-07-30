@@ -121,6 +121,13 @@ Permanent is right for both reachable causes: MangaDex registering a chapter wit
 WeebCentral extraction script that stopped matching after a site redesign (which CLAUDE.md names as
 the volatile part of that source). Neither is fixed by pressing a button.
 
+> **Amended 2026-07-29, while hand-checking the fix.** There is a third cause and it is the dominant
+> one: **every externally hosted MangaDex chapter takes this path.** They answer `/at-home/server`
+> with 200 and an empty file list, so `compactMap` yields `[]` and this decision is what catches them.
+> That makes the empty-page case routine rather than the edge case argued above — which strengthens
+> the decision to handle it at all, and makes the "blast radius" argument for keeping it in the model
+> rather than throwing from the sources the *only* remaining reason it lives here.
+
 After the chrome decision above this is no longer a trap — an empty page list already forces the bar
 visible. It is an honesty fix. A blank black screen tells the user their app is broken; a sentence
 tells them the chapter is.
@@ -128,6 +135,11 @@ tells them the chapter is.
 **Accepted cost: the message cannot distinguish "MangaDex has no images for this chapter" from "our
 scraper broke."** To the user those read identically and only the second is our defect. Separating
 them requires the sources to throw distinctly, which is the change rejected above.
+
+> **Amended 2026-07-29.** Make that three cases, the third being "this chapter is published on the
+> publisher's own site" — see above. That one is not a failure at all, and telling the user their
+> chapter has no pages is actively misleading about it. It is also the only one of the three the
+> *chapter list* could rule out before the reader is ever opened; see revisit triggers.
 
 ### Chapter advance is load-then-commit
 
@@ -213,6 +225,16 @@ hand-checked on the iPhone 17 simulator.
   decodes neither `externalUrl` nor a page count (`MangaDexAPI.swift:125-131`, `:156-167`). So the
   reader cannot tell "read this elsewhere" from "this is gone", and tells the user the same thing for
   both.
+
+  > **Corrected 2026-07-29, while hand-checking the fix.** The 404 claim is wrong. An externally
+  > hosted chapter answers **HTTP 200 with an empty file list** — real `baseUrl`, `data: []`,
+  > `dataSaver: []` (probed against four of them). Only a chapter id that genuinely is not there
+  > 404s, which is the pinned fact above and still holds.
+  >
+  > The hazard survives, by a different route: external chapters reach the user through the
+  > **zero-pages** decision below rather than through the HTTP path, so they read *"This chapter has
+  > no pages to read."* Both classify permanent, so behaviour is unaffected — but "read this
+  > elsewhere" is now conflated with "this is broken" rather than with "this is gone".
 - **Nothing prevents *entering* the reader for an unreadable chapter.** This ADR makes the failure
   escapable and honest; it does not make the chapter list know which rows are dead.
 - **`.task { await loadAndBegin() }` still has no cancellation story.** Moving the await behind an
@@ -222,7 +244,10 @@ hand-checked on the iPhone 17 simulator.
 
 - If a second consumer of `pageURLs` appears, revisit throwing on an empty page list from the
   sources — the argument for deciding it in the model rests entirely on there being one caller.
-- If MangaDex chapters that are externally hosted become common enough to matter, decode
-  `externalUrl` and route those rows away from the reader instead of into a permanent failure.
+- **Externally hosted chapters are already common enough to matter** (corrected 2026-07-29 — they are
+  routine, not rare). Route those rows away from the reader instead of into a permanent failure. This
+  is cheaper than this ADR assumed: `externalUrl` need not be decoded at all, because such chapters
+  report `pages: 0` in the chapter list and `ChapterAttributes` (`MangaDexAPI.swift:125-131`) simply
+  does not decode `pages` yet. One field is enough to mark the row before anyone opens it.
 - If the queue ever sees a 408, fold the carve-out above back into `permanentStatus` so the two
   subsystems share one definition rather than two that differ by a single code.
