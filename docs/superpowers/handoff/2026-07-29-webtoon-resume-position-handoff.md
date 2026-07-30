@@ -14,9 +14,9 @@ changed about the design*). Read the ADR, not a summary of it.
 | | |
 |---|---|
 | `main` | `bd0d678` — PR #30 merged, ADR-0012 + ADR-0013 |
-| Working branch | `webtoon-resume-position` at **`87e36cc`**, steps 1–3 committed (**commit 1 of 3 done**), **tree clean, nothing pushed** |
+| Working branch | `webtoon-resume-position` at **`659abf1`** — **all three commits done**, **tree clean, nothing pushed**. Left: hand-checks, then one PR |
 | ADR | `docs/adr/0014-…`, 12 decisions + six 2026-07-30 amendments + five more from a second grill the same day |
-| Tests | **335 unit green, 0 failures** (329 + 6 new). UI tests last run green at `5cbd41d` (11) |
+| Tests | **357 unit green, 0 failures** (335 + 13 capture + 9 settle). UI tests last run green at `5cbd41d` (11) |
 | Next ADR number | 0015 |
 
 `5cbd41d` — *"Record a reading position, not just a page (ADR-0014, steps 1-2)"* — carries
@@ -294,8 +294,35 @@ inert (Q3); delete the `.onAppear` advance and the latch; add the throttle-with-
 `onDisappear` record. Its own commit because **this is where `finished` changes meaning for webtoons**
 (decision 7) — that deserves a reviewable unit rather than being buried in a rename sweep.
 
-**Commit 3 — restore.** TDD `settleStep` against the four pathological cases, *then* the anchor grid
-and the loop; delete the 50ms sleep and the `pagerTarget > 0` guard.
+**Commit 3 — restore. DONE (`659abf1`).** `settleStep` + `StripAnchor`, the anchor grid overlay, the
+loop with step zero, `isRestoring`; the 50ms sleep and the `pagerTarget > 0` guard are gone.
+
+### What implementation changed, commits 2 and 3
+
+- **`settleStep` returns a three-case `SettleStep`, not `StripAnchor?`** — `.realize(page:)` is an
+  instruction, not a stop, and `nil`-means-both would have hidden the "target row not realized" case
+  from the function under test. It also takes the **current aim**, so the overshoot rule corrects the
+  aim that overshot instead of recomputing the same slot from the fraction and oscillating. Amended
+  into ADR-0014 decision 10.
+- **Restore's target is `metrics.live ?? currentPage` *only once `progressChapterID` matches*,
+  falling back to `vm.pagerTarget` until then.** Decision 8's correction assumed `currentPage` is
+  current, and it is — but `didCompleteLoad` and the restore `task(id:)` are driven by the *same*
+  marker, so on a chapter advance the task can run first and read the previous chapter's page. The
+  guard is the same one `recordProgress` uses.
+- **`isDecoded` is `.success` only, so a page that failed to load never reports a position.** This is
+  the letter of Q1 and it has a consequence worth a decision: while the viewport top is inside a
+  broken strip nothing is recorded, and if the *last* strip of a chapter is broken, that chapter can
+  never be marked `finished` — the past-the-end fallback holds the last *decoded* strip, one short of
+  `pageCount - 1`. Under the old `.onAppear` recording it would have finished. **Open question:** a
+  failed strip's 460pt height is *settled* (it will not change until the reader taps Retry), which is
+  arguably what the gate is really asking about. Counting `.failure` as measurable is a one-line
+  change (`if case .empty = phase { false } else { true }`) and costs only the retry case.
+- **`xcp` collapse-direction reformat happened again** — it stripped `lastKnownFileType`/`name` from
+  four unrelated `PBXFileReference` entries. Fixed by scripted replace rather than the backup dance;
+  `git diff --stat` read `4 ++++` before `git add`, as it should.
+- **SwiftLint (via the `agy` hook) deleted `StripFrame`'s explicit memberwise init** after commit 2
+  landed, which left the tree dirty; folded back in by `--amend`. Expect this on any struct whose
+  hand-written init matches the synthesized one.
 
 ## Left to do, in order
 
@@ -332,8 +359,20 @@ and the loop; delete the 50ms sleep and the `pagerTarget > 0` guard.
    than viewport, fraction 0.99, measurement that never stabilises, target row not realized. Replace
    the guard `vm.pagerTarget > 0` with `page > 0 || fraction > 0` (`ReaderView.swift:305`) and
    **delete the 50ms sleep** (`:309`).
-6. **Hand-checks** — resume mid-strip; after rotation; images all disk-cached vs all cold (the two ends
-   of the settle loop's timing); mode switch mid-chapter; paged modes unaffected; row tap resumes.
+6. **Hand-checks — THE ONLY THING LEFT before the PR.** Nothing below has been run on a device or
+   simulator; all three commits are unit-tested only, and restore is the one part of this ADR whose
+   correctness is established by a human scrolling a real chapter and looking.
+   - resume mid-strip;
+   - after rotation (the fraction is a ratio, so it should survive);
+   - images all disk-cached vs all cold — **the two ends of the settle loop's timing**, and the case
+     most likely to expose a bad wait;
+   - mode switch mid-chapter, **both directions**;
+   - paged modes unaffected;
+   - row tap resumes (both doors);
+   - **the chrome toggle still works while scrolled into a strip** — the anchor grid covers every
+     realized strip and only `allowsHitTesting(false)` keeps it from eating that tap;
+   - **the settle loop does not fight a reader who scrolls immediately on open** (known hazard, no
+     iOS 17 signal for "the user touched the scroll view").
 
 ## Hazards
 

@@ -621,6 +621,15 @@ decision, not the measurement.
 > list for `Models/WebtoonGeometry.swift` is otherwise unchanged: the throttle's `recordAction`
 > deliberately does **not** live there, because it is timing rather than geometry, but its tests share
 > this file's test file so commit 2 touches the pbxproj once.
+>
+> **Written 2026-07-30 as `SettleStep`, not `StripAnchor?`.** This decision sketched the signature as
+> "return the next anchor to scroll to or `nil` for stop". The implementation returns a three-case enum
+> — `.realize(page:)` / `.scroll(StripAnchor)` / `.stop` — because "the target row is not realized" is a
+> different *instruction* (aim at the row, which is what forces a `LazyVStack` to build it) rather than
+> a reason to stop, and folding it into `nil` would have hidden one of the four cases this decision
+> demands tests for from the function under test. The loop also passes its **current aim** in, so the
+> overshoot rule ("aim one slot earlier") corrects the aim that actually overshot rather than
+> recomputing the same slot from the fraction and oscillating against it.
 
 ### 11. Every door into the reader carries the position
 
