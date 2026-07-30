@@ -86,6 +86,86 @@ func stripPosition(frames: [Int: StripFrame], viewport: CGRect) -> ReadingPositi
     return ReadingPosition(page: index, fraction: maxStripFraction)
 }
 
+// MARK: - Restore
+
+/// A slice of a strip, and the only thing restore can actually address.
+///
+/// Each realized strip is overlaid with `stripAnchorSlots` equal `Color.clear` views
+/// carrying these ids, so `scrollTo` lands within 1/N of a strip with no height
+/// arithmetic — the overlay inherits the strip's measured height whatever it turns out
+/// to be (ADR-0014 decision 9).
+struct StripAnchor: Hashable {
+    var page: Int
+    var slot: Int
+}
+
+/// How many corrections the settle loop may make before it gives up and leaves the reader
+/// where it is. A loop that cannot stop is how you get a scroll-fight with the user.
+let settleAttemptBudget = 10
+
+/// What the settle loop should do next.
+enum SettleStep: Equatable {
+    /// The target row is not realized or not measured — aim at the row itself, which is
+    /// what forces a `LazyVStack` to build it. Decision 10's "step zero", and the reason
+    /// ADR-0013's fixed 50ms sleep is replaced rather than joined.
+    case realize(page: Int)
+    /// Aim at this slice.
+    case scroll(StripAnchor)
+    /// Close enough, out of budget, or as close as the grid can get.
+    case stop
+}
+
+/// One correction of the settle loop: where to aim next, given what the last one achieved.
+///
+/// No strip has its real height when restore fires — every one is a 460pt placeholder
+/// until its image decodes — so a single scroll aims at 62% of the wrong number. The loop
+/// scrolls, re-measures, and corrects; this function holds the part that is pure logic,
+/// including the part a hand-check will not think to try: when to **stop**.
+///
+/// The threshold is the grid's own resolution rather than a chosen constant. Anything
+/// tighter than one slot is unsatisfiable — the grid only addresses multiples of
+/// `slotHeight` — so the loop would burn its whole budget on every restore and then stop
+/// anyway, having achieved the same landing (ADR-0014 decision 10's amendment).
+///
+/// **Overshoot is never accepted.** A residual below zero means content was skipped, so it
+/// always earns another attempt aiming earlier. That is what makes the leftover error land
+/// *behind* the reader — re-reading a little — by construction rather than by luck.
+func settleStep(target: ReadingPosition, strip: StripFrame?, viewport: CGRect,
+                currentAim: StripAnchor?, attempt: Int,
+                slots: Int = stripAnchorSlots,
+                budget: Int = settleAttemptBudget) -> SettleStep {
+    guard attempt < budget else { return .stop }
+    guard let strip, strip.rect.height > 0 else { return .realize(page: target.page) }
+
+    let slotHeight = strip.rect.height / Double(slots)
+    guard slotHeight > 0 else { return .stop }
+
+    // The slice at or just before the target. `floor` is deliberate: it can only land the
+    // reader early, never past the position they saved.
+    let base = min(max(Int(target.fraction * Double(slots)), 0), slots - 1)
+    guard let aim = currentAim else { return .scroll(StripAnchor(page: target.page, slot: base)) }
+
+    let desired = strip.rect.minY + target.fraction * strip.rect.height
+    let residual = desired - viewport.minY
+
+    if residual >= 0 && residual < slotHeight { return .stop }
+
+    let corrected: Int
+    if residual < 0 {
+        // Past the target: come back by at least one slice.
+        corrected = aim.slot - max(1, Int((-residual / slotHeight).rounded(.up)))
+    } else {
+        // Short of it — the layout grew above us between the scroll and the measurement.
+        corrected = aim.slot + max(1, Int(residual / slotHeight))
+    }
+
+    let next = min(max(corrected, 0), slots - 1)
+    // Nowhere left to go inside this strip: stop rather than re-issue a scroll that cannot
+    // change anything.
+    guard next != aim.slot else { return .stop }
+    return .scroll(StripAnchor(page: target.page, slot: next))
+}
+
 // MARK: - Recording cadence
 
 /// What the reader should do with a fresh measurement.

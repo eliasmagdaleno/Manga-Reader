@@ -143,6 +143,12 @@ struct ReaderView: View {
     /// scrolling. Leading edge plus one trailing fire per window (ADR-0014 decision 5).
     private let recordWindow: TimeInterval = 1
 
+    /// Settle-loop timings. The budget and the stopping rule live in `settleStep`; these are
+    /// only how long the view is willing to wait for the layout to answer.
+    private let settleRealizeTimeout: TimeInterval = 1.5
+    private let settleRemeasureWait: TimeInterval = 0.05
+    private let settlePollInterval = 8
+
     /// The chapter the progress counters above belong to. The view model commits a chapter
     /// change only on success, so a mismatch here is a reliable "we really moved".
     @State private var progressChapterID: String
@@ -322,6 +328,80 @@ struct ReaderView: View {
         recordProgress(live)
     }
 
+    // MARK: Restore (vertical mode)
+
+    /// Where the vertical reader should land after a load.
+    ///
+    /// The live position wins, so a mid-chapter mode switch resumes where the reader *is*
+    /// rather than where the chapter was entered. `currentPage` is the paged modes' live
+    /// truth — but it is assigned in `didCompleteLoad`, which is driven by the same marker
+    /// as the task that calls this, so on a chapter advance it may not have run yet. Until
+    /// it has, `pagerTarget` is the only value that belongs to the new chapter.
+    private var restoreTarget: ReadingPosition {
+        guard progressChapterID == vm.currentChapter.id else { return vm.pagerTarget }
+        return metrics.live ?? ReadingPosition(page: currentPage)
+    }
+
+    /// Scroll to the saved position, then keep correcting until the measurement agrees.
+    ///
+    /// One scroll is not enough: every strip is a 460pt placeholder until its image decodes,
+    /// so an aim taken at that moment is against a layout that grows underneath it — and
+    /// every strip *above* the target grows too. The loop re-reads the real frames after
+    /// each attempt (ADR-0014 decisions 9 and 10).
+    private func restorePosition(using proxy: ScrollViewProxy) async {
+        let target = restoreTarget
+        guard target.page > 0 || target.fraction > 0 else { return }
+
+        // Silences the recorder for the duration: the loop renders overshoots it then
+        // rejects, and overshoot is the only transient the store's max would preserve.
+        metrics.isRestoring = true
+        defer { metrics.isRestoring = false }
+
+        // Step zero — wait for the target row to exist and be measured. This *replaces*
+        // ADR-0013's fixed 50ms sleep: the wait is now on the thing the scroll needs, not on
+        // a number that happened to work.
+        let realizeBy = Date().addingTimeInterval(settleRealizeTimeout)
+        while measuredStrip(target.page) == nil {
+            guard !Task.isCancelled, Date() < realizeBy else { return }
+            proxy.scrollTo(target.page, anchor: .top)
+            try? await Task.sleep(for: .milliseconds(settlePollInterval))
+        }
+
+        var aim: StripAnchor?
+        for attempt in 0..<settleAttemptBudget {
+            switch settleStep(target: target, strip: measuredStrip(target.page),
+                              viewport: metrics.viewport, currentAim: aim, attempt: attempt) {
+            case .stop:
+                return
+            case .realize(let page):
+                proxy.scrollTo(page, anchor: .top)
+            case .scroll(let anchor):
+                aim = anchor
+                proxy.scrollTo(anchor, anchor: .top)
+            }
+            await waitForRemeasure(of: target.page)
+            if Task.isCancelled { return }
+        }
+    }
+
+    /// A strip is only usable once it has a height; a realized-but-unlaid-out row has none.
+    private func measuredStrip(_ page: Int) -> StripFrame? {
+        guard let strip = metrics.frames[page], strip.rect.height > 0 else { return nil }
+        return strip
+    }
+
+    /// Give the layout a chance to answer: poll until the target strip's frame changes, or
+    /// the wait runs out. Waiting on the measurement rather than on a fixed duration is what
+    /// makes the loop as fast as a warm cache allows and as patient as a cold one needs.
+    private func waitForRemeasure(of page: Int) async {
+        let before = metrics.frames[page]
+        let deadline = Date().addingTimeInterval(settleRemeasureWait)
+        while metrics.frames[page] == before {
+            guard !Task.isCancelled, Date() < deadline else { return }
+            try? await Task.sleep(for: .milliseconds(settlePollInterval))
+        }
+    }
+
     // MARK: Content per mode
 
     @ViewBuilder private var content: some View {
@@ -459,13 +539,8 @@ struct ReaderView: View {
             // advances were unaffected either way: `pages` stays populated across a commit, so
             // the reader stays mounted.
             .task(id: vm.lastCompletedRequest) {
-                guard vm.errorMessage == nil, vm.pagerTarget.page > 0 else { return }
-                // `task` starts before this view has laid out and the LazyVStack has realized
-                // no rows, so `scrollTo` has nothing to aim at until a layout pass has run.
-                // Guarded on a non-zero target above, so a normal chapter open never waits.
-                try? await Task.sleep(for: .milliseconds(50))
-                guard !Task.isCancelled else { return }
-                proxy.scrollTo(vm.pagerTarget.page, anchor: .top)
+                guard vm.errorMessage == nil else { return }
+                await restorePosition(using: proxy)
             }
         }
     }
@@ -618,8 +693,24 @@ private struct WebtoonPage: View {
         CachedAsyncImage(url: url) { phase in
             strip(for: phase)
                 .background(frameReporter(isDecoded: isDecoded(phase)))
+                .overlay(anchorGrid)
         }
         .id(reloadToken)
+    }
+
+    /// The addressable slices of this strip. The `VStack` inherits the strip's measured
+    /// height and `Color` is infinitely flexible, so this divides it into N equal parts with
+    /// no height arithmetic — and it keeps working as the height changes underneath.
+    ///
+    /// `allowsHitTesting(false)` is not optional: the chrome toggle is a tap gesture on an
+    /// ancestor, and this overlay covers the whole strip (ADR-0014 decision 9).
+    private var anchorGrid: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<stripAnchorSlots, id: \.self) { slot in
+                Color.clear.id(StripAnchor(page: index, slot: slot))
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     @ViewBuilder private func strip(for phase: AsyncImagePhase) -> some View {

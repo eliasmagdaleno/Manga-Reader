@@ -110,6 +110,104 @@ final class WebtoonGeometryTests: XCTestCase {
         XCTAssertEqual(Int(fraction * Double(stripAnchorSlots)), stripAnchorSlots - 1)
     }
 
+    // MARK: - Restore: the settle loop's stopping rule
+
+    /// The grid can only address multiples of a slot, so the first aim floors the fraction —
+    /// which can only land the reader *early*, never past the position they saved.
+    func testTheFirstAimIsTheSliceAtOrJustBeforeTheFraction() {
+        let step = settleStep(target: ReadingPosition(page: 5, fraction: 0.62),
+                              strip: strip(-100, 3000), viewport: viewport,
+                              currentAim: nil, attempt: 0)
+
+        XCTAssertEqual(step, .scroll(StripAnchor(page: 5, slot: 31)))
+    }
+
+    /// `Int(0.99 * 50)` is 49, and 49 is the last slot of a `0..<50` grid. The clamp on
+    /// capture is what keeps this from ever being asked to address slot 50.
+    func testAFractionJustUnderOneAddressesTheLastSlot() {
+        let step = settleStep(target: ReadingPosition(page: 2, fraction: 0.99),
+                              strip: strip(-100, 3000), viewport: viewport,
+                              currentAim: nil, attempt: 0)
+
+        XCTAssertEqual(step, .scroll(StripAnchor(page: 2, slot: stripAnchorSlots - 1)))
+    }
+
+    /// One of the four pathological cases: the target row is not realized at all. Aiming at
+    /// the row itself is what forces a `LazyVStack` to build it, and this is what replaces
+    /// ADR-0013's fixed 50ms sleep rather than sitting beside it.
+    func testAnUnrealizedTargetRowIsAimedAtDirectly() {
+        let step = settleStep(target: ReadingPosition(page: 7, fraction: 0.4),
+                              strip: nil, viewport: viewport, currentAim: nil, attempt: 0)
+
+        XCTAssertEqual(step, .realize(page: 7))
+    }
+
+    /// Realized but not yet laid out is the same case: there is no height to divide by.
+    func testARealizedButUnmeasuredRowIsAlsoAimedAtDirectly() {
+        let step = settleStep(target: ReadingPosition(page: 7, fraction: 0.4),
+                              strip: strip(0, 0), viewport: viewport, currentAim: nil, attempt: 0)
+
+        XCTAssertEqual(step, .realize(page: 7))
+    }
+
+    /// The stopping rule is the grid's own resolution: with a 3000pt strip and N = 50 a slot
+    /// is 60pt, and anything tighter is unsatisfiable — the loop would spend its whole budget
+    /// and stop at the same place anyway.
+    func testItStopsOnceTheResidualIsWithinOneSlot() {
+        let step = settleStep(target: ReadingPosition(page: 5, fraction: 0.62),
+                              strip: strip(-1830, 3000), viewport: viewport,   // residual 30pt
+                              currentAim: StripAnchor(page: 5, slot: 31), attempt: 1)
+
+        XCTAssertEqual(step, .stop)
+    }
+
+    /// Overshoot is never accepted — a residual below zero means content was skipped. This is
+    /// what makes "the leftover error lands behind the reader" true by construction.
+    func testOvershootAlwaysEarnsAnotherAttemptAimingEarlier() {
+        let step = settleStep(target: ReadingPosition(page: 5, fraction: 0.62),
+                              strip: strip(-1960, 3000), viewport: viewport,   // residual -100pt
+                              currentAim: StripAnchor(page: 5, slot: 31), attempt: 1)
+
+        XCTAssertEqual(step, .scroll(StripAnchor(page: 5, slot: 29)))           // ⌈100/60⌉ = 2
+    }
+
+    /// The other direction: strips above the target decoded between the scroll and the
+    /// measurement, so everything moved down and the reader is short of where they asked for.
+    func testFallingShortAimsFurtherDown() {
+        let step = settleStep(target: ReadingPosition(page: 5, fraction: 0.62),
+                              strip: strip(-1660, 3000), viewport: viewport,    // residual 200pt
+                              currentAim: StripAnchor(page: 5, slot: 31), attempt: 1)
+
+        XCTAssertEqual(step, .scroll(StripAnchor(page: 5, slot: 34)))           // ⌊200/60⌋ = 3
+    }
+
+    /// A measurement that never stabilises: the budget is the only thing that ends it, and it
+    /// has to end it even while the residual is still enormous.
+    func testTheBudgetStopsALoopThatIsStillNowhereNearIt() {
+        let step = settleStep(target: ReadingPosition(page: 5, fraction: 0.62),
+                              strip: strip(-9000, 3000), viewport: viewport,
+                              currentAim: StripAnchor(page: 5, slot: 31),
+                              attempt: settleAttemptBudget)
+
+        XCTAssertEqual(step, .stop)
+    }
+
+    /// A strip shorter than the viewport cannot be positioned exactly — the scroll view runs
+    /// out of content underneath it — so the loop walks to the top of the strip and then stops
+    /// rather than re-issuing a scroll that cannot change anything.
+    func testAStripShorterThanTheViewportWalksToItsTopAndStops() {
+        let target = ReadingPosition(page: 3, fraction: 0.5)
+        let short = strip(-600, 400)                                            // residual -400pt
+
+        let first = settleStep(target: target, strip: short, viewport: viewport,
+                               currentAim: StripAnchor(page: 3, slot: 25), attempt: 1)
+        XCTAssertEqual(first, .scroll(StripAnchor(page: 3, slot: 0)))
+
+        let second = settleStep(target: target, strip: short, viewport: viewport,
+                                currentAim: StripAnchor(page: 3, slot: 0), attempt: 2)
+        XCTAssertEqual(second, .stop)
+    }
+
     // MARK: - Recording cadence
 
     private let window: TimeInterval = 1
