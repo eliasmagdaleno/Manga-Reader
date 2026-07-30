@@ -45,11 +45,15 @@ func nextChapter(after number: String, in ascending: [Chapter]) -> Chapter? {
 }
 
 /// What the detail-screen "Continue" button should do.
+///
+/// Only `.cont` carries a position: the other three all open at the start of a chapter.
+/// `.reread` used to carry the last page read and no caller ever honoured it — the button
+/// has always restarted the chapter, which is what "Read Again" means (ADR-0014 decision 4).
 enum ResumeAction: Equatable {
-    case start(Chapter)             // no history -> first chapter, page 0
-    case cont(Chapter, page: Int)   // mid-chapter -> exact page
-    case next(Chapter)              // finished a chapter -> next chapter, page 0
-    case reread(Chapter, page: Int) // finished the latest chapter -> re-read last page
+    case start(Chapter)                          // no history -> first chapter, page 0
+    case cont(Chapter, position: ReadingPosition) // mid-chapter -> exactly where they stopped
+    case next(Chapter)                           // finished a chapter -> next chapter, page 0
+    case reread(Chapter)                         // finished the latest chapter -> from the top
 }
 
 /// Choose the resume action from the latest history entry and the chapter list
@@ -66,7 +70,24 @@ func resumeAction(entry: ReadingEntry?, chapters: [Chapter]) -> ResumeAction? {
         ?? Chapter(id: entry.chapterId, number: entry.chapterNumber, title: nil)
 
     let finished = entry.pageCount > 0 && entry.page >= entry.pageCount - 1
-    if !finished { return .cont(current, page: entry.page) }
+    if !finished { return .cont(current, position: entry.position) }
     if let nxt = nextChapter(after: entry.chapterNumber, in: ascending) { return .next(nxt) }
-    return .reread(current, page: entry.page)
+    return .reread(current)
+}
+
+/// How far into the resume chapter the reader has got, 0...1, or `nil` when the action is
+/// not a mid-chapter continue. Drives the hairline fill on the Continue button.
+///
+/// **`fraction == 0` is read as "this page has been seen"**, which is right for the paged
+/// modes — where a page is consumed the moment it is on screen — and knowingly wrong for a
+/// webtoon sitting at the exact top of a strip. The entry does not record which mode it was
+/// read in, so the ambiguity cannot be resolved here; ADR-0014 decision 12 takes the error
+/// that keeps paged progress honest, because paged reading is the common case. The visible
+/// cost is that the fill *retreats* on the first scroll into a freshly opened webtoon
+/// chapter — see the ADR's hazards.
+func continueProgress(action: ResumeAction, entry: ReadingEntry?) -> Double? {
+    guard case .cont(_, let position) = action,
+          let entry, entry.pageCount > 0 else { return nil }
+    let consumed = Double(position.page) + (position.fraction > 0 ? position.fraction : 1)
+    return min(1, consumed / Double(entry.pageCount))
 }

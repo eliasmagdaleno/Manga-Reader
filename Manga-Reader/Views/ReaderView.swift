@@ -53,11 +53,13 @@ struct ReaderView: View {
 
     @StateObject private var vm: ReaderViewModel
 
-    init(manga: Manga, chapter: Chapter, initialPage: Int = 0, chapters: [Chapter] = []) {
+    init(manga: Manga, chapter: Chapter, initialPosition: ReadingPosition? = nil,
+         chapters: [Chapter] = []) {
         self.manga = manga
         _vm = StateObject(wrappedValue: ReaderViewModel(manga: manga, chapter: chapter,
                                                        chapters: chapters,
-                                                       initialPage: initialPage))
+                                                       initialPosition: initialPosition
+                                                           ?? ReadingPosition(page: 0)))
         _progressChapterID = State(initialValue: chapter.id)
     }
 
@@ -136,8 +138,8 @@ struct ReaderView: View {
             furthestPage = 0
             hasRecordedProgress = false
         }
-        currentPage = vm.pagerTarget
-        advanceProgress(to: vm.pagerTarget)
+        currentPage = vm.pagerTarget.page
+        advanceProgress(to: vm.pagerTarget.page)
     }
 
     private func errorState(_ message: String, canRetry: Bool) -> some View {
@@ -302,13 +304,13 @@ struct ReaderView: View {
             // advances were unaffected either way: `pages` stays populated across a commit, so
             // the reader stays mounted.
             .task(id: vm.lastCompletedRequest) {
-                guard vm.errorMessage == nil, vm.pagerTarget > 0 else { return }
+                guard vm.errorMessage == nil, vm.pagerTarget.page > 0 else { return }
                 // `task` starts before this view has laid out and the LazyVStack has realized
                 // no rows, so `scrollTo` has nothing to aim at until a layout pass has run.
                 // Guarded on a non-zero target above, so a normal chapter open never waits.
                 try? await Task.sleep(for: .milliseconds(50))
                 guard !Task.isCancelled else { return }
-                proxy.scrollTo(vm.pagerTarget, anchor: .top)
+                proxy.scrollTo(vm.pagerTarget.page, anchor: .top)
             }
         }
     }

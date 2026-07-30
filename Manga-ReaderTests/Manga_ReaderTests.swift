@@ -140,7 +140,7 @@ final class Manga_ReaderTests: XCTestCase {
         let entry = ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "t", coverURL: nil,
                                  chapterId: "id2", chapterNumber: "2", page: 3, pageCount: 10, updatedAt: Date())
         XCTAssertEqual(resumeAction(entry: entry, chapters: [ch("1"), ch("2"), ch("3")]),
-                       .cont(ch("2"), page: 3))
+                       .cont(ch("2"), position: ReadingPosition(page: 3)))
     }
 
     func testResumeActionFinishedJumpsToNext() {
@@ -154,7 +154,7 @@ final class Manga_ReaderTests: XCTestCase {
         let entry = ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "t", coverURL: nil,
                                  chapterId: "id3", chapterNumber: "3", page: 9, pageCount: 10, updatedAt: Date())
         XCTAssertEqual(resumeAction(entry: entry, chapters: [ch("1"), ch("2"), ch("3")]),
-                       .reread(ch("3"), page: 9))
+                       .reread(ch("3")))
     }
 
     // MARK: - Library updates

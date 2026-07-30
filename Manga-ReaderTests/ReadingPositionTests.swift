@@ -149,7 +149,7 @@ final class ReadingPositionTests: XCTestCase {
         let deepIntoLastPage = resumeAction(entry: store.entries.first, chapters: chapters)
 
         XCTAssertEqual(atLastPage, deepIntoLastPage)
-        XCTAssertEqual(atLastPage, .reread(chapter, page: 7))
+        XCTAssertEqual(atLastPage, .reread(chapter))
     }
 
     // MARK: - Save timing
@@ -217,5 +217,61 @@ final class ReadingPositionTests: XCTestCase {
 
         XCTAssertEqual(entry.page, 5)
         XCTAssertEqual(entry.fraction, 0.62)
+    }
+
+    // MARK: - The Continue button's progress fill
+
+    private func entry(page: Int, fraction: Double, pageCount: Int) -> ReadingEntry {
+        ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "T", coverURL: nil,
+                     chapterId: chapter.id, chapterNumber: chapter.number, page: page,
+                     pageCount: pageCount, updatedAt: Date(), fraction: fraction)
+    }
+
+    /// A webtoon halfway down strip 3 of 8 is 3.5/8 through the chapter, not 4/8: the fill
+    /// moves *while* a strip is being read rather than jumping once per strip
+    /// (ADR-0014 decision 12).
+    func testTheFillCountsTheFractionOfTheCurrentPage() {
+        let e = entry(page: 3, fraction: 0.5, pageCount: 8)
+
+        XCTAssertEqual(continueProgress(action: resumeAction(entry: e, chapters: [chapter])!,
+                                        entry: e) ?? -1,
+                       3.5 / 8, accuracy: 0.0001)
+    }
+
+    /// A paged entry has no fraction to give, and being *on* page 3 means pages 1-4 have
+    /// been seen. Reading `fraction == 0` as "page seen" is what keeps paged progress from
+    /// shifting down a whole page — knowingly at the cost below.
+    func testAPagedEntryCountsItsCurrentPageAsSeen() {
+        let e = entry(page: 3, fraction: 0, pageCount: 8)
+
+        XCTAssertEqual(continueProgress(action: resumeAction(entry: e, chapters: [chapter])!,
+                                        entry: e) ?? -1,
+                       4.0 / 8, accuracy: 0.0001)
+    }
+
+    /// **The accepted cost, asserted so nobody "fixes" it by accident.** A webtoon at the
+    /// exact top of a strip is indistinguishable from a paged reader on that page — the
+    /// entry does not record its reading mode — so the fill *retreats* on the first scroll
+    /// into a freshly opened chapter. See ADR-0014's hazards.
+    func testTheFillRetreatsOnTheFirstScrollIntoAFreshlyOpenedChapter() {
+        let opened = entry(page: 0, fraction: 0, pageCount: 8)
+        let scrolled = entry(page: 0, fraction: 0.1, pageCount: 8)
+
+        let atOpen = continueProgress(action: resumeAction(entry: opened, chapters: [chapter])!,
+                                      entry: opened) ?? -1
+        let afterScroll = continueProgress(action: resumeAction(entry: scrolled, chapters: [chapter])!,
+                                           entry: scrolled) ?? -1
+
+        XCTAssertEqual(atOpen, 1.0 / 8, accuracy: 0.0001)
+        XCTAssertEqual(afterScroll, 0.1 / 8, accuracy: 0.0001)
+        XCTAssertLessThan(afterScroll, atOpen, "documented, not desired")
+    }
+
+    /// Nothing to continue means nothing to draw.
+    func testThereIsNoFillWhenTheActionIsNotAContinue() {
+        let finished = entry(page: 7, fraction: 0, pageCount: 8)
+
+        XCTAssertNil(continueProgress(action: resumeAction(entry: finished, chapters: [chapter])!,
+                                      entry: finished))
     }
 }
