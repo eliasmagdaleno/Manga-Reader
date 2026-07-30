@@ -260,3 +260,36 @@ available evidence that a tuning change did what was intended.
 
 **Collection Multi-assignment** — ability for a single saved manga item (`LibraryItem`) to belong to multiple collections simultaneously (e.g. `Reading` and `Favorites`).
 
+## Reader
+
+**Chrome** — the reader's floating top bar and page indicator. The **only** dismiss control lives
+here, so "is chrome visible" and "can the user leave" are the same question — which is why
+visibility is *derived* (`showChrome || pageCount == 0`) and never assigned in a `catch`. See
+[ADR-0012](adr/0012-reader-failure-states-and-chapter-advance-commit.md).
+
+**Commit** — the instant a fetched chapter *replaces* the one being read: `currentChapter`, `pages`
+and the pager target are assigned together, and nothing is assigned before the pages are in hand.
+Because commit is the only thing that changes `currentChapter`, that property changing is a
+trustworthy "we really moved" signal.
+_Avoid_: load, switch, advance — an **advance** is the attempt, a commit is the outcome.
+
+**Pager target** (`pagerTarget`) — where the pager belongs once a load completes, **whether or not
+it committed**. On success it is the page the chapter opens at; on a failed advance it is the page
+the pager retreats to inside the chapter that survived.
+_Avoid_: landing page — nothing lands when an advance fails.
+
+**Advance trigger** — the sentinel pager index one step past an interstitial, whose appearance
+*requests* the adjacent chapter. It is not a page and holds no content of its own; it reports on the
+load it asked for. See [ADR-0013](adr/0013-reader-view-layer-after-load-then-commit.md).
+
+**Transient / permanent failure** — whether retrying could plausibly succeed. Transient keeps Retry
+as the primary action; permanent offers a way out instead of a button that cannot work.
+**Anything unrecognised is transient**: wrongly offering Retry costs a tap, wrongly withholding it
+strands a user. The same split governs the upgrade queue
+([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md)).
+
+**Banner** — a failure surfaced *over* readable content, as opposed to instead of it. Reachable only
+when a chapter is already on screen, which is exactly the case a failed advance leaves behind;
+blanking out a chapter being read to report that a *different* one is missing is what the commit
+ordering exists to prevent.
+

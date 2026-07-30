@@ -1,0 +1,205 @@
+//
+//  ReaderPresentationTests.swift
+//  Manga-ReaderTests
+//
+//  ADR-0012. `ReaderPresentation` is a pure function of four scalars, so the state
+//  space is small enough to walk exhaustively — which is the point. The bug this
+//  type exists to prevent was not a wrong branch but two branches that were allowed
+//  to disagree: "which body do we show" and "can the user leave" were independent
+//  decisions, so a state existed where the exit was unreachable.
+//
+//  `testChromeIsForcedWheneverThereIsNothingToRead` is therefore the load-bearing
+//  test. It asserts the invariant over every input combination rather than over the
+//  three states we happen to have thought of, so a fourth state added later cannot
+//  reintroduce the trap without going red.
+//
+
+import XCTest
+@testable import Manga_Reader
+
+final class ReaderPresentationTests: XCTestCase {
+
+    // MARK: - The invariant
+
+    /// The trap in one line: if there is no page on screen, the chrome — and with it
+    /// the only dismiss control — must be visible. Walked exhaustively over the whole
+    /// input space, so this holds for states that do not exist yet.
+    func testChromeIsForcedWheneverThereIsNothingToRead() {
+        for message in [nil, "boom"] as [String?] {
+            for isTransient in [true, false] {
+                for isLoading in [true, false] {
+                    let p = ReaderPresentation(errorMessage: message,
+                                               isTransient: isTransient,
+                                               isLoading: isLoading,
+                                               pageCount: 0)
+                    XCTAssertTrue(p.chromeForced,
+                                  "no pages ⇒ chrome must be forced " +
+                                  "(message: \(message ?? "nil"), transient: \(isTransient), loading: \(isLoading))")
+                }
+            }
+        }
+    }
+
+    /// The converse: once there are pages, chrome goes back to being the user's own
+    /// toggle. Forcing it forever would defeat full-bleed reading.
+    func testChromeIsNotForcedOncePagesExist() {
+        for message in [nil, "boom"] as [String?] {
+            for isLoading in [true, false] {
+                let p = ReaderPresentation(errorMessage: message,
+                                           isTransient: true,
+                                           isLoading: isLoading,
+                                           pageCount: 12)
+                XCTAssertFalse(p.chromeForced)
+            }
+        }
+    }
+
+    // MARK: - Body selection
+
+    func testErrorWithNoPagesTakesTheWholeScreen() {
+        let p = ReaderPresentation(errorMessage: "Request failed with HTTP status 404.",
+                                   isTransient: false, isLoading: false, pageCount: 0)
+        XCTAssertEqual(p.body, .error(message: "Request failed with HTTP status 404.", canRetry: false))
+        XCTAssertNil(p.banner, "a full-screen error must not also raise a banner")
+    }
+
+    /// A transient failure keeps Retry; a permanent one must not offer it. Pressing a
+    /// button that cannot succeed is what made the reported bug feel like a trap.
+    func testRetryIsOfferedOnlyForTransientFailures() {
+        let transient = ReaderPresentation(errorMessage: "offline",
+                                           isTransient: true, isLoading: false, pageCount: 0)
+        XCTAssertEqual(transient.body, .error(message: "offline", canRetry: true))
+
+        let permanent = ReaderPresentation(errorMessage: "gone",
+                                           isTransient: false, isLoading: false, pageCount: 0)
+        XCTAssertEqual(permanent.body, .error(message: "gone", canRetry: false))
+    }
+
+    func testLoadingWithNoPagesShowsTheLoadingState() {
+        let p = ReaderPresentation(errorMessage: nil, isTransient: true,
+                                   isLoading: true, pageCount: 0)
+        XCTAssertEqual(p.body, .loading)
+    }
+
+    /// An error raised while a chapter is still readable must not blank it out — that
+    /// is the whole point of load-then-commit. It surfaces as a banner over the content.
+    func testFailedAdvanceKeepsTheReadableChapterAndBannersTheError() {
+        let p = ReaderPresentation(errorMessage: "Chapter 7 is unavailable.",
+                                   isTransient: false, isLoading: false, pageCount: 20)
+        XCTAssertEqual(p.body, .content)
+        XCTAssertEqual(p.banner, "Chapter 7 is unavailable.")
+    }
+
+    /// Loading the *next* chapter must not replace the one being read.
+    func testLoadingWithPagesKeepsShowingContent() {
+        let p = ReaderPresentation(errorMessage: nil, isTransient: true,
+                                   isLoading: true, pageCount: 20)
+        XCTAssertEqual(p.body, .content)
+        XCTAssertNil(p.banner)
+    }
+
+    func testHealthyChapterShowsContentWithNoBanner() {
+        let p = ReaderPresentation(errorMessage: nil, isTransient: true,
+                                   isLoading: false, pageCount: 20)
+        XCTAssertEqual(p.body, .content)
+        XCTAssertNil(p.banner)
+        XCTAssertFalse(p.chromeForced)
+    }
+
+    /// An error outranks loading when neither has anything to show: a retry that is
+    /// already in flight must not hide the message that explains why.
+    func testErrorOutranksLoadingWhenBothApply() {
+        let p = ReaderPresentation(errorMessage: "boom", isTransient: true,
+                                   isLoading: true, pageCount: 0)
+        XCTAssertEqual(p.body, .error(message: "boom", canRetry: true))
+    }
+
+    // MARK: - Failure classification
+
+    /// MangaDex answers 404 for a chapter it does not have (verified live 2026-07-29).
+    /// Retrying cannot change that.
+    func testMangaDexNotFoundIsPermanent() {
+        XCTAssertFalse(isTransientFailure(MangaDexError.httpStatus(404)))
+        XCTAssertFalse(isTransientFailure(MangaDexError.httpStatus(403)))
+        XCTAssertFalse(isTransientFailure(MangaDexError.httpStatus(410)))
+    }
+
+    /// 429 and 408 are the two 4xx codes that mean "later", not "no". 429 matches the
+    /// upgrade queue's `permanentStatus`; 408 is ADR-0012's deliberate divergence from it.
+    func testRateLimitAndTimeoutStayTransient() {
+        XCTAssertTrue(isTransientFailure(MangaDexError.httpStatus(429)))
+        XCTAssertTrue(isTransientFailure(MangaDexError.httpStatus(408)))
+        XCTAssertTrue(isTransientFailure(MangaDexError.rateLimited))
+    }
+
+    func testServerErrorsAreTransient() {
+        XCTAssertTrue(isTransientFailure(MangaDexError.httpStatus(500)))
+        XCTAssertTrue(isTransientFailure(MangaDexError.httpStatus(503)))
+    }
+
+    /// A URL we failed to build is our own bug — retrying rebuilds the identical URL.
+    /// A malformed reply is the server having a bad moment, which the next one may not.
+    func testClientSideAndMalformedResponsesSplitOnWhetherRetryRebuildsTheSameRequest() {
+        XCTAssertFalse(isTransientFailure(MangaDexError.invalidURL))
+        XCTAssertTrue(isTransientFailure(MangaDexError.invalidResponse))
+    }
+
+    /// Network failures are the case where withholding Retry would be worst — the user
+    /// did nothing wrong and the next attempt may well work.
+    func testNetworkFailuresAreTransient() {
+        XCTAssertTrue(isTransientFailure(URLError(.notConnectedToInternet)))
+        XCTAssertTrue(isTransientFailure(URLError(.timedOut)))
+    }
+
+    /// An unrecognised error is transient, matching `permanentStatus`'s `default: return nil`.
+    /// Costs a wasted tap when wrong; withholding Retry when wrong strands the user.
+    func testUnknownErrorsDefaultToTransient() {
+        struct Mystery: Error {}
+        XCTAssertTrue(isTransientFailure(Mystery()))
+    }
+
+    func testSourceErrorsClassifyByWhetherRetryCouldHelp() {
+        // The scraper's script stopped matching the page — pressing a button won't fix it.
+        XCTAssertFalse(isTransientFailure(SourceError.extractionFailed("no images found")))
+        XCTAssertFalse(isTransientFailure(SourceError.unsupported("pageURLs")))
+        // A dismissed Cloudflare challenge is re-presented on retry, so retry is exactly right.
+        XCTAssertTrue(isTransientFailure(SourceError.cloudflareUnsolved))
+        XCTAssertTrue(isTransientFailure(SourceError.navigationFailed("connection lost")))
+    }
+
+    // MARK: - Failure copy (ADR-0013)
+
+    /// `MangaDexError.httpStatus` is the one case whose `errorDescription` is written for
+    /// a developer ("Request failed with HTTP status 404.", `MangaDexAPI.swift:349`), and
+    /// it is the exact string the field report was about.
+    func testHTTPStatusIsRewrittenForHumans() {
+        let message = readerFailureMessage(MangaDexError.httpStatus(404))
+        XCTAssertFalse(message.contains("Request failed"), "the developer phrasing must be gone")
+        XCTAssertTrue(message.contains("isn't available"))
+    }
+
+    /// The code stays in the sentence. ADR-0012's first hazard is that a 404 from
+    /// `/at-home/server` may mean "externally hosted" rather than "gone", so the copy must
+    /// not claim the chapter does not exist — and in the field the code is what tells the
+    /// two apart.
+    func testHTTPStatusKeepsTheCodeVisible() {
+        XCTAssertTrue(readerFailureMessage(MangaDexError.httpStatus(404)).contains("404"))
+        XCTAssertTrue(readerFailureMessage(MangaDexError.httpStatus(503)).contains("503"))
+    }
+
+    /// Every other error type already reads as English, so the reader must not paraphrase
+    /// it — `SourceError` and `ReaderError` messages pass through untouched.
+    func testEveryOtherErrorPassesThroughUnchanged() {
+        for error in [SourceError.cloudflareUnsolved,
+                      SourceError.extractionFailed("no images found")] as [Error] {
+            XCTAssertEqual(readerFailureMessage(error), error.localizedDescription)
+        }
+        XCTAssertEqual(readerFailureMessage(ReaderError.noPages),
+                       ReaderError.noPages.localizedDescription)
+        XCTAssertEqual(readerFailureMessage(MangaDexError.rateLimited),
+                       MangaDexError.rateLimited.localizedDescription)
+
+        struct Mystery: Error {}
+        XCTAssertEqual(readerFailureMessage(Mystery()), Mystery().localizedDescription)
+    }
+}
