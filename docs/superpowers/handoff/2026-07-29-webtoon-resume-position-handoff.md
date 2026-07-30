@@ -1,6 +1,9 @@
-# Session Handoff — 2026-07-29: webtoon resume position (ADR-0014 written, step 2 of 6 done)
+# Session Handoff — webtoon resume position (ADR-0014 written, step 2 committed, step 3 designed)
 
 **Audience:** the next session, continuing on `webtoon-resume-position`.
+**Updated 2026-07-30** after a grilling session that settled six implementation questions the ADR
+left open — see *Decided 2026-07-30*. Those decisions are **not yet in ADR-0014**; writing the
+amendments is the first task below.
 
 **This file replaces the design handoff that was here.** The design now lives in **ADR-0014**, which
 is authoritative and contains one correction the old handoff got wrong (see *What implementation
@@ -11,24 +14,21 @@ changed about the design*). Read the ADR, not a summary of it.
 | | |
 |---|---|
 | `main` | `bd0d678` — PR #30 merged, ADR-0012 + ADR-0013 |
-| Working branch | `webtoon-resume-position` at `0cf97eb`, **nothing committed yet** — all work below is uncommitted in the tree |
+| Working branch | `webtoon-resume-position` at **`5cbd41d`**, steps 1–2 committed, **tree clean, nothing pushed** |
 | ADR | `docs/adr/0014-resuming-a-webtoon-where-the-reader-stopped.md`, 12 decisions |
-| Tests | **329 green, 0 failures** (317 on `main` + 12 new) |
+| Tests | **340 green, 0 failures** (329 unit + 11 UI), verified on the commit |
 | Next ADR number | 0015 |
 
-Uncommitted files:
+`5cbd41d` — *"Record a reading position, not just a page (ADR-0014, steps 1-2)"* — carries
+`ReadingPosition`, its 12 tests, ADR-0014, the whole `HistoryStore` change, `history.flush()` on
+`.background`, the 24 migrated `record()` call sites, the ADR-0013 amendments and the glossary terms.
+The `agy` hook wrapped two over-long JSON literals in `ReadingPositionTests.swift` for SwiftLint;
+that was verified and `--amend`ed in, which is why the SHA is `5cbd41d` and not the `da16b42` the
+hook's own log names.
 
-```
-new:  Manga-Reader/Models/ReadingPosition.swift
-new:  Manga-ReaderTests/ReadingPositionTests.swift          (12 tests)
-new:  docs/adr/0014-resuming-a-webtoon-where-the-reader-stopped.md
-mod:  Manga-Reader/Services/HistoryStore.swift              (the whole model change)
-mod:  Manga-Reader/Manga_ReaderApp.swift                    (history.flush() on .background)
-mod:  Manga-Reader/Views/ReaderView.swift                   (call site only — the view work is step 4)
-mod:  Manga-ReaderTests/{Manga_ReaderTests,WorkMintingTests}.swift  (23 record() call sites migrated)
-mod:  docs/adr/0013-…, docs/glossary.md                     (amendments + vocabulary)
-mod:  Manga-Reader.xcodeproj/project.pbxproj                (see the xcp note in Hazards)
-```
+The `pbxproj` in that commit is **exactly the 4 lines the new test file needs** — the `xcp` noise
+(three stripped `PBXFileReference` attributes, the synchronized-group reflow) was reverted by
+restoring the committed file and re-adding the four entries by hand.
 
 ## The decision that constrains everything else
 
@@ -85,12 +85,134 @@ modes is paid at every read site forever.
 **Generalise the lesson:** any future defaulted, non-optional field on a persisted type needs the same
 treatment, and a migration test is the only thing that will tell you.
 
+## Decided 2026-07-30 (grilling session) — not yet in the ADR
+
+Six answers to questions ADR-0014 left open. **Each of these is confirmed by the user.** Where one
+changes something the ADR states, the amendment is named — write those amendments *before* the code,
+so the ADR never lags the branch.
+
+**1. A clamped page drops its fraction.** `landingIndex` becomes
+`landingPosition(_:pageCount:) -> ReadingPosition` and, whenever the clamp *moves* the page (saved
+page 7 against a chapter that now returns 5 pages, or a negative page), the fraction resets to 0.
+The fraction survives only when the page comes through untouched. Rationale: `pageCount` changing
+means the strips were re-cut, so the ratio maps to nothing — and ADR-0014 decision 1's accepted cost
+already names a stale pair as resuming "at a plausible-looking wrong place", which is harder to
+notice than resuming at zero. Wants a test named after the clamp.
+
+**2. `ResumeAction.reread` loses its payload — `case reread(Chapter)`.** Its `page:` was inert:
+`MangaDetailView.swift:473` maps `.reread` to page 0, and nothing else reads it, so the enum
+documented behaviour the app does not have. `.start` and `.next` already carry a chapter alone.
+Two test assertions change (`ReadingPositionTests.swift:148`, `Manga_ReaderTests.swift:157`).
+→ **Amends ADR-0014 decision 4**, which lists `.cont`/`.reread` as both carrying a position.
+
+**3. Strip measurements live in a non-observable box, not `@State`.** A `PreferenceKey` per realized
+row transports frames; `.onPreferenceChange` merges them into
+
+```swift
+final class StripMetrics {          // deliberately NOT ObservableObject
+    var frames: [Int: CGRect] = [:] // realized strips, reader coordinate space
+    var viewport: CGRect = .zero
+    var live: ReadingPosition?
+}
+@State private var metrics = StripMetrics()   // reference never reassigned ⇒ no invalidation
+```
+
+Rationale: nothing on screen renders the live position (`pageIndicator` is `mode.isPaged`-only,
+`ReaderView.swift:116`), so a `@State` write per scroll frame would re-evaluate the reader's body —
+with N=50 anchor views per realized strip — for no rendered benefit. Preference callbacks fire
+outside the update cycle, so there is no "modifying state during view update", and both the settle
+loop and the throttled `record` read the box directly and always see the newest measurement.
+`onGeometryChange` would be tidier and is iOS 18; the target is 17.5.
+→ **Amends ADR-0014 decision 8's mechanism only.** Its substance is unchanged: the live position
+lives in the *view*, not the view model, and restore prefers it over `pagerTarget`.
+
+**4. Capture's three holes, all in the pure function, all decided:**
+
+- **Viewport top past the last strip** (interstitial, end mark, the 50pt loader at
+  `ReaderView.swift:274-286`) → fall back to the **last measured strip, fraction clamped just under
+  1**. Costs nothing for completion (`finished` only asks `page >= pageCount - 1`, already satisfied
+  on entering the last strip) but keeps the value monotone as the reader scrolls off the end.
+- **Overscroll above the first strip** → `(0, 0)`. Rubber-band is not a position.
+- **Nothing measured yet** → **`nil`, record nothing.** An unmeasured strip is unknown, not "the
+  top"; writing `(0, 0)` would be harmless only because `record` is monotonic, which is the wrong
+  reason for a capture function to be correct.
+
+`[0, 1)` is enforced where the value is *made*, because restore computes `slot = Int(f · N)` and
+`f == 1.0` addresses slot 50 in a `0..<50` grid. Restore clamps too, as a backstop.
+
+**5. The view's throttle gets a trailing fire, and the reader records on disappear.** This is the
+one real *gap* found in ADR-0014 rather than an unwritten detail. Decision 5 says the reader needs no
+`scenePhase` code because `history.flush()` covers backgrounding — but that only holds if the store
+already has the final position, and with a leading-edge-only view throttle it does not:
+
+> Scroll for 30s, last tick fired 0.9s ago at 55% down strip 5, stop at 62%, read the screenful for
+> two minutes, background the app. `flush()` faithfully writes 55%. Nothing ever writes 62%.
+
+Scroll-then-stop-then-leave is the normal shape of reading, so the trailing value is the one that
+matters most.
+
+- **(a)** Leading edge records immediately; if more measurements arrive inside the window, **one**
+  catch-up record is scheduled at the window's end with the latest value. This is **not** the
+  debounce trap decision 5 rejected — the trailing fire is pinned to a fixed window end and never
+  pushed out, so the maximum gap stays ~1s however long the scroll runs.
+- **(b)** `onDisappear` records the live position, guarded by the same
+  `progressChapterID == vm.currentChapter.id` check the throttled path uses. It fires on the pop and
+  on a reading-mode switch, and it is required because a `.task`-scoped trailing timer dies with the
+  view — it covers "stop scrolling, immediately tap ✕", which (a) alone leaves up to a second short.
+
+With (a) in place the reader still needs no `scenePhase` code: ≥1s after the last scroll the store
+already holds the final position.
+→ **Amends ADR-0014 decision 5**, which currently reads as though one throttle shape covers both
+layers. The store's non-re-arming shape is exactly the wrong thing to copy into the view.
+
+**6. The settle loop's threshold is the grid's own resolution.** With
+`residual = (stripTop + f · stripHeight) − viewportTop`:
+
+- **Stop when `0 ≤ residual < slotHeight`**, `slotHeight = stripHeight / N`. Anything tighter cannot
+  be satisfied — the grid only addresses multiples of `slotHeight` (~60pt on a 3000pt strip) — so it
+  would burn the whole budget on every restore and stop anyway.
+- **Overshoot (`residual < 0`) always gets another attempt**, aiming one slot earlier. This is what
+  makes ADR-0014's "the residual lands behind the reader" true by construction.
+- **Budget: 10 attempts.** Per-attempt wait: poll until the target strip's measured frame changes,
+  or ~50ms. Step zero is "wait until the target row is realized and measured at all", capped at
+  ~1.5s — this **replaces** ADR-0013's fixed 50ms sleep rather than sitting beside it.
+
+Deriving the threshold from `N` keeps the two constants from drifting: raise `N` and the stopping
+rule tightens automatically.
+
+**Placement:** a new `Models/WebtoonGeometry.swift` holds `StripAnchor`, the capture function
+(`stripPosition(frames:viewport:) -> ReadingPosition?`) and `settleStep(...) -> StripAnchor?`.
+`Models/` is synchronized so it needs no `pbxproj` edit; its test file does, via `xcp`. The precedent
+is `Models/ReaderPresentation.swift` — the reader's pure pieces, lifted out of the view to be tested.
+
+### Still open — the grill stopped here
+
+- **Does `pagerTarget`'s retreat carry a fraction?** `retreatIndex` returns an `Int`
+  (`ReaderViewModel.swift:200-206`). Leaning: no — `ReadingPosition(page: retreat)`, fraction 0.
+  A failed advance never scrolls the vertical reader (`.task(id:)` is guarded on
+  `errorMessage == nil`), and restore prefers the live position anyway, so the fraction would be
+  unobservable.
+- **`continueProgress`'s exact formula** (ADR-0014 decision 12). `(page + fraction) / pageCount`
+  with a paged entry's `fraction == 0` treated as "page seen" — the entry does not record which mode
+  it was read in, so `fraction == 0` is genuinely ambiguous. Leaning:
+  `min(1, (Double(page) + (fraction > 0 ? fraction : 1)) / Double(pageCount))`.
+- **Does `didCompleteLoad` still call `record` after the latch is deleted?** It currently does
+  (`ReaderView.swift:140`), which is what records page 0 of a freshly opened chapter.
+- **Slicing and PR shape** for steps 3–5 — one PR with a commit per step is the assumption
+  (no stacked PRs), but the TDD order inside step 4/5 is not planned yet.
+
 ## Left to do, in order
 
+0. **Write the six amendments above into ADR-0014** (decisions 4, 5, 8 by name) and the glossary
+   where it is affected, before touching code.
+
 3. **Plumbing** — carry `ReadingPosition` end to end, TDD where it is pure:
-   - `ResumeAction.cont`/`.reread` carry a position, not a page (`ReadingResume.swift:52`, `:69`)
+   - `ResumeAction.cont` carries a position, not a page; `.reread` **loses its payload entirely**
+     (`ReadingResume.swift:52`, `:69` — see *Decided* 2)
    - `ReaderView.init` and `ReaderViewModel.init` take a position instead of `initialPage`
-     (`ReaderView.swift:56`, `ReaderViewModel.swift:73`); `Landing.exact` carries one
+     (`ReaderView.swift:56`, `ReaderViewModel.swift:73`); `Landing.exact` carries one, and
+     `landingIndex` becomes `landingPosition` which **zeroes the fraction on a clamp**
+     (see *Decided* 1)
    - `pagerTarget` becomes a `ReadingPosition` (`ReaderViewModel.swift:52`) — expect ~13
      `ReaderViewModelTests` assertions to need updating
    - `HistoryView.swift:66` passes `entry.position`
@@ -98,16 +220,18 @@ treatment, and a migration test is the only thing that will tell you.
      `history.entry(forChapter:)?.position` (ADR-0014 decision 11)
    - `continueProgress` → `(page + fraction) / pageCount`, treating a paged entry's `fraction == 0`
      as "page seen" so paged progress does not shift down a page (`MangaDetailView.swift:211-215`)
-4. **Capture + live position in `verticalReader`** — `GeometryReader` per realized row, viewport-top
-   fraction clamped to `[0,1)`, ~1s **throttle** (not idle-debounce) feeding `record`, live position as
-   `@State`, pending update **dropped** on chapter change via `progressChapterID`
-   (`ReaderView.swift:134`). **Delete `advanceProgress`'s latch and the `.onAppear` advance for
-   `.vertical` only** (`ReaderView.swift:188-195`, `:272`) — paged modes keep `onChange(of: currentPage)`.
+4. **Capture + live position in `verticalReader`** — `GeometryReader` per realized row reporting
+   through a `PreferenceKey` into `StripMetrics` (*Decided* 3), viewport-top fraction clamped to
+   `[0,1)` with the three holes of *Decided* 4, a ~1s **throttle with a trailing fire** plus a
+   record on `onDisappear` (*Decided* 5), pending update **dropped** on chapter change via
+   `progressChapterID` (`ReaderView.swift:134`). **Delete `advanceProgress`'s latch and the
+   `.onAppear` advance for `.vertical` only** (`ReaderView.swift:188-195`, `:272`) — paged modes keep
+   `onChange(of: currentPage)`.
 5. **Restore** — anchor grid (`N = 50`, `Color.clear` slices, **`allowsHitTesting(false)`** or it eats
-   the chrome-toggle tap) + the settle loop. Its stopping rule is a **pure function, unit-tested**
-   against: strip shorter than viewport, fraction 0.99, measurement that never stabilises, target row
-   not realized. Replace the guard `vm.pagerTarget > 0` with `page > 0 || fraction > 0`
-   (`ReaderView.swift:305`) and **delete the 50ms sleep** (`:309`).
+   the chrome-toggle tap) + the settle loop, stopping rule per *Decided* 6. It is a **pure function,
+   unit-tested** against: strip shorter than viewport, fraction 0.99, measurement that never
+   stabilises, target row not realized. Replace the guard `vm.pagerTarget > 0` with
+   `page > 0 || fraction > 0` (`ReaderView.swift:305`) and **delete the 50ms sleep** (`:309`).
 6. **Hand-checks** — resume mid-strip; after rotation; images all disk-cached vs all cold (the two ends
    of the settle loop's timing); mode switch mid-chapter; paged modes unaffected; row tap resumes.
 
@@ -116,10 +240,14 @@ treatment, and a migration test is the only thing that will tell you.
 - **`xcp` reformatted `project.pbxproj` in the *opposite* direction to what CLAUDE.md documents.** This
   time it **collapsed** the three `PBXFileSystemSynchronizedRootGroup` entries to one line each *and*
   stripped `lastKnownFileType`/`name` from three unrelated `PBXFileReference` entries. Net 10
-  insertions / 30 deletions, of which only **4 lines** are the new test file. Decide before staging
-  whether to keep the noise or `git checkout -p` the unrelated hunks. The lesson from CLAUDE.md holds
-  and generalises: **inspect the pbxproj diff immediately before `git add`, and do not assume which
-  direction the reformat went.**
+  insertions / 30 deletions, of which only **4 lines** are the new test file. The lesson from
+  CLAUDE.md holds and generalises: **inspect the pbxproj diff immediately before `git add`, and do
+  not assume which direction the reformat went.**
+  **What worked (2026-07-30):** `git checkout -p` is unusable here — one hunk mixes the new
+  `PBXFileReference` with two stripped ones. Instead: back the file up, `git checkout --` it, then
+  re-add the four entries (`PBXBuildFile`, `PBXFileReference`, the group child, the `Sources` build
+  phase) by copying `xcp`'s own lines out of the backup. `git diff --stat` then reads
+  `4 ++++`, and the target built and tested clean.
 - **The 5 remaining SourceKit errors are noise** — "No such module 'XCTest'", "Cannot find type
   'Manga' in scope" on files that compile and test clean. Judge only by `xcodebuild`.
 - **`finished` changes meaning for webtoons in step 4** (viewport top *enters* the last strip, rather
