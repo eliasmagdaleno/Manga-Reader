@@ -2,8 +2,8 @@
 
 **Audience:** the next session, continuing on `webtoon-resume-position`.
 **Updated 2026-07-30** after a grilling session that settled six implementation questions the ADR
-left open — see *Decided 2026-07-30*. Those decisions are **not yet in ADR-0014**; writing the
-amendments is the first task below.
+left open — see *Decided 2026-07-30*. They are now **written into ADR-0014** as dated amendments on
+decisions 4, 5, 8, 9 and 10; the ADR is authoritative and the summary below is a reading aid.
 
 **This file replaces the design handoff that was here.** The design now lives in **ADR-0014**, which
 is authoritative and contains one correction the old handoff got wrong (see *What implementation
@@ -85,11 +85,11 @@ modes is paid at every read site forever.
 **Generalise the lesson:** any future defaulted, non-optional field on a persisted type needs the same
 treatment, and a migration test is the only thing that will tell you.
 
-## Decided 2026-07-30 (grilling session) — not yet in the ADR
+## Decided 2026-07-30 (grilling session) — now amended into ADR-0014
 
-Six answers to questions ADR-0014 left open. **Each of these is confirmed by the user.** Where one
-changes something the ADR states, the amendment is named — write those amendments *before* the code,
-so the ADR never lags the branch.
+Six answers to questions ADR-0014 left open. **Each of these is confirmed by the user**, and each is
+now a dated amendment inside the ADR (decisions 4, 5, 8, 9, 10) carrying its rejected alternative.
+Read the ADR for the argument; this is the index.
 
 **1. A clamped page drops its fraction.** `landingIndex` becomes
 `landingPosition(_:pageCount:) -> ReadingPosition` and, whenever the clamp *moves* the page (saved
@@ -203,8 +203,9 @@ is `Models/ReaderPresentation.swift` — the reader's pure pieces, lifted out of
 
 ## Left to do, in order
 
-0. **Write the six amendments above into ADR-0014** (decisions 4, 5, 8 by name) and the glossary
-   where it is affected, before touching code.
+0. ~~Write the six amendments into ADR-0014~~ — **done 2026-07-30.** The glossary needed no change:
+   the terms (*Reading position*, *Strip*, *Anchor grid*, *Settle loop*, *Pager target*) all still
+   mean what they said, and the amendments are mechanism, which the glossary deliberately excludes.
 
 3. **Plumbing** — carry `ReadingPosition` end to end, TDD where it is pure:
    - `ResumeAction.cont` carries a position, not a page; `.reread` **loses its payload entirely**

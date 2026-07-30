@@ -1,6 +1,8 @@
 # ADR-0014 — Resuming a webtoon where the reader stopped
 
-- **Status:** Accepted (2026-07-29)
+- **Status:** Accepted (2026-07-29); **amended 2026-07-30** during implementation — decisions 4, 5,
+  8, 9 and 10 each carry a dated amendment below. Decision 5's is a *correction*: it described one
+  throttle shape for two layers, and the layer it got wrong is the one that loses data.
 - **Amends:** ADR-0013 — four of its decisions change here: the view-owned progress latch (its own
   "weakest of the eight decisions"), `pagerTarget`'s type, the fixed 50ms wait before `scrollTo`, and
   what the vertical restore aims at. It also closes three of its hazards — strip-granularity resume,
@@ -163,6 +165,28 @@ different concepts — one is transient and may *retreat* on a failed advance (A
 persisted and monotonic. `docs/glossary.md:276` is amended to say so explicitly, because a shared type
 invites the assumption that `pagerTarget` is monotonic too.
 
+> **Amended 2026-07-30.** Two corrections to the list of things that carry a position.
+>
+> **`ResumeAction.reread` carries no position at all — just a chapter.** Its `page:` payload was
+> already inert: `MangaDetailView.swift:473` maps `.reread` to page 0, nothing else reads it, and the
+> label only names the chapter. The case has been documenting a "re-read the last page" behaviour the
+> app has never had. **Beat:** converting it to a `ReadingPosition` for symmetry with `.cont` — one
+> line, and it keeps the door open if Read Again ever means "back to where you finished". Rejected
+> because it upgrades a dead field into a more convincing one, and the next reader would reasonably
+> assume the payload is honoured. `.start` and `.next` already carry a chapter alone; `.reread`
+> behaves exactly like them and now says so. If that behaviour is ever wanted, it should arrive as a
+> deliberate change with a test.
+>
+> **`landingIndex` becomes `landingPosition(_:pageCount:) -> ReadingPosition`, and a clamp that moves
+> the page zeroes the fraction.** A saved `(7, 0.6)` against a chapter that now returns 5 pages lands
+> at `(4, 0)`, not `(4, 0.6)`; a negative page lands at `(0, 0)`. The fraction survives only when the
+> page comes through untouched. **Beat:** carrying the fraction across the clamp, on the grounds that
+> a re-uploaded chapter is usually the same content re-split, so 60% down the last strip may be
+> nearer than its top. Rejected because a changed `pageCount` means the strips were re-cut, so the
+> ratio maps to nothing — and this decision's own accepted cost (decision 1) already names a stale
+> pair as resuming "at a plausible-looking wrong place", which is harder to notice than resuming at
+> zero. Landing at the top of a strip is honest about not knowing.
+
 ### 5. Throttle at both layers, not debounce at one
 
 The live position is fed to `record` **at most once per ~1s while scrolling**, and `HistoryStore`
@@ -187,6 +211,36 @@ strip-boundary fractions — i.e. back to landing at the top of a strip.
 **Accepted cost:** two intervals to tune instead of one, and a disk write every couple of seconds
 during continuous reading where today's design writes only on page boundaries. The coalescing is what
 makes the 500-entry re-encode survivable rather than fixed.
+
+> **Corrected 2026-07-30. This decision described one throttle shape and applied it to two layers,
+> and the layer it got wrong is the one that loses data.** The store's leading-edge, non-re-arming
+> throttle is right — it is `WorkStore`'s lesson and it bounds the write rate. Copying that shape into
+> the *view* drops the value that matters most:
+>
+> > Scroll for thirty seconds. The last tick fired 0.9s ago at 55% down strip 5. Stop at 62%, read
+> > that screenful for two minutes, then background the app. `flush()` faithfully writes 55%. Nothing
+> > ever writes 62%.
+>
+> Scroll-then-stop-then-leave is the normal shape of reading, so the trailing value is the one worth
+> having. It also makes this decision's closing claim — "the reader view needs no `scenePhase` code of
+> its own" — false as written, because `flush()` can only write what the store was told.
+>
+> **The view's throttle therefore has a trailing fire.** The leading edge records immediately; if more
+> measurements arrive inside the window, **one** catch-up record is scheduled at the window's end with
+> the latest value. This is **not** the idle-debounce beaten above: the trailing fire is pinned to a
+> fixed window end and is never pushed out, so the maximum gap stays ~1s however long the scroll runs.
+>
+> **And the reader records on `onDisappear`**, guarded by the same
+> `progressChapterID == vm.currentChapter.id` check the throttled path uses (decision 6). This is not
+> belt-and-braces: a `.task`-scoped trailing timer dies with the view, so "stop scrolling, immediately
+> tap ✕" is up to a second short without it. `onDisappear` fires on the pop and on a reading-mode
+> switch, both of which are exits from the vertical reader.
+>
+> With the trailing fire in place the original claim becomes true again: ≥1s after the last scroll the
+> store already holds the final position, so backgrounding needs nothing new in the reader.
+>
+> **Accepted cost:** one more moving part in the view, and a record that can fire while the view is
+> being torn down.
 
 ### 6. A pending position update is dropped when the chapter changes, not flushed
 
@@ -246,6 +300,42 @@ changing value into the type whose whole job (ADR-0013) is event-driven commit a
 **Accepted cost:** two possible restore sources, so "live wins when non-nil" is a rule someone has to
 know. Paged → webtoon still lands at the top of the strip: the paged mode has no fraction to give,
 which is an honest limit of a page index rather than something this decision drops.
+
+> **Amended 2026-07-30 — the ownership stands, the *mechanism* changes. The live position is not
+> `@State`; it lives in a non-observable box that `@State` merely holds.**
+>
+> ```swift
+> final class StripMetrics {          // deliberately NOT ObservableObject
+>     var frames: [Int: CGRect] = [:] // realized strips, in the reader's coordinate space
+>     var viewport: CGRect = .zero
+>     var live: ReadingPosition?
+> }
+> @State private var metrics = StripMetrics()   // the reference is never reassigned
+> ```
+>
+> A `PreferenceKey` per realized row transports frames; `.onPreferenceChange` merges them into the box
+> and recomputes `live`. **Nothing on screen renders the live position** — `pageIndicator` is
+> `mode.isPaged`-only (`ReaderView.swift:116`) — so a `@State` write per scroll frame would
+> re-evaluate the reader's body, with N anchor views on every realized strip (decision 9), to render
+> nothing new. Preference callbacks fire outside the update cycle, so there is no "modifying state
+> during view update"; because the box publishes nothing, a scroll costs zero body evaluations; and
+> the settle loop and the throttled `record` both read it directly and always see the newest
+> measurement.
+>
+> **Beat:** plain `@State`, as this decision originally said. It is the sanctioned channel and it
+> keeps the value visible to Previews and Instruments as state — and reading it from the settle loop
+> does work, because the storage box outlives the captured view struct. Rejected on cost and on
+> fragility: the per-frame invalidation is real, and "this works because `@State` is reference-backed"
+> is a fact about the implementation that a refactor is entitled to break.
+>
+> **Beat:** `onGeometryChange`, which is the tidy modern answer to all of this and is iOS 18. The
+> deployment target is 17.5, so `GeometryReader` + preference is the available path — see the revisit
+> trigger below, which already gathers the iOS 18 work.
+>
+> **Accepted cost:** a mutable reference smuggled through `@State`, which is exactly the pattern
+> SwiftUI discourages. The defence is that this is a *measurement cache*, not view state, and what
+> makes it allowed to be a reference is precisely that nothing renders from it — so if anything ever
+> does need to render from it, this decision has to be reopened rather than worked around.
 
 ### 9. Restore is an anchor grid plus a settle loop — one path on both OS versions
 
@@ -309,6 +399,29 @@ and wants precision, addressing wants stable identity — so the two halves are 
 reader has to understand both. Restore precision is quantized at 1/N, and the grid adds N views per
 realized row.
 
+> **Amended 2026-07-30 — what capture reports when the viewport top is not inside a strip.** The rule
+> above ("the strip covering the viewport top") has three holes, and because capture feeds `record`,
+> they decide what gets *persisted*. All three live in the pure function
+> `stripPosition(frames:viewport:) -> ReadingPosition?`, so they are unit-testable without a scroll
+> view.
+>
+> - **Past the last strip** — the top is in the interstitial, the end mark, or the 50pt loader
+>   (`ReaderView.swift:274-286`), and no strip covers it. **Fall back to the last measured strip,
+>   fraction clamped just under 1.** This changes nothing about completion — `finished` asks
+>   `page >= pageCount - 1`, which entering the last strip already satisfied (decision 7) — but it
+>   keeps the recorded value moving as the reader scrolls off the end instead of freezing partway
+>   down the final strip.
+> - **Overscroll above the first strip** — rubber-banding gives a negative offset. **Clamp to
+>   `(0, 0)`.** A bounce is not a position.
+> - **Nothing measured yet** — restore fires before any row has reported a frame. **Return `nil` and
+>   record nothing.** **Beat:** returning `(0, 0)`, which is harmless because `record` is monotonic.
+>   Rejected: that makes the capture function correct for a reason that lives in another type. An
+>   unmeasured strip is *unknown*, and a function whose job is to say where the reader is should be
+>   able to say it does not know.
+>
+> `[0, 1)` is enforced where the value is **made**, because restore computes `slot = Int(f · N)` and
+> `f == 1.0` addresses slot N in a `0..<N` grid. Restore clamps as well, as a cheap backstop.
+
 ### 10. The settle loop's stopping rule is a pure function
 
 A free function — given the target position, the target strip's measured frame, the viewport, and the
@@ -330,6 +443,30 @@ here is known to be no signal.
 
 **Accepted cost:** the geometry *feeding* the function is still untested view code; the tests prove the
 decision, not the measurement.
+
+> **Amended 2026-07-30 — the stopping rule, concretely. Its threshold is the grid's own resolution,
+> not a chosen constant.** With `residual = (stripTop + f · stripHeight) − viewportTop`:
+>
+> - **Stop when `0 ≤ residual < slotHeight`**, where `slotHeight = stripHeight / N`. **Beat:** a fixed
+>   point threshold (8pt, 12pt — "close enough to look right"). Rejected because the grid can only
+>   address multiples of `slotHeight` — ~60pt on a 3000pt strip at N = 50 — so any tighter threshold is
+>   unsatisfiable, and the loop would burn its whole budget on every single restore and then stop
+>   anyway, having achieved exactly the same landing.
+> - **Overshoot is never accepted.** `residual < 0` means content was skipped, so it always gets
+>   another attempt aiming one slot earlier. This is what makes decision 9's claim that "the residual
+>   lands *behind* the reader" true by construction rather than by luck.
+> - **Budget: 10 attempts.** Per attempt, poll until the target strip's measured frame changes or
+>   ~50ms elapses. Step zero is "wait until the target row is realized and measured at all", capped at
+>   ~1.5s — this is what **replaces** ADR-0013's fixed 50ms sleep, rather than sitting beside it.
+>
+> Deriving the threshold from `N` keeps the two constants from drifting: raise `N` for finer restore
+> and the stopping rule tightens automatically, with no second edit to remember.
+>
+> **Placement:** `Models/WebtoonGeometry.swift` holds `StripAnchor`, `stripPosition(frames:viewport:)`
+> from decision 9's amendment, and `settleStep(…) -> StripAnchor?`. `Models/` is a synchronized group
+> so the file needs no `project.pbxproj` edit; its test file does, via `xcp`. The precedent is
+> `Models/ReaderPresentation.swift` (ADR-0012) — the reader's pure pieces, lifted out of the view so
+> they can be tested.
 
 ### 11. Every door into the reader carries the position
 
@@ -367,6 +504,10 @@ only.
   and the lexicographic max keeps an earlier `(5, 0.8)` from a webtoon session. Switching back to
   webtoon then resumes 80% down strip 5 even though the paged reader was at its top. Harmless in
   practice, invisible in the model.
+- **The exit-path record rests on `onDisappear` firing** (decision 5's amendment). SwiftUI does not
+  promise it on every teardown, and the case it covers — leaving within a second of the last scroll —
+  is silent when it fails: the reader simply resumes a screenful early. The trailing fire bounds the
+  damage to that one second.
 - **The settle loop can fight the user.** If the reader starts scrolling while it is still converging,
   it will keep pulling them back. The attempt budget bounds the fight, but nothing detects user
   interaction mid-restore, and there is no clean SwiftUI signal for "the user touched the scroll view"
@@ -385,7 +526,9 @@ only.
 
 - **When the deployment target moves to iOS 18**, replace the anchor grid with
   `ScrollPosition.scrollTo(point:)` and *delete* N — the grid becomes dead weight rather than a
-  fallback worth maintaining.
+  fallback worth maintaining. The same move retires the other half: `onGeometryChange` replaces the
+  `GeometryReader` + `PreferenceKey` capture of decision 8's amendment, and with the per-frame
+  invalidation gone, `StripMetrics` may no longer need to be a non-observable box.
 - If resume still misses after the settle loop, go `UIScrollView` via `UIViewRepresentable`, where
   `contentOffset` is exact — the same shape of problem `Components/ZoomableContainer.swift` already
   solved for zoom physics. It means owning the lazy loading too: a `LazyVStack` does not stay lazy
