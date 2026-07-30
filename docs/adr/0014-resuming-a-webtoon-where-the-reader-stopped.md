@@ -4,7 +4,10 @@
   8, 9 and 10 each carry a dated amendment below, and one new hazard. Two of those are *corrections*
   rather than refinements: decision 5 described one throttle shape for two layers, and the layer it
   got wrong is the one that loses data; decision 8 claimed to close ADR-0013's mode-switch hazard
-  while closing half of it.
+  while closing half of it. **A second grilling session the same day** added five more, all in
+  decisions 5, 8, 9 and 10 and all about capture: what a placeholder strip may report, how the
+  measurement box is updated, and what the recorder does while restore is scrolling. They are
+  labelled *(second grill)* to keep them apart from the first round's, which share their date.
 - **Amends:** ADR-0013 — four of its decisions change here: the view-owned progress latch (its own
   "weakest of the eight decisions"), `pagerTarget`'s type, the fixed 50ms wait before `scrollTo`, and
   what the vertical restore aims at. It also closes three of its hazards — strip-granularity resume,
@@ -244,6 +247,46 @@ makes the 500-entry re-encode survivable rather than fixed.
 > **Accepted cost:** one more moving part in the view, and a record that can fire while the view is
 > being torn down.
 
+> **Amended 2026-07-30 (second grill) — the recorder is silenced while the settle loop runs, and the
+> throttle's *shape* is a pure function.**
+>
+> **`StripMetrics.isRestoring` gates the record path, not the measurement.** Capture and restore share
+> one measurement stream, and decision 10's loop deliberately renders positions it then rejects: an
+> overshoot never becomes a *landing*, but it does become a frame, `stripPosition` faithfully reports
+> it, and `record`'s lexicographic max makes it permanent if a window ends there. The asymmetry is the
+> whole argument — undershoot transients are discarded by the max, overshoot transients stick, so the
+> loop's one rejected outcome is the only one that can reach disk. Timing does not save it: step zero
+> waits up to ~1.5s for the target row to realize, which is the *normal* case on a cold cache, so the
+> trailing fire lands mid-flight precisely when strips are still resizing. `onDisappear` is guarded by
+> the same flag and is the sharper case — open a chapter, tap ✕ mid-flight, and the exit record writes
+> a scroll the user never performed. Suppressed it writes nothing, which is correct: the store already
+> holds the position restore is aiming at. **Beat:** clamping records to ≤ the restore target rather
+> than suppressing them — more surgical, and it keeps real scrolling recordable during the loop's tail.
+> Rejected for putting a second ceiling rule beside `record`'s max, which is decision 3's "one
+> invariant in two places" again. **Accepted cost:** if the reader scrolls during restore (the "settle
+> loop can fight the user" hazard) that scrolling is unrecorded until the loop exits — bounded by the
+> same attempt budget at ~2s, and picked up by the next trailing fire. Commit 2 defines the field and
+> the guard, commit 3 sets it: one commit holding an inert field beats one commit shipping a knowingly
+> wrong recorder.
+>
+> **The throttle's shape is a pure function** — `recordAction(now:lastFired:window:trailingArmed:)`
+> returning `.recordNow` / `.scheduleTrailing(at:)` / `.ignore` — and the view keeps the `Task`, the
+> sleep and the call to `record`. The correction above was a *shape* bug found by writing out a
+> scenario in prose, which is a fine way to find one bug and a bad way to be sure there is not a
+> second. The two properties that make the corrected shape right are each one assertion, and neither is
+> checkable by reading the view: a measurement arriving inside the window after a leading fire returns
+> `.scheduleTrailing` rather than `.ignore` (the bug that was actually there), and an armed trailing
+> fire is never pushed out (what separates this from the idle-debounce beaten above, and the property
+> most likely to be broken later by someone "fixing" a missed update). It is also the third piece of
+> tricky logic in this one view after `stripPosition` and `settleStep`; leaving it untested because its
+> subject is time rather than geometry would be an accident of subject matter. **Beat:** a `Throttle`
+> class owning its own timer with an injected `Clock`, tested end to end. It proves more — including
+> that the trailing fire actually lands — but a fake clock is real machinery for fifteen lines, and
+> `HistoryStore`'s injected-interval trick (set the interval near zero) cannot test a trailing fire at
+> all, only that something eventually happens. **Placement:** its own file under `Models/`, with its
+> tests sharing the one new test file `WebtoonGeometry`'s tests already need, so commit 2 crosses the
+> `pbxproj` hazard once instead of twice.
+
 ### 6. A pending position update is dropped when the chapter changes, not flushed
 
 `record` attributes to `vm.currentChapter` at call time (`ReaderView.swift:193`). A throttled tick
@@ -369,6 +412,43 @@ which is an honest limit of a page index rather than something this decision dro
 > "rare, and lands you somewhere you have never been" is the same shape as the bug this whole ADR
 > exists to fix.
 
+> **Amended 2026-07-30 (second grill) — how the box is *updated*: `frames` is replaced wholesale, and
+> `live` is last-known-good.**
+>
+> The amendment above says `.onPreferenceChange` "merges" frames into the box. Merge is wrong, for a
+> reason specific to the coordinate space: frames are viewport-relative, so **every frame is valid only
+> at the scroll offset it was measured at.** A `LazyVStack` derealizes rows a screen or two away, and a
+> merged dictionary would keep their rects forever, frozen thousands of points ago.
+>
+> - **`frames` is replaced by each preference value.** The value *is* the set of realized rows; a row
+>   that fell out of it has no frame, not an old one. Two failures go away. A stale rect can test as
+>   containing the viewport top and report the wrong `page` — and under the max a wrong *high* page
+>   sticks forever while a wrong low one is silently discarded, so the error only ever compounds in the
+>   damaging direction. And `settleStep`'s "target row not realized" case — one of the four decision 10
+>   demands tests for — stops being answerable with fiction, which is what makes decision 10's step
+>   zero ("wait until the target row is realized and measured at all") implementable rather than
+>   vacuous. **Beat:** merging, so the loop has something to aim at before its target realizes. That
+>   something is exactly the lie above, and step zero is the designed answer to the case it covers.
+> - **`didCompleteLoad` clears `frames`** on a chapter change, alongside `live`. Replacement mostly
+>   self-corrects on the next layout pass, but strip indices overlap across chapters, so there is a
+>   window in which the old chapter's strip 3 answers for the new one's.
+> - **A `nil` capture never clears `live`; only a non-nil capture replaces it.** `nil` has three
+>   producers — nothing measured yet, overscroll above the first strip, and (decision 9's fourth hole)
+>   an undecoded covering strip — and wholesale replacement adds a fourth: `verticalReader` leaving the
+>   hierarchy emits the preference's empty default. That last one fires at exactly the moment the
+>   correction above reads `metrics.live?.page` on the way into a paged mode, so a self-clearing `live`
+>   would nil itself precisely when the mode-switch fix depends on it. Holding `StripMetrics` on
+>   `ReaderView` keeps the *box* alive across the switch; only stickiness keeps the *value* alive. It
+>   also removes a race that is otherwise unresolvable: SwiftUI does not order `onDisappear` against
+>   the preference change from the same teardown, so decision 5's exit-path record would be a coin
+>   flip.
+>
+> **Accepted cost:** `live` can be stale — up to a throttle window of scrolling, or a strip's worth if
+> the covering strip was still decoding. All three consumers (the exit record, the mode switch, the
+> restore fallback) prefer a slightly stale real position to `nil`, which means "start at the top":
+> landing short beats landing nowhere. The one case where stale is genuinely wrong is a chapter change,
+> and that is the case that clears it explicitly.
+
 ### 9. Restore is an anchor grid plus a settle loop — one path on both OS versions
 
 **Capture:** one `GeometryReader` per *realized* row, reporting the strip's frame in a named
@@ -454,6 +534,41 @@ realized row.
 > `[0, 1)` is enforced where the value is **made**, because restore computes `slot = Int(f · N)` and
 > `f == 1.0` addresses slot N in a `0..<N` grid. Restore clamps as well, as a cheap backstop.
 
+> **Amended 2026-07-30 (second grill) — a fourth hole: a strip that has not decoded cannot report a
+> position.** The three holes above are all about the *viewport* being outside every strip. This one is
+> about the *strip* being a lie. `CachedAsyncImage.phase` starts `.empty` even for a disk hit
+> (`CachedAsyncImage.swift:22-24`) and `.empty` renders `Screentone().frame(height: 460)`
+> (`ReaderView.swift:465-468`), so until its image lands a strip's height is a placeholder. This ADR
+> already leans on that fact to justify the settle loop — but **capture reads the same heights, and
+> capture writes to disk.**
+>
+> Cold cache, the reader flicks down 3300pt. Seven 460pt placeholders put the viewport top 60% into
+> strip 7, `record` persists `(7, 0.6)`, and the next open lands 1800pt into a real 3000pt strip 7 —
+> content they have never seen. That is decision 7's rejected failure ("resume lands a full viewport
+> *past* where they stopped — skipping content, which is worse than landing short") arriving through
+> capture rather than through `onAppear`. Because `page` is monotonic and feeds `TasteProfile.swift:99`,
+> the same flick can mark the chapter finished as well.
+>
+> - The per-row preference payload is **`(frame, isDecoded)`**, not a bare frame. `WebtoonPage` already
+>   switches on its phase (`ReaderView.swift:458-477`), so the flag costs nothing to produce.
+> - If the strip covering the viewport top has **not** decoded, `stripPosition` returns `nil` — the same
+>   "it does not know" the third hole established.
+> - The past-the-last-strip fallback picks the highest **realized and decoded** strip, or placeholder
+>   fractions come back in through that door.
+>
+> Gating on the *covering* strip alone is exactly sufficient: the fraction is a ratio inside that one
+> strip, so undecoded strips above it change which strip is on top but cannot distort the ratio — and
+> at that instant, that genuinely is the strip on screen.
+>
+> **Beat:** accept it, and widen the existing hazard ("restore correctness rests on measurements taken
+> while images are still decoding") to cover capture too. One less field on the payload, and the reader
+> really was looking at that pixel. Rejected because the restore hazard self-corrects on the next
+> scroll, while a wrong *persisted* value outlives the session that made it and is then defended by the
+> max.
+>
+> **Accepted cost:** a chapter read on a cold, slow connection records only what `didCompleteLoad` wrote
+> at open, until images start landing.
+
 ### 10. The settle loop's stopping rule is a pure function
 
 A free function — given the target position, the target strip's measured frame, the viewport, and the
@@ -499,6 +614,13 @@ decision, not the measurement.
 > so the file needs no `project.pbxproj` edit; its test file does, via `xcp`. The precedent is
 > `Models/ReaderPresentation.swift` (ADR-0012) — the reader's pure pieces, lifted out of the view so
 > they can be tested.
+
+> **Amended 2026-07-30 (second grill).** The loop raises `StripMetrics.isRestoring` for its whole
+> duration and clears it in a `defer`; that is what silences the recorder while the loop renders — and
+> then rejects — its overshoots. The argument is in decision 5's second amendment. The pure-function
+> list for `Models/WebtoonGeometry.swift` is otherwise unchanged: the throttle's `recordAction`
+> deliberately does **not** live there, because it is timing rather than geometry, but its tests share
+> this file's test file so commit 2 touches the pbxproj once.
 
 ### 11. Every door into the reader carries the position
 
@@ -554,7 +676,22 @@ only.
   in iOS 17.
 - **Restore correctness rests on measurements taken while images are still decoding.** The loop
   converges on whatever the frames say at the time; a strip whose image arrives late shifts content
-  after the loop has already stopped.
+  after the loop has already stopped. Capture is *not* exposed to this — decision 9's second amendment
+  gates it on the covering strip having decoded — which is the asymmetry to remember: restore may act
+  on a placeholder, capture may not persist one.
+- **A cold, slow session records almost nothing.** With the decoded gate, a chapter scrolled faster
+  than its images arrive holds only the position `didCompleteLoad` wrote at open. Nothing is wrong and
+  nothing is lost that was ever known — but "I read for a minute and it resumed at the top" is a real
+  user-visible shape, and its cause is invisible in the model.
+- **Real scrolling during a restore is dropped.** `isRestoring` silences the recorder for the loop's
+  duration (~2s worst case), so a reader who starts scrolling while the loop is still converging has
+  that movement recorded only by the next trailing fire. It compounds with the "settle loop can fight
+  the user" hazard above: the same window in which the loop pulls them back is the window in which
+  their own scrolling does not count.
+- **`live` is deliberately stale-tolerant.** A `nil` capture never clears it (decision 8's second
+  amendment), so the mode switch and the exit record can read a position up to a throttle window old.
+  The failure mode is landing a screenful short, never landing ahead — but anyone adding a *fourth*
+  consumer has to check that "slightly stale beats nil" still holds for it.
 - **The anchor grid multiplies view count** — N `Color.clear` per realized row, and it must keep
   `allowsHitTesting(false)` or it swallows the chrome-toggle tap.
 - **`HistoryStore.save()` is still an all-or-nothing re-encode** of 500 entries plus read-marks
