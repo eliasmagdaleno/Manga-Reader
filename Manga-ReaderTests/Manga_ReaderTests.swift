@@ -48,25 +48,25 @@ final class Manga_ReaderTests: XCTestCase {
 
     @MainActor func testRecordPrependsNewEntry() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 2, pageCount: 10)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil), page: 0, pageCount: 8)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 2), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 0), pageCount: 8)
         XCTAssertEqual(store.entries.count, 2)
         XCTAssertEqual(store.entries.first?.chapterId, "c2") // most-recent-first
     }
 
     @MainActor func testRecordSameChapterUpdatesInPlace() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 2, pageCount: 10)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 5, pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 2), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 5), pageCount: 10)
         XCTAssertEqual(store.entries.count, 1)
         XCTAssertEqual(store.entries.first?.page, 5)
     }
 
     @MainActor func testRecordNonConsecutiveChapterCreatesNewEntry() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil), page: 1, pageCount: 10)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 3, pageCount: 10) // reopened later
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 3), pageCount: 10) // reopened later
         XCTAssertEqual(store.entries.count, 3)          // new session, not an in-place update
         XCTAssertEqual(store.entries.first?.chapterId, "c1")
         XCTAssertEqual(store.entries.first?.page, 3)
@@ -74,19 +74,19 @@ final class Manga_ReaderTests: XCTestCase {
 
     @MainActor func testLatestEntryForManga() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga("a"), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)
-        store.record(manga: sampleManga("b"), chapter: Chapter(id: "c2", number: "1", title: nil), page: 1, pageCount: 10)
+        store.record(manga: sampleManga("a"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
+        store.record(manga: sampleManga("b"), chapter: Chapter(id: "c2", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
         XCTAssertEqual(store.latestEntry(forManga: "a")?.chapterId, "c1")
         XCTAssertNil(store.latestEntry(forManga: "zzz"))
     }
 
     @MainActor func testDeleteAndClear() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
         let entry = store.entries[0]
         store.delete(entry)
         XCTAssertTrue(store.entries.isEmpty)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
         store.clear()
         XCTAssertTrue(store.entries.isEmpty)
     }
@@ -94,7 +94,7 @@ final class Manga_ReaderTests: XCTestCase {
     @MainActor func testReadingEntryRecordsSourceId() {
         let store = makeHistoryStore()
         let manga = sampleManga("m", sourceId: "weebcentral")
-        store.record(manga: manga, chapter: Chapter(id: "c1", number: "1", title: nil), page: 0, pageCount: 5)
+        store.record(manga: manga, chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 0), pageCount: 5)
         XCTAssertEqual(store.entries.first?.sourceId, "weebcentral")
     }
 
@@ -140,7 +140,7 @@ final class Manga_ReaderTests: XCTestCase {
         let entry = ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "t", coverURL: nil,
                                  chapterId: "id2", chapterNumber: "2", page: 3, pageCount: 10, updatedAt: Date())
         XCTAssertEqual(resumeAction(entry: entry, chapters: [ch("1"), ch("2"), ch("3")]),
-                       .cont(ch("2"), page: 3))
+                       .cont(ch("2"), position: ReadingPosition(page: 3)))
     }
 
     func testResumeActionFinishedJumpsToNext() {
@@ -154,7 +154,7 @@ final class Manga_ReaderTests: XCTestCase {
         let entry = ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "t", coverURL: nil,
                                  chapterId: "id3", chapterNumber: "3", page: 9, pageCount: 10, updatedAt: Date())
         XCTAssertEqual(resumeAction(entry: entry, chapters: [ch("1"), ch("2"), ch("3")]),
-                       .reread(ch("3"), page: 9))
+                       .reread(ch("3")))
     }
 
     // MARK: - Library updates
@@ -181,8 +181,8 @@ final class Manga_ReaderTests: XCTestCase {
 
     @MainActor func testReadChapterNumbersForManga() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), page: 1, pageCount: 5)
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c2", number: "2", title: nil), page: 1, pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 1), pageCount: 5)
         XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["1", "2"])
         XCTAssertTrue(store.readChapterNumbers(forManga: "other").isEmpty)
     }
@@ -191,7 +191,7 @@ final class Manga_ReaderTests: XCTestCase {
 
     @MainActor func testOpenedChapterCountsAsRead() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), page: 0, pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 0), pageCount: 5)
         XCTAssertTrue(store.isRead(chapterId: "c1"))       // has a history entry → read
         XCTAssertFalse(store.isRead(chapterId: "c2"))
     }
@@ -219,7 +219,7 @@ final class Manga_ReaderTests: XCTestCase {
     @MainActor func testMarkUnreadClearsBothMarkAndHistory() throws {
         let store = makeHistoryStore()
         let chapter = Chapter(id: "c1", number: "1", title: nil)
-        store.record(manga: sampleManga("m"), chapter: chapter, page: 2, pageCount: 5) // opened
+        store.record(manga: sampleManga("m"), chapter: chapter, position: ReadingPosition(page: 2), pageCount: 5) // opened
         store.markRead(manga: sampleManga("m"), chapter: chapter)                       // and marked
         XCTAssertTrue(store.isRead(chapterId: "c1"))
 
@@ -268,7 +268,7 @@ final class Manga_ReaderTests: XCTestCase {
         let c1 = Chapter(id: "c1", number: "1", title: nil)
         let c2 = Chapter(id: "c2", number: "2", title: nil)
         let c3 = Chapter(id: "c3", number: "3", title: nil)
-        store.record(manga: manga, chapter: c1, page: 2, pageCount: 5)  // opened
+        store.record(manga: manga, chapter: c1, position: ReadingPosition(page: 2), pageCount: 5)  // opened
         store.markRead(manga: manga, chapter: c2)                       // manually marked
         store.markRead(manga: manga, chapter: c3)                       // manually marked, untouched below
 
@@ -1656,7 +1656,7 @@ final class Manga_ReaderTests: XCTestCase {
     @MainActor private func tagRead(_ works: WorkStore, _ history: HistoryStore,
                                     _ id: String, _ tags: [Tag]) {
         works.noteListingTags(tags, for: sampleManga(id))
-        history.record(manga: sampleManga(id), chapter: ch("1"), page: 9, pageCount: 10)
+        history.record(manga: sampleManga(id), chapter: ch("1"), position: ReadingPosition(page: 9), pageCount: 10)
     }
 
     @MainActor private func makeEngine(history: HistoryStore, tasteStore: TasteProfileStore,
@@ -1846,7 +1846,7 @@ final class Manga_ReaderTests: XCTestCase {
 
         // History only — no Works, no provisional snapshots. Exactly a pre-slice-3 user.
         for i in 1...3 {
-            history.record(manga: sampleManga("m\(i)"), chapter: ch("1"), page: 9, pageCount: 10)
+            history.record(manga: sampleManga("m\(i)"), chapter: ch("1"), position: ReadingPosition(page: 9), pageCount: 10)
         }
         let engine = makeEngine(history: history, tasteStore: taste,
                                 provider: FixedPoolProvider(pool: [scored("rec1")]))

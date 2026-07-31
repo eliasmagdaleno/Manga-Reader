@@ -273,10 +273,34 @@ Because commit is the only thing that changes `currentChapter`, that property ch
 trustworthy "we really moved" signal.
 _Avoid_: load, switch, advance — an **advance** is the attempt, a commit is the outcome.
 
+**Reading position** (`ReadingPosition`) — a place inside a chapter: a page index plus a `fraction`
+of the way down that page. The fraction is only meaningful against the page it was captured on, and
+is only ever non-zero in the vertical mode, where a page is a **strip**. Persisted flat on
+`ReadingEntry` (`page`, `fraction`), which is why that type hand-writes `init(from:)` — a default value
+does not make a non-optional key optional to Swift's decoder. Carried as one value everywhere else. **Persisted positions only move forward** — same page keeps the larger fraction, a higher page
+takes the new pair — because `page` doubles as the completion signal for Continue Reading, the
+in-progress badge and taste signals.
+_Avoid_: resume pointer, last position — a *last* position would move backwards, which is a
+[deliberately rejected design](adr/0014-resuming-a-webtoon-where-the-reader-stopped.md), not a
+synonym.
+
+**Strip** — a webtoon page: one tall image, routinely several screens long. The reason a page index
+alone cannot say where a reader stopped, and the unit the anchor grid subdivides.
+
 **Pager target** (`pagerTarget`) — where the pager belongs once a load completes, **whether or not
-it committed**. On success it is the page the chapter opens at; on a failed advance it is the page
-the pager retreats to inside the chapter that survived.
+it committed**. On success it is the position the chapter opens at; on a failed advance it is the page
+the pager retreats to inside the chapter that survived. It is a **reading position** but, unlike a
+persisted one, it is transient and **not monotonic** — retreating is its whole purpose.
 _Avoid_: landing page — nothing lands when an advance fails.
+
+**Anchor grid** — the N invisible, equally spaced, individually identified slices overlaid on each
+strip so `scrollTo` can address a point *inside* it. A rendering constant, never persisted, so its
+resolution can be raised without touching saved data.
+
+**Settle loop** — restore scrolling to a fraction, re-measuring where it actually landed, and
+scrolling again until the target strip sits where it should or the attempt budget runs out. It exists
+because no strip has its real height while its image is still decoding, so the first scroll is aiming
+at a placeholder. Its stopping rule is pure and unit-tested; the loop around it is not.
 
 **Advance trigger** — the sentinel pager index one step past an interstitial, whose appearance
 *requests* the adjacent chapter. It is not a page and holds no content of its own; it reports on the

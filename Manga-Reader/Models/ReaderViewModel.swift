@@ -33,7 +33,7 @@ final class ReaderViewModel: ObservableObject {
     /// user was travelling*, which is what both the retreat target and the banner's wording
     /// are derived from on failure (ADR-0013).
     enum Landing: Equatable {
-        case exact(Int)
+        case exact(ReadingPosition)
         case first
         case last
     }
@@ -49,7 +49,7 @@ final class ReaderViewModel: ObservableObject {
     /// it is the page the chapter opens at; on a failed advance it retreats into the chapter
     /// that survived, since the pager is otherwise stranded on the sentinel index that
     /// requested the missing one. See ADR-0013.
-    @Published private(set) var pagerTarget = 0
+    @Published private(set) var pagerTarget = ReadingPosition(page: 0)
 
     /// The generation of the most recent load to *finish* and still be current. The view
     /// repositions the pager when this changes.
@@ -66,17 +66,17 @@ final class ReaderViewModel: ObservableObject {
 
     private let manga: Manga
     private let source: MangaSource
-    private let initialPage: Int
+    private let initialPosition: ReadingPosition
     /// Injected so tests never reach the network. Production passes the real cache.
     private let prefetch: ([URL], Int) -> Void
 
-    init(manga: Manga, chapter: Chapter, chapters: [Chapter], initialPage: Int,
+    init(manga: Manga, chapter: Chapter, chapters: [Chapter], initialPosition: ReadingPosition,
          source: MangaSource? = nil,
          prefetch: (([URL], Int) -> Void)? = nil) {
         self.manga = manga
         self.currentChapter = chapter
         self.chapters = chapters
-        self.initialPage = initialPage
+        self.initialPosition = initialPosition
         self.source = source ?? SourceRegistry.shared.source(for: manga)
         self.prefetch = prefetch ?? { urls, width in
             ImageCache.shared.prefetch(urls, maxConcurrent: width)
@@ -115,11 +115,11 @@ final class ReaderViewModel: ObservableObject {
         if chapters.isEmpty {
             chapters = (try? await source.chapters(mangaId: manga.id)) ?? []
         }
-        await advance(to: currentChapter, landing: .exact(initialPage))
+        await advance(to: currentChapter, landing: .exact(initialPosition))
     }
 
     func retry() async {
-        await advance(to: currentChapter, landing: .exact(initialPage))
+        await advance(to: currentChapter, landing: .exact(initialPosition))
     }
 
     func loadNext() async {
@@ -162,7 +162,7 @@ final class ReaderViewModel: ObservableObject {
 
             currentChapter = chapter
             pages = fetched
-            pagerTarget = Self.landingIndex(landing, pageCount: fetched.count)
+            pagerTarget = Self.landingPosition(landing, pageCount: fetched.count)
             prefetch(fetched, source.imagePrefetchConcurrency)
         } catch {
             guard isCurrent() else { return }
@@ -171,8 +171,11 @@ final class ReaderViewModel: ObservableObject {
             failureIsTransient = isTransientFailure(error)
             // The pager is sitting on the sentinel index that asked for the chapter that
             // isn't there. Retreat into the one that survived.
+            // A page, not a position: a retreat is "back into the chapter that survived",
+            // which is a page-level statement, and the fraction it lands with is
+            // unobservable in all three modes (ADR-0014 decision 7's amendment).
             if let retreat = Self.retreatIndex(landing, pageCount: pages.count) {
-                pagerTarget = retreat
+                pagerTarget = ReadingPosition(page: retreat)
             }
         }
     }
@@ -185,12 +188,21 @@ final class ReaderViewModel: ObservableObject {
         return urls
     }
 
-    private static func landingIndex(_ landing: Landing, pageCount: Int) -> Int {
-        guard pageCount > 0 else { return 0 }
+    private static func landingPosition(_ landing: Landing, pageCount: Int) -> ReadingPosition {
+        guard pageCount > 0 else { return ReadingPosition(page: 0) }
         switch landing {
-        case .exact(let page): return min(max(page, 0), pageCount - 1)
-        case .first:           return 0
-        case .last:            return pageCount - 1
+        case .exact(let position):
+            let page = min(max(position.page, 0), pageCount - 1)
+            // A clamp that *moves* the page drops the fraction with it. A fraction is only
+            // meaningful against the page it was captured on, and a changed page count means
+            // the pages were re-cut — so 60% of strip 7 maps to nothing in the chapter that
+            // exists now. Landing at the top is honest about not knowing; landing 60% down
+            // some other strip is invented precision, and a wrong resume is harder to notice
+            // than a zeroed one (ADR-0014 decision 4's amendment).
+            guard page == position.page else { return ReadingPosition(page: page) }
+            return position
+        case .first: return ReadingPosition(page: 0)
+        case .last:  return ReadingPosition(page: pageCount - 1)
         }
     }
 

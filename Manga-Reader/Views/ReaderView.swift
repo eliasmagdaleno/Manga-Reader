@@ -46,6 +46,70 @@ enum ReadingMode: String, CaseIterable, Identifiable {
     var isPaged: Bool { self != .vertical }
 }
 
+// MARK: - Strip measurement
+
+/// The vertical reader's measurement cache: every realized strip's frame, the viewport,
+/// and the position they imply.
+///
+/// **Deliberately not `ObservableObject`, and deliberately a reference** (ADR-0014
+/// decision 8's amendment). Nothing on screen renders the live position — `pageIndicator`
+/// is paged-only — so publishing it would re-evaluate the reader's body on every scroll
+/// frame, with N anchor views per realized strip, to render nothing new. `@State` holds
+/// the box and never reassigns it, so the reader never invalidates; the throttle and the
+/// settle loop read it directly and always see the newest measurement.
+///
+/// If anything ever *does* need to render from this, that decision has to be reopened
+/// rather than worked around.
+final class StripMetrics {
+    /// Realized strips only, in the reader's named coordinate space. **Replaced whole on
+    /// every measurement, never merged**: frames are viewport-relative, so a frame from a
+    /// derealized row is only valid at the scroll offset it was taken at, and a stale one
+    /// can test as containing the viewport top (ADR-0014 decision 8, second amendment).
+    var frames: [Int: StripFrame] = [:]
+    var viewport: CGRect = .zero
+
+    /// Last known good. A `nil` capture — nothing measured, overscroll, an undecoded strip,
+    /// or the empty preference emitted when the vertical reader tears down — never clears
+    /// it, because the mode switch and the exit record read it at exactly that moment.
+    /// Only a chapter change clears it.
+    var live: ReadingPosition?
+
+    /// Raised by the settle loop for its duration. Gates the *record* path, not the
+    /// measurement: the loop renders overshoots it then rejects, and overshoot is the only
+    /// transient `record`'s max preserves. Set from commit 3.
+    var isRestoring = false
+
+    var lastFired: Date?
+    var trailingArmed = false
+
+    func resetForNewChapter() {
+        frames = [:]
+        live = nil
+        lastFired = nil
+        trailingArmed = false
+    }
+}
+
+/// Per-row frames. `reduce` merges *siblings within one layout pass*; each pass starts from
+/// `defaultValue`, which is what makes the value a snapshot of the currently realized rows
+/// rather than an accumulation across passes.
+private struct StripFramesKey: PreferenceKey {
+    static let defaultValue: [Int: StripFrame] = [:]
+    static func reduce(value: inout [Int: StripFrame], nextValue: () -> [Int: StripFrame]) {
+        value.merge(nextValue()) { _, newer in newer }
+    }
+}
+
+private struct StripViewportKey: PreferenceKey {
+    static let defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) { value = nextValue() }
+}
+
+/// The reader's scroll coordinate space. Frames measured in it are **viewport-relative** —
+/// a strip's `minY` goes negative as it scrolls above the top edge — which is the whole
+/// reason `frames` cannot be merged across passes.
+private let readerScrollSpace = "webtoonReaderScroll"
+
 // MARK: - Reader
 
 struct ReaderView: View {
@@ -53,11 +117,13 @@ struct ReaderView: View {
 
     @StateObject private var vm: ReaderViewModel
 
-    init(manga: Manga, chapter: Chapter, initialPage: Int = 0, chapters: [Chapter] = []) {
+    init(manga: Manga, chapter: Chapter, initialPosition: ReadingPosition? = nil,
+         chapters: [Chapter] = []) {
         self.manga = manga
         _vm = StateObject(wrappedValue: ReaderViewModel(manga: manga, chapter: chapter,
                                                        chapters: chapters,
-                                                       initialPage: initialPage))
+                                                       initialPosition: initialPosition
+                                                           ?? ReadingPosition(page: 0)))
         _progressChapterID = State(initialValue: chapter.id)
     }
 
@@ -66,13 +132,44 @@ struct ReaderView: View {
     @EnvironmentObject private var history: HistoryStore
 
     @State private var currentPage = 0
-    @State private var furthestPage = 0
-    @State private var hasRecordedProgress = false
     @State private var showChrome = false
+
+    /// Held by `ReaderView` rather than by `verticalReader`, so the live position survives a
+    /// reading-mode switch — which is what lets each mode resume from the other's notion of
+    /// where the reader is (ADR-0014 decision 8's correction).
+    @State private var metrics = StripMetrics()
+
+    /// How often the vertical reader is allowed to hand a position to the store while
+    /// scrolling. Leading edge plus one trailing fire per window (ADR-0014 decision 5).
+    private let recordWindow: TimeInterval = 1
+
+    /// Settle-loop timings. The budget and the stopping rule live in `settleStep`; these are
+    /// only how long the view is willing to wait for the layout to answer.
+    private let settleRealizeTimeout: TimeInterval = 1.5
+    private let settleRemeasureWait: TimeInterval = 0.05
+    private let settlePollInterval = 8
 
     /// The chapter the progress counters above belong to. The view model commits a chapter
     /// change only on success, so a mismatch here is a reliable "we really moved".
     @State private var progressChapterID: String
+
+    /// The load `didCompleteLoad` has already processed.
+    ///
+    /// Restore and `didCompleteLoad` are driven by the *same* marker, so this is the only
+    /// honest way for restore to know whether the state it reads — `currentPage`, `metrics` —
+    /// belongs to this load yet. `progressChapterID` cannot answer it: `init` seeds it with
+    /// the chapter id, so on a first open it matches before anything has run.
+    @State private var loadedRequest: Int?
+
+    /// The chapter the *scroll view* has been positioned for. A `ScrollView` keeps its
+    /// content offset when the pages under it are replaced, so this is what distinguishes
+    /// "already at the top of this chapter" from "still at the bottom of the last one".
+    @State private var scrolledChapterID: String?
+
+    /// The chapter whose next-chapter load has already been requested. Without it the loader
+    /// at the bottom of the strip re-fires as soon as it is on screen again, and the reader
+    /// skips through several chapters in a row.
+    @State private var advanceRequestedFor: String?
 
     /// Which failure the user has already seen. Compared against the view model's completion
     /// marker rather than the message text, so an identical error twice in a row still shows
@@ -122,6 +219,12 @@ struct ReaderView: View {
         .toolbar(.hidden, for: .tabBar)
         .task { await vm.begin() }
         .onChange(of: vm.lastCompletedRequest) { _, _ in didCompleteLoad() }
+        // Entering a paged mode adopts the vertical reader's live position. `currentPage` is
+        // otherwise assigned only in `didCompleteLoad`, so webtoon strip 5 → paged used to
+        // land on the page the chapter was opened at (ADR-0014 decision 8's correction).
+        .onChange(of: mode) { _, newMode in
+            if newMode.isPaged, let live = metrics.live { currentPage = live.page }
+        }
     }
 
     /// Everything the view does after a load finishes, in one place and one order.
@@ -131,13 +234,22 @@ struct ReaderView: View {
     /// would go unrecorded until the reader swiped. SwiftUI's observer ordering is not a
     /// documented guarantee, so this does not depend on it.
     private func didCompleteLoad() {
+        loadedRequest = vm.lastCompletedRequest
         if vm.currentChapter.id != progressChapterID {
             progressChapterID = vm.currentChapter.id
-            furthestPage = 0
-            hasRecordedProgress = false
+            // Strip indices overlap between chapters, so the old chapter's strip 3 would
+            // otherwise answer for the new one's until the next layout pass replaced it.
+            metrics.resetForNewChapter()
+        } else {
+            // A load that completed without moving chapter is a failed advance (or a retry),
+            // so let the reader ask again by scrolling back to the bottom.
+            advanceRequestedFor = nil
         }
-        currentPage = vm.pagerTarget
-        advanceProgress(to: vm.pagerTarget)
+        currentPage = vm.pagerTarget.page
+        // The open-time record is what puts a chapter into History at all (`isRead` is "has
+        // an entry") and what mints the Work. It has to stay: in the vertical reader,
+        // opening a chapter and leaving before any measurement lands records nothing.
+        recordProgress(vm.pagerTarget)
     }
 
     private func errorState(_ message: String, canRetry: Bool) -> some View {
@@ -185,13 +297,145 @@ struct ReaderView: View {
         withAnimation(.snappy(duration: 0.22)) { showChrome.toggle() }
     }
 
-    private func advanceProgress(to index: Int) {
-        guard !vm.pages.isEmpty, index >= 0, index < vm.pages.count else { return }
-        guard index > furthestPage || !hasRecordedProgress else { return }
-        furthestPage = max(furthestPage, index)
-        hasRecordedProgress = true
+    /// The one door to the store. Monotonicity is the store's job now (ADR-0014 decision 3),
+    /// so there is no view-side latch left — only the two things the *view* knows: that the
+    /// position belongs to the chapter this view believes it is showing, and that it names a
+    /// page that exists.
+    private func recordProgress(_ position: ReadingPosition) {
+        guard progressChapterID == vm.currentChapter.id else { return }
+        guard !vm.pages.isEmpty, position.page >= 0, position.page < vm.pages.count else { return }
         history.record(manga: manga, chapter: vm.currentChapter,
-                       page: furthestPage, pageCount: vm.pages.count)
+                       position: position, pageCount: vm.pages.count)
+    }
+
+    // MARK: Live position (vertical mode)
+
+    /// Called on every measurement the vertical reader reports.
+    ///
+    /// Two jobs, in order: keep `metrics.live` current — sticky, so a `nil` capture leaves
+    /// the last known position alone — and decide whether this measurement is allowed to
+    /// reach the store.
+    private func measurementChanged() {
+        if let position = stripPosition(frames: metrics.frames, viewport: metrics.viewport) {
+            metrics.live = position
+        }
+        guard !metrics.isRestoring else { return }
+
+        let now = Date()
+        switch recordAction(now: now, lastFired: metrics.lastFired,
+                            window: recordWindow, trailingArmed: metrics.trailingArmed) {
+        case .recordNow:
+            metrics.lastFired = now
+            recordLivePosition()
+        case .scheduleTrailing(let deadline):
+            metrics.trailingArmed = true
+            Task { @MainActor in
+                let wait = deadline.timeIntervalSinceNow
+                if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+                metrics.trailingArmed = false
+                guard !metrics.isRestoring else { return }
+                metrics.lastFired = Date()
+                recordLivePosition()
+            }
+        case .ignore:
+            break
+        }
+    }
+
+    /// The trailing fire deliberately outlives the view — `metrics` is a reference and
+    /// `progressChapterID` reads through `@State` storage, so a tick that lands after a
+    /// chapter advance is dropped by `recordProgress`'s guard rather than written against
+    /// the wrong chapter (ADR-0014 decision 6).
+    private func recordLivePosition() {
+        guard let live = metrics.live else { return }
+        recordProgress(live)
+    }
+
+    // MARK: Restore (vertical mode)
+
+    /// Where the vertical reader should land after a load.
+    ///
+    /// The live position wins, so a mid-chapter mode switch resumes where the reader *is*
+    /// rather than where the chapter was entered. `currentPage` is the paged modes' live
+    /// truth — but it is assigned in `didCompleteLoad`, which is driven by the same marker
+    /// as the task that calls this, so on a chapter advance it may not have run yet. Until
+    /// it has, `pagerTarget` is the only value that belongs to the new chapter.
+    private var restoreTarget: ReadingPosition {
+        guard loadedRequest == vm.lastCompletedRequest else { return vm.pagerTarget }
+        return metrics.live ?? ReadingPosition(page: currentPage)
+    }
+
+    /// Scroll to the saved position, then keep correcting until the measurement agrees.
+    ///
+    /// One scroll is not enough: every strip is a 460pt placeholder until its image decodes,
+    /// so an aim taken at that moment is against a layout that grows underneath it — and
+    /// every strip *above* the target grows too. The loop re-reads the real frames after
+    /// each attempt (ADR-0014 decisions 9 and 10).
+    private func restorePosition(using proxy: ScrollViewProxy) async {
+        let isNewChapter = scrolledChapterID != vm.currentChapter.id
+        let target: ReadingPosition
+        switch restorePlan(target: restoreTarget, isNewChapter: isNewChapter) {
+        case .none:
+            return
+        case .top:
+            // Arriving in a new chapter is a scroll, not a no-op: the scroll view is still
+            // holding the offset from the chapter the reader just left.
+            scrolledChapterID = vm.currentChapter.id
+            proxy.scrollTo(0, anchor: .top)
+            return
+        case .settle(let position):
+            scrolledChapterID = vm.currentChapter.id
+            target = position
+        }
+
+        // Silences the recorder for the duration: the loop renders overshoots it then
+        // rejects, and overshoot is the only transient the store's max would preserve.
+        metrics.isRestoring = true
+        defer { metrics.isRestoring = false }
+
+        // Step zero — wait for the target row to exist and be measured. This *replaces*
+        // ADR-0013's fixed 50ms sleep: the wait is now on the thing the scroll needs, not on
+        // a number that happened to work.
+        let realizeBy = Date().addingTimeInterval(settleRealizeTimeout)
+        while measuredStrip(target.page) == nil {
+            guard !Task.isCancelled, Date() < realizeBy else { return }
+            proxy.scrollTo(target.page, anchor: .top)
+            try? await Task.sleep(for: .milliseconds(settlePollInterval))
+        }
+
+        var aim: StripAnchor?
+        for attempt in 0..<settleAttemptBudget {
+            switch settleStep(target: target, strip: measuredStrip(target.page),
+                              viewport: metrics.viewport, currentAim: aim, attempt: attempt) {
+            case .stop:
+                return
+            case .realize(let page):
+                proxy.scrollTo(page, anchor: .top)
+            case .scroll(let anchor):
+                aim = anchor
+                proxy.scrollTo(anchor, anchor: .top)
+            }
+            await waitForRemeasure(of: target.page)
+            if Task.isCancelled { return }
+        }
+    }
+
+    /// A strip is only usable once it has a height; a realized-but-unlaid-out row has none.
+    private func measuredStrip(_ page: Int) -> StripFrame? {
+        guard let strip = metrics.frames[page], strip.rect.height > 0 else { return nil }
+        return strip
+    }
+
+    /// Give the layout a chance to answer: poll until the target strip's frame changes, or
+    /// the wait runs out. Waiting on the measurement rather than on a fixed duration is what
+    /// makes the loop as fast as a warm cache allows and as patient as a cold one needs.
+    private func waitForRemeasure(of page: Int) async {
+        let before = metrics.frames[page]
+        let deadline = Date().addingTimeInterval(settleRemeasureWait)
+        while metrics.frames[page] == before {
+            guard !Task.isCancelled, Date() < deadline else { return }
+            try? await Task.sleep(for: .milliseconds(settlePollInterval))
+        }
     }
 
     // MARK: Content per mode
@@ -229,7 +473,7 @@ struct ReaderView: View {
         .id(mode)
         .onChange(of: currentPage) { _, newValue in
             if newValue >= 0, newValue < vm.pages.count {
-                advanceProgress(to: newValue)
+                recordProgress(ReadingPosition(page: newValue))
             } else if newValue == vm.pages.count + 1 {
                 Task { await vm.loadNext() }
             } else if newValue == -2 {
@@ -266,18 +510,31 @@ struct ReaderView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 0) {
+                    // No `onAppear` progress here any more: a row's `onAppear` fires no later
+                    // than its top reaching the viewport *bottom*, so it recorded a strip the
+                    // reader had not reached, and the max then made that win over the real
+                    // position — resuming a full viewport ahead (ADR-0014 decision 7). In
+                    // vertical mode the viewport top is the only position feed.
                     ForEach(Array(vm.pages.enumerated()), id: \.offset) { index, url in
                         WebtoonPage(url: url, index: index)
                             .id(index)
-                            .onAppear { advanceProgress(to: index) }
                     }
                     if !vm.pages.isEmpty && !vm.isLoading {
                         if let next = vm.nextChapter {
                             InterstitialPage(chapter: next, isNext: true)
                                 .frame(height: UIScreen.main.bounds.height * 0.8)
 
+                            // Latched per chapter. This trigger sits below an interstitial at
+                            // the bottom of the strip, and the chapter it loads replaces the
+                            // pages underneath a scroll view that keeps its offset — so
+                            // without the latch it comes straight back on screen and requests
+                            // the chapter after, and the reader skips several in a row.
+                            // Cleared by `didCompleteLoad` when the advance did not happen,
+                            // so a failed load can be retried by scrolling.
                             Color.clear.frame(height: 50)
                                 .onAppear {
+                                    guard advanceRequestedFor != vm.currentChapter.id else { return }
+                                    advanceRequestedFor = vm.currentChapter.id
                                     Task { await vm.loadNext() }
                                 }
                         } else {
@@ -289,6 +546,31 @@ struct ReaderView: View {
                 .onTapGesture(perform: toggleChrome)
             }
             .ignoresSafeArea()
+            .coordinateSpace(.named(readerScrollSpace))
+            // The viewport, in the same space the strips report in — so its top is 0 and the
+            // pure function stays general enough to test against any rectangle.
+            .background(
+                GeometryReader { geo in
+                    Color.clear.preference(key: StripViewportKey.self,
+                                           value: CGRect(origin: .zero, size: geo.size))
+                }
+            )
+            .onPreferenceChange(StripFramesKey.self) { frames in
+                metrics.frames = frames          // replaced, never merged
+                measurementChanged()
+            }
+            .onPreferenceChange(StripViewportKey.self) { rect in
+                metrics.viewport = rect
+                measurementChanged()
+            }
+            // Covers "stop scrolling, immediately tap ✕", which the trailing fire alone
+            // leaves up to a window short — a `Task`-scheduled trailing tick can outlive the
+            // view, but nothing guarantees it lands before the pop. Also fires on a
+            // reading-mode switch, which is the other way out of this reader.
+            .onDisappear {
+                guard !metrics.isRestoring else { return }
+                recordLivePosition()
+            }
             // Restores position on a *commit* only. A failed advance leaves the reader at the
             // bottom of a chapter that is still fully rendered — a legitimate place to be —
             // so unlike the pager, nothing retreats here.
@@ -302,13 +584,8 @@ struct ReaderView: View {
             // advances were unaffected either way: `pages` stays populated across a commit, so
             // the reader stays mounted.
             .task(id: vm.lastCompletedRequest) {
-                guard vm.errorMessage == nil, vm.pagerTarget > 0 else { return }
-                // `task` starts before this view has laid out and the LazyVStack has realized
-                // no rows, so `scrollTo` has nothing to aim at until a layout pass has run.
-                // Guarded on a non-zero target above, so a normal chapter open never waits.
-                try? await Task.sleep(for: .milliseconds(50))
-                guard !Task.isCancelled else { return }
-                proxy.scrollTo(vm.pagerTarget, anchor: .top)
+                guard vm.errorMessage == nil else { return }
+                await restorePosition(using: proxy)
             }
         }
     }
@@ -446,6 +723,11 @@ private struct ZoomablePage: View {
 
 /// A single page in the continuous vertical reader. Owns its own reload token
 /// so a failed page can be retried independently of the rest of the strip.
+///
+/// Also reports its own frame, which is what capture measures. The report carries whether
+/// the image has decoded, because until then this is a 460pt placeholder and a fraction
+/// measured against it would be *persisted* against a layout about to be replaced
+/// (ADR-0014 decision 9, second amendment).
 private struct WebtoonPage: View {
     let url: URL
     let index: Int
@@ -454,24 +736,60 @@ private struct WebtoonPage: View {
 
     var body: some View {
         CachedAsyncImage(url: url) { phase in
-            switch phase {
-            case .success(let img):
-                img.resizable().scaledToFit().frame(maxWidth: .infinity)
-            case .empty:
-                Screentone()
-                    .frame(height: 460)
-                    .overlay(
-                        Text(String(format: "%03d", index + 1))
-                            .font(.inkMono(13, weight: .semibold))
-                            .foregroundStyle(Ink.tertiary)
-                    )
-            default:
-                Screentone(opacity: 0.5)
-                    .frame(height: 460)
-                    .overlay(PageRetry { reloadToken += 1 })
-            }
+            strip(for: phase)
+                .background(frameReporter(isDecoded: isDecoded(phase)))
+                .overlay(anchorGrid)
         }
         .id(reloadToken)
+    }
+
+    /// The addressable slices of this strip. The `VStack` inherits the strip's measured
+    /// height and `Color` is infinitely flexible, so this divides it into N equal parts with
+    /// no height arithmetic — and it keeps working as the height changes underneath.
+    ///
+    /// `allowsHitTesting(false)` is not optional: the chrome toggle is a tap gesture on an
+    /// ancestor, and this overlay covers the whole strip (ADR-0014 decision 9).
+    private var anchorGrid: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<stripAnchorSlots, id: \.self) { slot in
+                Color.clear.id(StripAnchor(page: index, slot: slot))
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    @ViewBuilder private func strip(for phase: AsyncImagePhase) -> some View {
+        switch phase {
+        case .success(let img):
+            img.resizable().scaledToFit().frame(maxWidth: .infinity)
+        case .empty:
+            Screentone()
+                .frame(height: 460)
+                .overlay(
+                    Text(String(format: "%03d", index + 1))
+                        .font(.inkMono(13, weight: .semibold))
+                        .foregroundStyle(Ink.tertiary)
+                )
+        default:
+            Screentone(opacity: 0.5)
+                .frame(height: 460)
+                .overlay(PageRetry { reloadToken += 1 })
+        }
+    }
+
+    private func isDecoded(_ phase: AsyncImagePhase) -> Bool {
+        if case .success = phase { return true }
+        return false
+    }
+
+    private func frameReporter(isDecoded: Bool) -> some View {
+        GeometryReader { geo in
+            Color.clear.preference(
+                key: StripFramesKey.self,
+                value: [index: StripFrame(rect: geo.frame(in: .named(readerScrollSpace)),
+                                          isDecoded: isDecoded)]
+            )
+        }
     }
 }
 

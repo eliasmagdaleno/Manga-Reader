@@ -49,7 +49,7 @@ final class WorkMintingTests: XCTestCase {
 
         history.record(manga: listing("wc-1", title: "Omniscient Reader"),
                        chapter: Chapter(id: "c1", number: "1", title: nil),
-                       page: 0, pageCount: 20)
+                       position: ReadingPosition(page: 0), pageCount: 20)
 
         let id = try XCTUnwrap(works.workId(for: ListingKey(sourceId: "weebcentral", mangaId: "wc-1")))
         XCTAssertEqual(works.work(id)?.displayTitle, "Omniscient Reader")
@@ -63,11 +63,11 @@ final class WorkMintingTests: XCTestCase {
         let orv = listing("wc-1", title: "Omniscient Reader")
 
         history.record(manga: orv, chapter: Chapter(id: "c1", number: "1", title: nil),
-                       page: 0, pageCount: 20)
+                       position: ReadingPosition(page: 0), pageCount: 20)
         history.record(manga: orv, chapter: Chapter(id: "c1", number: "1", title: nil),
-                       page: 5, pageCount: 20)
+                       position: ReadingPosition(page: 5), pageCount: 20)
         history.record(manga: orv, chapter: Chapter(id: "c2", number: "2", title: nil),
-                       page: 0, pageCount: 18)
+                       position: ReadingPosition(page: 0), pageCount: 18)
 
         let id = try XCTUnwrap(works.workId(for: ListingKey(sourceId: "weebcentral", mangaId: "wc-1")))
         XCTAssertEqual(works.work(id)?.listings.count, 1)

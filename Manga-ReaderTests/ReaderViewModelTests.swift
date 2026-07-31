@@ -131,19 +131,20 @@ final class ReaderViewModelTests: XCTestCase {
         let source = GatedSource()
         configure(source)
         let vm = ReaderViewModel(manga: Self.manga, chapter: chapter, chapters: Self.three,
-                                 initialPage: 0, source: source, prefetch: { _, _ in })
+                                 initialPosition: ReadingPosition(page: 0), source: source,
+                                 prefetch: { _, _ in })
         return (vm, source)
     }
 
     private func makeVM(chapter: Chapter,
                         chapters: [Chapter] = ReaderViewModelTests.three,
-                        initialPage: Int = 0,
+                        initialPosition: ReadingPosition = ReadingPosition(page: 0),
                         configure: (StubSource) -> Void) -> (ReaderViewModel, StubSource) {
         let source = StubSource()
         configure(source)
         // Swallow the prefetch: these tests must not touch the network or the real cache.
         let vm = ReaderViewModel(manga: Self.manga, chapter: chapter, chapters: chapters,
-                                 initialPage: initialPage, source: source,
+                                 initialPosition: initialPosition, source: source,
                                  prefetch: { _, _ in })
         return (vm, source)
     }
@@ -240,11 +241,38 @@ final class ReaderViewModelTests: XCTestCase {
     // MARK: - Pager target
 
     func testInitialPageIsClampedToTheChapterLength() async {
-        let (vm, _) = makeVM(chapter: Self.chapter("1"), initialPage: 999) {
+        let (vm, _) = makeVM(chapter: Self.chapter("1"), initialPosition: ReadingPosition(page: 999)) {
             $0.pages["ch1"] = .success(Self.urls(10))
         }
         await vm.begin()
-        XCTAssertEqual(vm.pagerTarget, 9)
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 9))
+    }
+
+    /// A fraction is only meaningful against the page it was captured on. When the clamp
+    /// *moves* the page — the chapter was re-uploaded with fewer, re-cut pages — 60% down
+    /// strip 7 maps to nothing, so the reader lands at the top of the page that exists
+    /// rather than at a plausible-looking wrong place (ADR-0014 decision 4's amendment).
+    func testAClampedPositionLosesItsFraction() async {
+        let (vm, _) = makeVM(chapter: Self.chapter("1"),
+                             initialPosition: ReadingPosition(page: 7, fraction: 0.6)) {
+            $0.pages["ch1"] = .success(Self.urls(5))
+        }
+        await vm.begin()
+
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 4),
+                       "clamped to the last page, and the fraction goes with the page it belonged to")
+    }
+
+    /// The other half of the rule: a page that survives the clamp keeps its fraction, which
+    /// is the whole point of carrying one.
+    func testAnUnclampedPositionKeepsItsFraction() async {
+        let (vm, _) = makeVM(chapter: Self.chapter("1"),
+                             initialPosition: ReadingPosition(page: 3, fraction: 0.6)) {
+            $0.pages["ch1"] = .success(Self.urls(10))
+        }
+        await vm.begin()
+
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 3, fraction: 0.6))
     }
 
     func testMovingBackwardsLandsOnTheLastPage() async {
@@ -256,7 +284,8 @@ final class ReaderViewModelTests: XCTestCase {
         await vm.loadPrevious()
 
         XCTAssertEqual(vm.currentChapter.id, "ch1")
-        XCTAssertEqual(vm.pagerTarget, 11, "entering a chapter backwards opens at its end")
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 11),
+                       "entering a chapter backwards opens at its end")
     }
 
     /// ADR-0013. A failed *forward* advance leaves the pager on the sentinel index that
@@ -270,7 +299,8 @@ final class ReaderViewModelTests: XCTestCase {
         await vm.begin()
         await vm.loadNext()
 
-        XCTAssertEqual(vm.pagerTarget, 19, "the last page of the chapter that survived")
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 19),
+                       "the last page of the chapter that survived")
     }
 
     func testAFailedBackwardAdvanceRetreatsToTheFirstPage() async {
@@ -281,17 +311,17 @@ final class ReaderViewModelTests: XCTestCase {
         await vm.begin()
         await vm.loadPrevious()
 
-        XCTAssertEqual(vm.pagerTarget, 0)
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 0))
     }
 
     /// A failed initial load has nothing to retreat into, so the target is left alone.
     func testAFailedInitialLoadLeavesTheTargetAlone() async {
-        let (vm, _) = makeVM(chapter: Self.chapter("1"), initialPage: 4) {
+        let (vm, _) = makeVM(chapter: Self.chapter("1"), initialPosition: ReadingPosition(page: 4)) {
             $0.pages["ch1"] = .failure(MangaDexError.httpStatus(404))
         }
         await vm.begin()
 
-        XCTAssertEqual(vm.pagerTarget, 0)
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 0))
     }
 
     // MARK: - Completion marker
@@ -315,7 +345,8 @@ final class ReaderViewModelTests: XCTestCase {
         await vm.loadNext()
         let afterAdvance = vm.lastCompletedRequest
         XCTAssertGreaterThan(afterAdvance, afterBegin)
-        XCTAssertEqual(vm.pagerTarget, 0, "two consecutive chapters landing on the same page")
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 0),
+                       "two consecutive chapters landing on the same page")
 
         await vm.loadNext()   // ch3 fails
         XCTAssertGreaterThan(vm.lastCompletedRequest, afterAdvance,
@@ -412,7 +443,7 @@ final class ReaderViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.currentChapter.id, "ch3")
         XCTAssertEqual(vm.pages.count, 14)
-        XCTAssertEqual(vm.pagerTarget, 0)
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 0))
         XCTAssertNil(vm.errorMessage)
         XCTAssertNil(vm.presentation.banner)
     }
@@ -471,7 +502,8 @@ final class ReaderViewModelTests: XCTestCase {
 
         XCTAssertEqual(vm.currentChapter.id, "ch1", "the newest request must win")
         XCTAssertEqual(vm.pages.count, 7)
-        XCTAssertEqual(vm.pagerTarget, 6, "the target belongs to the request that won")
+        XCTAssertEqual(vm.pagerTarget, ReadingPosition(page: 6),
+                       "the target belongs to the request that won")
     }
 
     /// A superseded request that *fails* must stay silent: a banner about a chapter the user

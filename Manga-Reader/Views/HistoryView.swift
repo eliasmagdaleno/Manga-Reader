@@ -63,7 +63,8 @@ struct HistoryView: View {
 
     private func row(_ entry: ReadingEntry) -> some View {
         NavigationLink {
-            ReaderView(manga: entry.asManga, chapter: entry.asChapter, initialPage: entry.page)
+            ReaderView(manga: entry.asManga, chapter: entry.asChapter,
+                       initialPosition: entry.position)
         } label: {
             HStack(spacing: 12) {
                 AsyncImage(url: entry.coverURL) { phase in

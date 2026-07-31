@@ -1,6 +1,6 @@
 # ADR-0013 — The reader's view layer after load-then-commit
 
-- **Status:** Accepted (2026-07-29)
+- **Status:** Accepted (2026-07-29); **amended by ADR-0014 (2026-07-29)**
 - **Amends:** ADR-0012 (its "the landing-page calculation straddles the split" cost — this is the
   second pass it asked for, and it lands the seam in the view model's favour)
 - **Related:** ADR-0008 (transient vs permanent, in the upgrade queue), ADR-0003 (bridged sources
@@ -168,6 +168,18 @@ impossible to get out of step, and was rejected for widening the seam further to
 only consumer is a view-side guard. This is the weakest of the eight decisions and the first one to
 revisit if progress recording misbehaves.
 
+> **Amended 2026-07-29 by [ADR-0014](0014-resuming-a-webtoon-where-the-reader-stopped.md).** The latch
+> is gone: `furthestPage` and `hasRecordedProgress` are deleted and `HistoryStore` owns monotonicity,
+> skipping its save when nothing advanced. This decision's own premise expired rather than being
+> overturned — "state whose only consumer is a view-side guard" stopped being true once a *fraction*
+> needed recording, because the guard `index > furthestPage` actively swallows every within-page
+> change. Note the revisit trigger below aimed at `ReaderViewModel`; the store won instead, since the
+> view model is the wrong owner for persistence policy and would still have left two owners of one
+> invariant.
+>
+> `progressChapterID` survives, for a different job: dropping a throttled position update whose
+> chapter has since changed.
+
 ### The vertical reader restores on commit only, and never snaps back
 
 The webtoon reader's scroll restore keys off `lastCompletedRequest` with an `errorMessage == nil`
@@ -194,6 +206,17 @@ scrolls to `vm.pagerTarget`.
 > the `LazyVStack` has realized no rows, so `scrollTo` has nothing to aim at yet. It is a magic
 > number and it is guarded on `pagerTarget > 0`, so a normal chapter open never waits — only an
 > actual resume does. See hazards.
+
+> **Amended 2026-07-29 by [ADR-0014](0014-resuming-a-webtoon-where-the-reader-stopped.md).** Three
+> changes to this decision:
+>
+> - **The 50ms sleep is replaced**, not kept alongside the anchor grid. The settle loop's first step is
+>   "wait until the target row is realized and measured", which is what the magic number was standing
+>   in for.
+> - **The `pagerTarget > 0` guard was a bug.** A resume anywhere inside page 0 — the whole of a one- or
+>   two-strip chapter — skipped restore entirely. It becomes `page > 0 || fraction > 0`.
+> - **`pagerTarget` is a `ReadingPosition`**, not an `Int`, and restore prefers the reader's *live*
+>   position over it when one exists — which is what carries position across a mode switch.
 
 It replaces `.onChange(of: pages.count) { proxy.scrollTo(min(initialPage, count - 1)) }`
 (`ReaderView.swift:282-285`), which has **two live bugs today**, independent of this branch: it
@@ -303,18 +326,25 @@ read it.
   interleaving bug silently — both guards are `guard mine == generation` and neither fails loudly.
 - **Nothing here addresses `.task` cancellation** (carried from ADR-0012). Latest-wins makes the
   *commit* correct; the work still runs.
-- **The webtoon restore waits a fixed 50ms for layout.** A magic number standing in for "one layout
+- ~~**The webtoon restore waits a fixed 50ms for layout.**~~ A magic number standing in for "one layout
   pass", and there is no SwiftUI signal for that — `scrollTo` into a `LazyVStack` has nothing to aim
   at before its rows are realized. On a slow first frame it can still miss. It only runs on an actual
   resume (`pagerTarget > 0`), so the blast radius is one code path.
-- **Webtoon resume lands at the top of the right *strip*, not where the reader stopped.**
+  **Resolved by [ADR-0014](0014-resuming-a-webtoon-where-the-reader-stopped.md)** — the settle loop
+  waits for a measurement instead of a duration. Its guard was also wrong: see the amendment above.
+- ~~**Webtoon resume lands at the top of the right *strip*, not where the reader stopped.**~~
   `ReadingEntry.page` is a page index (`HistoryStore.swift:22`) and a webtoon page is a long strip, so
   a chapter of 8 strips offers 8 resume points. The restore now fires, which is a bug fixed; the
   granularity is a model limitation and needs its own decision — whether `ReadingEntry` grows a
   second notion of position or `page` becomes fractional.
-- **Switching reading mode mid-chapter does not carry position.** The `task(id:)` reruns on mount, so
+  **Addressed by [ADR-0014](0014-resuming-a-webtoon-where-the-reader-stopped.md)**: `ReadingEntry`
+  grows a `fraction`; `page` stays an `Int`. Both alternatives named here were the two finalists.
+- ~~**Switching reading mode mid-chapter does not carry position.**~~ The `task(id:)` reruns on mount, so
   switching into webtoon scrolls to the page the chapter was *entered* at rather than the one being
   read. Before this change it scrolled nowhere at all; neither is right.
+  **Resolved by [ADR-0014](0014-resuming-a-webtoon-where-the-reader-stopped.md)** for webtoon →
+  anything and anything → webtoon; paged → webtoon still lands at a strip's top, because a paged mode
+  has no fraction to hand over.
 - **An externally hosted chapter is reported as broken.** It is not a failure at all — the chapter
   exists and is published on the publisher's own site — but it reaches the user through the zero-pages
   path and reads *"This chapter has no pages to read."* The chapter list could rule this one out
@@ -322,16 +352,21 @@ read it.
 
 ## Revisit triggers
 
-- If progress recording misbehaves after a chapter change, move `furthestPage` and
+- ~~If progress recording misbehaves after a chapter change, move `furthestPage` and
   `hasRecordedProgress` into `ReaderViewModel` next to `currentChapter` so they reset in the same
-  assignment that commits. That is the rejected alternative above and the one to reach for first.
+  assignment that commits. That is the rejected alternative above and the one to reach for first.~~
+  **Taken 2026-07-29, but not to the view model** — `HistoryStore` owns monotonicity instead. See
+  [ADR-0014](0014-resuming-a-webtoon-where-the-reader-stopped.md) decision 3.
 - If task cancellation lands, it supersedes latest-wins arbitration rather than sitting beside it —
   and the `catch` must learn to ignore `CancellationError` before it does, or every cancelled advance
   raises a banner.
 - If a third caller needs to know a load completed, promote `lastCompletedRequest` from "the thing
   that moves the pager" to a named domain event; three consumers of a bare `Int` is one too many.
-- If webtoon resume needs to land where the reader actually stopped rather than at the top of a strip,
+- ~~If webtoon resume needs to land where the reader actually stopped rather than at the top of a strip,
   that is a change to `ReadingEntry`'s notion of position, not to the scroll call — and it touches
-  history, resume and the progress display at once. Worth its own ADR.
+  history, resume and the progress display at once. Worth its own ADR.~~
+  **Taken 2026-07-29:** [ADR-0014](0014-resuming-a-webtoon-where-the-reader-stopped.md). The
+  prediction held — it changed `ReadingEntry`, `HistoryStore`, `ResumeAction`, the reader's view layer
+  and the Continue button's progress rule, and it moved what `finished` means for a webtoon.
 - If `MangaDexError`'s copy is ever fixed at source, delete `readerFailureMessage`'s `httpStatus`
   case rather than leaving two layers rewriting the same string.

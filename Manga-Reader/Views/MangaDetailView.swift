@@ -206,17 +206,10 @@ struct MangaDetailView: View {
         .padding(.horizontal, Gutter.page)
     }
 
-    /// The reader's furthest progress through the resume chapter, 0...1, or nil
-    /// when the action isn't a mid-chapter continue.
-    private func continueProgress(action: ResumeAction, entry: ReadingEntry?) -> Double? {
-        guard case .cont(_, let page) = action,
-              let entry, entry.pageCount > 0 else { return nil }
-        return min(1, Double(page + 1) / Double(entry.pageCount))
-    }
-
     private func continueLink(_ action: ResumeAction, progress: Double?) -> some View {
         NavigationLink {
-            ReaderView(manga: manga, chapter: action.chapter, initialPage: action.startPage, chapters: vm.chapters)
+            ReaderView(manga: manga, chapter: action.chapter,
+                       initialPosition: action.startPosition, chapters: vm.chapters)
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: 12).fill(Ink.seal)
@@ -242,8 +235,10 @@ struct MangaDetailView: View {
                         .font(.system(size: 12, weight: .semibold))
                     Text(action.label)
                         .lineLimit(1)
-                    if case .cont(_, let page) = action {
-                        Text("· p.\(page + 1)")
+                    // The page only: a stamp reading "p.4·62%" tells the reader nothing
+                    // they can act on, and the hairline fill already carries the fraction.
+                    if case .cont(_, let position) = action {
+                        Text("· p.\(position.page + 1)")
                             .font(.inkMono(11, weight: .semibold))
                             .opacity(0.85)
                     }
@@ -408,7 +403,11 @@ struct MangaDetailView: View {
                 VStack(spacing: 0) {
                     ForEach(chapterPreview(vm.chapters, limit: 5)) { chapter in
                         NavigationLink {
-                            ReaderView(manga: manga, chapter: chapter, chapters: vm.chapters)
+                            // The row advertises a saved position (ChapterRow's resume marker),
+                            // so tapping it has to honour one — ADR-0014 decision 11.
+                            ReaderView(manga: manga, chapter: chapter,
+                                       initialPosition: history.entry(forChapter: chapter.id)?.position,
+                                       chapters: vm.chapters)
                         } label: {
                             ChapterRow(chapter: chapter)
                         }
@@ -465,13 +464,13 @@ struct MangaDetailView: View {
 private extension ResumeAction {
     var chapter: Chapter {
         switch self {
-        case .start(let c), .next(let c), .cont(let c, _), .reread(let c, _): return c
+        case .start(let c), .next(let c), .cont(let c, _), .reread(let c): return c
         }
     }
-    var startPage: Int {
+    var startPosition: ReadingPosition {
         switch self {
-        case .start, .next, .reread: return 0
-        case .cont(_, let p): return p
+        case .start, .next, .reread: return ReadingPosition(page: 0)
+        case .cont(_, let position): return position
         }
     }
     var label: String {
@@ -479,7 +478,7 @@ private extension ResumeAction {
         case .start:                 return "Start Reading"
         case .cont(let c, _):        return "Continue · Ch \(c.number)"
         case .next(let c):           return "Start Ch \(c.number)"
-        case .reread(let c, _):      return "Read Again · Ch \(c.number)"
+        case .reread(let c):         return "Read Again · Ch \(c.number)"
         }
     }
 }
