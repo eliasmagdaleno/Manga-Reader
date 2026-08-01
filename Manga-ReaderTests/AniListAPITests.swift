@@ -216,6 +216,50 @@ final class AniListAPITests: XCTestCase {
         XCTAssertEqual(attemptCount, 2, "one retry, then give up -- never a loop")
     }
 
+    // MARK: - The tag vocabulary (ADR-0011, slice 1)
+
+    /// Recorded from `MediaTagCollection` on 2026-07-28, truncated to five entries that
+    /// cover every property the seeding rule reads: an excluded-category tag (`Technical`),
+    /// a `Cast-Main Cast` tag, a globally-flagged spoiler, an adult tag, and an ordinary one.
+    private static let tagCollectionJSON = Data("""
+    {"data":{"MediaTagCollection":[
+      {"name":"Dungeon","category":"Theme-Fantasy","isGeneralSpoiler":false,"isAdult":false},
+      {"name":"Full Color","category":"Technical","isGeneralSpoiler":false,"isAdult":false},
+      {"name":"Male Protagonist","category":"Cast-Main Cast","isGeneralSpoiler":false,"isAdult":false},
+      {"name":"Time Manipulation","category":"Theme-Sci Fi","isGeneralSpoiler":true,"isAdult":false},
+      {"name":"Tentacles","category":"Sexual Content","isGeneralSpoiler":false,"isAdult":true}
+    ]}}
+    """.utf8)
+
+    func testTagVocabularyDecodesCategoryAndBothFlags() async throws {
+        let api = AniListAPI(transport: { _ in (Self.tagCollectionJSON, self.http(200)) })
+
+        let entries = try await api.tagVocabulary()
+
+        XCTAssertEqual(entries.count, 5)
+        XCTAssertEqual(entries[0], TagVocabularyEntry(name: "Dungeon",
+                                                      category: "Theme-Fantasy",
+                                                      isGeneralSpoiler: false,
+                                                      isAdult: false))
+        XCTAssertEqual(entries[1].category, "Technical")
+        XCTAssertEqual(entries[2].category, "Cast-Main Cast")
+        XCTAssertTrue(entries[3].isGeneralSpoiler)
+        XCTAssertTrue(entries[4].isAdult)
+    }
+
+    /// The vocabulary shares the media path's error mapping, so a proxy's HTML 502
+    /// must not surface as a DecodingError here either.
+    func testTagVocabularyServerErrorThrowsHTTPStatus() async throws {
+        let api = AniListAPI(transport: { _ in (Data("<html>502</html>".utf8), self.http(502)) })
+
+        do {
+            _ = try await api.tagVocabulary()
+            XCTFail("expected httpStatus")
+        } catch let error as AniListError {
+            XCTAssertEqual(error, .httpStatus(502))
+        }
+    }
+
     // MARK: - AniListRateLimiter
 
     /// The budget is 30/min, so requests must be spaced, not merely serialized.
