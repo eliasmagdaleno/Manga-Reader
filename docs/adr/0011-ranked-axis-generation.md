@@ -64,6 +64,32 @@ which side of the scoring equation rank lands on.
 - **`RecommendationEngine` gates the rail at `minTaggedManga = 3`** (`:52`, `:151`), and pushes
   weights out through a one-way closure so it cannot start, stop, or inspect the queue (`:34-36`).
 
+**Measured 2026-08-03 against the real device store — 22 Works, 58 history entries, 425-tag
+vocabulary. Do not re-derive; re-run `TagPairSeedingDiagnostic` instead.**
+
+- **13 Works carry a tag at rank ≥ 60**; 20 have engagement. The other 9 are provisional or
+  unresolved, and a provisional snapshot has an empty ranked axis.
+- **A single Work does not dominate the cut, and the reason is not the one that was predicted.**
+  Every one of the top 20 pairs recurs in **≥ 2 Works**; no single-Work pair appears at all; the
+  top 5 draws on 6 distinct titles. The prediction that Berserk would own the cut rested on
+  misreading its `ranked=66` as engagement — it is a **tag count**. Berserk's engagement is
+  mid-pack (2.179 against Iruma-kun's 5.005), so its 1035 candidate pairs each land near
+  `2.179 × [0.6…1.0]`, far below the recurring pairs at 5–8.8. **Recurrence beats volume**, which
+  is what the formula claims and had not previously been checked.
+- **Therefore no per-Work cap or diversity rule was added.** The two candidates considered — one
+  pair per Work, and recurrence-only weighting — were both rejected as unnecessary rather than
+  wrong.
+- **The top 5 does contain a triangle**: `Demons∧Magic`, `Demons∧Found Family`,
+  `Found Family∧Magic` are the three edges of one triple over largely the same three Works, so
+  three of five queries ask nearly the same question and will overlap under AND. **Left in
+  deliberately** — a "no tag in more than N of the cut" rule is a guess, and slice 4's golden diff
+  is the instrument that shows whether the overlap actually costs pool breadth. This is the open
+  item this measurement leaves behind.
+- **Engagement is not persisted.** It is derived from history, which lives in **UserDefaults**, not
+  Application Support — so reading the real store off-device needs `Library/Preferences/…plist`
+  alongside `works.json`, and `devicectl … --source .` is rejected (use `--source Library`). The
+  diagnostic decays recency against `Date()`, so its weights are not reproducible to the digit.
+
 ## Decisions
 
 ### The ranked axis pays off as *generation on AniList*, not as scoring on MangaDex candidates
@@ -145,7 +171,7 @@ and an empty pool is indistinguishable from a broken one.
 want and it does not clear 80 on both legs. The floor's job is to exclude noise, not to rank;
 ranking happens downstream with each candidate's actual rank values in hand.
 
-### Seeds are the top 5 **co-occurring** pairs, excluding `Technical` and `Cast-Main Cast`
+### Seeds are the top 5 **co-occurring** pairs, excluding `Technical`, `Cast-Main Cast` and `Demographic`
 
 ```
 pairWeight(a,b) = Σ over Works w carrying both a and b at rank ≥ 60:
@@ -176,6 +202,29 @@ Two categories are excluded from **seeding only**, and remain available for scor
 
 The 66 `isAdult` tags are excluded from seeding on `main`. `isAdult:false` filters the *results*, but
 a seed drawn from `Sexual Content` still shapes the pool and reads badly in a reason string.
+
+**Amended 2026-08-03, after slice 2 ran against the real store** (see the measurements below):
+
+- **`Demographic`** (Shounen, Seinen) joins the exclusion set. The real store seeded four
+  demographic pairs into its top 20. Same argument as `Cast-Main Cast` — a demographic covers an
+  enormous slice of the catalogue, so as a leg of an AND it barely narrows anything. This is
+  knowingly the *weakest* of the three: `Seinen ∧ Tragedy` is at least a coherent question where
+  `Full Color ∧ Tragedy` is not. It was excluded because none of the four reached the cut, so the
+  change costs nothing observable today while stopping a near-tautology from displacing a real
+  pair as the store grows. **Accepted cost:** a real signal is being discarded on a prediction
+  about future data, and the top 5 is identical with and without it — so there is currently no
+  evidence this decision is *right*, only that it is free.
+- The adult exclusion is an **injected parameter** (`excludeAdultTags`, defaulting to `true`), not
+  a constant. It is a fact about *which branch this is*, not about the domain: hardcoding it puts a
+  permanent body diff on the private branch that every merge from `main` must re-resolve, which is
+  the shape that eventually resolves the wrong way. A parameter keeps the private branch to a
+  call-site change and makes both behaviours testable from `main`.
+- Ties are broken **lexicographically** after weight. Not decoration: every pair inside one Work
+  shares that Work's engagement and the multiplier band is only `[0.60, 1.00]`, so exact-tie blocks
+  are the common case and the top-5 cut runs through one. Swift's sort is not guaranteed stable, so
+  without a total order the golden file in slice 4 would diff on re-sorts rather than on rankings.
+  **Accepted cost:** alphabetical order is meaningless — where a tie block spans the cut, which
+  pairs survive carries no signal and must not be read as any.
 
 ### `category` lives in a cached tag vocabulary, never on the Work
 

@@ -221,8 +221,9 @@ excludes noise, it does not rank.
 
 **Tag vocabulary** — AniList's 425 tags with their `category`, `isAdult` and `isGeneralSpoiler`
 flags, cached whole in `Caches/`. Category is a property of a *tag name*, never of a Work, which is
-why it is not persisted on `RankedTag`. `Technical` and `Cast-Main Cast` are excluded from seeding
-(format facts and near-universal traits); the 8 `isGeneralSpoiler` tags are excluded from **reason
+why it is not persisted on `RankedTag`. `Technical`, `Cast-Main Cast` and `Demographic` are
+excluded from seeding (format facts, near-universal traits, and labels too broad to narrow an AND —
+the last added on evidence in slice 2); the 8 `isGeneralSpoiler` tags are excluded from **reason
 strings** but not from seeding.
 
 **Provenance scoring** — the scoring shape the tag and MAL pools share: `weight × 1/(1 + position)`,
