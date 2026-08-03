@@ -122,22 +122,23 @@ Slice 4 stays **last and alone** so a golden diff has exactly one cause.
   `PBXFileReference`, the group child, the `Sources` phase). **Re-run the tests after doing this** —
   a hand-edited pbxproj that fails to compile is the obvious risk, and it was verified green here.
   **`git diff --cached --stat` must read `4 ++++` immediately before `git commit`.**
-- **The `agy` post-commit hook runs a full build + test and timed the shell out at 10 minutes.** The
-  commit had already succeeded — verify with `git log`, do not re-commit, and do not start a build
-  until it exits or you get "database is locked".
-- **`agy` produced no verdict for either commit this session.** `.agy_code_review.md` holds a single
-  line — "I've started running the unit test suite via `xcodebuild`…" — and nothing after it, for
-  both `d945315` and `540d7f3`. It writes that line *before* the build and evidently never got back
-  to overwrite it, so **the file's presence is not evidence a review happened**: check that it
-  contains findings, not just that its mtime is recent. **Slice 2 has not been reviewed by `agy`.**
-  Check the file again early next session in case it finished on its own schedule; if it is still
-  one line, the review is simply owed. The mechanical half was reproduced by hand and is green —
-  389 tests pass, and SwiftLint reports **zero** violations in `TagPairSeeding.swift` and
-  `TagPairSeedingTests.swift` (the 35 repo-wide warnings are all pre-existing, 23 of them in
-  `Manga_ReaderTests.swift`, which is also over `type_body_length` at 2007 lines against a limit of
-  1800). What was *not* reproduced is the architectural commentary — the part actually worth having
-  on a new subsystem. A write-up of the hook's failure modes is in
-  `docs/superpowers/handoff/2026-08-03-agy-hook-issues.md`.
+- **The `agy` post-commit hook was rewritten on 2026-08-03 and now behaves differently.** It runs
+  **detached**, so `git commit` no longer blocks for minutes. While a review is in flight it holds
+  **`.agy_review_running`** in the repo root — **check that file is absent before starting an
+  `xcodebuild`**, or you get "database is locked". It now writes to a temp file and only replaces
+  `.agy_code_review.md` on success, so a failed run no longer destroys the previous review.
+  Completed reviews start with `# agy review — <SHA> — <TIMESTAMP>` and end with
+  `# agy review complete — exit 0`; **a missing footer means the run aborted** and the contents
+  belong to an older commit. It targets `iPhone 17`, matching `CLAUDE.md`. The failure modes that
+  prompted the rewrite are in `docs/superpowers/handoff/2026-08-03-agy-hook-issues.md` — still worth
+  reading, because it documents *why* the sentinels exist.
+- **Slice 2 was reviewed and passed.** The verdict arrived late, from the pre-rewrite hook (no
+  sentinels, ran on `iPhone 17 Pro`, conversational preamble still at the top of the file — a live
+  example of the problem the rewrite fixes). It reports 389 passed / 0 failed, 0 compiler errors,
+  0 style violations, 0 violations in the new files, and its architectural notes restate the four
+  load-bearing decisions without contradicting any of them. Independently reproduced here: 389
+  tests, and SwiftLint clean on both new files (the 35 repo-wide warnings are pre-existing, 23 in
+  `Manga_ReaderTests.swift`, which is also over `type_body_length` at 2007 lines against 1800).
 - **SourceKit errors are noise** — "No such module 'XCTest'", "Cannot find type 'Work' in scope" on
   files that compile clean. Judge only by `xcodebuild`.
 - **Do not stack PRs.** Merging a base with `--delete-branch` closes the child unrecoverably.

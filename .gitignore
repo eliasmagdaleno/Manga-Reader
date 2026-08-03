@@ -1,3 +1,4 @@
 Secrets.xcconfig
 .worktrees/
 .agy_code_review.md
+.agy_review_running
