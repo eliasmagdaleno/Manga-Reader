@@ -346,8 +346,8 @@ final class AniListPoolTests: XCTestCase {
         _ = await AniListCandidateProvider.buildRecord(
             seeds: [seeded("Dungeon", "Revenge", weight: 1.0)],
             query: { _, _ in works },
-            resolve: { ids in
-                await asked.set(ids)
+            resolve: { works in
+                await asked.set(works.compactMap(\.malId))
                 return [:]
             },
             resolveLimit: 12)
@@ -387,10 +387,10 @@ final class AniListPoolTests: XCTestCase {
         let record = await AniListCandidateProvider.buildRecord(
             seeds: [seeded("Dungeon", "Revenge", weight: 1.0)],
             query: { _, _ in works },
-            resolve: { ids in
+            resolve: { works in
                 await resolveCalls.increment()
                 // Only 4 of the 12 come back.
-                return Dictionary(uniqueKeysWithValues: ids.prefix(4).map {
+                return Dictionary(uniqueKeysWithValues: works.compactMap(\.malId).prefix(4).map {
                     ($0, self.manga("md-\($0)", malId: $0))
                 })
             },
@@ -494,9 +494,10 @@ final class AniListPoolTests: XCTestCase {
                                 poolStore: poolStore,
                                 query: { _, _ in [self.aniList(1, malId: 11,
                                                             [("Dungeon", 90), ("Revenge", 80)])] },
-                                resolve: { ids in
+                                resolve: { works in
                                     Dictionary(uniqueKeysWithValues:
-                                        ids.map { ($0, self.manga("md-\($0)", malId: $0)) })
+                                        works.compactMap(\.malId)
+                                            .map { ($0, self.manga("md-\($0)", malId: $0)) })
                                 })
 
         let profile = profile(weights)
@@ -522,9 +523,10 @@ final class AniListPoolTests: XCTestCase {
                                 poolStore: poolStore,
                                 query: { _, _ in [self.aniList(1, malId: 11,
                                                             [("Dungeon", 90), ("Revenge", 80)])] },
-                                resolve: { ids in
+                                resolve: { works in
                                     Dictionary(uniqueKeysWithValues:
-                                        ids.map { ($0, self.manga("md-\($0)", malId: $0)) })
+                                        works.compactMap(\.malId)
+                                            .map { ($0, self.manga("md-\($0)", malId: $0)) })
                                 })
 
         let profile = profile(weights)

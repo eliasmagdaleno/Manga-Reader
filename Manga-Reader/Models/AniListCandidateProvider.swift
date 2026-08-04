@@ -25,9 +25,17 @@ import Foundation
 
 struct AniListCandidateProvider: CandidateProvider {
     /// AniList ids are useless to MangaDex; `idMal` is the bridge, exactly as
-    /// `MoreLikeThisProvider` already reverse-resolves. Returns only what it resolved —
-    /// a short return is the normal case, not an error.
-    typealias Resolve = @Sendable ([Int]) async -> [Int: Manga]
+    /// `MoreLikeThisProvider` already reverse-resolves. Returns only what it resolved,
+    /// keyed by `malId` — a short return is the normal case, not an error.
+    ///
+    /// Takes whole `AniListWork`s, **not bare `malId`s**. Reverse-resolution is title
+    /// matching: `MoreLikeThis.pickMatch` needs a title to search MangaDex with, and
+    /// `MangaDexAPI.searchManga(title:)` is the only way to get candidates at all. Passing
+    /// ids alone would mean re-fetching titles we held one line earlier — one
+    /// `MyAnimeListAPI.mangaDetail` per unresolved id, up to `resolveLimit` per refresh,
+    /// against a budget this ADR never costed. `knownTitles` is also a *better* left-hand
+    /// side than MAL's single title (`AniListAPI.swift:77-80`).
+    typealias Resolve = @Sendable ([AniListWork]) async -> [Int: Manga]
 
     /// One pair's query, and how many results to ask for. Injected at this level rather
     /// than as an `AniListAPI` so tests can throw on a chosen call without a transport
@@ -161,7 +169,10 @@ struct AniListCandidateProvider: CandidateProvider {
         // MangaDex title search per `idMal` without a fresh cache hit — is spent only on
         // the head.
         let head = Array(ranked.prefix(resolveLimit))
-        let resolved = await resolve(head.compactMap(\.work.malId))
+        // Only works carrying a `malId` are resolvable at all — the bridge is `idMal`, so
+        // one without it cannot be searched for by any route and must not consume a slot
+        // in the resolve batch.
+        let resolved = await resolve(head.map(\.work).filter { $0.malId != nil })
 
         // No floor and no backfill. A title failing to resolve is the *normal* case —
         // AniList's catalogue and MangaDex's are different sets — and topping the head back

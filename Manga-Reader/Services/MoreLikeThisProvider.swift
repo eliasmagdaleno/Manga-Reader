@@ -45,13 +45,13 @@ final class MoreLikeThisProvider {
 
         // Partition into fresh cache hits (batch-fetch later) and misses (live search).
         var resolvedIds: [Int: String] = [:]     // malId -> MangaDex id, from fresh cache hits
-        var toSearch: [MyAnimeListManga] = []     // recs needing a live search
+        var toSearch: [ReverseTarget] = []        // recs needing a live search
         for rec in recs {
             if let cached = store.reverseResolution(malId: rec.node.id), cached.isFresh() {
                 if case .resolved(let mdId) = cached { resolvedIds[rec.node.id] = mdId }
                 // A fresh .unresolved miss: skip entirely (don't re-search yet).
             } else {
-                toSearch.append(rec.node)
+                toSearch.append(ReverseTarget(malId: rec.node.id, title: rec.node.title))
             }
         }
 
@@ -85,11 +85,73 @@ final class MoreLikeThisProvider {
         return out
     }
 
-    /// Search MangaDex for each rec's title and reverse-resolve to a confident Manga
+    /// Reverse-resolve AniList pool candidates to openable MangaDex titles, keyed by
+    /// `malId`. The `Resolve` closure `AniListCandidateProvider` is constructed with
+    /// (ADR-0011 slice 4).
+    ///
+    /// This lives here, on a class named for a different feature, because the cache-write
+    /// discipline below — `.resolved` / `.unresolved` / **nothing on a thrown search** —
+    /// must have exactly one implementation. A second copy that recorded `.unresolved` on a
+    /// transient throw would poison `EntityResolutionStore` against a title permanently.
+    /// The shared `MALReverseResolver` extraction ADR-0011 parks until after slice 4 is
+    /// where this and `recommendations(for:)` eventually meet; the naming debt is carried
+    /// until then deliberately.
+    ///
+    /// The assembly around the helper *is* duplicated from `recommendations(for:)` — about
+    /// 25 lines — because the two orderings genuinely differ: that one reassembles in
+    /// MAL-recommendation order and drops self, this one returns an unordered map because
+    /// `buildRecord` already holds the pool's own ranking. Merging them would mean a flag
+    /// parameter.
+    ///
+    /// **Residual:** `AniListWork.knownTitles` carries romaji/english/native/synonyms, but
+    /// `MoreLikeThis.pickMatch` takes a single `malTitle`, so only the primary title
+    /// reaches the matcher. Widening the matcher would change the shipped MAL path in the
+    /// slice whose golden must have one cause; the strong arm — an exact `malId` hit among
+    /// the search candidates — does not depend on the title anyway.
+    func resolve(works: [AniListWork], limit: Int) async -> [Int: Manga] {
+        var resolvedIds: [Int: String] = [:]     // malId -> MangaDex id, from fresh cache hits
+        var toSearch: [ReverseTarget] = []
+        for work in works.prefix(limit) {
+            guard let malId = work.malId, let title = work.knownTitles.first else { continue }
+            if let cached = store.reverseResolution(malId: malId), cached.isFresh() {
+                if case .resolved(let mdId) = cached { resolvedIds[malId] = mdId }
+                // A fresh .unresolved miss: skip entirely (don't re-search yet).
+            } else {
+                toSearch.append(ReverseTarget(malId: malId, title: title))
+            }
+        }
+
+        let freshlyResolved = await reverseResolveViaSearch(toSearch)
+        var out = freshlyResolved
+
+        // Batch-fetch the cache-hit ids we know but hold no full `Manga` for. One request,
+        // covers included — the same shape `recommendations(for:)` uses.
+        let searchedIds = Set(freshlyResolved.values.map(\.id))
+        let idsNeedingFetch = Array(Set(resolvedIds.values.filter { !searchedIds.contains($0) }))
+        if !idsNeedingFetch.isEmpty,
+           let fetched = try? await MangaDexAPI.fetchMangaByIdsWithCovers(ids: idsNeedingFetch) {
+            let byId = Dictionary(fetched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            for (malId, mdId) in resolvedIds where out[malId] == nil {
+                if let manga = byId[mdId] { out[malId] = manga }
+            }
+        }
+        return out
+    }
+
+    /// What reverse-resolution actually needs: a MAL id to confirm against, and a title to
+    /// search MangaDex with. Introduced so the AniList pool can share the helper below
+    /// without pretending its candidates are `MyAnimeListManga` — they arrive from AniList
+    /// and only ever carried an `idMal`.
+    struct ReverseTarget: Sendable {
+        let malId: Int
+        let title: String
+    }
+
+    /// Search MangaDex for each target's title and reverse-resolve to a confident Manga
     /// (bounded concurrency, cap 4 — the pattern established for LibraryStore.refresh).
     /// Records `.resolved`/`.unresolved` in the reverse cache; a THROWN search records
     /// nothing (transient — don't poison the cache), mirroring MALEntityResolver.
-    private func reverseResolveViaSearch(_ nodes: [MyAnimeListManga]) async -> [Int: Manga] {
+    private func reverseResolveViaSearch(_ nodes: [ReverseTarget]) async -> [Int: Manga] {
         guard !nodes.isEmpty else { return [:] }
         let matcher = self.matcher
         let maxConcurrent = 4
@@ -105,13 +167,13 @@ final class MoreLikeThisProvider {
                 group.addTask {
                     do {
                         let candidates = try await MangaDexAPI.searchManga(title: node.title)
-                        let match = MoreLikeThis.pickMatch(targetMalId: node.id,
+                        let match = MoreLikeThis.pickMatch(targetMalId: node.malId,
                                                            malTitle: node.title,
                                                            candidates: candidates,
                                                            matcher: matcher)
-                        return (node.id, match, true)
+                        return (node.malId, match, true)
                     } catch {
-                        return (node.id, nil, false)   // transient — cache nothing
+                        return (node.malId, nil, false)   // transient — cache nothing
                     }
                 }
             }
