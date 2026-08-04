@@ -738,10 +738,17 @@ depends on a sleep is the flake the no-ties invariant exists to avoid.
 
 ## Revisit triggers
 
-- If the AniList pool measurably beats the tag pool in the golden diff, decoding MangaDex's free
-  list-endpoint tags becomes the next obvious work — and at that point the tag pool stops being
-  provenance-only and the two pools stop being independent, which is when the agreement term needs
-  re-examining.
+- Decoding MangaDex's free list-endpoint tags was gated on the AniList pool going through a golden
+  diff. **Amended 2026-08-04: that gate is now satisfied and is not sufficient on its own.** Slice 4
+  shipped and the golden exists, so the sentence above reads as a green light; it is not one. The
+  binding condition is the second one, and it is untouched: decoding those tags moves the tag pool
+  off provenance-only, and the two pools stop being independent observers — they would partly share
+  a source. The agreement term rewards independent convergence, so over correlated pools it inflates
+  confidence instead of measuring it. **The golden cannot adjudicate this**, which is the trap: it
+  pins outputs, every output would move, and every move would have a plausible story while the
+  invariant that broke is a statistical one no fixture asserts. Re-examine the agreement term
+  *first*, as its own decision — the decoding is the easy half. This holds for a provenance-only
+  decoding too, unless it is genuinely never read by scoring.
 - If the queue ever runs at its budget ceiling for sustained stretches, the `malId` side-cache is the
   first thing to add, and it is purely additive.
 - **If a future seeding diagnostic shows the top-5 pairs sharing more than ~40% of their results**,
