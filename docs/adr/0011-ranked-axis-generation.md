@@ -275,6 +275,83 @@ one build later is indistinguishable from exploration. `load()` fires on every H
   time a chapter is opened; the pool changes every two weeks. Baking exclusions in would resurrect
   titles the user just read.
 
+**Amended 2026-08-04, designing slice 3.** The policy above survives unchanged; what follows fills
+the holes it left. Every one of these is a decision the original text did not make.
+
+- **The refresh state lives in an `actor AniListPoolStore`** (`Services/`), owning the `Caches/`
+  file, the in-memory copy, and an **in-flight `Task` keyed by the seed-pair set**. The provider
+  stays a `struct` holding a reference to it. `load()` fires on every Home appearance, so without
+  in-flight dedupe two appearances two seconds apart kick two independent 5-query refreshes for the
+  same seeds — 10 requests against a 30/min budget. Returning the *same* `Task` to the second caller
+  is the fix and it needs actor isolation to be race-free. `TagVocabularyStore`'s plain-class shape
+  was rejected as the model: that store *awaits* its fetch (`TagVocabularyStore.swift:105`), which is
+  right for one caller on a cold path and is exactly what this design exists not to do. A
+  `@MainActor` class matching the app's other stores was rejected for putting a 40-title JSON
+  encode/decode on the main actor and making the provider main-actor-bound, which
+  `CandidateProvider` is not. The refresh is an **unstructured `Task` created inside the actor**, so
+  it does not inherit the rail build's cancellation — read-through means nothing if the refresh dies
+  with the caller that triggered it.
+- **Empty pools are cached, at a 24-hour TTL** — the one place the 14-day number does not apply.
+  "Fetched and empty" is distinguished from "never fetched" in the record. Not caching empties at
+  all means the user whose top pair is genuinely rare re-issues 5 AniList requests on every Home
+  appearance, forever — the hazard below, made expensive. Caching them for 14 days is also wrong,
+  because a transient AniList hiccup that returns HTTP 200 with an empty page is indistinguishable
+  from a real empty, and eating a fortnight of dark rail for that is worse than re-asking.
+  **Accepted cost:** a third TTL in a codebase whose stated preference is one number, and at most
+  one wasted 5-request refresh per day for a sparse-taste user.
+- **All five pair queries must complete without throwing, or nothing is written.** The record's
+  identity *is* the seed-pair set, so an entry keyed on five pairs but built from three is lying
+  about its own key, and slice 4's golden would show a thin pool with no way to attribute it.
+  Caching the partial with its contributing subset was rejected: it decouples key from contents, so
+  every consumer must handle subset provenance, and staleness gains a second dimension. Aborting is
+  nearly free — the previous entry stands and the next Home appearance retries seconds later.
+  **A query returning zero results is not a failure**: under AND semantics that is a normal outcome,
+  and treating it as an error would abort refreshes for precisely the sparse-taste user and prevent
+  the empty record above from ever being written.
+- **`perPairLimit = 12`, deduped, capped at 40 unique titles — and candidates are scored *before*
+  any resolution, with only the top 12 resolved.** The AniList side costs 5 requests regardless; the
+  real fan-out is that every `idMal` without a fresh `EntityResolutionStore` hit costs one live
+  MangaDex title search (`MoreLikeThisProvider.swift:107`), so 20 per pair is up to 100 searches on
+  a cold cache. `withinPool` is computable from the AniList response alone, so the whole pool can be
+  ranked for free and budget spent only on the head; a title ranked 47th will never reach a rail
+  that shows a handful of cards. 40 matches the existing `poolLimit` so this pool is not
+  structurally larger than the ones beside it. Resolving everything was rejected — better second-
+  refresh economics, but it front-loads up to 60 searches for a user who may never scroll, against
+  a MangaDex rate limiter the AniList limiter knows nothing about. **The ordering is the decision;
+  the constants are tunable, doing it the other way round is not fixable without restructuring.**
+- **Resolution failures never abort and never backfill.** A title failing to resolve is the *normal*
+  case — AniList's catalogue and MangaDex's are different sets — and there is no honest way to
+  separate "MangaDex doesn't have it" from "the search 500'd" without the subset provenance rejected
+  above. Backfilling to top the head back up to 12 would turn a bounded fan-out into a loop whose
+  length depends on network luck, spending the most budget exactly when MangaDex is least healthy.
+  A minimum-resolved floor was rejected as a guess at a threshold, the same shape of guess this ADR
+  declined to make for pool diversity. **Accepted cost:** total MangaDex failure self-heals within a
+  day via the 24-hour empty TTL, but a *partial* — 4 of 12 resolving — is written with the full 14.
+  Slice 4's golden is the instrument that would show it.
+- **The cached record stores raw material, not scores.** Per title: the resolved `Manga` plus, per
+  contributing pair, its `min(rank_a, rank_b)`. `withinPool` is recomputed at read time against
+  today's `pairWeight`s. The `min(rank)` half is a frozen property of the title; `pairWeight` is
+  not — engagement is recency-decayed against `Date()`, so a stored score is a 14-day-old snapshot
+  of a drifting quantity. Recomputation is arithmetic over ~12 titles on an already-`async` path,
+  and it gives the right split: **membership is expensive to refresh, ordering is free.** It also
+  covers the case the cache key cannot — a taste shift that reweights the same five pairs without
+  reordering them does not invalidate the entry, by design, and that is exactly where frozen scores
+  go quietly wrong. Freezing was defensible on the grounds that `compose`'s per-session reshuffle
+  already exceeds this precision, but that reshuffle is exploration noise layered on a *correct*
+  ranking; using it to excuse a stale one is how the two stop being distinguishable.
+- **The provider never calls `TagVocabularyStore.vocabulary()`.** That method awaits a network fetch
+  whenever the cache is absent *or* older than 30 days (`TagVocabularyStore.swift:105-113`), so
+  calling it on the rail path stalls Home behind a 27 KB request and a limiter slot — on cold launch
+  after a `Caches/` purge, which is the case that placement deliberately accepts. A non-fetching
+  `cachedVocabulary()` plus a fire-and-forget `refreshIfNeeded()` are added; the existing
+  `vocabulary()` is untouched for its current caller. **Staleness is fine for this consumer and
+  absence is not**: categories move on the order of years, and an unknown tag already stays seedable
+  by the deny-list rule, so a 40-day-old vocabulary is a non-event — while a missing one triggers
+  the skip-rather-than-degrade rule above, returning `[]` and refreshing in the background, which is
+  indistinguishable to the user from a cold pool miss.
+- **A corrupt or undecodable cache file is treated as a miss**, matching
+  `TagVocabularyStore.loadIfNeeded`'s `try?`.
+
 ### Candidates are scored on their own rank; agreement generalizes to a geometric mean over n pools
 
 ```
@@ -347,6 +424,34 @@ A higher bar was rejected on asymmetry: the pool is additive and degrades to not
 permissive costs a mediocre third pool for a few titles, while being too strict leaves a shipped
 feature dark for weeks.
 
+**Amended 2026-08-04, designing slice 3 — the gate is counted on *contributing* Works, inside the
+provider.** Seed first, then require the resulting pairs drew on **≥ 3 distinct Works**.
+
+Counting Works with a non-empty `snapshot.tags` is the obvious reading and is subtly wrong: a Work
+can carry ranked tags where none clears `minimumSeedTagRank`, or where every tag clearing it sits in
+an excluded category. Those Works contribute nothing, so counting them lets the gate open on a store
+that then produces zero pairs — and a zero-pair store yields an empty pool, cached for 24 hours by
+the rule above. The gate would be doing the opposite of its job. Counting contributing Works states
+the property this ADR already argues for — "a recurring pair is taste, a one-off is an accident" —
+directly rather than through a proxy.
+
+**This reopens slice 2:** `SeededTagPair` gains `contributingWorks: Set<WorkID>`, the Works that
+carried both legs at rank ≥ 60 and therefore contributed a term to the pair's weight. The gate is
+then `Set(pairs.flatMap(\.contributingWorks)).count >= 3`. Per-pair rather than a summary union for
+the same reason the weight travels with the pair: slice 4's golden is more readable with the datum
+next to what it describes — and here it makes the **triangle** measured on 2026-08-03 directly
+visible, since overlapping edges can be seen drawing on the same Work ids rather than inferred. A
+separate `contributingWorks(...)` function was rejected outright: it re-walks the admission logic in
+a second place, and the two can then disagree about what a contributing Work is, which is the exact
+failure this gate definition exists to prevent. **Accepted cost:** churn on 15 green slice-2 tests,
+most of which must now state provenance they do not care about.
+
+The gate lives **in the provider**, not in `RecommendationEngine`. Putting it in the engine would
+make the engine know what a ranked axis is and how to count one, to serve one of its three pools —
+the knowledge accumulation ADR-0010's one-way closure was chosen to prevent
+(`RecommendationEngine.swift:34-36`). A provider returning `[]` is already fully supported
+(`CandidateProvider.swift:193-197`).
+
 ### Reason strings name the pair; MAL still wins
 
 `"More Dungeon + Necromancy"`, in the existing `"More \(name)"` idiom (`CandidateProvider.swift:87`).
@@ -368,6 +473,64 @@ composite already handles.
 tag flags — which the vocabulary-cache decision above deliberately avoids. Eight global flags cover
 the structural cases; the residual is a tag that is accurate, on-topic, and mildly revealing.
 
+**Amended 2026-08-04, designing slice 3 — when several pairs surfaced the same title, the reason
+names the pair contributing the largest term to its `withinPool` score**, with a lexicographic
+tiebreak on the canonical pair.
+
+The original text fixed the format and the spoiler rule but never said which pair wins, and the
+2026-08-03 measurement makes multi-pair overlap the *dominant* case rather than an edge one: the
+triangle means three of five seeds ask nearly the same question over the same Works. Naming the
+largest contribution keeps the reason string explaining the title's actual placement instead of
+telling a second, unrelated story about it. The tiebreak is load-bearing for the same reason slice
+2's was — within a Work every pair shares that engagement and the multiplier band is `[0.60, 1.00]`,
+so exact ties are ordinary and Swift's sort is not stable; without a total order the reason flips
+between builds on identical data.
+
+Naming the highest-weighted *seed* pair instead was rejected: it decouples the reason from the
+ranking, so a title that scraped in at 61 on the top pair and dominated on the fourth is explained
+by the pair it barely matched.
+
+**Spoiler suppression degrades the text, it never re-picks the pair.** If the winning pair is
+`Reincarnation ∧ Magic`, the string is `"More Magic"` — not the next pair down with two clean legs.
+Falling through would make the printed reason describe a weaker contribution than the one that
+actually placed the title, breaking the trace back to the score.
+
+### The provider splits into a pure core and an I/O shell, and lands unreferenced
+
+**Amended 2026-08-04 — a new decision, recorded here because it only makes sense beside the policies
+above.**
+
+`MoreLikeThisProvider` calls `MangaDexAPI.searchManga` and `fetchMangaByIdsWithCovers` as statics
+inside a private method (`MoreLikeThisProvider.swift:107`, `:71`), so it has no injection point. If
+the AniList provider does the same, every policy decided above is testable only against live
+network. Instead: a **pure, synchronous core** takes the per-pair `[AniListWork]` plus the seed pairs
+and returns candidates ranked by `pairWeight × min(rank_a, rank_b)/100` — that is the "score first"
+step, total and network-free — and a thin shell does seed → 5 transport-faked queries → core → **an
+injected `Resolve = ([Int]) async -> [Int: Manga]` closure** → cache write. The closure is the
+`MetadataUpgradeQueue.Sleep` pattern (`MetadataUpgradeQueue.swift:13`), this codebase's established
+answer to a dependency worth faking without a protocol. Each policy then has a deterministic test: a
+`Resolve` returning short exercises the no-floor rule, one returning nothing exercises the 24-hour
+empty, a transport throwing on query 3 exercises the abort.
+
+**`reverseResolveViaSearch` is deliberately not extracted into a shared helper this slice.** It is
+40 private lines, and the two callers want different things — MoreLikeThis resolves in
+recommendation order and drops self; this one resolves a scored head. Extracting means changing a
+shipped, working path in the same slice that adds a new one, and slice 4's golden needs exactly one
+cause — the argument that already deferred MangaDex tag decoding. If both paths still look alike
+after slice 4, extract then, with the golden in place to prove nothing moved. Wrapping MangaDex
+behind a protocol was rejected as larger than this slice. **Accepted cost: two resolution paths on
+`main` until at least slice 4.**
+
+**Slice 3 lands unreferenced.** `RecommendationEngine` still constructs the composite with `tag:` and
+`mal:` only (`RecommendationEngine.swift:66`). The moment the provider is reachable, the AniList pool
+contributes to `foryou-ranking.txt` and slice 4's diff can no longer answer the one question it
+exists for. Wiring it at `wAniList = 0` was rejected as looking inert without being it: a zero weight
+still admits the pool to the composite's `manga` and `reason` dictionaries, so it can supply titles
+the other pools missed and overwrite reasons on titles they did not — the golden moves anyway, which
+is worse than obviously-dead code. **Accepted cost: the cache never warms before slice 4**, so the
+first golden run after wiring sees a cold miss on the pool and possibly the vocabulary, and reads as
+a broken feature if unexpected. Run it, wait, run it again.
+
 ## Hazards
 
 - **A WeebCentral-only reader may never clear the gate, silently.** Those Works have no `malId`,
@@ -387,6 +550,11 @@ the structural cases; the residual is a tag that is accurate, on-topic, and mild
 - **The pool cache and the vocabulary cache are both evictable, with different consequences.**
   Losing the pool costs a rebuild; losing the vocabulary disables the feature until refetched, by
   the skip-rather-than-degrade rule above.
+- **There are now three staleness numbers in this subsystem** — 14 days for a populated pool, 24
+  hours for an empty one, 30 days for the vocabulary — against a codebase that deliberately holds
+  one. Each is argued, but "which TTL applies here" is now a question that can be got wrong.
+- **A 4-of-12 pool is written with the full 14-day TTL** and nothing distinguishes it from a healthy
+  one. Only total resolution failure self-heals quickly, via the empty-pool TTL.
 - **Rank is AniList's crowd, not the user's.** `Dungeon: 95` means AniList voters agree the tag
   characterizes the title. It is evidence about the title, and this ADR treats it as evidence about
   the reader by way of what they read.

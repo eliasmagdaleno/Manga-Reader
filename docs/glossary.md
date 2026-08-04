@@ -213,7 +213,17 @@ so it is the only one that does not score by provenance.
 seeding unit for the AniList pool: `AND` semantics make a pair expressive where a single tag is just
 a popularity list, and drawing both legs from the same Work is what makes the conjunction a claim
 someone actually made. Weighted by `Σ engagement(w) × min(rank_a, rank_b)/100` over the Works
-carrying both, so pairs that *recur* beat pairs that happened once. Top 5 seed the query.
+carrying both, so pairs that *recur* beat pairs that happened once. Top 5 seed the query. Each pair
+carries its **contributing Works** — the ones that supplied a term to its weight — which is what the
+AniList pool's ≥ 3 gate counts, and what makes a pair's evidence visible in the golden file.
+
+**Pool cache** — the AniList pool's persisted result, in `Caches/`, **keyed on the seed-pair set**
+so a taste shift invalidates it for free. Read-through: a read returns whatever is there, empty
+included, and kicks a background refresh, so the pool always appears one rail build later than the
+taste that asked for it. Stores **raw material, not scores** — the resolved titles plus their
+per-pair `min(rank)` — because engagement decays daily, so ranking is recomputed on every read while
+membership is refreshed every two weeks. **Populated entries live 14 days, empty ones 24 hours**: an
+empty pool is a normal outcome under `AND`, but it is also what a transient failure looks like.
 
 **Minimum tag rank** — AniList's per-tag floor on a query. Applies to **every** tag in a
 conjunction, so it thins a pair fast: `Dungeon ∧ Iyashikei` is empty at 80. Set to 60 — the floor
