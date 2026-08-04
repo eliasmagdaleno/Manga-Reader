@@ -511,6 +511,60 @@ final class AniListPoolTests: XCTestCase {
         XCTAssertEqual(second.first?.reason, "More Dungeon + Revenge")
     }
 
+    /// The seam the golden file cannot see.
+    ///
+    /// `RecommendationGoldenTests` feeds the composite a hand-scored `StubPool`, so nothing
+    /// there proves a *real* `AniListCandidateProvider`'s output lands in the `ani` slot,
+    /// normalizes against its own pool, and carries its reason through the
+    /// tag < AniList < MAL precedence. This is that proof, and it is deliberately **not**
+    /// goldened: it needs a settle for the background refresh, and a golden whose content
+    /// depends on a sleep is the flake the fixture's no-ties invariant exists to avoid.
+    ///
+    /// Not covered here, and not automated anywhere: that the app's composition root hands
+    /// the provider *single* long-lived store instances. See ADR-0011's hazard on that.
+    func testTheAniListPoolReachesTheComposite() async throws {
+        let works = (1...3).map { work("W\($0)", [("Dungeon", 90), ("Revenge", 90)]) }
+        let weights = Dictionary(uniqueKeysWithValues: works.map { ($0.id, 1.0) })
+
+        let ani = provider(works: works,
+                           vocabularyStore: vocabularyStore(seeded: Self.vocabulary),
+                           poolStore: AniListPoolStore(directory: temporaryDirectory()),
+                           query: { _, _ in [self.aniList(1, malId: 11,
+                                                          [("Dungeon", 90), ("Revenge", 80)])] },
+                           resolve: { works in
+                               Dictionary(uniqueKeysWithValues:
+                                   works.compactMap(\.malId)
+                                       .map { ($0, self.manga("md-\($0)", malId: $0)) })
+                           })
+
+        // A tag pool that also carries md-11, so the composite has something to blend with
+        // and the reason precedence has something to override.
+        let tag = FixedPool(items: [
+            ScoredManga(manga: manga("md-11"), score: 1.0, reason: "More Dungeon"),
+            ScoredManga(manga: manga("md-99"), score: 0.5, reason: "More Revenge")
+        ])
+        let composite = CompositeCandidateProvider(tag: tag, mal: EmptyCandidateProvider(),
+                                                   ani: ani)
+        let profile = profile(weights)
+
+        let cold = try await composite.candidates(for: profile, excluding: [], limit: 10)
+        XCTAssertEqual(cold.map(\.manga.id), ["md-11", "md-99"],
+                       "a cold AniList pool degrades to the tag ranking, it does not fail it")
+        XCTAssertEqual(cold.first?.reason, "More Dungeon",
+                       "and nothing overrides the tag reason while the pool is empty")
+
+        try await Task.sleep(nanoseconds: 200_000_000)
+        let warm = try await composite.candidates(for: profile, excluding: [], limit: 10)
+
+        XCTAssertEqual(warm.map(\.manga.id), ["md-11", "md-99"])
+        XCTAssertEqual(warm.first?.reason, "More Dungeon + Revenge",
+                       "the AniList reason overrides the tag one — a conjunction says more")
+        // md-11 tops both pools, so both normalize to 1.0: 1.0 + 0.6 + 0.25 x sqrt(1 x 1).
+        XCTAssertEqual(warm[0].score, 1.85, accuracy: 1e-9)
+        XCTAssertEqual(warm[1].score, 0.5, accuracy: 1e-9,
+                       "tag-only, so no AniList term and no agreement bonus")
+    }
+
     /// Exclusions are applied at scoring time, never baked into the cache: `read ∪ saved ∪
     /// notInterested` changes every time a chapter is opened, the pool every two weeks.
     func testExclusionsAreAppliedAtReadTimeNotCachedIntoThePool() async throws {
@@ -559,4 +613,11 @@ private actor Counter {
 private actor Box {
     private(set) var value: [Int] = []
     func set(_ new: [Int]) { value = new }
+}
+
+/// A pre-scored pool, for asserting composite behaviour without a network-shaped provider.
+private struct FixedPool: CandidateProvider {
+    let items: [ScoredManga]
+    func candidates(for profile: TasteProfile,
+                    excluding: Set<String>, limit: Int) async throws -> [ScoredManga] { items }
 }

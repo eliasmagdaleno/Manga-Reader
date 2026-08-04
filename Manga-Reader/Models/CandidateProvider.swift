@@ -153,16 +153,26 @@ struct MALCandidateProvider: CandidateProvider {
     }
 }
 
-/// Blends two candidate pools (tag + MAL). Each pool is normalized to [0, 1] (÷ its own
-/// max) so the two signals are comparable, then combined `W_TAG·tag + W_MAL·mal` plus an
-/// agreement bonus of `AGREEMENT_BONUS · √(tag · mal)`. Empty MAL pool ⇒ exactly the tag
-/// ranking (graceful degradation).
+/// A candidate provider that returns nothing. The honest default for the `ani` slot on
+/// paths that must not touch the network — previews, and tests about the blend rather than
+/// the pool. Distinct from a failing provider: this degrades to a two-pool rail by design,
+/// which `CompositeCandidateProvider` already handles as its graceful-degradation case.
+struct EmptyCandidateProvider: CandidateProvider {
+    func candidates(for profile: TasteProfile,
+                    excluding: Set<String>, limit: Int) async throws -> [ScoredManga] { [] }
+}
+
+/// Blends three candidate pools (tag + AniList + MAL). Each pool is normalized to [0, 1]
+/// (÷ its own max) so the signals are comparable, then combined
+/// `W_TAG·tag + W_ANILIST·ani + W_MAL·mal` plus an agreement bonus of
+/// `AGREEMENT_BONUS · (∏ contributing normalized scores)^(1/n)`. Any pool empty or failing
+/// ⇒ the ranking the remaining pools produce (graceful degradation).
 ///
-/// The agreement term is the geometric mean of the two normalized scores, which tracks the
-/// **weaker** of the two signals: two pools agreeing at the top of both earns close to the
-/// full bonus, while incidental co-occurrence deep in both earns almost nothing. It is also
-/// zero whenever either pool omits the title, so non-overlap needs no special case — the
-/// loop below runs over the intersection purely as an optimization.
+/// The agreement term is the geometric mean over the pools that scored the title, which
+/// tracks the **weakest** contributing signal: pools agreeing at the top of each earn close
+/// to the full bonus, while incidental co-occurrence deep in each earns almost nothing. A
+/// pool omitting the title simply does not enter the product, so non-overlap needs no
+/// special case.
 ///
 /// This replaced a flat `+0.25` for any overlap at all. Under the flat bonus a title ranked
 /// ~40% of top strength in *both* pools outranked the single best recommendation either
@@ -173,6 +183,13 @@ struct MALCandidateProvider: CandidateProvider {
 struct CompositeCandidateProvider: CandidateProvider {
     let tag: CandidateProvider
     let mal: CandidateProvider
+    /// The AniList pool (ADR-0011). Defaulted to an empty provider — **not** as a
+    /// convenience, but because the paths that take the default genuinely should not do
+    /// AniList network: SwiftUI previews and every test that is about the blend rather than
+    /// the pool. The app's composition root passes the real one explicitly.
+    /// `var`, not `let`: a `let` carrying a default value is excluded from the memberwise
+    /// initializer entirely, which would make it unsettable.
+    var ani: CandidateProvider = EmptyCandidateProvider()
 
     // Tuning constants. Non-private and injectable (the memberwise init defaults them, so
     // `CompositeCandidateProvider(tag:mal:)` still reads the same) for two reasons: the golden
@@ -181,6 +198,10 @@ struct CompositeCandidateProvider: CandidateProvider {
     // this file. Defaults are the shipping values.
     var wTag = 1.0
     var wMal = 0.85
+    /// Below `wMal` — not because the ranked axis is the weaker signal (ADR-0011 argues it
+    /// is the best-evidenced of the three) but because it is the only one that has never
+    /// faced a real device. The golden file is the instrument for raising it.
+    var wAniList = 0.6
     /// Scales the geometric-mean agreement term. Deliberately left at the flat bonus's old
     /// value so the formula change could be evaluated on its own — note the geometric bonus is
     /// always ≤ the flat one it replaced, reaching 0.25 only when a title tops both pools, so
@@ -192,31 +213,55 @@ struct CompositeCandidateProvider: CandidateProvider {
                     limit: Int) async throws -> [ScoredManga] {
         async let tagPool = tag.candidates(for: profile, excluding: excluding, limit: limit)
         async let malPool = mal.candidates(for: profile, excluding: excluding, limit: limit)
-        // Either pool failing degrades to empty (MAL failing ⇒ tag-only rail).
+        async let aniPool = ani.candidates(for: profile, excluding: excluding, limit: limit)
+        // Any pool failing degrades to empty (MAL failing ⇒ tag-only rail).
         let tags = (try? await tagPool) ?? []
         let mals = (try? await malPool) ?? []
+        let anis = (try? await aniPool) ?? []
 
         let tagNorm = Self.normalized(tags)
         let malNorm = Self.normalized(mals)
+        let aniNorm = Self.normalized(anis)
 
         var score: [String: Double] = [:]
         var manga: [String: Manga] = [:]
         var reason: [String: String] = [:]
 
+        // Reason precedence is tag < AniList < MAL, applied by assignment order (ADR-0011).
+        // "Because you read Solo Leveling" names a book the user chose and beats any tag
+        // phrasing; a two-tag conjunction is strictly more informative than the single broad
+        // tag that surfaced the same title, so it overrides "More Action".
         for c in tags {
             manga[c.manga.id] = c.manga
             reason[c.manga.id] = c.reason
             score[c.manga.id, default: 0] += wTag * (tagNorm[c.manga.id] ?? 0)
+        }
+        for c in anis {
+            if manga[c.manga.id] == nil { manga[c.manga.id] = c.manga }
+            reason[c.manga.id] = c.reason
+            score[c.manga.id, default: 0] += wAniList * (aniNorm[c.manga.id] ?? 0)
         }
         for c in mals {
             if manga[c.manga.id] == nil { manga[c.manga.id] = c.manga }
             reason[c.manga.id] = c.reason      // MAL reason preferred when MAL contributed
             score[c.manga.id, default: 0] += wMal * (malNorm[c.manga.id] ?? 0)
         }
-        // Agreement: proportional to the geometric mean of the two normalized scores.
-        for id in Set(tagNorm.keys).intersection(malNorm.keys) {
-            let agreement = ((tagNorm[id] ?? 0) * (malNorm[id] ?? 0)).squareRoot()
-            score[id, default: 0] += agreementBonus * agreement
+
+        // Agreement: the geometric mean over the pools that actually scored the title.
+        //
+        // Generalized from the two-pool `√(tag·mal)` when the AniList pool landed, and it
+        // reduces to that expression exactly when only two pools contribute — so the change
+        // is one the golden file can adjudicate as a diff. Three *pairwise* terms were
+        // rejected: a title in all three would collect up to 3 × agreementBonus, which is
+        // precisely the "agreement outranks strength" failure the geometric mean was adopted
+        // to fix, and holding the balance would mean cutting agreementBonus to ~0.08 —
+        // quietly weakening two-pool agreement as a side effect of adding a third pool.
+        for id in manga.keys {
+            let contributing = [tagNorm[id], aniNorm[id], malNorm[id]].compactMap { $0 }
+                .filter { $0 > 0 }
+            guard contributing.count >= 2 else { continue }
+            let product = contributing.reduce(1.0, *)
+            score[id, default: 0] += agreementBonus * pow(product, 1.0 / Double(contributing.count))
         }
 
         // Secondary sort on id keeps the order stable for exactly-tied scores, so the
