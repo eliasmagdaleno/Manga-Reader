@@ -113,6 +113,39 @@ final class TagPairSeedingTests: XCTestCase {
         XCTAssertEqual(seed([unread], weights: [:]), [])
     }
 
+    // MARK: - Provenance (the >= 3 Works gate, ADR-0011 slice 3)
+
+    /// The pair carries the Works that actually contributed a term to its weight. The gate
+    /// counts *these*, not Works with a non-empty ranked axis: a Work can carry ranked tags
+    /// where none clears 60, or where every one that does sits in an excluded category, and
+    /// counting those opens the gate on a store that then produces no pairs at all.
+    func testAPairCarriesTheWorksThatContributedToIt() {
+        let one = work("One", [("Dungeon", 80), ("Revenge", 80)])
+        let two = work("Two", [("Dungeon", 90), ("Revenge", 70)])
+        // Ranked axis, nothing admissible: below the floor and an excluded category.
+        let neither = work("Neither", [("Dungeon", 59), ("Full Color", 95)])
+
+        let pairs = seed([one, two, neither],
+                         weights: [one.id: 1.0, two.id: 1.0, neither.id: 1.0])
+
+        XCTAssertEqual(pairs.count, 1)
+        XCTAssertEqual(pairs[0].contributingWorks, [one.id, two.id],
+                       "a Work whose tags are all inadmissible contributed nothing")
+        XCTAssertEqual(Set(pairs.flatMap(\.contributingWorks)).count, 2,
+                       "which is what the gate counts — and here it would correctly stay shut")
+    }
+
+    /// Provenance is per-pair, not a summary union, so overlapping pairs are visibly drawn
+    /// on the same Works. This is the 2026-08-03 triangle made inspectable rather than
+    /// inferred.
+    func testOverlappingPairsShowTheySharTheirWorks() {
+        let w = work("Triangle", [("Dungeon", 80), ("Iyashikei", 80), ("Revenge", 80)])
+        let pairs = seed([w], weights: [w.id: 1.0])
+
+        XCTAssertEqual(pairs.count, 3)
+        XCTAssertTrue(pairs.allSatisfy { $0.contributingWorks == [w.id] })
+    }
+
     // MARK: - Canonicalisation
 
     /// `Dungeon AND Revenge` and `Revenge AND Dungeon` are one pair. If the type did not

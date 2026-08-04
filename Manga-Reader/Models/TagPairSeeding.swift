@@ -35,12 +35,34 @@ struct TagPair: Hashable, Codable {
     }
 }
 
+/// One definition of the pair ordering, because there are now four places that need it —
+/// the seeding tiebreak, the cache key's canonical form, the ordering of a candidate's
+/// contributions, and the reason-string tiebreak. Each is load-bearing for the same reason:
+/// Swift's sort is not guaranteed stable, so without a *total* order these all diff between
+/// runs on identical data. Four hand-spelled copies of a comparator that must agree is how
+/// they stop agreeing.
+extension TagPair: Comparable {
+    static func < (lhs: TagPair, rhs: TagPair) -> Bool {
+        lhs.a != rhs.a ? lhs.a < rhs.a : lhs.b < rhs.b
+    }
+}
+
 /// A pair and the strength of the claim behind it. The weight travels with the pair
 /// deliberately: the provider weights its results by it, and a golden diff is far more
 /// readable with the number visible than with five bare names.
 struct SeededTagPair: Equatable {
     let pair: TagPair
     let weight: Double
+    /// The Works that carried **both** legs at rank >= 60 and therefore contributed a term
+    /// to `weight`. This is what the >= 3 Works gate counts, and it must come from here
+    /// rather than from a separate `contributingWorks(...)` helper: a second walk of the
+    /// admission logic is a second definition of "contributing", and the two would
+    /// eventually disagree — which is the exact failure the gate exists to prevent.
+    ///
+    /// Per-pair rather than one summary union, for the same reason `weight` travels with
+    /// the pair: it makes overlapping pairs visibly draw on the same Work ids instead of
+    /// leaving that to be inferred.
+    let contributingWorks: Set<WorkID>
 }
 
 /// AniList's per-tag floor, applied to **every** leg of a conjunction. 60 excludes noise;
@@ -78,6 +100,7 @@ func seedPairs(works: [Work],
                excludeAdultTags: Bool = true) -> [SeededTagPair] {
 
     var accumulated: [TagPair: Double] = [:]
+    var provenance: [TagPair: Set<WorkID>] = [:]
 
     for work in works {
         guard let engagement = weights[work.id], let tags = work.snapshot?.tags else { continue }
@@ -102,6 +125,9 @@ func seedPairs(works: [Work],
                 let pair = TagPair(admissible[i].name, admissible[j].name)
                 let weaker = min(admissible[i].rank, admissible[j].rank)
                 accumulated[pair, default: 0] += engagement * Double(weaker) / 100
+                // Recorded in the same step that adds the term, so provenance cannot
+                // drift from the weight it explains.
+                provenance[pair, default: []].insert(work.id)
             }
         }
     }
@@ -114,11 +140,10 @@ func seedPairs(works: [Work],
     // Accepted cost: alphabetical order is meaningless -- when a tie block spans the cut,
     // which pairs survive carries no signal and must not be read as any.
     return accumulated
-        .map { SeededTagPair(pair: $0.key, weight: $0.value) }
+        .map { SeededTagPair(pair: $0.key, weight: $0.value,
+                             contributingWorks: provenance[$0.key] ?? []) }
         .sorted {
-            if $0.weight != $1.weight { return $0.weight > $1.weight }
-            if $0.pair.a != $1.pair.a { return $0.pair.a < $1.pair.a }
-            return $0.pair.b < $1.pair.b
+            $0.weight != $1.weight ? $0.weight > $1.weight : $0.pair < $1.pair
         }
         .prefix(limit)
         .map { $0 }

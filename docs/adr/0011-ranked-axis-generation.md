@@ -562,6 +562,28 @@ after slice 4, extract then, with the golden in place to prove nothing moved. Wr
 behind a protocol was rejected as larger than this slice. **Accepted cost: two resolution paths on
 `main` until at least slice 4.**
 
+**Amended 2026-08-04, implementing slice 3 — two decisions the design above did not make,
+recorded because both were forced by the compiler rather than chosen freely.**
+
+- **Works reach the provider through a `LoadWorks = @Sendable () async -> [Work]` closure.**
+  Seeding needs Works, `WorkStore` is `@MainActor`, and this provider deliberately is not —
+  so it cannot hold the store. A closure is the same one-way shape as
+  `RecommendationEngine.PriorityPush`: the provider can read Works and can do nothing else
+  to the store. Passing a `[Work]` snapshot at construction was rejected because the
+  provider outlives any one rail build and the store changes under it.
+- **`Manga` gains `Codable, Equatable` on the type**, not via an extension: Swift only
+  synthesizes those in the declaring file, and a cross-file `extension Manga: Codable {}`
+  does not compile. A lossy mirror in `LibraryItem`'s shape was rejected — a pool entry
+  that dropped `malId` or `sourceId` could not produce an openable candidate.
+  **Accepted cost:** `Manga` is now persistable everywhere, and a field added to it silently
+  changes the pool cache's format. The corrupt-file-is-a-miss rule is what contains that.
+
+Two things the design predicted turned out cheaper than stated. The slice-2 churn was **one
+new test, not 15** — the existing tests assert on `.pair` and `.weight`, never on whole
+`SeededTagPair` values, so the added field did not touch them. And `rankPoolCandidates`
+could not be written as one `map`/`sorted`/`prefix`/`map` chain; the type checker times out
+on it. It is explicit loops, which the ordering comments now have to carry alone.
+
 **Slice 3 lands unreferenced.** `RecommendationEngine` still constructs the composite with `tag:` and
 `mal:` only (`RecommendationEngine.swift:66`). The moment the provider is reachable, the AniList pool
 contributes to `foryou-ranking.txt` and slice 4's diff can no longer answer the one question it

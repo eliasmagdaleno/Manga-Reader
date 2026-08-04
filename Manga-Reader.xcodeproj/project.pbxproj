@@ -12,6 +12,7 @@
 		3F09684CEAF72FFBAB5FC149 /* ReaderPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C6FEFC3040D33CD88650572 /* ReaderPresentationTests.swift */; };
 		4C97ADEAD9C4238A1365A208 /* TagVocabularyStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBC6F29C8208094651FCAC5C /* TagVocabularyStoreTests.swift */; };
 		647DD2EB7E9AD349DBB04923 /* TagPairSeedingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAFC1B6DC1B892DB348D885 /* TagPairSeedingTests.swift */; };
+		DFF2BC11BF304A968E8FEE01 /* AniListPoolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846EC8488D4E46DAB7E152EC /* AniListPoolTests.swift */; };
 		62C77C4658C29B13DA62393D /* MetadataUpgradeQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3230EFD03B407AE9AF0906F2 /* MetadataUpgradeQueueTests.swift */; };
 		6FB3C6A88ECE9ABE9FF0A62A /* ReaderViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3077F8455CE3CDC586CB6F0 /* ReaderViewModelTests.swift */; };
 		AD1157092EA0000200CF2434 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1157092EA0000100CF2434 /* HistoryView.swift */; };
@@ -92,6 +93,7 @@
 		D3077F8455CE3CDC586CB6F0 /* ReaderViewModelTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = ReaderViewModelTests.swift; path = ReaderViewModelTests.swift; sourceTree = "<group>"; };
 		DBC6F29C8208094651FCAC5C /* TagVocabularyStoreTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = TagVocabularyStoreTests.swift; sourceTree = "<group>"; };
 		4DAFC1B6DC1B892DB348D885 /* TagPairSeedingTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = TagPairSeedingTests.swift; sourceTree = "<group>"; };
+		846EC8488D4E46DAB7E152EC /* AniListPoolTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = AniListPoolTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -211,6 +213,7 @@
 				651410493E4CE11A30957C52 /* WebtoonGeometryTests.swift */,
 				DBC6F29C8208094651FCAC5C /* TagVocabularyStoreTests.swift */,
 				4DAFC1B6DC1B892DB348D885 /* TagPairSeedingTests.swift */,
+				846EC8488D4E46DAB7E152EC /* AniListPoolTests.swift */,
 			);
 			path = "Manga-ReaderTests";
 			sourceTree = "<group>";
@@ -409,6 +412,7 @@
 				AD72C1D3D3B222BBCA88006B /* WebtoonGeometryTests.swift in Sources */,
 				4C97ADEAD9C4238A1365A208 /* TagVocabularyStoreTests.swift in Sources */,
 				647DD2EB7E9AD349DBB04923 /* TagPairSeedingTests.swift in Sources */,
+				DFF2BC11BF304A968E8FEE01 /* AniListPoolTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -144,6 +144,46 @@ struct AniListAPI {
     }
     """
 
+    /// One page of media carrying **every** listed tag at `minimumTagRank` or better.
+    ///
+    /// `tag_in` is a **conjunction** on AniList, not a disjunction — verified live at
+    /// ranks 0, 60 and 80 (ADR-0011's Context and its 2026-08-04 measurement). That is the
+    /// whole reason the query unit is a *pair*: a single tag at a popularity sort is a
+    /// popularity list wearing a tag's name, while `Demons AND Magic, both >= 60` is a
+    /// statement about one reader.
+    ///
+    /// `isAdult: false` filters the *results*; excluding adult tags from the seeds is a
+    /// separate decision made in `seedPairs`.
+    private static let mediaByTagsQuery = """
+    query ($tags: [String], $rank: Int, $perPage: Int) {
+      Page(page: 1, perPage: $perPage) {
+        media(type: MANGA, tag_in: $tags, minimumTagRank: $rank,
+              isAdult: false, sort: POPULARITY_DESC) {
+          id idMal
+          title { romaji english native }
+          synonyms
+          genres
+          tags { name rank }
+          status
+          chapters
+        }
+      }
+    }
+    """
+
+    /// The pool query. Returns `[]` rather than throwing when AniList has nothing:
+    /// under AND semantics an empty result is a **normal outcome** for a reader whose
+    /// taste is genuinely rare, and treating it as an error would abort the whole refresh
+    /// for exactly that user (ADR-0011).
+    func media(tags: [String],
+               minimumTagRank: Int = minimumSeedTagRank,
+               limit: Int) async throws -> [AniListWork] {
+        let payload: PagePayload = try await perform(
+            query: Self.mediaByTagsQuery,
+            variables: ["tags": tags, "rank": minimumTagRank, "perPage": limit])
+        return (payload.page?.media ?? []).map { $0.toWork() }
+    }
+
     /// Look a Work up by its MyAnimeList id — the common path, since MangaDex
     /// publishes `attributes.links.mal` and the app is already keyed on `malId`.
     func work(malId: Int) async throws -> AniListWork {
@@ -231,6 +271,14 @@ private struct GraphQLEnvelope<Payload: Decodable>: Decodable {
 private struct MediaPayload: Decodable {
     let media: Media?
     enum CodingKeys: String, CodingKey { case media = "Media" }
+}
+
+private struct PagePayload: Decodable {
+    struct Page: Decodable {
+        let media: [Media]?
+    }
+    let page: Page?
+    enum CodingKeys: String, CodingKey { case page = "Page" }
 }
 
 private struct TagCollectionPayload: Decodable {

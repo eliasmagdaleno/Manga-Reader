@@ -121,6 +121,36 @@ actor TagVocabularyStore {
         }
     }
 
+    /// What is on disk right now, **without ever awaiting a fetch** — stale or `nil`.
+    ///
+    /// `vocabulary()` above awaits the network whenever the cache is absent *or* past its
+    /// 30-day TTL, which is right for its caller and wrong for the rail: it would stall
+    /// Home behind a 27 KB request and a limiter slot, on the cold-launch-after-eviction
+    /// case `Caches/` placement deliberately accepts. Read-through means nothing if the
+    /// read blocks.
+    ///
+    /// **Staleness is fine for this consumer; absence is not.** Categories move on the
+    /// order of years and an unknown tag stays seedable by the deny-list rule, so a
+    /// 40-day-old vocabulary is a non-event — while a missing one triggers ADR-0011's
+    /// skip-rather-than-degrade rule.
+    func cachedVocabulary() -> TagVocabulary? {
+        loadIfNeeded()
+        return cached
+    }
+
+    /// Brings the cache up to date in the background, if it needs it. Fire-and-forget:
+    /// the caller gets no result and does not wait, because whatever it is doing this
+    /// build is being done with `cachedVocabulary()` already.
+    ///
+    /// Deliberately *not* deduped against a concurrent refresh the way the pool store's
+    /// task is — `vocabulary()` is idempotent, at most one extra 27 KB request is at
+    /// stake, and the TTL closes the window after the first success.
+    func refreshIfNeeded(now: Date = Date()) {
+        loadIfNeeded()
+        if let cached, cached.isFresh(now: now) { return }
+        Task { _ = await self.vocabulary(now: now) }
+    }
+
     private func loadIfNeeded() {
         guard !loaded else { return }
         loaded = true
