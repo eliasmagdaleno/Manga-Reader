@@ -84,11 +84,52 @@ vocabulary. Do not re-derive; re-run `TagPairSeedingDiagnostic` instead.**
   three of five queries ask nearly the same question and will overlap under AND. **Left in
   deliberately** — a "no tag in more than N of the cut" rule is a guess, and slice 4's golden diff
   is the instrument that shows whether the overlap actually costs pool breadth. This is the open
-  item this measurement leaves behind.
+  item this measurement leaves behind. **Resolved 2026-08-04 — see the next block; the overlap was
+  measured and is small.**
 - **Engagement is not persisted.** It is derived from history, which lives in **UserDefaults**, not
   Application Support — so reading the real store off-device needs `Library/Preferences/…plist`
   alongside `works.json`, and `devicectl … --source .` is rejected (use `--source Library`). The
   diagnostic decays recency against `Date()`, so its weights are not reproducible to the digit.
+
+**Measured 2026-08-04 against live AniList — the triangle's three edges, `minimumTagRank: 60`,
+`isAdult: false`, `sort: POPULARITY_DESC`, top 12 each. Do not re-derive; re-run the three queries.**
+
+The 2026-08-03 block left the triangle open on the assumption that three pairs over the same three
+tags ask "nearly the same question." **They do not.** Across 36 slots the three edges return **29
+distinct titles**:
+
+| Appears in | Count | Titles |
+|---|---|---|
+| all 3 pools | **2** | Berserk, The Greatest Estate Developer |
+| exactly 2 | **3** | Tsugumomo, Welcome to Demon School! Iruma-kun, Ichi the Witch |
+| exactly 1 | **24** | — |
+
+The tags overlap; the catalogue regions largely do not. `Demons∧Magic` returns shounen battle (Solo
+Leveling, Jujutsu Kaisen, Black Clover), `Demons∧Found Family` returns darker ensembles (Chainsaw
+Man, The Promised Neverland, The Girl From the Other Side), `Found Family∧Magic` returns soft and
+slice-of-life (Witch Hat Atelier, Miss Kobayashi's Dragon Maid, WITCH WATCH). A shared tag pair is
+not a shared neighbourhood, which is the thing this measurement establishes and the earlier
+prediction got wrong.
+
+Two consequences, both **no change**:
+
+- **Breadth costs ~7 duplicate slots in 36.** Real, small, and not worth a "no tag in more than N of
+  the cut" seeding rule. The 2026-08-03 decision to leave the triangle in now rests on evidence
+  rather than on declining to guess.
+- **`withinPool` sums over every pair that surfaced a candidate** (see the scoring decision below),
+  so a title in all three edges collects three terms. That is the same "agreement outranks strength"
+  shape rejected for the cross-pool agreement term — one level down, inside the AniList pool, where
+  that argument had not been applied. **It stands**, because the measurement says it applies to 2
+  titles, one of which (Berserk) is a seed Work and so is a library title the candidate path drops
+  anyway. Capping or `max`-ing the per-pair contribution is a two-line change and stays available;
+  it is not worth paying for roughly one title per refresh against `wAniList = 0.6`.
+  **Accepted cost:** the sum is knowingly unbounded in the number of contributing pairs, and a
+  future store whose top pairs *are* redundant would amplify one cluster with nothing to stop it.
+  The revisit trigger below is what catches that.
+
+Also re-confirmed at the floor this ADR actually uses: all 12 `Demons∧Magic` results carry **both**
+tags at rank ≥ 60 (weakest legs: Slime 61/74, Solo Leveling 64/87). The Context block's AND-semantics
+finding was verified at ranks 0 and 80 on 2026-07-28; this extends it to 60.
 
 ## Decisions
 
@@ -567,6 +608,11 @@ a broken feature if unexpected. Run it, wait, run it again.
   re-examining.
 - If the queue ever runs at its budget ceiling for sustained stretches, the `malId` side-cache is the
   first thing to add, and it is purely additive.
+- **If a future seeding diagnostic shows the top-5 pairs sharing more than ~40% of their results**,
+  the unbounded sum in `withinPool` becomes a real amplifier and is the thing to reopen — not the
+  seeding formula, which is honestly reporting a redundant taste. The 2026-08-04 measurement puts
+  today's figure at 7 duplicate slots in 36 (~19%) for the worst case in the cut, so there is roughly
+  a factor of two of headroom before this matters.
 - If triples ever become viable — a much larger library, or a lower floor — the pair decision is what
   to reopen, not the seeding formula.
 - If per-title spoiler suppression is ever wanted in the UI, that is the argument for widening

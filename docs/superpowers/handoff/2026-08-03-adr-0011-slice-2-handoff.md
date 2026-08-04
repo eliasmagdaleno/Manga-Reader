@@ -65,6 +65,11 @@ mid-pack (2.179 against Iruma-kun's 5.005), so its 1035 candidate pairs each lan
 Works. **Recurrence beats volume** — which is exactly what the formula claims and had never been
 checked. No diversity rule was added.
 
+**Closed 2026-08-04** — the triangle below was measured against live AniList and the overlap is
+small (29 distinct titles across 36 slots; 2 titles in all three edges). See ADR-0011's
+`Measured 2026-08-04` block. Nothing changed; a revisit trigger was added. The paragraph below is
+kept as written for the record.
+
 **The one real finding left open:** the top 5 contains a **triangle** — `Demons∧Magic`,
 `Demons∧Found Family`, `Found Family∧Magic`, three edges of one triple over largely the same three
 Works. Three of five queries ask nearly the same question and will overlap under AND semantics.
