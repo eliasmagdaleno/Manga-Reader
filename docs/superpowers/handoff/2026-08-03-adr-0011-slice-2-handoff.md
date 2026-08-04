@@ -11,7 +11,7 @@ Neither is affected by this work.
 | | |
 |---|---|
 | `main` | `80bd1f6` — unchanged this session |
-| Working branch | **`anilist-ranked-pool`** at **`d945315`**, tree clean, **not pushed, no PR yet** |
+| Working branch | **`anilist-ranked-pool`** at **`412072c`** (docs-only, 2026-08-04), tree clean, **not pushed, no PR yet** |
 | Unit tests | **389 pass, 1 skipped, 0 failures** — was 373. The skip is the diagnostic, by design |
 | ADRs | 0007–0014 accepted; 0011 **amended in place today**; next free number is **0015** |
 | Device | iPhone 16 Pro `BE0AB07B-8A4E-5D2C-A674-5698010C4D27` |
@@ -107,10 +107,50 @@ Four things cost real time to discover:
 
 1. ~~Tag vocabulary cache~~ — done, `51c4cbe`
 2. ~~Pair seeding~~ — **done, `d945315`**
-3. **The provider + its read-through cache — never blocks the rail** ← next
+3. **The provider + its read-through cache — never blocks the rail** ← next, **now fully designed**
 4. Fold into `CompositeCandidateProvider` and diff `Manga-ReaderTests/__Goldens__/foryou-ranking.txt`
 
 Slice 4 stays **last and alone** so a golden diff has exactly one cause.
+
+### Slice 3 is specified — read ADR-0011 before writing anything (`412072c`, 2026-08-04)
+
+A grilling session on 2026-08-04 walked the whole slice-3 decision tree and wrote the results into
+ADR-0011 as **three dated `Amended 2026-08-04` blocks**, under the sections they modify:
+
+- under **"The pool is read-through and never blocks"** — the actor, the TTLs, failure policy, the
+  fan-out budget, the cache record shape, the vocabulary accessor;
+- under **"The pool runs only above 3 AniList-resolved Works"** — what the gate counts and where it
+  lives;
+- under **"Reason strings name the pair"** — which pair wins when several surfaced a title;
+- plus a **new decision section**, "The provider splits into a pure core and an I/O shell, and lands
+  unreferenced", covering the test seam and the wiring question.
+
+Also two new hazards and a **Pool cache** glossary entry. Docs only — no code was written, and the
+implementation is untouched.
+
+**The four that are easiest to get wrong, or that cost something:**
+
+1. **`SeededTagPair` gains `contributingWorks: Set<WorkID>` — this reopens slice 2.** The ≥ 3 gate
+   counts *contributing* Works, not Works with a ranked axis, because a Work can carry ranked tags
+   where none clears rank 60 or all sit in excluded categories. Expect churn on the 15 green
+   slice-2 tests. This is the only decision here that touches shipped code.
+2. **Two TTLs on one cache:** 14 days populated, **24 hours empty**. An empty pool is normal under
+   AND *and* is what a transient failure looks like — the short TTL is what stops a hiccup costing
+   a fortnight of dark rail. Collapsing them back to one number is the regression.
+3. **Score before resolving.** `withinPool` is computable from the AniList response alone, so rank
+   all candidates for free and spend MangaDex searches only on the top 12. The *ordering* is the
+   decision; `perPairLimit = 12` and the cap of 40 are tunable. Doing it the other way round is not
+   fixable without restructuring.
+4. **The provider must not call `TagVocabularyStore.vocabulary()`** — it awaits a network fetch on a
+   cold *or* 30-day-stale cache (`TagVocabularyStore.swift:105-113`), which stalls the exact path
+   read-through exists to protect. Add a non-fetching `cachedVocabulary()` + `refreshIfNeeded()`;
+   leave the existing method alone for its current caller.
+
+**Expect the first slice-4 run to look broken.** Slice 3 lands unreferenced, so nothing ever kicks a
+refresh — the first Home appearance after slice 4 wires the provider is a cold miss on the pool and
+possibly the vocabulary, and the golden will show an empty AniList pool. That is the read-through
+rule working. Run it, wait a beat, run it again. Wiring at `wAniList = 0` to pre-warm was considered
+and rejected in the ADR (a zero weight still moves the golden via reasons and pool membership).
 
 ## Gotchas — all still true, all hit again this session
 
