@@ -236,6 +236,15 @@ excluded from seeding (format facts, near-universal traits, and labels too broad
 the last added on evidence in slice 2); the 8 `isGeneralSpoiler` tags are excluded from **reason
 strings** but not from seeding.
 
+**Within-pool score** — how the AniList pool ranks its own candidates, and the counterpart to
+**provenance scoring**: `Σ over the pairs that surfaced the title: pairWeight x min(rank_a,
+rank_b)/100`. The first scoring in the system that reads the candidate's *own* metadata rather than
+its position in a list, so `Dungeon 98 ∧ Necromancy 87` outranks a title that scraped in at 61/60.
+Summing across pairs is deliberately the same "agreement outranks strength" shape rejected one level
+up for the **agreement bonus** — held here because measurement put the overlap between the top
+pairs' results at ~19%, not because the shape is safe
+([ADR-0011](adr/0011-ranked-axis-generation.md)).
+
 **Provenance scoring** — the scoring shape the tag and MAL pools share: `weight × 1/(1 + position)`,
 summed over every query that surfaced the title. Multi-query overlap falls out for free. Used
 because a `Manga` carries no tags, so list position is the only candidate-side datum available.

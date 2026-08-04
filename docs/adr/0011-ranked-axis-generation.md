@@ -1,6 +1,6 @@
 # ADR-0011 — Spending the ranked axis: AniList as a candidate generator
 
-- **Status:** Accepted (2026-07-28)
+- **Status:** Accepted (2026-07-28); amended 2026-08-03 (slice 2), 2026-08-04 (slices 3 and 4)
 - **Amends:** ADR-0007 — its "the AniList client must not be callable from view models" rule, and
   its claim that the ranked axis can never be a search key
 - **Related:** ADR-0008 (queue policy), ADR-0010 (drain loop and wiring), ADR-0001 (Work vs
@@ -594,6 +594,113 @@ is worse than obviously-dead code. **Accepted cost: the cache never warms before
 first golden run after wiring sees a cold miss on the pool and possibly the vocabulary, and reads as
 a broken feature if unexpected. Run it, wait, run it again.
 
+### `Resolve` takes whole `AniListWork`s, not `malId`s — reversing a slice-3 decision
+
+**Amended 2026-08-04, implementing slice 4.** Slice 3 declared
+`Resolve = ([Int]) async -> [Int: Manga]`, on the reasoning that `idMal` is the bridge and the
+id is therefore all the closure needs. Implementing the closure showed that is wrong.
+
+Reverse-resolution **is title matching**. `MoreLikeThis.pickMatch` takes a `malTitle`
+(`MoreLikeThis.swift:19-28`), and the only route to candidates at all is
+`MangaDexAPI.searchManga(title:)`. `buildRecord` held the complete `AniListWork` and discarded
+everything but the id one line before calling `resolve`, so the closure would have had to buy the
+titles back: one `MyAnimeListAPI.mangaDetail` per unresolved id, up to `poolResolveLimit` per
+refresh, against a MAL budget this ADR never costed. The alternative that beat the original is
+simply passing what we already have.
+
+`buildRecord` now filters the head to works carrying a `malId` before handing them over — without
+one there is no bridge by any route, so such a work must not consume a slot in the resolve batch.
+
+**Accepted cost:** this edits a shipped, reviewed, committed public typealias and the tests pinned
+to it, so slice 4 is **not** purely additive as planned. It is done in the commit that first makes
+the type reachable, before any golden is regenerated, so the golden diff's attributability is
+unaffected.
+
+**Residual, and it is a real one:** `AniListWork.knownTitles` carries romaji, english, native and
+synonyms — a richer left-hand side than MAL's single title — but `pickMatch` accepts one title, so
+only the primary reaches the matcher. Widening the matcher would change the shipped MAL path in the
+slice whose golden must have exactly one cause. The strong arm, an exact `malId` hit among the
+search candidates, does not use the title at all.
+
+### The composite stays fixed-arity; the two caches are owned by the app
+
+**Amended 2026-08-04, implementing slice 4.**
+
+`CompositeCandidateProvider` gains a named `ani:` property and `wAniList`, rather than becoming a
+`[WeightedPool]`. The *formula* generalizes to n; the *type* is not thereby obliged to. Against the
+array: the golden's `tagNorm` / `aniNorm` / `malNorm` columns and its weights header are read off
+named properties, and the `tag < AniList < MAL` precedence is three ordered assignments over named
+pools rather than a priority field per element. No fourth pool is on any roadmap.
+**Accepted cost:** a fourth pool would be a real refactor of a shipped, goldened path.
+
+`ani` defaults to a new `EmptyCandidateProvider`. This is not a convenience default: the paths that
+take it — SwiftUI previews, and every test about the blend rather than the pool — genuinely must not
+do AniList network. It is distinct from the `wAniList = 0` wiring rejected above, which would have
+admitted the pool to the `manga` and `reason` dictionaries while claiming to be inert.
+
+`AniListRateLimiter`, `TagVocabularyStore` and `AniListPoolStore` are constructed **once in
+`Manga_ReaderApp.init`** and captured by the `makeProvider` closure; `makeProvider`'s signature is
+unchanged. Both stores are actors whose state must outlive a rail build — `AniListPoolStore` holds
+the in-flight refresh and the superseded-seeds guard — and `makeProvider` runs on *every* rebuild,
+so a store built inside it would mean no refresh is ever in flight and the pool never warms. The
+provider struct itself is rebuilt per call, which is correct: only the actors need identity.
+
+Widening `makeProvider` to take a dependency struct was rejected because all four existing
+`RecommendationEngine(...)` sites rely on the defaulted closure and want no AniList machinery.
+**Statics/`.shared` were rejected on precedent:** `EntityResolutionStore.shared` is already this
+codebase's cautionary tale (`MetadataUpgradeQueue.swift:66`), and both stores take a `directory:`
+for testability that a shared instance would fight.
+
+The limiter is now passed **explicitly** into `MetadataUpgradeQueue` rather than left to its default
+argument (`MetadataUpgradeQueue.swift:54`). The "one owner of the rate limiter" claim this ADR
+amends ADR-0007 with was previously true only by accident of that default.
+
+### The vocabulary refresh is kicked at launch
+
+**Amended 2026-08-04, implementing slice 4.** Traced on the shipped code, the cold path costs
+**three** rail builds, not two: build 1 finds no vocabulary and returns `[]` *before seeding at all*
+(`AniListCandidateProvider.swift:68-71`), build 2 seeds but misses the pool, build 3 has one. And
+`RecommendationEngine.load()` is `guard !loadedOnce` (`:87`), so "build" means app launch or a
+deliberate pull-to-refresh — not a tab switch.
+
+`Manga_ReaderApp`'s launch `.task` now calls `vocabularyStore.refreshIfNeeded()` beside
+`queue.start()`, collapsing three to two. The provider's own kick **stays**: it is the correctness
+path for a `Caches/` eviction mid-session, `refreshIfNeeded` is idempotent, and both firing is a
+no-op.
+
+Making build 1 *await* the vocabulary was rejected outright — it converts skip-rather-than-degrade
+into block-the-rail. Accepting three was the real alternative, and `TagVocabularyStore.swift:128`
+argues against launch-time fetching; the answer is that its concern is *blocking* Home, which a
+fire-and-forget kick does not.
+
+### The golden gets a stub pool, and the seam gets its own test
+
+**Amended 2026-08-04, implementing slice 4.** The AniList pool enters `foryou-ranking.txt` as a
+hand-scored `StubPool`, not as a real `AniListCandidateProvider`.
+
+A real provider would put `withinPool` arithmetic, both TTLs, and a read-through that returns empty
+on first call inside the golden's blast radius — against a fixture whose stated principle is that
+every number in the file is derivable with a calculator, and a hand-maintained no-ties invariant
+that emergent scores would leave to luck. Everything a real provider would add is already pinned
+deterministically by slice 3's 25 tests.
+
+The fixture carries **four** cases, each making one decision readable: a title in all three pools
+(the only row where `n = 3`, and where the rejected pairwise sum would have paid `3 x
+agreementBonus` instead of one); a tag+MAL title **absent** from the AniList pool, whose row must
+stay byte-identical as the control for the n=2 reduction; an AniList-only title showing `wAniList`
+in isolation; and a tag+AniList title whose reason must flip to the conjunction while the
+three-pool title keeps its MAL reason — pinning both directions of precedence.
+
+**The slot and its data landed in two separate commits**, so the reduction-to-n=2 claim is an
+artifact rather than an inference from unchanged rows inside a busy diff. It held: with the pool
+empty, every `agree` and `final` value was byte-identical and no row moved.
+
+**Accepted cost:** the golden never exercises the wire between the real provider and the composite.
+That is covered by `AniListPoolTests.testTheAniListPoolReachesTheComposite` — real provider, real
+composite, cold call degrading to the tag ranking, then after the refresh settles the AniList reason
+overriding the tag one. Deliberately **not** goldened: it needs a settle, and a golden whose content
+depends on a sleep is the flake the no-ties invariant exists to avoid.
+
 ## Hazards
 
 - **A WeebCentral-only reader may never clear the gate, silently.** Those Works have no `malId`,
@@ -618,7 +725,14 @@ a broken feature if unexpected. Run it, wait, run it again.
   one. Each is argued, but "which TTL applies here" is now a question that can be got wrong.
 - **A 4-of-12 pool is written with the full 14-day TTL** and nothing distinguishes it from a healthy
   one. Only total resolution failure self-heals quickly, via the empty-pool TTL.
-- **Rank is AniList's crowd, not the user's.** `Dungeon: 95` means AniList voters agree the tag
+- **Nothing automated proves the app hands the provider *single* store instances.** The Q6 seam test
+  covers provider-to-composite; the composition root in `Manga_ReaderApp.init` is not testable
+  without either constructing the App type or duplicating the wiring, which would assert the copy.
+  The sole detector is a human running the app twice and noticing the pool warms on the **second**
+  launch — and the slice-3 handoff primes the reader to *expect* an empty first run, which is
+  exactly the expectation that could absorb a real bug. **With the launch kick in place the
+  expected number is two launches; a third empty run means the capture is wrong.**
+- - **Rank is AniList's crowd, not the user's.** `Dungeon: 95` means AniList voters agree the tag
   characterizes the title. It is evidence about the title, and this ADR treats it as evidence about
   the reader by way of what they read.
 
