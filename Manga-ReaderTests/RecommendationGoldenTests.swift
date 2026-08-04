@@ -85,6 +85,7 @@ final class RecommendationGoldenTests: XCTestCase {
         "A": "Alpha Blade",       "B": "Blue Sentinel",   "C": "Crimson Vow",
         "D": "Dawnbreaker",       "E": "Everlight",       "F": "Fallow Season",
         "G": "Gilded Cage",       "H": "Hollow Court",    "I": "Ivory Requiem",
+        "J": "Jade Lantern",
         "Z": "Zenith (excluded)",
         "tie-a": "Tie Alpha",     "tie-b": "Tie Beta",
     ]
@@ -245,7 +246,9 @@ final class RecommendationGoldenTests: XCTestCase {
                                                          excluding: Self.excluded, limit: 20)
         let malPool = try await malProvider().candidates(for: Self.makeProfile(),
                                                          excluding: Self.excluded, limit: 20)
-        for (label, pool) in [("tag", tagPool), ("mal", malPool)] {
+        let aniPool = try await aniProvider().candidates(for: Self.makeProfile(),
+                                                         excluding: Self.excluded, limit: 20)
+        for (label, pool) in [("tag", tagPool), ("mal", malPool), ("ani", aniPool)] {
             let scores = pool.map { ($0.score * 1e9).rounded() }
             XCTAssertEqual(Set(scores).count, scores.count,
                            "\(label) pool has tied scores — sub-providers have no stable "
@@ -276,20 +279,40 @@ final class RecommendationGoldenTests: XCTestCase {
     /// provider and this composite is covered by `testTheAniListPoolReachesTheComposite`
     /// there.
     ///
-    /// **Empty in this commit, deliberately.** Adding the third slot and its data in one
-    /// change would give the golden diff two possible causes. With no AniList candidates the
-    /// regenerated file must show only the new header and column — and *zero* movement in
-    /// any row, which is ADR-0011's claim that the generalized geometric mean reduces to
-    /// today's exact behaviour when only two pools contribute, proven as a diff.
     private func aniProvider() -> StubPool {
         StubPool(items: Self.aniScores.map { id, score, reason in
             ScoredManga(manga: Self.manga(id), score: score, reason: reason)
         })
     }
 
-    /// `(id, raw score, reason)`. Raw, not normalized — the provider divides by its own max,
-    /// exactly as the live one does.
-    private static let aniScores: [(String, Double, String)] = []
+    /// `(id, raw score, reason)`. Raw, not normalized — the composite divides by this pool's
+    /// own max, exactly as it does for the live one.
+    ///
+    /// Four cases, each chosen to make one decision visible in the golden:
+    ///
+    /// - **C, Crimson Vow** — already in *both* other pools, so it is the only row where the
+    ///   agreement term runs at `n = 3`. This is where the rejected pairwise-sum alternative
+    ///   would have differed: three terms would have paid up to `3 × agreementBonus`, and the
+    ///   geometric mean pays 0.25 exactly once. C also tops all three pools, which is the
+    ///   only configuration that earns the full bonus.
+    /// - **A, Alpha Blade** — deliberately *absent* here. It is in tag + MAL only, so its
+    ///   `agree` and `final` must stay byte-identical to the two-pool era. It is the control.
+    /// - **J, Jade Lantern** — AniList-only, so `wAniList = 0.6` is visible in isolation with
+    ///   no agreement term at all.
+    /// - **B, Blue Sentinel** — tag + AniList. Its reason must flip from `"More Action"` to
+    ///   the AniList conjunction (precedence: tag < AniList), while C's must stay
+    ///   `"Because you read Berserk"` despite AniList contributing (AniList < MAL). Those two
+    ///   rows pin the whole precedence rule in the golden rather than only in a unit test.
+    ///   B also overtakes A once the third pool contributes — the first ranking change the
+    ///   AniList pool causes, and the reason this fixture is worth reading.
+    ///
+    /// Scores are chosen to preserve the no-ties invariant stated in the header; the closest
+    /// pair after blending is B at 1.4117 against A at 1.3335.
+    private static let aniScores: [(String, Double, String)] = [
+        ("C", 2.300, "More Dungeon + Necromancy"),
+        ("B", 1.380, "More Demons + Magic"),
+        ("J", 1.035, "More Dungeon + Revenge"),
+    ]
 
     /// Renders the ranking as a fixed-width table.
     ///

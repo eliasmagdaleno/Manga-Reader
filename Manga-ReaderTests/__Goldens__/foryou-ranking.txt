@@ -14,14 +14,15 @@ final : CompositeCandidateProvider's output score.
 
 rank title                 tagNorm  aniNorm  malNorm  agree   final    reason
 ---------------------------------------------------------------------------------------------------------
-1    Crimson Vow           1.0000   -        1.0000   0.2500  2.1000   Because you read Berserk
-2    Alpha Blade           0.9677   -        0.2778   0.1296  1.3335   Because you read Berserk
-3    Blue Sentinel         0.8710   -        -        0.0000  0.8710   More Action
+1    Crimson Vow           1.0000   1.0000   1.0000   0.2500  2.7000   Because you read Berserk
+2    Blue Sentinel         0.8710   0.6000   -        0.1807  1.4117   More Demons + Magic
+3    Alpha Blade           0.9677   -        0.2778   0.1296  1.3335   Because you read Berserk
 4    Hollow Court          -        -        0.4167   0.0000  0.3542   Because you read Berserk
 5    Everlight             0.3387   -        -        0.0000  0.3387   More Romance
 6    Ivory Requiem         -        -        0.3333   0.0000  0.2833   Because you read Vinland Saga
-7    Dawnbreaker           0.2419   -        -        0.0000  0.2419   More Action
-8    Fallow Season         0.2258   -        -        0.0000  0.2258   More Romance
-9    Gilded Cage           0.1935   -        -        0.0000  0.1935   More Isekai
+7    Jade Lantern          -        0.4500   -        0.0000  0.2700   More Dungeon + Revenge
+8    Dawnbreaker           0.2419   -        -        0.0000  0.2419   More Action
+9    Fallow Season         0.2258   -        -        0.0000  0.2258   More Romance
+10   Gilded Cage           0.1935   -        -        0.0000  0.1935   More Isekai
 
 excluded (already read/saved/dismissed): Zenith (excluded)
