@@ -80,6 +80,11 @@ are the exception**: they accumulate and are never replaced.
 provider — in practice MangaDex's, which arrive free with the detail fetch the UI already makes.
 Costs no request, carries no tag rank, and is replaced wholesale once a provider is queried.
 
+**Tagged Work** — a read Work that carries tags from *either* route: a provider snapshot or a
+provisional one. The unit the recommender's cold-start gate counts, and the reason a Work can be
+read many times and still not count — a source that supplies no Listing tags and matches no
+external id gives neither route anything to work with.
+
 **Upgrade queue** — the single serial queue that turns provisional snapshots into provider ones,
 resolving a Work to an external id first when it has none. It owns the whole AniList request
 budget (**30/min, measured — not the 90 the docs claim**), so provider access goes through it and
@@ -213,7 +218,17 @@ so it is the only one that does not score by provenance.
 seeding unit for the AniList pool: `AND` semantics make a pair expressive where a single tag is just
 a popularity list, and drawing both legs from the same Work is what makes the conjunction a claim
 someone actually made. Weighted by `Σ engagement(w) × min(rank_a, rank_b)/100` over the Works
-carrying both, so pairs that *recur* beat pairs that happened once. Top 5 seed the query.
+carrying both, so pairs that *recur* beat pairs that happened once. Top 5 seed the query. Each pair
+carries its **contributing Works** — the ones that supplied a term to its weight — which is what the
+AniList pool's ≥ 3 gate counts, and what makes a pair's evidence visible in the golden file.
+
+**Pool cache** — the AniList pool's persisted result, in `Caches/`, **keyed on the seed-pair set**
+so a taste shift invalidates it for free. Read-through: a read returns whatever is there, empty
+included, and kicks a background refresh, so the pool always appears one rail build later than the
+taste that asked for it. Stores **raw material, not scores** — the resolved titles plus their
+per-pair `min(rank)` — because engagement decays daily, so ranking is recomputed on every read while
+membership is refreshed every two weeks. **Populated entries live 14 days, empty ones 24 hours**: an
+empty pool is a normal outcome under `AND`, but it is also what a transient failure looks like.
 
 **Minimum tag rank** — AniList's per-tag floor on a query. Applies to **every** tag in a
 conjunction, so it thins a pair fast: `Dungeon ∧ Iyashikei` is empty at 80. Set to 60 — the floor
@@ -221,9 +236,19 @@ excludes noise, it does not rank.
 
 **Tag vocabulary** — AniList's 425 tags with their `category`, `isAdult` and `isGeneralSpoiler`
 flags, cached whole in `Caches/`. Category is a property of a *tag name*, never of a Work, which is
-why it is not persisted on `RankedTag`. `Technical` and `Cast-Main Cast` are excluded from seeding
-(format facts and near-universal traits); the 8 `isGeneralSpoiler` tags are excluded from **reason
+why it is not persisted on `RankedTag`. `Technical`, `Cast-Main Cast` and `Demographic` are
+excluded from seeding (format facts, near-universal traits, and labels too broad to narrow an AND —
+the last added on evidence in slice 2); the 8 `isGeneralSpoiler` tags are excluded from **reason
 strings** but not from seeding.
+
+**Within-pool score** — how the AniList pool ranks its own candidates, and the counterpart to
+**provenance scoring**: `Σ over the pairs that surfaced the title: pairWeight x min(rank_a,
+rank_b)/100`. The first scoring in the system that reads the candidate's *own* metadata rather than
+its position in a list, so `Dungeon 98 ∧ Necromancy 87` outranks a title that scraped in at 61/60.
+Summing across pairs is deliberately the same "agreement outranks strength" shape rejected one level
+up for the **agreement bonus** — held here because measurement put the overlap between the top
+pairs' results at ~19%, not because the shape is safe
+([ADR-0011](adr/0011-ranked-axis-generation.md)).
 
 **Provenance scoring** — the scoring shape the tag and MAL pools share: `weight × 1/(1 + position)`,
 summed over every query that surfaced the title. Multi-query overlap falls out for free. Used

@@ -10,7 +10,12 @@ import Foundation
 // MARK: - Public Types (used by Views / ViewModels)
 
 /// A lightweight representation of a manga item that ALWAYS carries a cover URL if available.
-struct Manga: Identifiable {                        // Conform to Identifiable so SwiftUI lists work nicely.
+// `Codable`/`Equatable` are declared here rather than in an extension because Swift only
+// synthesizes them in the file that declares the type. ADR-0011's pool cache persists
+// resolved `Manga` values whole — a lossy mirror could not produce an openable candidate —
+// and an undecodable cache file is treated as a miss, which is what protects that if this
+// struct ever gains a field.
+struct Manga: Identifiable, Codable, Equatable {    // Conform to Identifiable so SwiftUI lists work nicely.
     let id: String                                  // The source's ID for the manga (unique only WITHIN a source).
     let sourceId: String                            // Which source this manga came from (e.g. "mangadex").
     let title: String                               // Display title (prefer English; fallback to first available).

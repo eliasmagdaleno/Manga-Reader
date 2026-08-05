@@ -135,19 +135,83 @@ struct AniListAPI {
     }
     """
 
+    /// The whole 425-tag vocabulary in one 27 KB request (ADR-0011). `category` is a
+    /// property of a tag *name*, globally, so it is fetched once and cached rather than
+    /// persisted onto every Work.
+    private static let tagCollectionQuery = """
+    query {
+      MediaTagCollection { name category isGeneralSpoiler isAdult }
+    }
+    """
+
+    /// One page of media carrying **every** listed tag at `minimumTagRank` or better.
+    ///
+    /// `tag_in` is a **conjunction** on AniList, not a disjunction — verified live at
+    /// ranks 0, 60 and 80 (ADR-0011's Context and its 2026-08-04 measurement). That is the
+    /// whole reason the query unit is a *pair*: a single tag at a popularity sort is a
+    /// popularity list wearing a tag's name, while `Demons AND Magic, both >= 60` is a
+    /// statement about one reader.
+    ///
+    /// `isAdult: false` filters the *results*; excluding adult tags from the seeds is a
+    /// separate decision made in `seedPairs`.
+    private static let mediaByTagsQuery = """
+    query ($tags: [String], $rank: Int, $perPage: Int) {
+      Page(page: 1, perPage: $perPage) {
+        media(type: MANGA, tag_in: $tags, minimumTagRank: $rank,
+              isAdult: false, sort: POPULARITY_DESC) {
+          id idMal
+          title { romaji english native }
+          synonyms
+          genres
+          tags { name rank }
+          status
+          chapters
+        }
+      }
+    }
+    """
+
+    /// The pool query. Returns `[]` rather than throwing when AniList has nothing:
+    /// under AND semantics an empty result is a **normal outcome** for a reader whose
+    /// taste is genuinely rare, and treating it as an error would abort the whole refresh
+    /// for exactly that user (ADR-0011).
+    func media(tags: [String],
+               minimumTagRank: Int = minimumSeedTagRank,
+               limit: Int) async throws -> [AniListWork] {
+        let payload: PagePayload = try await perform(
+            query: Self.mediaByTagsQuery,
+            variables: ["tags": tags, "rank": minimumTagRank, "perPage": limit])
+        return (payload.page?.media ?? []).map { $0.toWork() }
+    }
+
     /// Look a Work up by its MyAnimeList id — the common path, since MangaDex
     /// publishes `attributes.links.mal` and the app is already keyed on `malId`.
     func work(malId: Int) async throws -> AniListWork {
-        try await media(variables: ["malId": malId])
+        let payload: MediaPayload = try await perform(query: Self.mediaQuery,
+                                                      variables: ["malId": malId])
+        guard let media = payload.media else { throw AniListError.notFound }
+        return media.toWork()
     }
 
-    private func media(variables: [String: Any]) async throws -> AniListWork {
+    /// The tag vocabulary. Shares `perform`'s retry and error mapping, so an HTML 502
+    /// from a proxy surfaces as `.httpStatus` here too rather than as a `DecodingError`.
+    func tagVocabulary() async throws -> [TagVocabularyEntry] {
+        let payload: TagCollectionPayload = try await perform(query: Self.tagCollectionQuery,
+                                                              variables: [:])
+        return payload.tags ?? []
+    }
+
+    /// One request/retry/decode path for every query. Generic over the payload because the
+    /// error handling — and only the error handling — is what the two callers share; each
+    /// decides for itself what a missing payload means.
+    private func perform<Payload: Decodable>(query: String,
+                                             variables: [String: Any]) async throws -> Payload {
         var request = URLRequest(url: Self.endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.httpBody = try JSONSerialization.data(
-            withJSONObject: ["query": Self.mediaQuery, "variables": variables])
+            withJSONObject: ["query": query, "variables": variables])
 
         // Initial try plus one retry on 429, honoring Retry-After -- the same shape
         // as MyAnimeListAPI.request and MangaDexAPI.request. Bounded deliberately:
@@ -169,7 +233,8 @@ struct AniListAPI {
             // isn't GraphQL at all does the status code become the interesting thing:
             // a 5xx from a proxy is an HTML page, and decoding it raises a
             // DecodingError that reads like a schema change and misdirects debugging.
-            guard let envelope = try? JSONDecoder().decode(GraphQLEnvelope.self, from: data) else {
+            guard let envelope = try? JSONDecoder()
+                .decode(GraphQLEnvelope<Payload>.self, from: data) else {
                 throw (200...299).contains(http.statusCode)
                     ? AniListError.invalidResponse
                     : AniListError.httpStatus(http.statusCode)
@@ -178,10 +243,10 @@ struct AniListAPI {
             if let first = envelope.errors?.first {
                 throw first.status == 404 ? .notFound : AniListError.graphQL(message: first.message)
             }
-            guard let media = envelope.data?.media else {
+            guard let payload = envelope.data else {
                 throw AniListError.notFound
             }
-            return media.toWork()
+            return payload
         }
         throw AniListError.rateLimited
     }
@@ -189,21 +254,36 @@ struct AniListAPI {
 
 // MARK: - Wire types
 
-/// AniList nests the payload under `data.Media` — capital M, hence the CodingKey.
-private struct GraphQLEnvelope: Decodable {
+/// The `{ data, errors }` shape every GraphQL response has. Generic over the payload:
+/// error handling is identical for every query, the payload never is.
+private struct GraphQLEnvelope<Payload: Decodable>: Decodable {
     struct GraphQLError: Decodable {
         let message: String
         let status: Int?
     }
-    let data: GraphQLPayload?
+    let data: Payload?
     let errors: [GraphQLError]?
 }
 
+/// AniList nests the media under `data.Media` — capital M, hence the CodingKey.
 /// Top-level rather than nested in `GraphQLEnvelope` so its `CodingKeys` doesn't
 /// end up two levels deep, which SwiftLint's `nesting` rule rejects.
-private struct GraphQLPayload: Decodable {
+private struct MediaPayload: Decodable {
     let media: Media?
     enum CodingKeys: String, CodingKey { case media = "Media" }
+}
+
+private struct PagePayload: Decodable {
+    struct Page: Decodable {
+        let media: [Media]?
+    }
+    let page: Page?
+    enum CodingKeys: String, CodingKey { case page = "Page" }
+}
+
+private struct TagCollectionPayload: Decodable {
+    let tags: [TagVocabularyEntry]?
+    enum CodingKeys: String, CodingKey { case tags = "MediaTagCollection" }
 }
 
 private struct Media: Decodable {
