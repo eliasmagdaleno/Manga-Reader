@@ -1,7 +1,7 @@
 # ADR-0011 — Spending the ranked axis: AniList as a candidate generator
 
 - **Status:** Accepted (2026-07-28); amended 2026-08-03 (slice 2), 2026-08-04 (slices 3 and 4),
-  2026-08-04 (slice 4 device check)
+  2026-08-04 (slice 4 device check), 2026-08-04 (`MALReverseResolver` extraction discharged)
 - **Amends:** ADR-0007 — its "the AniList client must not be callable from view models" rule, and
   its claim that the ranked axis can never be a search key
 - **Related:** ADR-0008 (queue policy), ADR-0010 (drain loop and wiring), ADR-0001 (Work vs
@@ -591,6 +591,51 @@ after slice 4, extract then, with the golden in place to prove nothing moved. Wr
 behind a protocol was rejected as larger than this slice. **Accepted cost: two resolution paths on
 `main` until at least slice 4.**
 
+**Amended 2026-08-04, after slice 4 merged — the extraction is discharged, and the reason given for
+deferring it turns out to have been wrong.**
+
+`MALReverseResolver` (`Services/MALReverseResolver.swift`) now owns `ReverseTarget`, the
+cache-hit/miss partition, the bounded-concurrency search, and the batch fetch, exposing
+`resolve(_ targets:) -> [Int: Manga]` plus an `resolve(works:limit:)` adapter for the pool.
+`MoreLikeThisProvider.resolve(works:limit:)` is deleted, not shimmed — a forwarding stub would have
+kept the naming debt the extraction existed to retire. The callers lost 162 lines and gained 22.
+
+**The cut is wide on purpose.** The narrow alternative — extract only the search helper, leave the
+partition and batch-fetch assembly in both callers — is what the code already effectively had, since
+`reverseResolveViaSearch` was one private method both called. It moves a file boundary without
+removing the ~25 duplicated assembly lines that made the extraction worth doing at all. What stays
+with the callers is **ordering**, and only ordering: `recommendations(for:)` reassembles in
+MAL-recommendation order and drops self; the pool takes the map as-is because `buildRecord` already
+holds its ranking. That is the same argument the paragraph above makes for why they differ — it just
+turns out to be an argument about ordering, not about the resolution beneath it.
+
+**The correction, which matters more than the extraction.** The sentence above — *"extract then,
+with the golden in place to prove nothing moved"* — is false, and it was repeated into three
+handoffs and acted on as a reason to defer. The golden pins the **blend**, never the **resolution**:
+every AniList test stubs `Resolve` outright (`AniListPoolTests.swift:315`, `:349`, `:390`) and the
+MAL path stubs `SimilarTitlesProviding`. Both existing safety nets inject *past* the code being
+extracted, which had **zero** coverage — it was private, and it called `MangaDexAPI` statics.
+
+So the extraction carries its own net rather than borrowing one. `search` and `fetchByIds` are
+injected `@Sendable` closures defaulting to the real endpoints — the same `Sleep`/`Resolve` pattern
+argued for above, applied to the thing that most needed it. `MALReverseResolverTests` pins the
+cache-write discipline (`.resolved` / `.unresolved` / **nothing on a thrown search**), the partition,
+the stale-miss re-attempt, and the adapter's limit and `malId` filtering. That discipline was
+previously prose in a doc comment, trusted to be noticed; a second implementation writing
+`.unresolved` on a transient throw would poison `EntityResolutionStore` against a title for the full
+14-day TTL, invisibly. **Verified by mutation:** flipping `else if didSearch` to `else` fails exactly
+the two tests that name the case, and nothing else.
+
+**Accepted cost:** four injection points on the resolver and one more parameter on
+`MoreLikeThisProvider.init`, all defaulted, so no call site was forced to change. And the generalized
+lesson, which is not local to this file: **an untested path cannot be refactored under a golden that
+stubs it.** Before citing a golden as licence to move code, check the tests actually reach the code.
+
+**Still parked:** widening `MoreLikeThis.pickMatch` to take `AniListWork.knownTitles` rather than a
+single title. `ReverseTarget` keeps `title: String`. Tempting while holding the type, and now
+provable — but the widening *changes matching behaviour*, and this extraction's whole claim is that
+nothing moved. Two causes again. See the residual recorded under the `Resolve` decision below.
+
 **Amended 2026-08-04, implementing slice 3 — two decisions the design above did not make,
 recorded because both were forced by the compiler rather than chosen freely.**
 
@@ -787,6 +832,14 @@ depends on a sleep is the flake the no-ties invariant exists to avoid.
 - - **Rank is AniList's crowd, not the user's.** `Dungeon: 95` means AniList voters agree the tag
   characterizes the title. It is evidence about the title, and this ADR treats it as evidence about
   the reader by way of what they read.
+
+- **A golden that stubs a dependency proves nothing about that dependency.** This ADR told a future
+  session it could extract `reverseResolveViaSearch` "with the golden in place to prove nothing
+  moved." It could not: `foryou-ranking.txt` reaches the pool through a stubbed `Resolve` and the MAL
+  path through a stubbed `SimilarTitlesProviding`, so the resolution code the sentence licensed
+  moving was the one thing no test executed. The claim survived into three handoffs unchallenged
+  because it was written down. Generalized: before citing a fixture as licence to move code, confirm
+  the fixture's execution actually reaches it — a stub is exactly a promise that it does not.
 
 ## Revisit triggers
 
