@@ -6,24 +6,23 @@
 //  MyAnimeList's per-title recommendations. Orchestration only: forward-resolve → MAL
 //  detail → top-N recommendations → reverse-resolve each back to a MangaDex Manga, in
 //  recommendation-weight order. The decision logic lives in pure helpers (MoreLikeThis,
-//  MALTitleMatcher); this is the thin, live-verified network glue (the codebase has no
-//  network-mock harness). Non-throwing: any failure degrades to fewer/zero cards.
+//  MALTitleMatcher) and the reverse resolution in MALReverseResolver; what is left here
+//  is the MAL-specific part — which recommendations to take, and what order to return
+//  them in. Non-throwing: any failure degrades to fewer/zero cards.
 //
 
 import Foundation
 
 @MainActor
 final class MoreLikeThisProvider {
-    private let store: EntityResolutionStore
     private let resolver: MALEntityResolver
-    private let matcher: MALTitleMatcher
+    private let reverse: MALReverseResolver
 
     init(store: EntityResolutionStore = .shared,
          resolver: MALEntityResolver? = nil,
-         matcher: MALTitleMatcher = .init()) {
-        self.store = store
+         reverse: MALReverseResolver? = nil) {
         self.resolver = resolver ?? MALEntityResolver(store: store)
-        self.matcher = matcher
+        self.reverse = reverse ?? MALReverseResolver(store: store)
     }
 
     /// The top `limit` recommendations by weight (descending). Pure — no network. Marked
@@ -43,161 +42,21 @@ final class MoreLikeThisProvider {
         let recs = Self.topRecommendations(detail.recommendations ?? [], limit: limit)
         guard !recs.isEmpty else { return [] }
 
-        // Partition into fresh cache hits (batch-fetch later) and misses (live search).
-        var resolvedIds: [Int: String] = [:]     // malId -> MangaDex id, from fresh cache hits
-        var toSearch: [ReverseTarget] = []        // recs needing a live search
-        for rec in recs {
-            if let cached = store.reverseResolution(malId: rec.node.id), cached.isFresh() {
-                if case .resolved(let mdId) = cached { resolvedIds[rec.node.id] = mdId }
-                // A fresh .unresolved miss: skip entirely (don't re-search yet).
-            } else {
-                toSearch.append(ReverseTarget(malId: rec.node.id, title: rec.node.title))
-            }
-        }
+        let resolved = await reverse.resolve(
+            recs.map { .init(malId: $0.node.id, title: $0.node.title) })
 
-        // Live search + reverse-resolve the misses; records the cache outcomes.
-        let freshlyResolved = await reverseResolveViaSearch(toSearch)   // [malId: Manga]
-        for (recMalId, m) in freshlyResolved { resolvedIds[recMalId] = m.id }
-
-        // Full `Manga` values we already have (from the live searches), keyed by id.
-        let searchedById = Dictionary(freshlyResolved.values.map { ($0.id, $0) },
-                                      uniquingKeysWith: { first, _ in first })
-
-        // Batch-fetch the MangaDex ids we know but don't yet have a full Manga for
-        // (cache-hit ids). One request, covers included.
-        let idsNeedingFetch = Array(Set(resolvedIds.values.filter { searchedById[$0] == nil }))
-        var fetchedById: [String: Manga] = [:]
-        if !idsNeedingFetch.isEmpty,
-           let fetched = try? await MangaDexAPI.fetchMangaByIdsWithCovers(ids: idsNeedingFetch) {
-            fetchedById = Dictionary(fetched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        }
-
-        // Reassemble in recommendation (weight) order; drop self; de-dupe by id.
+        // Reassemble in recommendation (weight) order; drop self; de-dupe by id. This is
+        // the part that stayed here: the resolver returns an unordered map because the
+        // AniList pool carries its own ranking, so the MAL ordering belongs to this caller.
         var out: [Manga] = []
         var seen = Set<String>()
         for rec in recs {
-            guard let mdId = resolvedIds[rec.node.id],
-                  let resolved = searchedById[mdId] ?? fetchedById[mdId],
-                  resolved.id != manga.id,
-                  seen.insert(resolved.id).inserted else { continue }
-            out.append(resolved)
+            guard let match = resolved[rec.node.id],
+                  match.id != manga.id,
+                  seen.insert(match.id).inserted else { continue }
+            out.append(match)
         }
         return out
-    }
-
-    /// Reverse-resolve AniList pool candidates to openable MangaDex titles, keyed by
-    /// `malId`. The `Resolve` closure `AniListCandidateProvider` is constructed with
-    /// (ADR-0011 slice 4).
-    ///
-    /// This lives here, on a class named for a different feature, because the cache-write
-    /// discipline below — `.resolved` / `.unresolved` / **nothing on a thrown search** —
-    /// must have exactly one implementation. A second copy that recorded `.unresolved` on a
-    /// transient throw would poison `EntityResolutionStore` against a title permanently.
-    /// The shared `MALReverseResolver` extraction ADR-0011 parks until after slice 4 is
-    /// where this and `recommendations(for:)` eventually meet; the naming debt is carried
-    /// until then deliberately.
-    ///
-    /// The assembly around the helper *is* duplicated from `recommendations(for:)` — about
-    /// 25 lines — because the two orderings genuinely differ: that one reassembles in
-    /// MAL-recommendation order and drops self, this one returns an unordered map because
-    /// `buildRecord` already holds the pool's own ranking. Merging them would mean a flag
-    /// parameter.
-    ///
-    /// **Residual:** `AniListWork.knownTitles` carries romaji/english/native/synonyms, but
-    /// `MoreLikeThis.pickMatch` takes a single `malTitle`, so only the primary title
-    /// reaches the matcher. Widening the matcher would change the shipped MAL path in the
-    /// slice whose golden must have one cause; the strong arm — an exact `malId` hit among
-    /// the search candidates — does not depend on the title anyway.
-    func resolve(works: [AniListWork], limit: Int) async -> [Int: Manga] {
-        var resolvedIds: [Int: String] = [:]     // malId -> MangaDex id, from fresh cache hits
-        var toSearch: [ReverseTarget] = []
-        for work in works.prefix(limit) {
-            guard let malId = work.malId, let title = work.knownTitles.first else { continue }
-            if let cached = store.reverseResolution(malId: malId), cached.isFresh() {
-                if case .resolved(let mdId) = cached { resolvedIds[malId] = mdId }
-                // A fresh .unresolved miss: skip entirely (don't re-search yet).
-            } else {
-                toSearch.append(ReverseTarget(malId: malId, title: title))
-            }
-        }
-
-        let freshlyResolved = await reverseResolveViaSearch(toSearch)
-        var out = freshlyResolved
-
-        // Batch-fetch the cache-hit ids we know but hold no full `Manga` for. One request,
-        // covers included — the same shape `recommendations(for:)` uses.
-        let searchedIds = Set(freshlyResolved.values.map(\.id))
-        let idsNeedingFetch = Array(Set(resolvedIds.values.filter { !searchedIds.contains($0) }))
-        if !idsNeedingFetch.isEmpty,
-           let fetched = try? await MangaDexAPI.fetchMangaByIdsWithCovers(ids: idsNeedingFetch) {
-            let byId = Dictionary(fetched.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-            for (malId, mdId) in resolvedIds where out[malId] == nil {
-                if let manga = byId[mdId] { out[malId] = manga }
-            }
-        }
-        return out
-    }
-
-    /// What reverse-resolution actually needs: a MAL id to confirm against, and a title to
-    /// search MangaDex with. Introduced so the AniList pool can share the helper below
-    /// without pretending its candidates are `MyAnimeListManga` — they arrive from AniList
-    /// and only ever carried an `idMal`.
-    struct ReverseTarget: Sendable {
-        let malId: Int
-        let title: String
-    }
-
-    /// Search MangaDex for each target's title and reverse-resolve to a confident Manga
-    /// (bounded concurrency, cap 4 — the pattern established for LibraryStore.refresh).
-    /// Records `.resolved`/`.unresolved` in the reverse cache; a THROWN search records
-    /// nothing (transient — don't poison the cache), mirroring MALEntityResolver.
-    private func reverseResolveViaSearch(_ nodes: [ReverseTarget]) async -> [Int: Manga] {
-        guard !nodes.isEmpty else { return [:] }
-        let matcher = self.matcher
-        let maxConcurrent = 4
-
-        // (malId, resolved Manga?, didSearch) — didSearch == false means the search threw.
-        let results: [(Int, Manga?, Bool)] = await withTaskGroup(
-            of: (Int, Manga?, Bool).self
-        ) { group in
-            var iterator = nodes.makeIterator()
-
-            func addNext() {
-                guard let node = iterator.next() else { return }
-                group.addTask {
-                    do {
-                        let candidates = try await MangaDexAPI.searchManga(title: node.title)
-                        let match = MoreLikeThis.pickMatch(targetMalId: node.malId,
-                                                           malTitle: node.title,
-                                                           candidates: candidates,
-                                                           matcher: matcher)
-                        return (node.malId, match, true)
-                    } catch {
-                        return (node.malId, nil, false)   // transient — cache nothing
-                    }
-                }
-            }
-
-            for _ in 0..<maxConcurrent { addNext() }
-
-            var out: [(Int, Manga?, Bool)] = []
-            while let result = await group.next() {
-                out.append(result)
-                addNext()
-            }
-            return out
-        }
-
-        var resolved: [Int: Manga] = [:]
-        for (recMalId, manga, didSearch) in results {
-            if let manga {
-                store.recordReverse(malId: recMalId, .resolved(mangaDexId: manga.id))
-                resolved[recMalId] = manga
-            } else if didSearch {
-                store.recordReverse(malId: recMalId, .unresolved(checkedAt: Date()))
-            }   // !didSearch → record nothing
-        }
-        return resolved
     }
 }
 
