@@ -199,10 +199,26 @@ extension AniListWork {
 func poolReason(for contributions: [PairContribution],
                 weights: [TagPair: Double],
                 vocabulary: TagVocabulary) -> String {
-    let ranked = contributions
-        .map { (c: $0, term: (weights[$0.pair] ?? 0) * Double($0.minimumRank) / 100) }
-        .sorted { $0.term != $1.term ? $0.term > $1.term : $0.c.pair < $1.c.pair }
-    guard let winner = ranked.first?.c.pair else { return "Recommended" }
+    // Spelled out rather than written as a `map` producing an inferred tuple: the tuple
+    // form made the dictionary lookup, the `??`, the `Double` conversion, the arithmetic
+    // and the destructuring `sorted` closure one expression for the type checker to solve,
+    // and it timed out on CI while compiling locally. A named type and an annotated
+    // binding solve it in pieces. This is the second such timeout in this file — see
+    // ADR-0011's revisit trigger.
+    struct RankedPair {
+        let pair: TagPair
+        let term: Double
+    }
+    let ranked: [RankedPair] = contributions.map { contribution in
+        let weight: Double = weights[contribution.pair] ?? 0
+        let rank = Double(contribution.minimumRank) / 100
+        return RankedPair(pair: contribution.pair, term: weight * rank)
+    }
+    .sorted { left, right in
+        if left.term != right.term { return left.term > right.term }
+        return left.pair < right.pair
+    }
+    guard let winner = ranked.first?.pair else { return "Recommended" }
 
     let legs = [winner.a, winner.b].filter { !vocabulary.isGeneralSpoiler($0) }
     switch legs.count {

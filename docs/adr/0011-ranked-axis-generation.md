@@ -801,6 +801,17 @@ depends on a sleep is the flake the no-ties invariant exists to avoid.
   invariant that broke is a statistical one no fixture asserts. Re-examine the agreement term
   *first*, as its own decision — the decoding is the easy half. This holds for a provenance-only
   decoding too, unless it is genuinely never read by scoring.
+- **`AniListPool.swift`'s pure-core style has a compile-time cost, and it has now bitten twice.**
+  The core is written as chained `map`/`sorted`/`reduce` over inferred tuples, which is what makes
+  it readable and testable without a transport — but each chain is one expression for the type
+  checker, and two of them have hit *"unable to type-check in reasonable time"*: once during slice 3
+  and once in `poolReason` on 2026-08-04, the latter **passing locally and failing on CI**. That
+  asymmetry is the real hazard: the timeout is marginal rather than deterministic, so a green local
+  build does not predict a green CI one, and the failure surfaces after review rather than during
+  it. Fixed both times by naming an intermediate type and annotating the binding. **If a third
+  occurs, stop treating them as individual bugs** — the answer is a house rule for this file (named
+  types over inferred tuples in any chain that mixes a dictionary lookup with arithmetic), not a
+  third local fix.
 - If the queue ever runs at its budget ceiling for sustained stretches, the `malId` side-cache is the
   first thing to add, and it is purely additive.
 - **If a future seeding diagnostic shows the top-5 pairs sharing more than ~40% of their results**,
