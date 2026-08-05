@@ -71,10 +71,14 @@ struct Manga_ReaderApp: App {
         _engine = StateObject(wrappedValue: RecommendationEngine(
             history: hist, library: lib, profileStore: ts, workStore: wk,
             makeProvider: { @MainActor source in
-                let similar = MoreLikeThisProvider()
+                // One reverse resolver for both consumers, so the cache-write discipline
+                // has a single implementation (ADR-0011). It needs no identity of its own —
+                // all its durable state is in `EntityResolutionStore.shared` — so unlike
+                // the two actors above, rebuilding it per rail build would also be correct.
+                let reverse = MALReverseResolver()
                 return CompositeCandidateProvider(
                     tag: TagCandidateProvider(source: source),
-                    mal: MALCandidateProvider(similar: similar),
+                    mal: MALCandidateProvider(similar: MoreLikeThisProvider(reverse: reverse)),
                     ani: AniListCandidateProvider(
                         // Hops to the `@MainActor` `WorkStore`; the provider deliberately
                         // is not main-actor-isolated. Same one-way shape as `PriorityPush`.
@@ -86,11 +90,8 @@ struct Manga_ReaderApp: App {
                                 try await anilist.media(tags: [pair.a, pair.b], limit: limit)
                             }
                         },
-                        // Reverse-resolution lives on `MoreLikeThisProvider` so the
-                        // cache-write discipline keeps one implementation; see its
-                        // `resolve(works:limit:)`.
                         resolve: { works in
-                            await similar.resolve(works: works, limit: poolResolveLimit)
+                            await reverse.resolve(works: works, limit: poolResolveLimit)
                         }))
             },
             pushPriority: { upgrades.setPriority($0) }))
