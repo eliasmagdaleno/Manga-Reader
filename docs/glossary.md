@@ -80,6 +80,11 @@ are the exception**: they accumulate and are never replaced.
 provider — in practice MangaDex's, which arrive free with the detail fetch the UI already makes.
 Costs no request, carries no tag rank, and is replaced wholesale once a provider is queried.
 
+**Tagged Work** — a read Work that carries tags from *either* route: a provider snapshot or a
+provisional one. The unit the recommender's cold-start gate counts, and the reason a Work can be
+read many times and still not count — a source that supplies no Listing tags and matches no
+external id gives neither route anything to work with.
+
 **Upgrade queue** — the single serial queue that turns provisional snapshots into provider ones,
 resolving a Work to an external id first when it has none. It owns the whole AniList request
 budget (**30/min, measured — not the 90 the docs claim**), so provider access goes through it and

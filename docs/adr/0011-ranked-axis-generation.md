@@ -1,6 +1,7 @@
 # ADR-0011 — Spending the ranked axis: AniList as a candidate generator
 
-- **Status:** Accepted (2026-07-28); amended 2026-08-03 (slice 2), 2026-08-04 (slices 3 and 4)
+- **Status:** Accepted (2026-07-28); amended 2026-08-03 (slice 2), 2026-08-04 (slices 3 and 4),
+  2026-08-04 (slice 4 device check)
 - **Amends:** ADR-0007 — its "the AniList client must not be callable from view models" rule, and
   its claim that the ranked axis can never be a search key
 - **Related:** ADR-0008 (queue policy), ADR-0010 (drain loop and wiring), ADR-0001 (Work vs
@@ -130,6 +131,34 @@ Two consequences, both **no change**:
 Also re-confirmed at the floor this ADR actually uses: all 12 `Demons∧Magic` results carry **both**
 tags at rank ≥ 60 (weakest legs: Slime 61/74, Solo Leveling 64/87). The Context block's AND-semantics
 finding was verified at ranks 0 and 80 on 2026-07-28; this extends it to 60.
+
+**Facts verified live 2026-08-04, running slice 4's device check (do not re-derive):**
+
+- **`RecommendationEngine`'s cold-start gate runs *before* any provider is constructed, and
+  darkens all three pools at once.** `profileAndExclusions()` returns `nil` when
+  `profile.taggedMangaCount < 3` (`RecommendationEngine.swift:151`), and `rebuild()` returns on
+  that `nil` **without calling `makeProvider`** — so below the threshold the AniList provider is
+  never built, never queried, and its own contributing-Works gate is never asked. The observable is
+  an empty rail *and* an absent pool cache, from one cause. A device check that reads only the
+  absence of `Caches/anilist-pool.json` cannot distinguish this from broken wiring, and on
+  2026-08-04 one did not: it recorded a negative against a store holding **2** tagged Works.
+- **`taggedMangaCount` counts Works reachable from `history.entries`, not Works in the store.**
+  Signals are built by grouping history entries by Work (`RecommendationEngine.swift:172+`), and
+  `taggedCount` increments only for a signal whose tags are non-empty (`TasteProfile.swift:115-116`).
+  A tagged Work that was saved but never read contributes nothing to the gate.
+- **Tags reach a Work by two independent routes, and a Work can miss both.** Either a provider fetch
+  (MAL match → AniList), or the provisional tier built from a Listing's own tags
+  (`WorkStore.swift:157`, `:171-180`) — which for MangaDex arrive free with the detail fetch. On the
+  check's store, one Work carried 9 MangaDex tags while its `upgrade-attempts.json` entry read
+  `unmatched`: provisional-only, and still counted by the gate.
+- **The composition root hands the provider single store instances.** Relaunching against a warm
+  pool left `anilist-pool.json` byte- and mtime-identical across a 60s poll while the For You rail
+  rendered — so `rebuild()` ran, `makeProvider` ran, and `refreshIfNeeded` found a record and
+  no-oped. A per-build `AniListPoolStore` would have held no record and refetched. This discharges
+  the wiring hazard below.
+- **The cold path completes unattended.** A container empty at 15:57 held a full pool by 16:21 — 5
+  seed pairs, 12 of 12 head candidates reverse-resolved, three of them multi-pair contributors —
+  produced by ordinary reading, with no scripted run.
 
 ## Decisions
 
@@ -703,6 +732,21 @@ depends on a sleep is the flake the no-ties invariant exists to avoid.
 
 ## Hazards
 
+- **A reader whose history is dominated by an untaggable source can never open the *engine's* gate,
+  no matter how much they read.** This is upstream of, and distinct from, the WeebCentral hazard
+  below: that one is about this ADR's contributing-Works gate inside the provider, whereas this one
+  closes `RecommendationEngine`'s `taggedMangaCount >= 3` check and darkens **all three** pools.
+  A Work reaches the count only via a MAL match or a Listing carrying its own tags
+  (`WorkStore.swift:157`); a Listing from a source that supplies neither tags nor a resolvable
+  external id has **neither** route available — an opaque numeric id matches nothing on MAL, and
+  there are no Listing tags to build a provisional snapshot from. Such a Work still contributes
+  *weight* to the profile (`TasteProfile.swift:110-115`), so it looks like signal and counts as
+  none. Observed live 2026-08-04: a store of 5 Works, 3 of them untaggable by both routes and all
+  3 recorded `unmatched`, sat permanently at `taggedMangaCount == 2`. Reading more from such a
+  source moves the number by zero, forever, with no error and nothing in the UI to explain it.
+  **Not addressed
+  here** — it is a property of the Work model (ADR-0007/ADR-0009), not of the ranked axis, and
+  fixing it inside this ADR's subsystem would be fixing it in the wrong place.
 - **A WeebCentral-only reader may never clear the gate, silently.** Those Works have no `malId`,
   resolution depends on `MALTitleMatcher` clearing a threshold ADR-0005 says never to loosen, and a
   decline means the Work never gains a ranked axis. The rail is then permanently absent with no
@@ -732,6 +776,14 @@ depends on a sleep is the flake the no-ties invariant exists to avoid.
   launch — and the slice-3 handoff primes the reader to *expect* an empty first run, which is
   exactly the expectation that could absorb a real bug. **With the launch kick in place the
   expected number is two launches; a third empty run means the capture is wrong.**
+  **Discharged 2026-08-04** by the relaunch check in the Context block above — the pool cache went
+  unmodified across a relaunch that rendered the rail, which a per-build store cannot do. The hazard
+  stands as *written* for any future change to `Manga_ReaderApp.init`: it is still the case that
+  nothing automated proves this, and the detector is still a human. What the check also proved is
+  that **the detector needs a precondition**: the sole observable, an absent pool cache, has a cause
+  upstream of the wiring, and the 2026-08-04 run mistook one for the other. Verify
+  `taggedMangaCount >= 3` from the container **before** treating an absent pool as a wiring result;
+  below the threshold the run is invalid, not negative.
 - - **Rank is AniList's crowd, not the user's.** `Dungeon: 95` means AniList voters agree the tag
   characterizes the title. It is evidence about the title, and this ADR treats it as evidence about
   the reader by way of what they read.
