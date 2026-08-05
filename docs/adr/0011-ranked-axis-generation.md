@@ -792,6 +792,11 @@ depends on a sleep is the flake the no-ties invariant exists to avoid.
   **Not addressed
   here** — it is a property of the Work model (ADR-0007/ADR-0009), not of the ranked axis, and
   fixing it inside this ADR's subsystem would be fixing it in the wrong place.
+  **Taken up 2026-08-05 by ADR-0015**, which relocates it once more: the Work model turns out not to
+  be wrong either. Such a reader genuinely cannot be recommended from — loosening the count fails at
+  `!profile.isEmpty` one line later, and all three pools would have nothing to query with — so the
+  gate stays and the *silence* is treated as the defect. Discharged as a legibility fix, not a
+  reachability one.
 - **A WeebCentral-only reader may never clear the gate, silently.** Those Works have no `malId`,
   resolution depends on `MALTitleMatcher` clearing a threshold ADR-0005 says never to loosen, and a
   decline means the Work never gains a ranked axis. The rail is then permanently absent with no
