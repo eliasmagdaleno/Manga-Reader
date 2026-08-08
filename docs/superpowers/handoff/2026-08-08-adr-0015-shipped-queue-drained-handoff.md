@@ -11,7 +11,7 @@ up" section below matters more than usual.
 
 | | |
 |---|---|
-| `main` | **`ef55323`**, clean, in sync with origin |
+| `main` | **`ef55323`** at time of writing, clean and in sync; this handoff's own commits sit on top |
 | Branches | `foryou-rail-state` merged (PR #34, squashed to `fb7e84b`) and deleted both ends |
 | Tests | **433 pass / 1 skipped / 0 failures**, verified locally and in CI |
 | ADR-0015 | Implemented, device-checked, merged. Six amendments folded in |
@@ -125,10 +125,20 @@ The prior handoff's list still applies. Three updates from this session:
 
 ## Machine-migration leftovers
 
-- **The Remember plugin's history did not come over.** `.remember/` here starts 2026-08-07 23:43
-  (this machine's own setup) with an empty `archive.md` and no rotated archives. On the old Mac it
-  is at `/Users/eliasmagdaleno/xcode/Manga-Reader/.remember/` — note the old path differs from this
-  machine's `/Users/eliasmagdaleno/Manga-Reader`. It is gitignored, so cloning will never bring it.
+- **The Remember plugin's history was missing, and has since been recovered** (same session, after
+  this handoff was first written). It is gitignored, so cloning never would have brought it; it was
+  copied by hand from the old Mac's `/Users/eliasmagdaleno/xcode/Manga-Reader/.remember/` — note
+  that old path differs from this machine's `/Users/eliasmagdaleno/Manga-Reader`. History now runs
+  **2026-07-10 → present**, unbroken: 21 dailies and an `archive.md` with weekly rollups back to the
+  week of 2026-07-07.
+
+  Three collisions were hand-merged rather than overwritten, and the reasoning matters if this is
+  ever done again: `today-2026-08-07.done.md` existed on **both** machines with different real
+  content (the old Mac's 23:39 migration note, this machine's 23:56 Node/Firebase note) and was
+  merged chronologically; `now.md` was empty on the old Mac and held the live session buffer here,
+  so it was excluded outright; `archive.md` was a 9-byte stub here and was replaced wholesale. A
+  straight `cp -R` would have destroyed the first two. The bulk copy used `cp -n` so nothing could
+  overwrite silently.
 - **The auto-memory came over intact** (15 files + index), re-keyed to the new project path.
 - `NEW-MAC-SETUP.md` and `manga-reader-briefing.md` in `~/Downloads` are both stale as of this
   session; the briefing has been deleted, the setup doc has not been updated.
