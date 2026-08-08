@@ -26,90 +26,24 @@ struct Manga_ReaderApp: App {
     /// could reach it could only misuse it (ADR-0010).
     @StateObject private var queue: MetadataUpgradeQueue
 
-    /// The AniList pool's two caches (ADR-0011). Owned here, not built inside
-    /// `makeProvider`, because both are **actors whose state must outlive a rail build**:
-    /// `AniListPoolStore` holds the in-flight refresh and the superseded-seeds guard, and a
-    /// fresh instance per rebuild would mean no refresh is ever "in flight", the dedupe
-    /// slice 3 tested would be silently dead, and the pool would never warm. Plain
-    /// properties rather than `@StateObject` — neither publishes anything, so a view that
-    /// could reach one could only misuse it (ADR-0010).
+    /// Plain properties rather than `@StateObject` — neither publishes anything, so a view
+    /// that could reach one could only misuse it (ADR-0010). See `AppComposition` for why
+    /// they are held for the app's lifetime rather than built per rail build.
     private let vocabularyStore: TagVocabularyStore
     private let poolStore: AniListPoolStore
 
+    /// The graph itself lives in `AppComposition`, where it can be built against temp
+    /// storage and asserted on. This initializer does nothing but adopt what it built.
     init() {
-        // Built first: the three commitment paths below (read, save, feedback) all
-        // mint into it, so they must share this one instance (ADR-0007).
-        let wk = WorkStore()
-        let lib = LibraryStore(works: wk)
-        let hist = HistoryStore(works: wk)
-        let ts = TasteProfileStore()
-
-        // One limiter, passed explicitly rather than left to `MetadataUpgradeQueue`'s
-        // default argument. ADR-0011 amends ADR-0007's "one owner of the client" to **one
-        // owner of the rate limiter**, and that claim is only true by construction if
-        // every AniList caller is handed the same instance. The queue and the pool draw on
-        // the same 30/min budget.
-        let anilist = AniListAPI()
-        let limiter = AniListRateLimiter()
-        // Hoisted for the same reason as the limiter directly above, and it is the same
-        // claim: the queue would otherwise build its own via `memory ?? UpgradeAttemptMemory()`
-        // and hold it privately, so "one owner of the attempt records" would be false by
-        // construction. Two consumers now read it — the drain, deciding what to skip, and the
-        // rail, deciding whether to explain itself (ADR-0015) — and if they saw different
-        // records the notice would contradict the drain.
-        let attempts = UpgradeAttemptMemory()
-        let upgrades = MetadataUpgradeQueue(works: wk, anilist: anilist, rateLimiter: limiter,
-                                            memory: attempts)
-
-        let vocab = TagVocabularyStore(fetch: { try await limiter.run { try await anilist.tagVocabulary() } })
-        let pool = AniListPoolStore()
-        self.vocabularyStore = vocab
-        self.poolStore = pool
-        _library = StateObject(wrappedValue: lib)
-        _history = StateObject(wrappedValue: hist)
-        _taste = StateObject(wrappedValue: ts)
-        _works = StateObject(wrappedValue: wk)
-        _queue = StateObject(wrappedValue: upgrades)
-        // The engine pushes, the queue never pulls: pulling would mean the queue
-        // building a profile, and building one mints Works (ADR-0009).
-        // The third pool (ADR-0011 slice 4). `makeProvider` runs on every rail build, so the
-        // provider *struct* is rebuilt each time — that is fine and deliberate, it is a few
-        // closures over two actor references. Only the actors need identity, and they are
-        // captured from above.
-        _engine = StateObject(wrappedValue: RecommendationEngine(
-            history: hist, library: lib, profileStore: ts, workStore: wk,
-            makeProvider: { @MainActor source in
-                // One reverse resolver for both consumers, so the cache-write discipline
-                // has a single implementation (ADR-0011). It needs no identity of its own —
-                // all its durable state is in `EntityResolutionStore.shared` — so unlike
-                // the two actors above, rebuilding it per rail build would also be correct.
-                let reverse = MALReverseResolver()
-                return CompositeCandidateProvider(
-                    tag: TagCandidateProvider(source: source),
-                    mal: MALCandidateProvider(similar: MoreLikeThisProvider(reverse: reverse)),
-                    ani: AniListCandidateProvider(
-                        // Hops to the `@MainActor` `WorkStore`; the provider deliberately
-                        // is not main-actor-isolated. Same one-way shape as `PriorityPush`.
-                        loadWorks: { await MainActor.run { wk.allWorkIds().compactMap { wk.work($0) } } },
-                        vocabularyStore: vocab,
-                        poolStore: pool,
-                        query: { pair, limit in
-                            try await limiter.run {
-                                try await anilist.media(tags: [pair.a, pair.b], limit: limit)
-                            }
-                        },
-                        resolve: { works in
-                            await reverse.resolve(works: works, limit: poolResolveLimit)
-                        }))
-            },
-            pushPriority: { upgrades.setPriority($0) },
-            // The one read-only question the recommender may ask the queue's memory
-            // (ADR-0015). It cannot start, stop, or steer the drain — `suppresses` only
-            // answers "does an unexpired failure already rule this Work out", which is what
-            // separates "not tagged yet" from "cannot be tagged". Passed the whole `Work`
-            // rather than an id so the `.unmatched(knownTitlesCount:)` comparison stays
-            // paired with the Work it was recorded for.
-            tagBlocked: { attempts.suppresses($0) }))
+        let composed = AppComposition()
+        self.vocabularyStore = composed.vocabularyStore
+        self.poolStore = composed.poolStore
+        _library = StateObject(wrappedValue: composed.library)
+        _history = StateObject(wrappedValue: composed.history)
+        _taste = StateObject(wrappedValue: composed.taste)
+        _works = StateObject(wrappedValue: composed.works)
+        _queue = StateObject(wrappedValue: composed.queue)
+        _engine = StateObject(wrappedValue: composed.engine)
     }
 
     private var appearance: AppearanceMode {

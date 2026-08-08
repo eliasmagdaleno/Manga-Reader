@@ -89,13 +89,36 @@ Works already exist", but nothing user-facing calls it. Three things point at it
 deal of code, and this ADR's six amendments are six instances of what happens when that step is
 skipped.
 
+### Outcome of that grilling (2026-08-08) — **do not pick up ADR-0005**
+
+The grilling happened, and it says no. ADR-0005 now carries an amendment recording why:
+
+- Its target is wrong. It describes **Listing → Work** (the `merge` primitive above), but
+  `SourceRegistry` registers two sources and MangaDex hands over `malId` for free — so every
+  silently-unresolved Work today failed at **Work → MAL id**, which is `setExternalIds`, not
+  `merge`. The recommendation above cited `merge` as evidence *for* picking it up; that was the
+  wrong primitive.
+- Its premise is shelved. The Context argues from ADR-0003's growing source count, shelved
+  deliberately since 2026-07-21.
+- It fails ADR-0015's own standard: derived from reading `MALTitleMatcher`, never reported.
+
+What survives is the **per-item visibility gap** — three untaggable Works beside twenty taggable
+ones clears the gate and leaves the omission as silent as before, because the notice only fires when
+*everything* is untaggable. Small, no override store, no picker UI. That is the next candidate.
+
 ## Also open, in rough priority order
 
-- **Deferred cleanup, explicitly owed:** retire `MyAnimeListDebugView` and its 3 live UI tests — the
-  real More Like This rail has been proven since 2026-07-22.
-- **No automated coverage of the `HomeView` rail branch or the root wiring.** Both rest on the
-  manual device check above. `ForYouUnavailableNotice` carries the accessibility identifier
-  `forYouUnavailableNotice` so a UI test can drive it.
+- ~~**Deferred cleanup, explicitly owed:** retire `MyAnimeListDebugView` and its 3 live UI tests.~~
+  **Already done in `342514a` (PR #27), before this handoff was written.** This entry was carried
+  forward from an older handoff without re-checking; the view, its tests and every reference to it
+  were gone the whole time. Corrected 2026-08-08.
+- ~~**No automated coverage of the `HomeView` rail branch or the root wiring.**~~ **The root wiring
+  is now covered.** `AppComposition` (2026-08-08) holds the graph with injectable storage, and
+  `AppCompositionTests` builds the real one against a temp directory and asserts rail state follows
+  the queue's attempt memory — mutation-checked by unwiring `tagBlocked`, which the old 433 tests
+  could not detect. **The `HomeView` branch stays manual, deliberately** — covering it needs a
+  launch-argument seam shipping in the app to test one `else if`; the reasoning is in
+  `AppCompositionTests`' header, and `forYouUnavailableNotice` remains in place if that is revisited.
 - **Tracked minors from the blend work:** `malId` on `LibraryItem` so saved seeds skip the title
   search; More Like This reverse-resolution beyond MangaDex-only.
 - **ADR-0015's mixed-library hazard** — three taggable Works beside twenty untaggable ones opens the
