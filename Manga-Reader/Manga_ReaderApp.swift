@@ -51,7 +51,15 @@ struct Manga_ReaderApp: App {
         // the same 30/min budget.
         let anilist = AniListAPI()
         let limiter = AniListRateLimiter()
-        let upgrades = MetadataUpgradeQueue(works: wk, anilist: anilist, rateLimiter: limiter)
+        // Hoisted for the same reason as the limiter directly above, and it is the same
+        // claim: the queue would otherwise build its own via `memory ?? UpgradeAttemptMemory()`
+        // and hold it privately, so "one owner of the attempt records" would be false by
+        // construction. Two consumers now read it — the drain, deciding what to skip, and the
+        // rail, deciding whether to explain itself (ADR-0015) — and if they saw different
+        // records the notice would contradict the drain.
+        let attempts = UpgradeAttemptMemory()
+        let upgrades = MetadataUpgradeQueue(works: wk, anilist: anilist, rateLimiter: limiter,
+                                            memory: attempts)
 
         let vocab = TagVocabularyStore(fetch: { try await limiter.run { try await anilist.tagVocabulary() } })
         let pool = AniListPoolStore()
@@ -94,7 +102,14 @@ struct Manga_ReaderApp: App {
                             await reverse.resolve(works: works, limit: poolResolveLimit)
                         }))
             },
-            pushPriority: { upgrades.setPriority($0) }))
+            pushPriority: { upgrades.setPriority($0) },
+            // The one read-only question the recommender may ask the queue's memory
+            // (ADR-0015). It cannot start, stop, or steer the drain — `suppresses` only
+            // answers "does an unexpired failure already rule this Work out", which is what
+            // separates "not tagged yet" from "cannot be tagged". Passed the whole `Work`
+            // rather than an id so the `.unmatched(knownTitlesCount:)` comparison stays
+            // paired with the Work it was recorded for.
+            tagBlocked: { attempts.suppresses($0) }))
     }
 
     private var appearance: AppearanceMode {
