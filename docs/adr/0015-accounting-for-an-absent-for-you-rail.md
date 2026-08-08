@@ -21,6 +21,10 @@ is the part a future reader cannot reconstruct from the corrected text.
 | 2 | `UpgradeAttemptMemory` can be wired from the root | It is not reachable there at all today | same section |
 | 3 | `noTaggableSignal` ⟺ *every* untagged Work blocked | A transient-failure Work is never blocked, so the quantifier never holds | "Only the dead end gets UI" / the definition |
 | 4 | Copy: "**adding** a title from MangaDex will" | Saving a title does not move `taggedCount`; only reading does | The copy |
+| 5 | `railState` also assigned on `load()`'s `loadedOnce` short-circuit | Nothing correct to assign there; writing would overwrite a decided state | "`profileAndExclusions()` returns the reason" |
+
+Amendment 5 was found during implementation on 2026-08-08, after the first four; it is the same
+error again, which is the strongest argument this section makes.
 
 The common shape: this ADR was written with the code open but **not read at the call sites it
 commits to**. The failure is worth naming because it recurred — the prior session's correction (a
@@ -257,8 +261,18 @@ argued against for the view, and no more acceptable inside the engine. One funct
 it is refusing; the bug is that it throws that knowledge away, which is the original defect
 reproduced one layer down.
 
-`railState` is assigned **before** `rebuild()`'s `Task.isCancelled` check (`:122`) and on `load()`'s
-`loadedOnce` short-circuit (`:87-92`), or a cancelled rebuild strands the UI on a stale explanation.
+`railState` is assigned on both paths **before** `rebuild()`'s `Task.isCancelled` check (`:122`) —
+including `.ready`, which is published as soon as the gate opens rather than after the pool returns,
+or a cancelled rebuild strands the UI on a stale explanation.
+
+**Amendment 5 (2026-08-08, found in implementation):** this ADR also required an assignment on
+`load()`'s `loadedOnce` short-circuit (`:87-92`). **There is nothing correct to assign there.** The
+short-circuit returns precisely *because* a previous `rebuild()` already decided the state, so
+writing to it could only overwrite a decided state with `.building` — reintroducing the stale-UI
+failure the rule exists to prevent, in the one place the rule named. `load()` is therefore left
+untouched, and `.building` is the initial value only. Recorded rather than quietly dropped because
+the original line reads as a checked claim and is not one: like the four before it, it was written
+without opening the call site.
 
 ## Hazards
 
