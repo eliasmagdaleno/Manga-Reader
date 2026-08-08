@@ -1,6 +1,7 @@
 # ADR-0010 — The drain loop: pass shape, failure handling, testing seams, and wiring
 
-- **Status:** Accepted (2026-07-28)
+- **Status:** Accepted (2026-07-28); **amended by ADR-0015 (2026-08-05)** — the engine's seam with
+  the queue narrows from *no coupling* to *no control*, admitting one read-only predicate
 - **Amends:** ADR-0009 (its push site, its order of operations, and its silence on what a pass
   consumes)
 - **Related:** ADR-0008 (queue policy), ADR-0007 (Work shape, rate limiter), ADR-0001 (Work vs
@@ -165,6 +166,14 @@ call site instead of two, and the grid comes along free. Placement is **after** 
 below the three-tagged-manga threshold the function returns `nil`, and pushing there would overwrite
 a previous session's good ordering with a cold-start blank, which is strictly worse than pushing
 nothing.
+
+**Amended 2026-08-05 by ADR-0015.** The rule above is restated as **no control**, not no coupling.
+The engine now also asks the queue one read-only question — `TagBlocked = (WorkID) -> Bool`, "is
+there an unexpired failure on record for this Work" — through a second injected closure, so it can
+tell a reader whose library cannot be tagged from one who has simply not read enough. It still
+cannot start, stop, pace, or alter the queue, and the queue remains unaware it is being asked. The
+closure form is what keeps this from decaying into a type dependency; see ADR-0015 for why the
+`WorkStore` cannot answer the question instead.
 
 `setPriority` **replaces** rather than merges. The map is complete for every Work with reading
 history, so a Work dropping out means its history is gone, and it should fall to the tail rather than

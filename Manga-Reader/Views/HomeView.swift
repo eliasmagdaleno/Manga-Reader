@@ -38,7 +38,8 @@ struct HomeView: View {
                         loadingRail
                     }
 
-                    // Personalized rail #0 — hidden until there's enough reading signal.
+                    // Personalized rail #0 — hidden until there's enough reading signal,
+                    // except when the engine reports the gate can never open (ADR-0015).
                     if !engine.recommendations.isEmpty {
                         VStack(alignment: .leading, spacing: 14) {
                             InkSectionHeader("For You", eyebrow: "Based on your reading")
@@ -70,6 +71,12 @@ struct HomeView: View {
                                 onMoreLikeThis: { engine.markMoreLikeThis($0) }
                             )
                         }
+                    } else if engine.railState == .noTaggableSignal {
+                        // The only closed gate that gets words. `building` and
+                        // `needMoreReading` still render nothing, deliberately: a
+                        // first-launch reader does not need the recommender's internals
+                        // reported as a progress bar (ADR-0015).
+                        ForYouUnavailableNotice()
                     }
 
                     let titles = source.homeRailTitles.count >= 3 ? source.homeRailTitles : ["Popular", "Recently Updated", "Newly Added"]

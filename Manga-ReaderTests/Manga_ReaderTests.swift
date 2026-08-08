@@ -1664,7 +1664,8 @@ final class Manga_ReaderTests: XCTestCase {
                                        workStore: WorkStore? = nil,
                                        mangaDexSource: MangaSource = CannedTagSource(lists: [:], failTags: []),
                                        now: Date = Date(), seed: UInt64 = 1,
-                                       pushPriority: @escaping RecommendationEngine.PriorityPush = { _ in })
+                                       pushPriority: @escaping RecommendationEngine.PriorityPush = { _ in },
+                                       tagBlocked: @escaping RecommendationEngine.TagBlocked = { _ in false })
         -> RecommendationEngine {
         let lib = LibraryStore(defaults: UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!)
         let works = workStore ?? WorkStore(directory: URL(fileURLWithPath: NSTemporaryDirectory())
@@ -1673,7 +1674,7 @@ final class Manga_ReaderTests: XCTestCase {
                                     workStore: works,
                                     mangaDexSource: mangaDexSource,
                                     makeProvider: { _ in provider }, now: { now }, seed: seed,
-                                    pushPriority: pushPriority)
+                                    pushPriority: pushPriority, tagBlocked: tagBlocked)
     }
 
     /// A provider returning a fixed ranked pool, ignoring the profile.
@@ -1731,6 +1732,104 @@ final class Manga_ReaderTests: XCTestCase {
         await engine.refresh()
         // rec2 = not interested, m1 = already read → both excluded.
         XCTAssertEqual(engine.recommendations.map(\.manga.id), ["rec1"])
+    }
+
+    // MARK: - Rail state (ADR-0015)
+
+    /// Reads `id` without ever giving it tags — the untaggable case the notice exists for.
+    @MainActor private func untaggedRead(_ history: HistoryStore, _ id: String) {
+        history.record(manga: sampleManga(id), chapter: ch("1"),
+                       position: ReadingPosition(page: 9), pageCount: 10)
+    }
+
+    @MainActor func testRailStateStartsBuilding() {
+        let engine = makeEngine(history: makeHistoryStore(), tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: []))
+        XCTAssertEqual(engine.railState, .building)
+    }
+
+    @MainActor func testRailStateReadyWhenGateOpens() async throws {
+        let history = makeHistoryStore()
+        let works = makeWorkStore()
+        for i in 1...3 {
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
+        }
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works)
+        await engine.refresh()
+        XCTAssertEqual(engine.railState, .ready)
+    }
+
+    /// Untagged Works the drain has not answered for yet are still in play, so the
+    /// ceiling has not been reached and the rail stays silent rather than explaining.
+    @MainActor func testRailStateNeedMoreReadingWhileUntaggedWorksAreStillInPlay() async throws {
+        let history = makeHistoryStore()
+        for i in 1...3 { untaggedRead(history, "m\(i)") }
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                tagBlocked: { _ in false })
+        await engine.refresh()
+        XCTAssertEqual(engine.railState, .needMoreReading(tagged: 0, needed: 3))
+        XCTAssertTrue(engine.recommendations.isEmpty)
+    }
+
+    @MainActor func testRailStateNoTaggableSignalWhenEveryUntaggedWorkIsBlocked() async throws {
+        let history = makeHistoryStore()
+        for i in 1...3 { untaggedRead(history, "m\(i)") }
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                tagBlocked: { _ in true })
+        await engine.refresh()
+        XCTAssertEqual(engine.railState, .noTaggableSignal)
+    }
+
+    /// The case the ADR's original universal quantifier could not see (amendment 3):
+    /// one Work failing transiently is never recorded, so "every untagged Work is
+    /// blocked" is false forever — yet 1 tagged + 1 in play cannot reach 3.
+    @MainActor func testRailStateNoTaggableSignalWhenArithmeticCannotReachTheGate() async throws {
+        let history = makeHistoryStore()
+        let works = makeWorkStore()
+        tagRead(works, history, "tagged1", [Tag(id: "a", name: "Action", group: "genre")])
+        for i in 1...5 { untaggedRead(history, "blocked\(i)") }
+        untaggedRead(history, "transient")
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works,
+                                tagBlocked: { work in
+                                    !work.knownTitles.contains("Title transient")
+                                })
+        await engine.refresh()
+        // 1 tagged + 1 unblocked = 2 < 3: even tagging everything left cannot open it.
+        XCTAssertEqual(engine.railState, .noTaggableSignal)
+    }
+
+    /// The documented non-fix: with two tagged Works already, one perpetually transient
+    /// Work could still open the gate, so silence remains correct.
+    @MainActor func testRailStateStaysSilentWhenOneUnblockedWorkCouldStillOpenTheGate() async throws {
+        let history = makeHistoryStore()
+        let works = makeWorkStore()
+        for i in 1...2 { tagRead(works, history, "t\(i)", [Tag(id: "a", name: "Action", group: "genre")]) }
+        untaggedRead(history, "transient")
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works, tagBlocked: { _ in false })
+        await engine.refresh()
+        XCTAssertEqual(engine.railState, .needMoreReading(tagged: 2, needed: 3))
+    }
+
+    /// Amendment 1: the closure is handed the whole `Work`, so the caller cannot pair
+    /// the wrong `knownTitles` count with the wrong id.
+    @MainActor func testTagBlockedReceivesTheWholeWork() async throws {
+        let history = makeHistoryStore()
+        untaggedRead(history, "m1")
+        var seen: [Work] = []
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: []),
+                                tagBlocked: { work in seen.append(work); return false })
+        await engine.refresh()
+        XCTAssertEqual(seen.count, 1)
+        XCTAssertEqual(seen.first?.knownTitles, ["Title m1"])
     }
 
     // MARK: - Engagement weight push (ADR-0010)

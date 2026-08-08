@@ -35,7 +35,34 @@ final class RecommendationEngine: ObservableObject {
     /// the recommender must not be able to start, stop, or inspect the queue (ADR-0010).
     typealias PriorityPush = ([WorkID: Double]) -> Void
 
+    /// Whether the upgrade queue already holds an unexpired failure for this Work — i.e.
+    /// tagging it is not merely pending but currently ruled out. Read-only by construction:
+    /// ADR-0010's seam, narrowed by ADR-0015 from *no coupling* to *no control*.
+    ///
+    /// Takes the whole `Work`, not a `WorkID`, because `UpgradeAttemptMemory.suppresses`
+    /// does — its `.unmatched(knownTitlesCount:)` branch needs `knownTitles.count`, and an
+    /// id-keyed closure would force a store lookup at the composition root, re-creating the
+    /// mispairing that signature exists to prevent (ADR-0015 amendment 1).
+    typealias TagBlocked = (Work) -> Bool
+
+    /// Why the rail is or isn't rendering. Modelled as state rather than an `errorMessage`
+    /// string (ADR-0015): these differ in what the reader can do about them, and none of
+    /// them is an error — the app is working and has nothing to recommend.
+    enum RailState: Equatable {
+        /// `load()` in flight, nothing decided yet.
+        case building
+        /// Not enough tagged Works, but Works still in play could get there.
+        case needMoreReading(tagged: Int, needed: Int)
+        /// Enough reading, and tagging everything still in play cannot open the gate.
+        case noTaggableSignal
+        case ready
+    }
+
     @Published private(set) var recommendations: [ScoredManga] = []
+    /// Two of the four cases render nothing today. They are carried for diagnosis: the
+    /// 2026-08-04 device check spent a full cycle on an empty rail and reached two wrong
+    /// hypotheses before finding this gate shut upstream (ADR-0015).
+    @Published private(set) var railState: RailState = .building
 
     private let history: HistoryStore
     private let library: LibraryStore
@@ -48,6 +75,7 @@ final class RecommendationEngine: ObservableObject {
     private let makeProvider: (MangaSource) -> CandidateProvider
     private let now: () -> Date
     private let pushPriority: PriorityPush
+    private let tagBlocked: TagBlocked
 
     private let minTaggedManga = 3
     private let poolLimit = 40
@@ -71,7 +99,10 @@ final class RecommendationEngine: ObservableObject {
          seed: UInt64? = nil,
          // Defaulted to a no-op so every existing construction site — previews,
          // tests, the debug views — stays valid and stays silent.
-         pushPriority: @escaping PriorityPush = { _ in }) {
+         pushPriority: @escaping PriorityPush = { _ in },
+         // Same defaulting rule as `pushPriority`: no existing construction site changes,
+         // and an engine without the queue simply never reports `noTaggableSignal`.
+         tagBlocked: @escaping TagBlocked = { _ in false }) {
         self.history = history
         self.library = library
         self.profileStore = profileStore
@@ -80,6 +111,7 @@ final class RecommendationEngine: ObservableObject {
         self.makeProvider = makeProvider
         self.now = now
         self.pushPriority = pushPriority
+        self.tagBlocked = tagBlocked
         self.seed = seed ?? UInt64.random(in: .min ... .max)
     }
 
@@ -113,9 +145,17 @@ final class RecommendationEngine: ObservableObject {
     }
 
     private func rebuild() async {
-        guard let (profile, excluding) = profileAndExclusions() else {
+        // `railState` is published on both paths BEFORE the cancellation check below, or a
+        // cancelled rebuild strands the UI on a stale explanation (ADR-0015).
+        let profile: TasteProfile, excluding: Set<String>
+        switch profileAndExclusions() {
+        case .refused(let state):
+            railState = state
             recommendations = []
             return
+        case .ready(let p, let ex):
+            railState = .ready
+            (profile, excluding) = (p, ex)
         }
         let pool = (try? await makeProvider(mangaDexSource)
             .candidates(for: profile, excluding: excluding, limit: poolLimit)) ?? []
@@ -127,15 +167,28 @@ final class RecommendationEngine: ObservableObject {
     /// exploration reshuffle — the "See all" grid wants the straight ranking. Empty
     /// during cold-start, exactly like the rail.
     func rankedRecommendations(limit: Int = 100) async -> [Manga] {
-        guard let (profile, excluding) = profileAndExclusions() else { return [] }
+        // The grid ignores the refusal reason: it is only reachable from a rail that is
+        // already rendering, so a refusal here means the profile changed underneath it.
+        guard case .ready(let profile, let excluding) = profileAndExclusions() else { return [] }
         let pool = (try? await makeProvider(mangaDexSource)
             .candidates(for: profile, excluding: excluding, limit: limit)) ?? []
         return pool.map(\.manga)
     }
 
+    /// Either the profile and exclusion set, or the reason the gate is shut.
+    private enum ProfileOutcome {
+        case ready(TasteProfile, Set<String>)
+        case refused(RailState)
+    }
+
     /// Builds the taste profile and the exclusion set (read ∪ saved ∪ not-interested),
-    /// or nil when there isn't enough signal (cold-start). Shared by the rail and the grid.
-    private func profileAndExclusions() -> (TasteProfile, Set<String>)? {
+    /// or the reason there isn't enough signal. Shared by the rail and the grid.
+    ///
+    /// The reason is returned rather than recomputed by the caller because this function
+    /// already knows it: computing `railState` beside the gate would put the threshold and
+    /// the definition of "tagged" in two places that drift the first time either is tuned
+    /// (ADR-0015).
+    private func profileAndExclusions() -> ProfileOutcome {
         let savedIds = Set(library.items.map(\.id))
         // LibraryItem carries no malId/description/status/year — synthesize a minimal
         // Manga per saved item so TasteProfile.build can materialize seeds for it.
@@ -143,19 +196,50 @@ final class RecommendationEngine: ObservableObject {
             Manga(id: item.id, sourceId: item.sourceId ?? "mangadex", title: item.title,
                  description: "", status: "unknown", year: nil, coverURL: item.coverURL, malId: nil)
         }
-        let profile = TasteProfile.build(signals: resolveSignals(),
+        // Bound to a local rather than passed inline: the ceiling test below reuses it,
+        // and `resolveSignals()` mints, so calling it twice is a side effect twice.
+        let signals = resolveSignals()
+        let profile = TasteProfile.build(signals: signals,
                                          savedIds: savedIds,
                                          moreLikeThis: Set(profileStore.moreLikeThis),
                                          now: now(),
                                          libraryItems: libraryManga)
-        guard profile.taggedMangaCount >= minTaggedManga, !profile.isEmpty else { return nil }
+        guard profile.taggedMangaCount >= minTaggedManga, !profile.isEmpty else {
+            return .refused(refusalReason(signals: signals, profile: profile))
+        }
         // AFTER the gate, deliberately: a rejected profile carries no ordering, and
         // pushing its empty map would replace whatever the queue is already draining
         // against with a cold-start blank (ADR-0010). Here rather than in `rebuild`
         // because "See all" builds the same profile and is the same signal.
         pushPriority(profile.workWeights)
         let readIds = Set(history.entries.map(\.mangaId))
-        return (profile, readIds.union(savedIds).union(profileStore.notInterested))
+        return .ready(profile, readIds.union(savedIds).union(profileStore.notInterested))
+    }
+
+    /// A **ceiling test**, not a universal quantifier (ADR-0015 amendment 3):
+    ///
+    ///     noTaggableSignal ⟺ taggedMangaCount + (untagged, not blocked).count < minTaggedManga
+    ///
+    /// Read as "even if every Work still in play got tagged, the gate cannot open". The
+    /// original "every untagged Work is blocked" never holds when one Work fails
+    /// transiently on every drain pass, because transient failures record nothing — so a
+    /// single such Work would suppress the notice forever, by the one route no test catches.
+    ///
+    /// Monotone toward silence: a Work getting tagged or a TTL expiring can only move the
+    /// state back to `needMoreReading`, never falsely to the notice. A Work missing from the
+    /// store counts as in play for the same reason — an unanswerable question is not a no.
+    private func refusalReason(signals: [TasteProfile.WorkSignal], profile: TasteProfile) -> RailState {
+        let stillInPlay = signals.filter { signal in
+            // Same `entries` filter TasteProfile.build counts under, or the two disagree.
+            guard !signal.entries.isEmpty, signal.tags.isEmpty else { return false }
+            guard let work = workStore.work(signal.workId) else { return true }
+            return !tagBlocked(work)
+        }.count
+
+        guard profile.taggedMangaCount + stillInPlay < minTaggedManga else {
+            return .needMoreReading(tagged: profile.taggedMangaCount, needed: minTaggedManga)
+        }
+        return .noTaggableSignal
     }
 
     /// Groups reading history by Work — the seam where Listing-keyed edges meet Work
