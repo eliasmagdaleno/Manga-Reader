@@ -2,3 +2,9 @@ Secrets.xcconfig
 .worktrees/
 .agy_code_review.md
 .agy_review_running
+
+# macOS / Xcode per-user noise. `xcuserdata` holds window and breakpoint state that
+# changes whenever the project is merely open, so it shows up as an untracked file
+# in every session and never carries anything worth committing.
+.DS_Store
+**/xcuserdata/

@@ -109,10 +109,20 @@ those hunks before committing.
 **The reformat can vanish on its own, which makes `git diff` right after `xcp` untrustworthy.**
 If Xcode has the project open it rewrites `project.pbxproj` back to one-line form on its own
 schedule — so the same `xcp add-file` shows 31 insertions immediately and 4 insertions some
-minutes later, with nothing in between having touched the file. Verified 2026-07-26 with xcp
-1.2.1: neither `xcodebuild build` nor `xcodebuild test` does this; only Xcode itself. **Check
-`git diff --stat` immediately before `git add`, not right after `xcp`** — and don't conclude
-from one clean diff that the caveat above no longer applies.
+minutes later, with nothing in between having touched the file. **Check `git diff --stat`
+immediately before `git add`, not right after `xcp`** — and don't conclude from one clean diff
+that the caveat above no longer applies.
+
+**The rewrite is not tied to `xcp` at all.** Corrected 2026-08-08: this section used to say
+"neither `xcodebuild build` nor `xcodebuild test` does this; only Xcode itself." A session that
+never ran `xcp` saw `project.pbxproj` churn twice anyway — the three synchronized-group entries
+collapsing from multi-line to one-line, plus a `name =` key dropped from a file reference —
+during plain `xcodebuild build` / `test` runs, with Xcode open the whole time. Whether
+`xcodebuild` provokes it or Xcode simply rewrote on its own schedule was **not** isolated (Xcode
+was running in both cases), so the only claim worth carrying is the practical one: **if Xcode has
+the project open, treat `project.pbxproj` as able to change under you at any moment, `xcp` or
+not.** Check it before every `git add`, and `git checkout` the file when the churn is unrelated
+to your change.
 
 Adding the file in Xcode also does all four correctly. Hand-editing `pbxproj` is the last
 resort; if you must, mirror an existing entry across all four sections.
