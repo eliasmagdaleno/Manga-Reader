@@ -165,6 +165,14 @@ made a promise and broken it. One word, and it inverted the ADR's entire user-vi
 clear `taggedMangaCount` and then die on `!profile.isEmpty` — the exact failure the first decision
 above rejects.
 
+**Amendment 6 (2026-08-08, found on the device check):** the notice must not wear the seal wash.
+This ADR argued the state is not an error and rejected `errorMessage` on exactly that ground, but the
+argument was made about *words* and the first implementation kept `InkNotice`'s `Ink.sealSoft` fill
+while dropping only its exclamation icon. Rendered on a device, it still read as an error banner —
+inviting the one inference this ADR calls guaranteed useless. The fill carries most of that signal,
+so the notice uses `Ink.surfaceAlt` with a hairline border: recessed, neutral, informational. Colour
+is part of the claim "this is not an error", not decoration applied after it.
+
 **Accepted cost:** two of the four states render nothing today. They are carried for diagnosis, not
 speculation — the 2026-08-04 device check burned a full cycle on an empty rail and reached two wrong
 hypotheses before finding this gate closed upstream. A published state naming which gate is shut, and

@@ -38,7 +38,16 @@ struct ForYouUnavailableNotice: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
-            .background(RoundedRectangle(cornerRadius: 10).fill(Ink.sealSoft))
+            // `surfaceAlt`, not `sealSoft`: the seal wash is what `InkNotice` fills an
+            // *error* with, and wearing it would invite the one inference ADR-0015 calls
+            // guaranteed useless — that something is broken. Dropping the exclamation icon
+            // was not enough on its own; the fill carries most of that signal. A recessed
+            // neutral surface reads as information.
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Ink.surfaceAlt)
+                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(Ink.hairline, lineWidth: 1))
+            )
             .padding(.horizontal, Gutter.page)
         }
         .accessibilityIdentifier("forYouUnavailableNotice")
