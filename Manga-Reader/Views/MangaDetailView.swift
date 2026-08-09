@@ -11,6 +11,7 @@ struct MangaDetailView: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
     @EnvironmentObject private var works: WorkStore
+    @EnvironmentObject private var engine: RecommendationEngine
     @StateObject private var moreLikeThis = MoreLikeThisViewModel()
     @State private var synopsisExpanded = false
     @State private var showingWebPage = false
@@ -29,6 +30,19 @@ struct MangaDetailView: View {
         mangaSource?.webURL(forManga: manga.id)
     }
 
+    /// Whether this title has been *refused* a catalog match, so the empty "More Like This"
+    /// section can say why instead of disappearing.
+    ///
+    /// Nil-safe by design, and both nils mean "say nothing": a title with no Work has never
+    /// been committed to (read, saved, rated — ADR-0007), so the drain has not tried and
+    /// there is no answer to report. Inferring it from the source instead would be guessing,
+    /// against this area's standing precision bias (`MALTitleMatcher`, ADR-0005).
+    private var isUnmatchable: Bool {
+        guard let id = works.workId(for: ListingKey(manga)),
+              let work = works.work(id) else { return false }
+        return engine.isUnmatchable(work)
+    }
+
     /// This manga's source when it can browse by genre — otherwise nil, so the genre
     /// chips render as plain, non-tappable metadata.
     private var tagBrowseSource: MangaSource? {
@@ -44,7 +58,14 @@ struct MangaDetailView: View {
                 if !vm.tags.isEmpty { tags }
                 if !vm.description.isEmpty || vm.isLoading { description }
                 chapters
-                if !moreLikeThis.items.isEmpty { moreLikeThisRail }
+                if !moreLikeThis.items.isEmpty {
+                    moreLikeThisRail
+                } else if isUnmatchable {
+                    // The empty section explains itself rather than vanishing (ADR-0005's
+                    // first implied requirement). Ordered after the rail check so a title
+                    // that somehow has both never shows the notice instead of results.
+                    UnmatchedTitleNotice()
+                }
             }
             .padding(.bottom, 40)
         }

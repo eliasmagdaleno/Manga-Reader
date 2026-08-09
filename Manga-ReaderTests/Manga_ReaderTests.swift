@@ -1832,6 +1832,34 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(seen.first?.knownTitles, ["Title m1"])
     }
 
+    /// The per-title question the detail screen asks (ADR-0005's visibility requirement).
+    /// It is the *same* predicate the rail state is built from, deliberately: a second way
+    /// to ask would let the detail screen and the rail disagree about one Work.
+    @MainActor func testIsUnmatchableAnswersForOneWork() async throws {
+        let history = makeHistoryStore()
+        let works = makeWorkStore()
+        untaggedRead(history, "refused")
+        untaggedRead(history, "pending")
+
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: []),
+                                workStore: works,
+                                tagBlocked: { $0.knownTitles.contains("Title refused") })
+        // Minting happens on the real path — the engine resolving signals out of history.
+        await engine.refresh()
+
+        let byTitle = Dictionary(uniqueKeysWithValues: works.allWorkIds()
+            .compactMap { works.work($0) }
+            .map { ($0.displayTitle, $0) })
+        let refused = try XCTUnwrap(byTitle["Title refused"])
+        let pending = try XCTUnwrap(byTitle["Title pending"])
+
+        XCTAssertTrue(engine.isUnmatchable(refused))
+        // Untagged but never answered for: the notice must stay off, or it would claim a
+        // refusal the drain has not made.
+        XCTAssertFalse(engine.isUnmatchable(pending))
+    }
+
     // MARK: - Engagement weight push (ADR-0010)
 
     /// The recommender pushes; the queue never pulls. Pulling would mean the queue
