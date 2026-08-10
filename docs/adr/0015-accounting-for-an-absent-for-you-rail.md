@@ -1,6 +1,6 @@
 # ADR-0015 — Accounting for an absent "For You" rail
 
-- **Status:** Accepted (2026-08-05), amended 2026-08-07
+- **Status:** Accepted (2026-08-05), amended 2026-08-07, 2026-08-08, 2026-08-10
 - **Amends:** ADR-0010 — its "the engine pushes, the queue never pulls" seam, which this narrows
   from *no coupling* to *no control*: a read-only predicate is now permitted, through a closure.
   **Also amends itself** — see "Amendments (2026-08-07)" below
@@ -36,6 +36,136 @@ None of the four changed the ADR's *shape*: the gate stays, the state stays mode
 only the dead end gets UI, and the queue is still asked through a closure. What changed is that three
 of those would not have compiled or would not have fired, and the fourth would have told the reader
 to do something that does not work.
+
+## Amendment 7 (2026-08-10): `ready` carries the rail's basis
+
+Hazard 3 below — "a mixed library can hide the problem" — was recorded as out of scope and is now
+in scope. `ready` gains a payload:
+
+```swift
+case ready(tagged: Int, of: Int)
+```
+
+and `HomeView` renders one line under the rail: **"Based on 8 of 11 titles you've read."**
+
+**Why now.** ADR-0017 (excluding novels from MAL resolution candidates) was accepted on a Python
+harness run over twelve hand-picked titles skewed toward Korean webtoons — the population where its
+effect is largest, which is the standing caveat on that acceptance. This payload is the same ratio
+measured against the reader's real library, in the app, continuously. It is the cheapest available
+answer to "did 0017 actually work here", and it needs no harness to survive.
+
+### `of` counts read titles, not the library
+
+The denominator is Works with history entries. **Rejected: read ∪ saved**, i.e. everything on the
+Library screen. A saved-but-unread title contributes no entries, so it can never reach `tagged` —
+amendment 4 above establishes this and had to correct the copy for the same reason. Counting it in
+`of` would make the ratio permanently less than 1 for any reader with a backlog, reporting *having a
+to-read list* as a recommender failure. Numerator and denominator must be drawn from one population
+or the sentence is not about anything.
+
+### `of` counts Works, not Listings
+
+Per ADR-0001, one series read on two sources is one Work and two Listings, and it contributes one
+taste signal. The count follows the signal. **This reads as an off-by-one to anyone who remembers
+reading it on both sources**, and is recorded here so a future reader recognises it as a decision
+rather than filing it. The alternative — counting Listings — would inflate the denominator with
+duplicates the recommender never treated as separate, understating the basis it actually used.
+
+### Hidden at parity
+
+`tagged == of` renders nothing. **Rejected: always showing it**, including the healthy "11 of 11".
+A line that renders unconditionally becomes wallpaper within a day and stops being read, which
+destroys the diagnostic value it exists for. The accepted consequence is stated plainly because it
+cuts against the motivation above: **if ADR-0017 worked as measured, this line may never appear on
+the author's library.** Its absence is then the result, not a failure to observe one.
+
+**Observed 2026-08-10, on a simulator seeded with seven real MangaDex titles read alongside the
+three untaggable WeebCentral placeholders already there: "Based on 6 of 10 titles you've read."**
+The four excluded are the three placeholders plus `Wind Breaker`, whose refusal ADR-0017 predicts
+and defends. The line therefore does what it was built for on its first real outing — it reports a
+rail built from 60% of the history, and every title it excludes is one with a known, documented
+reason. Note the shape of the number: **the untaggable remainder here is a property of the sources
+read, not of MAL resolution**, which is the distinction the line makes visible and the count alone
+does not explain.
+
+### The payload rides on the state
+
+`profileAndExclusions()` returns `.ready(TasteProfile, Set<String>, RailState)` — the state fully
+formed, not just the numbers. Same argument the "returns the reason instead of `nil`" decision makes
+below: the basis is computed from the same `signals` array the gate is applied to, and recomputing it
+in `rebuild()` would need that array published or rebuilt, putting the definition of the population
+in a second place that drifts. **Rejected: a second `@Published` property** beside `railState`, which
+is that second place with extra steps.
+
+### One claim in the implementation is untestable, by construction
+
+The denominator is written `signals.filter { !$0.entries.isEmpty }.count`, mirroring the filter
+`TasteProfile.build` counts under. **Mutation-checked: replacing it with `signals.count` fails no
+test, and cannot** — `resolveSignals()` derives every signal from a history entry, so the predicate
+is always true. It is kept as the written form of an alignment that would otherwise be an
+undocumented coincidence, and recorded here as vacuous rather than presented as verified. The
+load-bearing half of the decision *is* covered: adding `savedIds.count` to the denominator turns the
+suite red.
+
+## Amendment 8 (2026-08-10): the ceiling test needs a reading precondition
+
+**The defect is real; the story originally written here about how it was found was not. Both are
+recorded, because the false one is the ninth instance of this ADR's recurring failure and it was
+committed to a file before being checked.**
+
+What was claimed: that the simulator had been observed rendering the dead-end notice on a device
+with no reading history at all. What is true: the simulator has **three** read titles, all
+WeebCentral placeholders (`Zurnak Vhelli`, `Bramgot no Yeshu`, `Qelparre Drift`), all unmatchable —
+so `noTaggableSignal` was **the correct render**, and the screenshot showed the feature working.
+
+The bad inference: the app's `Library/Preferences/…plist` was dumped and had no `history.entries`
+key, and **an absent key was read as an absent fact**. It was absent because `cfprefs` had not
+flushed it to disk, and because the container inspected was the pre-reinstall one. The live value —
+obtained later by printing `history.entries.count` from `rebuild()` — is 3. This is the same error
+the 2026-08-07 amendments name: *a claim about current behaviour is not verified until the line
+asserting it has been opened.* A `plutil` dump is not that line.
+
+The defect itself was found by reasoning about the predicate and is **proved by test, not by
+observation**: `testEmptyHistoryIsColdStartNotADeadEnd` fails on the pre-amendment engine with
+exactly `noTaggableSignal` where `needMoreReading(tagged: 0, needed: 3)` belongs. It is a real
+first-launch defect that no reader has yet reported, and it is worth fixing on that basis alone —
+but it is not what was on the screen.
+
+Amendment 3 replaced
+
+> enough read Works to clear the threshold *if they were tagged*, **and** every untagged one is
+> blocked
+
+with the ceiling test alone, on the claim that it "subsumes the original *enough read Works if
+tagged* clause." **It does not subsume that clause; it deletes it.** With zero read Works,
+`taggedMangaCount + stillInPlay = 0 < 3` and the ceiling test fires — trivially, because tagging
+nothing cannot open any gate. The definition is therefore both halves:
+
+```
+noTaggableSignal  ⟺  readWorks ≥ minTaggedManga
+                  ∧  taggedMangaCount + (untagged, not blocked).count < minTaggedManga
+```
+
+This restores what the state's own name asserts — *enough reading*, nothing identifiable — and what
+the decision "only the dead end gets UI" depends on. Without it, **cold start and a permanent dead
+end render identically, in the dead end's favour**, which is verbatim the defect this ADR was
+written to fix. The ADR spent four paragraphs arguing a first-launch reader should see silence and
+then shipped them the notice.
+
+**Why amendment 3 missed it.** It was reasoned from the shape of the predicate — is the quantifier
+sound? — and the unsound case it was checked against (one perpetually transient Work) was the
+interesting one, not the trivial one. **The empty library was never substituted in.** Checking a
+definition against its hard case and not its degenerate case is how a guard clause goes missing.
+
+*Rejected: special-casing `signals.isEmpty`.* It fixes the observed screen and leaves the same
+defect at one and two read titles, where the ceiling test is equally trivial and equally wrong. The
+precondition is the general form and the tests cover both points.
+
+**Consequence for amendment 7's basis line:** none. The line still could not be verified on the
+simulator, for the reason the diagnosis above actually establishes: all three read titles are
+WeebCentral placeholders that nothing can tag, so the rail never opens and there is nothing for the
+line to annotate. Verifying it needs a library with at least three *taggable* read titles — which is
+the standing obstacle ADR-0016's Hazard 3 called unsatisfiable, not a property of this amendment.
 
 ## Context
 
@@ -226,7 +356,9 @@ The definition is therefore:
 noTaggableSignal  ⟺  taggedMangaCount + (untagged, not blocked).count < minTaggedManga
 ```
 
-Read as: *even if every Work still in play got tagged, the gate cannot open.* It subsumes the original
+**Superseded by amendment 8 above — this is the half-definition that shipped the notice to a reader
+with an empty history.** Read as: *even if every Work still in play got tagged, the gate cannot
+open.* It subsumes the original
 "enough read Works if tagged" clause, and it is monotone in the right direction — a Work getting
 tagged, or a TTL expiring, can only move the state back toward silence, never falsely toward the
 notice.
@@ -297,6 +429,9 @@ without opening the call site.
   clears the gate and renders a rail built from an eighth of the reader's actual taste. This ADR does
   not address that: the rail is present, so the failure is no longer silent, merely thin. Recorded
   because "the gate opened" is not the same claim as "the recommendations are good".
+  **Partly addressed by amendment 7 (2026-08-10)**: the thinness is now reported as "N of M titles
+  you've read". The hazard is not closed — the rail is still built from an eighth of the taste, and
+  the reader is merely told so.
 - **The notice names MangaDex.** If the source lineup ever changes — a source removed, or MangaDex
   demoted from the default browse source — this copy becomes wrong in a place no test will catch.
 
