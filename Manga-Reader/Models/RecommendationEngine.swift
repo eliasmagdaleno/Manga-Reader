@@ -55,7 +55,16 @@ final class RecommendationEngine: ObservableObject {
         case needMoreReading(tagged: Int, needed: Int)
         /// Enough reading, and tagging everything still in play cannot open the gate.
         case noTaggableSignal
-        case ready
+        /// The rail is rendering, built from `tagged` of the `of` titles the reader has
+        /// read. The payload rides on the state rather than a second published property
+        /// for the same reason the refusal reason does: the definition of "tagged" and
+        /// the population it is drawn from must exist in exactly one place, beside the
+        /// gate that applies them (ADR-0015, amended 2026-08-10).
+        ///
+        /// `of` counts **Works with history entries** — read titles. Saved-but-unread
+        /// library items are excluded because they can never reach `tagged`, and two
+        /// Listings of one series count once (ADR-0001).
+        case ready(tagged: Int, of: Int)
     }
 
     @Published private(set) var recommendations: [ScoredManga] = []
@@ -153,8 +162,8 @@ final class RecommendationEngine: ObservableObject {
             railState = state
             recommendations = []
             return
-        case .ready(let p, let ex):
-            railState = .ready
+        case .ready(let p, let ex, let state):
+            railState = state
             (profile, excluding) = (p, ex)
         }
         let pool = (try? await makeProvider(mangaDexSource)
@@ -169,7 +178,7 @@ final class RecommendationEngine: ObservableObject {
     func rankedRecommendations(limit: Int = 100) async -> [Manga] {
         // The grid ignores the refusal reason: it is only reachable from a rail that is
         // already rendering, so a refusal here means the profile changed underneath it.
-        guard case .ready(let profile, let excluding) = profileAndExclusions() else { return [] }
+        guard case .ready(let profile, let excluding, _) = profileAndExclusions() else { return [] }
         let pool = (try? await makeProvider(mangaDexSource)
             .candidates(for: profile, excluding: excluding, limit: limit)) ?? []
         return pool.map(\.manga)
@@ -177,7 +186,11 @@ final class RecommendationEngine: ObservableObject {
 
     /// Either the profile and exclusion set, or the reason the gate is shut.
     private enum ProfileOutcome {
-        case ready(TasteProfile, Set<String>)
+        /// Carries the `.ready` state fully formed, not just the profile: its basis count
+        /// is drawn from the same `signals` the gate is applied to, and recomputing it in
+        /// `rebuild()` would need that array published or rebuilt — the drift this
+        /// function's doc comment already rejects for the refusal reason.
+        case ready(TasteProfile, Set<String>, RailState)
         case refused(RailState)
     }
 
@@ -213,7 +226,21 @@ final class RecommendationEngine: ObservableObject {
         // because "See all" builds the same profile and is the same signal.
         pushPriority(profile.workWeights)
         let readIds = Set(history.entries.map(\.mangaId))
-        return .ready(profile, readIds.union(savedIds).union(profileStore.notInterested))
+        // The denominator: Works the reader has actually read. Same `entries` filter
+        // `TasteProfile.build` counts `taggedMangaCount` under, or the two halves of
+        // "3 of 5" would be drawn from different populations.
+        //
+        // **The filter is vacuous today and no test can catch its removal** — verified by
+        // mutation, not assumed: `resolveSignals()` builds every signal from a history
+        // entry, so `entries` is non-empty by construction. It is kept as the written
+        // form of the alignment with `TasteProfile.build`, which would otherwise be an
+        // undocumented coincidence the moment either side gains a second signal source.
+        // Recorded rather than deleted or silently trusted, because ADR-0015's recurring
+        // failure is exactly a claim that reads as checked and is not.
+        let readTitles = signals.filter { !$0.entries.isEmpty }.count
+        return .ready(profile,
+                      readIds.union(savedIds).union(profileStore.notInterested),
+                      .ready(tagged: profile.taggedMangaCount, of: readTitles))
     }
 
     /// A **ceiling test**, not a universal quantifier (ADR-0015 amendment 3):

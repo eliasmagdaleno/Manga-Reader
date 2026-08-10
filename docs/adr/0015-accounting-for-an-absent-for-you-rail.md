@@ -1,6 +1,6 @@
 # ADR-0015 — Accounting for an absent "For You" rail
 
-- **Status:** Accepted (2026-08-05), amended 2026-08-07
+- **Status:** Accepted (2026-08-05), amended 2026-08-07, 2026-08-08, 2026-08-10
 - **Amends:** ADR-0010 — its "the engine pushes, the queue never pulls" seam, which this narrows
   from *no coupling* to *no control*: a read-only predicate is now permitted, through a closure.
   **Also amends itself** — see "Amendments (2026-08-07)" below
@@ -36,6 +36,67 @@ None of the four changed the ADR's *shape*: the gate stays, the state stays mode
 only the dead end gets UI, and the queue is still asked through a closure. What changed is that three
 of those would not have compiled or would not have fired, and the fourth would have told the reader
 to do something that does not work.
+
+## Amendment 7 (2026-08-10): `ready` carries the rail's basis
+
+Hazard 3 below — "a mixed library can hide the problem" — was recorded as out of scope and is now
+in scope. `ready` gains a payload:
+
+```swift
+case ready(tagged: Int, of: Int)
+```
+
+and `HomeView` renders one line under the rail: **"Based on 8 of 11 titles you've read."**
+
+**Why now.** ADR-0017 (excluding novels from MAL resolution candidates) was accepted on a Python
+harness run over twelve hand-picked titles skewed toward Korean webtoons — the population where its
+effect is largest, which is the standing caveat on that acceptance. This payload is the same ratio
+measured against the reader's real library, in the app, continuously. It is the cheapest available
+answer to "did 0017 actually work here", and it needs no harness to survive.
+
+### `of` counts read titles, not the library
+
+The denominator is Works with history entries. **Rejected: read ∪ saved**, i.e. everything on the
+Library screen. A saved-but-unread title contributes no entries, so it can never reach `tagged` —
+amendment 4 above establishes this and had to correct the copy for the same reason. Counting it in
+`of` would make the ratio permanently less than 1 for any reader with a backlog, reporting *having a
+to-read list* as a recommender failure. Numerator and denominator must be drawn from one population
+or the sentence is not about anything.
+
+### `of` counts Works, not Listings
+
+Per ADR-0001, one series read on two sources is one Work and two Listings, and it contributes one
+taste signal. The count follows the signal. **This reads as an off-by-one to anyone who remembers
+reading it on both sources**, and is recorded here so a future reader recognises it as a decision
+rather than filing it. The alternative — counting Listings — would inflate the denominator with
+duplicates the recommender never treated as separate, understating the basis it actually used.
+
+### Hidden at parity
+
+`tagged == of` renders nothing. **Rejected: always showing it**, including the healthy "11 of 11".
+A line that renders unconditionally becomes wallpaper within a day and stops being read, which
+destroys the diagnostic value it exists for. The accepted consequence is stated plainly because it
+cuts against the motivation above: **if ADR-0017 worked as measured, this line may never appear on
+the author's library.** Its absence is then the result, not a failure to observe one.
+
+### The payload rides on the state
+
+`profileAndExclusions()` returns `.ready(TasteProfile, Set<String>, RailState)` — the state fully
+formed, not just the numbers. Same argument the "returns the reason instead of `nil`" decision makes
+below: the basis is computed from the same `signals` array the gate is applied to, and recomputing it
+in `rebuild()` would need that array published or rebuilt, putting the definition of the population
+in a second place that drifts. **Rejected: a second `@Published` property** beside `railState`, which
+is that second place with extra steps.
+
+### One claim in the implementation is untestable, by construction
+
+The denominator is written `signals.filter { !$0.entries.isEmpty }.count`, mirroring the filter
+`TasteProfile.build` counts under. **Mutation-checked: replacing it with `signals.count` fails no
+test, and cannot** — `resolveSignals()` derives every signal from a history entry, so the predicate
+is always true. It is kept as the written form of an alignment that would otherwise be an
+undocumented coincidence, and recorded here as vacuous rather than presented as verified. The
+load-bearing half of the decision *is* covered: adding `savedIds.count` to the denominator turns the
+suite red.
 
 ## Context
 
@@ -297,6 +358,9 @@ without opening the call site.
   clears the gate and renders a rail built from an eighth of the reader's actual taste. This ADR does
   not address that: the rail is present, so the failure is no longer silent, merely thin. Recorded
   because "the gate opened" is not the same claim as "the recommendations are good".
+  **Partly addressed by amendment 7 (2026-08-10)**: the thinness is now reported as "N of M titles
+  you've read". The hazard is not closed — the rail is still built from an eighth of the taste, and
+  the reader is merely told so.
 - **The notice names MangaDex.** If the source lineup ever changes — a source removed, or MangaDex
   demoted from the default browse source — this copy becomes wrong in a place no test will catch.
 

@@ -1662,12 +1662,13 @@ final class Manga_ReaderTests: XCTestCase {
     @MainActor private func makeEngine(history: HistoryStore, tasteStore: TasteProfileStore,
                                        provider: CandidateProvider,
                                        workStore: WorkStore? = nil,
+                                       library: LibraryStore? = nil,
                                        mangaDexSource: MangaSource = CannedTagSource(lists: [:], failTags: []),
                                        now: Date = Date(), seed: UInt64 = 1,
                                        pushPriority: @escaping RecommendationEngine.PriorityPush = { _ in },
                                        tagBlocked: @escaping RecommendationEngine.TagBlocked = { _ in false })
         -> RecommendationEngine {
-        let lib = LibraryStore(defaults: UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!)
+        let lib = library ?? LibraryStore(defaults: UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!)
         let works = workStore ?? WorkStore(directory: URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("EngineTests-\(UUID().uuidString)"))
         return RecommendationEngine(history: history, library: lib, profileStore: tasteStore,
@@ -1758,7 +1759,75 @@ final class Manga_ReaderTests: XCTestCase {
                                 provider: FixedPoolProvider(pool: [scored("rec1")]),
                                 workStore: works)
         await engine.refresh()
-        XCTAssertEqual(engine.railState, .ready)
+        XCTAssertEqual(engine.railState, .ready(tagged: 3, of: 3))
+    }
+
+    // MARK: - The rail's basis count (ADR-0015, amended 2026-08-10)
+
+    /// The whole point of the payload: the gate opened on 3 tagged Works, but two more
+    /// read titles contributed nothing, so the rail is built from three fifths of the
+    /// reader's actual history. Hazard 3 of ADR-0015, made visible.
+    @MainActor func testReadyReportsTaggedOutOfReadTitles() async throws {
+        let history = makeHistoryStore()
+        let works = makeWorkStore()
+        for i in 1...3 {
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
+        }
+        for i in 1...2 { untaggedRead(history, "u\(i)") }
+
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works)
+        await engine.refresh()
+        XCTAssertEqual(engine.railState, .ready(tagged: 3, of: 5))
+    }
+
+    /// The denominator is *read* titles, not the library. A saved-but-unread title can
+    /// never enter the numerator (`taggedCount` increments only under `!entries.isEmpty`),
+    /// so counting it in `of:` would report the reader's backlog as a recommender failure.
+    @MainActor func testSavedButUnreadTitlesAreNotPartOfTheBasis() async throws {
+        let history = makeHistoryStore()
+        let works = makeWorkStore()
+        for i in 1...3 {
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
+        }
+        let lib = LibraryStore(defaults: UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!)
+        lib.toggle(sampleManga("saved-never-read"))
+
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works, library: lib)
+        await engine.refresh()
+        XCTAssertEqual(engine.railState, .ready(tagged: 3, of: 3),
+                       "a saved title moves neither number")
+    }
+
+    /// ADR-0001: the count is over Works, not Listings. The same series read on two
+    /// sources is one title the rail is based on, because it contributes one taste
+    /// signal — the honest description of what the recommender actually used.
+    @MainActor func testBasisCountsWorksNotListings() async throws {
+        let history = makeHistoryStore()
+        let works = makeWorkStore()
+        for i in 1...3 {
+            tagRead(works, history, "m\(i)", [Tag(id: "a", name: "Action", group: "genre")])
+        }
+        // Two Listings publishing the same MAL id — as a detail-screen visit to each
+        // would have minted them — collapse to one Work via the external-id dedupe path.
+        let onMangaDex = Manga(id: "dex-solo", sourceId: "mangadex", title: "Solo Leveling",
+                               description: "", status: "ongoing", year: nil, coverURL: nil, malId: 121496)
+        let onWeebCentral = Manga(id: "wc-solo", sourceId: "weebcentral", title: "Solo Leveling",
+                                  description: "", status: "ongoing", year: nil, coverURL: nil, malId: 121496)
+        XCTAssertEqual(works.mint(from: onMangaDex), works.mint(from: onWeebCentral),
+                       "precondition: the two listings are one Work")
+        history.record(manga: onMangaDex, chapter: ch("1"), position: ReadingPosition(page: 9), pageCount: 10)
+        history.record(manga: onWeebCentral, chapter: ch("2"), position: ReadingPosition(page: 9), pageCount: 10)
+
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                workStore: works)
+        await engine.refresh()
+        XCTAssertEqual(engine.railState, .ready(tagged: 3, of: 4),
+                       "two listings of one series count once")
     }
 
     /// Untagged Works the drain has not answered for yet are still in play, so the

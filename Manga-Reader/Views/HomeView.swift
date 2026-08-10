@@ -70,6 +70,11 @@ struct HomeView: View {
                                 onNotInterested: { engine.markNotInterested($0) },
                                 onMoreLikeThis: { engine.markMoreLikeThis($0) }
                             )
+                            // Only when the rail is thinner than the history behind it.
+                            // At parity it renders nothing — see ForYouBasisNotice.
+                            if case .ready(let tagged, let of) = engine.railState, tagged < of {
+                                ForYouBasisNotice(tagged: tagged, of: of)
+                            }
                         }
                     } else if engine.railState == .noTaggableSignal {
                         // The only closed gate that gets words. `building` and
