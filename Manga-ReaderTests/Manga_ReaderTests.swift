@@ -585,6 +585,95 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(b.toManga(id: "1", relationships: nil).malId)
     }
 
+    // MARK: - Alt titles (ADR-0016 Decision 1)
+
+    /// The shape is taken from a live `GET /manga?title=Tower of God` response: a list of
+    /// **single-key** locale maps, with the same locale free to repeat. Decoding it as one
+    /// merged dictionary would silently keep one value per locale and throw the rest away —
+    /// which is most of the matcher fuel this field exists to supply.
+    func testMangaAttributesFlattensAltTitleLocaleMaps() throws {
+        let json = """
+        {
+          "title": {"en": "Sinui Tap"},
+          "altTitles": [
+            {"ko": "신의 탑"},
+            {"en": "Tower of God"},
+            {"en": "Sin-ui Tab"},
+            {"tr": "Tanrının Kulesi"}
+          ],
+          "links": {"mal": "122663"}
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let manga = try decoder.decode(MangaAttributes.self, from: json)
+            .toManga(id: "abc", relationships: nil)
+
+        XCTAssertEqual(manga.altTitles?.count, 4, "both `en` alternates must survive")
+        XCTAssertEqual(manga.altTitles, ["신의 탑", "Tower of God", "Sin-ui Tab", "Tanrının Kulesi"],
+                       "order is the API's; locale keys are unsorted, so values are the only stable thing")
+        XCTAssertEqual(manga.malId, 122663)
+    }
+
+    func testMangaAttributesAltTitlesDropBlanksDuplicatesAndTheDisplayTitle() throws {
+        let json = """
+        {
+          "title": {"en": "Berserk"},
+          "altTitles": [
+            {"en": "Berserk"},
+            {"ja": "  ベルセルク  "},
+            {"ja": "ベルセルク"},
+            {"en": "   "}
+          ]
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let manga = try decoder.decode(MangaAttributes.self, from: json)
+            .toManga(id: "abc", relationships: nil)
+
+        // The display title is excluded (it already lives in `title`), the blank is dropped,
+        // and the trimmed duplicate collapses into the first spelling.
+        XCTAssertEqual(manga.altTitles, ["ベルセルク"])
+    }
+
+    func testMangaAttributesAltTitlesNilWhenAbsentOrEmpty() throws {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        let absent = #"{ "title": {"en": "X"} }"#.data(using: .utf8)!
+        XCTAssertNil(try decoder.decode(MangaAttributes.self, from: absent)
+            .toManga(id: "1", relationships: nil).altTitles)
+
+        // Present but contributing nothing collapses to nil rather than `[]` — nil and empty
+        // mean the same thing to every consumer, so only one of them should ever be stored.
+        let empty = #"{ "title": {"en": "X"}, "altTitles": [{"en": "X"}, {"ja": ""}] }"#.data(using: .utf8)!
+        XCTAssertNil(try decoder.decode(MangaAttributes.self, from: empty)
+            .toManga(id: "1", relationships: nil).altTitles)
+    }
+
+    /// The compatibility claim ADR-0016 Decision 1 rests on. ADR-0011's ranked-pool cache
+    /// persists `Manga` whole and treats an undecodable entry as a miss, so a required field
+    /// would silently invalidate every cache file written before today and re-fetch the pool.
+    /// This is that exact payload: a `Manga` encoded before `altTitles` existed.
+    func testMangaDecodesFromCacheEntryWrittenBeforeAltTitlesExisted() throws {
+        let legacy = """
+        {
+          "id": "abc",
+          "sourceId": "mangadex",
+          "title": "Berserk",
+          "description": "",
+          "status": "ongoing",
+          "malId": 2
+        }
+        """.data(using: .utf8)!
+
+        let manga = try JSONDecoder().decode(Manga.self, from: legacy)
+        XCTAssertEqual(manga.title, "Berserk")
+        XCTAssertEqual(manga.malId, 2)
+        XCTAssertNil(manga.altTitles)
+    }
+
     // MARK: - Image cache
 
     /// Thread-safe call counter for the injected fetcher.
