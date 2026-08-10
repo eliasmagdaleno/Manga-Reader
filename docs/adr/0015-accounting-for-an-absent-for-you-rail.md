@@ -79,6 +79,15 @@ destroys the diagnostic value it exists for. The accepted consequence is stated 
 cuts against the motivation above: **if ADR-0017 worked as measured, this line may never appear on
 the author's library.** Its absence is then the result, not a failure to observe one.
 
+**Observed 2026-08-10, on a simulator seeded with seven real MangaDex titles read alongside the
+three untaggable WeebCentral placeholders already there: "Based on 6 of 10 titles you've read."**
+The four excluded are the three placeholders plus `Wind Breaker`, whose refusal ADR-0017 predicts
+and defends. The line therefore does what it was built for on its first real outing — it reports a
+rail built from 60% of the history, and every title it excludes is one with a known, documented
+reason. Note the shape of the number: **the untaggable remainder here is a property of the sources
+read, not of MAL resolution**, which is the distinction the line makes visible and the count alone
+does not explain.
+
 ### The payload rides on the state
 
 `profileAndExclusions()` returns `.ready(TasteProfile, Set<String>, RailState)` — the state fully

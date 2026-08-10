@@ -80,6 +80,45 @@ If MAL adds a media type or omits the field, the failure mode is a candidate tha
 dropped surviving — a refusal, which is today's behaviour — rather than a correct candidate silently
 vanishing, which would be a new and invisible failure.
 
+## Verified in the app (2026-08-10)
+
+Accepted on a Python harness; **since confirmed running in the app**, on a simulator seeded with
+seven real MangaDex titles read alongside three untaggable WeebCentral placeholders. The upgrade
+queue resolved them live against MAL, and every resolved id was checked against MangaDex's own
+`links.mal` for that title:
+
+| Read title | App resolved | MangaDex ground truth | |
+|---|---|---|---|
+| Berserk | 2 | 2 | match |
+| Vinland Saga | 642 | 642 | match |
+| Vagabond | 656 | 656 | match |
+| Jeonjijeok Dokja Sijeom (ORV) | 132214 | 132214 | match |
+| Return of the Blossoming Blade | 146878 | 146878 | match |
+| Na Honjaman Level Up: Ragnarok | 172429 | 172429 | match |
+| Wind Breaker | — | 133081 | refused |
+
+**6 correct, 0 wrong, 1 refused.**
+
+The refusal is Hazard 1, behaving exactly as this ADR says it should. Querying MAL directly for the
+same three titles shows the mechanism rather than just the outcome:
+
+```
+Jeonjijeok Dokja Sijeom  →  143441 novel   "Omniscient Reader's Viewpoint"   ← ranked FIRST
+                            132214 manhwa  "Omniscient Reader's Viewpoint"
+Return of the Blossoming Blade → 146878 manhwa + 161366 novel "Return of the Mount Hua Sect"
+Wind Breaker             →  133081 manga  "Wind Breaker"
+                            103237 manhwa "Wind Breaker"              ← two comics, no novel
+```
+
+ORV's novel twin is still there, still identically titled, and still returned *above* the manhwa —
+so the ambiguity guard would still tie without this filter, and the app resolved it correctly with
+one. `Wind Breaker`'s collision is two comics, which the filter cannot and must not touch, and it
+refused. **This is the predicted behaviour on both sides of the line.**
+
+Hazard 2 stands undiminished: this is seven titles, chosen by the same author, three of them lifted
+from the original twelve. It confirms the mechanism operates in the app on live data; it does not
+widen the sample.
+
 ## Hazards
 
 1. **Two real comics can still share a title.** `Wind Breaker` names both a Japanese manga and a
