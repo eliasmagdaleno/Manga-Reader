@@ -2488,6 +2488,79 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertNil(id)
     }
 
+    // MARK: - Excluding novels from MAL candidates (ADR-0017)
+
+    private func malNode(_ id: Int, _ title: String, mediaType: String?) throws -> MyAnimeListManga {
+        let json = """
+        { "id": \(id), "title": "\(title)",
+          \(mediaType.map { "\"media_type\": \"\($0)\"," } ?? "")
+          "alternative_titles": { "en": "\(title)", "ja": null, "synonyms": [] } }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(MyAnimeListManga.self, from: json)
+    }
+
+    /// The real collision, from the live API on 2026-08-10: MAL carries the *Solo Leveling*
+    /// manhwa and the *Solo Leveling* novel under the same title, so the matcher sees two
+    /// candidates at 1.000 and the ambiguity guard refuses. Dropping the novel leaves one.
+    func testExcludingNovelsRemovesTheProseTwinOfAnAdaptation() throws {
+        let candidates = [try malNode(121_496, "Solo Leveling", mediaType: "manhwa"),
+                          try malNode(119_184, "Solo Leveling", mediaType: "novel")]
+
+        let kept = MyAnimeListAPI.excludingNovels(candidates)
+
+        XCTAssertEqual(kept.map(\.id), [121_496])
+    }
+
+    func testExcludingNovelsDropsLightNovelsAndKeepsEveryComicForm() throws {
+        let candidates = [try malNode(1, "A", mediaType: "manga"),
+                          try malNode(2, "B", mediaType: "manhwa"),
+                          try malNode(3, "C", mediaType: "manhua"),
+                          try malNode(4, "D", mediaType: "one_shot"),
+                          try malNode(5, "E", mediaType: "doujinshi"),
+                          try malNode(6, "F", mediaType: "novel"),
+                          try malNode(7, "G", mediaType: "light_novel")]
+
+        XCTAssertEqual(MyAnimeListAPI.excludingNovels(candidates).map(\.id), [1, 2, 3, 4, 5])
+    }
+
+    /// ADR-0017 Decision 3. An absent or unfamiliar `media_type` is **kept**: the filter
+    /// removes a known-bad candidate, it does not demand proof that a candidate is good.
+    /// Dropping the unknown would make a correct candidate vanish invisibly, which is a
+    /// worse failure than the refusal it would be trying to prevent.
+    func testExcludingNovelsKeepsCandidatesWithAnAbsentOrUnknownMediaType() throws {
+        let candidates = [try malNode(1, "A", mediaType: nil),
+                          try malNode(2, "B", mediaType: "web_manga_something_new"),
+                          try malNode(3, "C", mediaType: "novel")]
+
+        XCTAssertEqual(MyAnimeListAPI.excludingNovels(candidates).map(\.id), [1, 2])
+    }
+
+    /// Why the filter exists, stated through the resolver rather than the filter: with the
+    /// novel present the Work is refused, and it is refused by the **ambiguity guard**, not
+    /// by the threshold. This is the behaviour ADR-0016 misdiagnosed as a spelling-reach
+    /// problem and spent an implementation on.
+    ///
+    /// Note this test injects `search`, so it runs *around* `excludingNovels` — which is the
+    /// cost ADR-0017 Decision 2 accepts openly. That is what it is demonstrating.
+    @MainActor func testAProseTwinIsWhatRefusesTheWorkNotTheThreshold() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let withNovel = MALEntityResolver(store: store, search: { _ in
+            [MALCandidate(malId: 121_496, titles: ["Solo Leveling"]),
+             MALCandidate(malId: 119_184, titles: ["Solo Leveling"])]   // the novel
+        })
+        let filtered = MALEntityResolver(store: store, search: { _ in
+            [MALCandidate(malId: 121_496, titles: ["Solo Leveling"])]
+        })
+
+        let refused = try await withNovel.malId(for: work(["Solo Leveling"]))
+        let resolved = try await filtered.malId(for: work(["Solo Leveling"]))
+
+        XCTAssertNil(refused, "two entries at 1.000 — the guard refuses, correctly")
+        XCTAssertEqual(resolved, 121_496)
+    }
+
     // MARK: - MoreLikeThis.pickMatch
 
     /// Minimal `Manga` for pure MoreLikeThis tests. `Manga`'s memberwise init is internal,
@@ -2540,7 +2613,7 @@ final class Manga_ReaderTests: XCTestCase {
     private func mlRec(malId: Int, weight: Int) -> MyAnimeListMangaDetail.Recommendation {
         MyAnimeListMangaDetail.Recommendation(
             node: MyAnimeListManga(id: malId, title: "T\(malId)",
-                                   mainPicture: nil, alternativeTitles: nil),
+                                   mainPicture: nil, alternativeTitles: nil, mediaType: nil),
             numRecommendations: weight)
     }
 

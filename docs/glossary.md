@@ -55,9 +55,13 @@ searched **once per known title** (capped, display title first) and the results 
 ranked list, one ambiguity guard — never N matches and a maximum, which would have no runner-up to
 guard against ([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md),
 [ADR-0009](adr/0009-upgrade-queue-construction.md)). Always goes through MyAnimeList; AniList is a
-lookup-by-id provider and is never asked to search. A confident id is written to the Work
-**immediately**, before the metadata fetch — otherwise a transient provider failure rewinds the
-Work to an unresolved one and re-searches forever.
+lookup-by-id provider and is never asked to search. **Novels are dropped from the candidate list**
+before matching: MAL files novels under `/manga` and a comic adaptation carries its source novel's
+title, so the two tie and the ambiguity guard refuses a Work it has no real doubt about — the single
+largest measured cause of refusals
+([ADR-0017](adr/0017-excluding-novels-from-mal-resolution-candidates.md)). A confident id is written
+to the Work **immediately**, before the metadata fetch — otherwise a transient provider failure
+rewinds the Work to an unresolved one and re-searches forever.
 
 **Reverse resolution** — the other direction: external id → a Listing you can actually open.
 Currently MangaDex-only.

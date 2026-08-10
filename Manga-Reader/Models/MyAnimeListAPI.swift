@@ -35,6 +35,17 @@ struct MyAnimeListManga: Decodable {
     let title: String
     let mainPicture: MainPicture?
     let alternativeTitles: AlternativeTitles?
+    /// `manga`, `manhwa`, `manhua`, `novel`, `light_novel`, `one_shot`, `doujinshi`.
+    /// Optional so a response without the field still decodes — and so an unrecognised
+    /// value is never treated as a novel (ADR-0017: absent means "keep").
+    let mediaType: String?
+
+    /// A prose work, not a comic. MAL files novels under `/manga`, and its adaptations
+    /// carry the **same title** as their source novel — which is what makes this worth
+    /// knowing (ADR-0017).
+    var isNovel: Bool {
+        mediaType == "novel" || mediaType == "light_novel"
+    }
 
     struct MainPicture: Decodable {
         let medium: String?
@@ -124,16 +135,37 @@ struct MyAnimeListAPI {                              // Namespace-style struct f
         String(title.prefix(64))
     }
 
+    /// Drops prose works from a candidate list. **This is the whole of ADR-0017.**
+    ///
+    /// MAL indexes a light novel and its comic adaptation as two entries under the *same
+    /// title*, so the precision-biased matcher sees two candidates at identical similarity
+    /// and the ambiguity guard correctly refuses — a Work that is silently unresolved
+    /// forever, over a collision that is not a real doubt for a manga reader. Measured
+    /// 2026-08-10 over twelve scraping-style titles: **6 of 12 refused, all six on the
+    /// ambiguity guard, and four of them a novel/comic title collision.** Dropping novels
+    /// took it to 2 of 12.
+    ///
+    /// Applied here rather than in the resolver because this is the only caller and the
+    /// candidates are only ever used for resolution — a novel's `malId` would fetch a
+    /// novel's tags, which is wrong for every consumer this app has. An unknown or absent
+    /// `media_type` is **kept**: this filter exists to remove a known-bad candidate, not to
+    /// require proof that a candidate is good.
+    static func excludingNovels(_ candidates: [MyAnimeListManga]) -> [MyAnimeListManga] {
+        candidates.filter { !$0.isNovel }
+    }
+
     static func searchManga(title: String, limit: Int = 10) async throws -> [MyAnimeListManga] {
         let response: MyAnimeListSearchResponse = try await request(
             path: "/manga",
             queryItems: [
                 URLQueryItem(name: "q", value: searchQuery(for: title)),
                 URLQueryItem(name: "limit", value: String(limit)),
-                URLQueryItem(name: "fields", value: "alternative_titles,main_picture"),
+                // `media_type` is requested solely so `excludingNovels` can act on it; MAL
+                // has no server-side filter for it on this endpoint.
+                URLQueryItem(name: "fields", value: "alternative_titles,main_picture,media_type"),
             ]
         )
-        return response.data.map(\.node)
+        return excludingNovels(response.data.map(\.node))
     }
 
     /// Fetch a manga's detail by MAL id, including the two fields a future
