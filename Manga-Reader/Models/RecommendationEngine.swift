@@ -255,7 +255,26 @@ final class RecommendationEngine: ObservableObject {
     /// Monotone toward silence: a Work getting tagged or a TTL expiring can only move the
     /// state back to `needMoreReading`, never falsely to the notice. A Work missing from the
     /// store counts as in play for the same reason — an unanswerable question is not a no.
+    ///
+    /// **Guarded by a reading precondition (ADR-0015 amendment 8).** The ceiling test alone
+    /// says "even tagging everything cannot open the gate", which is trivially true of a
+    /// reader who has read nothing — and on 2026-08-10 the simulator rendered the dead-end
+    /// notice on a device with no `history.entries` at all. Amendment 3 claimed the ceiling
+    /// test *subsumed* the original "enough read Works to clear the threshold if they were
+    /// tagged" clause. It does not subsume it; it deletes it. Both halves are required:
+    ///
+    ///     noTaggableSignal ⟺ readWorks ≥ minTaggedManga
+    ///                       ∧ taggedMangaCount + (untagged, not blocked).count < minTaggedManga
+    ///
+    /// The first half is what makes the state's own name true — *enough reading*, nothing
+    /// identifiable. Without it, cold start and a permanent dead end render identically,
+    /// which is the exact defect this ADR was written to fix.
     private func refusalReason(signals: [TasteProfile.WorkSignal], profile: TasteProfile) -> RailState {
+        let readWorks = signals.filter { !$0.entries.isEmpty }.count
+        guard readWorks >= minTaggedManga else {
+            return .needMoreReading(tagged: profile.taggedMangaCount, needed: minTaggedManga)
+        }
+
         let stillInPlay = signals.filter { signal in
             // Same `entries` filter TasteProfile.build counts under, or the two disagree.
             guard !signal.entries.isEmpty, signal.tags.isEmpty else { return false }

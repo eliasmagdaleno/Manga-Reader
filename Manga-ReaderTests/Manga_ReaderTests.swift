@@ -1762,6 +1762,33 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(engine.railState, .ready(tagged: 3, of: 3))
     }
 
+    /// Found on the simulator 2026-08-10, on a device with no `history.entries` at all:
+    /// the app told a reader who had read nothing that the manga in their history
+    /// couldn't be matched to a catalog. ADR-0015 exists *because* a permanent dead end
+    /// was indistinguishable from cold start; amendment 3's ceiling test made them
+    /// identical again, in the dead end's favour.
+    @MainActor func testEmptyHistoryIsColdStartNotADeadEnd() async throws {
+        let engine = makeEngine(history: makeHistoryStore(), tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                tagBlocked: { _ in true })
+        await engine.refresh()
+        XCTAssertEqual(engine.railState, .needMoreReading(tagged: 0, needed: 3),
+                       "nothing read is not a dead end")
+    }
+
+    /// The same defect one step in: one untaggable title read is still too little
+    /// reading to conclude anything about the library. `noTaggableSignal` claims
+    /// "enough reading, nothing identifiable" — the first half has to hold.
+    @MainActor func testOneBlockedReadTitleIsStillColdStart() async throws {
+        let history = makeHistoryStore()
+        untaggedRead(history, "m1")
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: [scored("rec1")]),
+                                tagBlocked: { _ in true })
+        await engine.refresh()
+        XCTAssertEqual(engine.railState, .needMoreReading(tagged: 0, needed: 3))
+    }
+
     // MARK: - The rail's basis count (ADR-0015, amended 2026-08-10)
 
     /// The whole point of the payload: the gate opened on 3 tagged Works, but two more
@@ -1889,16 +1916,23 @@ final class Manga_ReaderTests: XCTestCase {
 
     /// Amendment 1: the closure is handed the whole `Work`, so the caller cannot pair
     /// the wrong `knownTitles` count with the wrong id.
+    ///
+    /// Reads three titles rather than one because amendment 8's reading precondition
+    /// short-circuits `refusalReason` before the closure is consulted at all. The claim
+    /// under test is the closure's *signature*, so it needs a library that actually
+    /// reaches it — not a weaker assertion.
     @MainActor func testTagBlockedReceivesTheWholeWork() async throws {
         let history = makeHistoryStore()
-        untaggedRead(history, "m1")
+        for i in 1...3 { untaggedRead(history, "m\(i)") }
         var seen: [Work] = []
         let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
                                 provider: FixedPoolProvider(pool: []),
                                 tagBlocked: { work in seen.append(work); return false })
         await engine.refresh()
-        XCTAssertEqual(seen.count, 1)
-        XCTAssertEqual(seen.first?.knownTitles, ["Title m1"])
+        XCTAssertEqual(seen.count, 3)
+        // A Set, because signals arrive newest-read-first and this test is about what the
+        // closure is handed, not the order it is handed things in.
+        XCTAssertEqual(Set(seen.flatMap(\.knownTitles)), ["Title m1", "Title m2", "Title m3"])
     }
 
     /// The per-title question the detail screen asks (ADR-0005's visibility requirement).

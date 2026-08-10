@@ -98,6 +98,66 @@ undocumented coincidence, and recorded here as vacuous rather than presented as 
 load-bearing half of the decision *is* covered: adding `savedIds.count` to the denominator turns the
 suite red.
 
+## Amendment 8 (2026-08-10): the ceiling test needs a reading precondition
+
+**The defect is real; the story originally written here about how it was found was not. Both are
+recorded, because the false one is the ninth instance of this ADR's recurring failure and it was
+committed to a file before being checked.**
+
+What was claimed: that the simulator had been observed rendering the dead-end notice on a device
+with no reading history at all. What is true: the simulator has **three** read titles, all
+WeebCentral placeholders (`Zurnak Vhelli`, `Bramgot no Yeshu`, `Qelparre Drift`), all unmatchable —
+so `noTaggableSignal` was **the correct render**, and the screenshot showed the feature working.
+
+The bad inference: the app's `Library/Preferences/…plist` was dumped and had no `history.entries`
+key, and **an absent key was read as an absent fact**. It was absent because `cfprefs` had not
+flushed it to disk, and because the container inspected was the pre-reinstall one. The live value —
+obtained later by printing `history.entries.count` from `rebuild()` — is 3. This is the same error
+the 2026-08-07 amendments name: *a claim about current behaviour is not verified until the line
+asserting it has been opened.* A `plutil` dump is not that line.
+
+The defect itself was found by reasoning about the predicate and is **proved by test, not by
+observation**: `testEmptyHistoryIsColdStartNotADeadEnd` fails on the pre-amendment engine with
+exactly `noTaggableSignal` where `needMoreReading(tagged: 0, needed: 3)` belongs. It is a real
+first-launch defect that no reader has yet reported, and it is worth fixing on that basis alone —
+but it is not what was on the screen.
+
+Amendment 3 replaced
+
+> enough read Works to clear the threshold *if they were tagged*, **and** every untagged one is
+> blocked
+
+with the ceiling test alone, on the claim that it "subsumes the original *enough read Works if
+tagged* clause." **It does not subsume that clause; it deletes it.** With zero read Works,
+`taggedMangaCount + stillInPlay = 0 < 3` and the ceiling test fires — trivially, because tagging
+nothing cannot open any gate. The definition is therefore both halves:
+
+```
+noTaggableSignal  ⟺  readWorks ≥ minTaggedManga
+                  ∧  taggedMangaCount + (untagged, not blocked).count < minTaggedManga
+```
+
+This restores what the state's own name asserts — *enough reading*, nothing identifiable — and what
+the decision "only the dead end gets UI" depends on. Without it, **cold start and a permanent dead
+end render identically, in the dead end's favour**, which is verbatim the defect this ADR was
+written to fix. The ADR spent four paragraphs arguing a first-launch reader should see silence and
+then shipped them the notice.
+
+**Why amendment 3 missed it.** It was reasoned from the shape of the predicate — is the quantifier
+sound? — and the unsound case it was checked against (one perpetually transient Work) was the
+interesting one, not the trivial one. **The empty library was never substituted in.** Checking a
+definition against its hard case and not its degenerate case is how a guard clause goes missing.
+
+*Rejected: special-casing `signals.isEmpty`.* It fixes the observed screen and leaves the same
+defect at one and two read titles, where the ceiling test is equally trivial and equally wrong. The
+precondition is the general form and the tests cover both points.
+
+**Consequence for amendment 7's basis line:** none. The line still could not be verified on the
+simulator, for the reason the diagnosis above actually establishes: all three read titles are
+WeebCentral placeholders that nothing can tag, so the rail never opens and there is nothing for the
+line to annotate. Verifying it needs a library with at least three *taggable* read titles — which is
+the standing obstacle ADR-0016's Hazard 3 called unsatisfiable, not a property of this amendment.
+
 ## Context
 
 **Facts verified live 2026-08-05 against `main` at `16c10cf`. Do not re-derive.**
@@ -287,7 +347,9 @@ The definition is therefore:
 noTaggableSignal  ⟺  taggedMangaCount + (untagged, not blocked).count < minTaggedManga
 ```
 
-Read as: *even if every Work still in play got tagged, the gate cannot open.* It subsumes the original
+**Superseded by amendment 8 above — this is the half-definition that shipped the notice to a reader
+with an empty history.** Read as: *even if every Work still in play got tagged, the gate cannot
+open.* It subsumes the original
 "enough read Works if tagged" clause, and it is monotone in the right direction — a Work getting
 tagged, or a TTL expiring, can only move the state back toward silence, never falsely toward the
 notice.
