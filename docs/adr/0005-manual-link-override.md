@@ -37,6 +37,34 @@ untaggable Works beside twenty taggable ones clears the gate, builds a rail, and
 exactly as silent as it was before. That gap is small, needs no override store and no picker UI, and
 is what this ADR's argument actually earns today.
 
+**Shipped, same day:** `UnmatchedTitleNotice`, in `MangaDetailView`'s "More Like This" slot. The
+first implied requirement is now met on both scales; the override itself remains blocked on a report.
+Four things about it are decisions rather than details:
+
+- **The predicate is `RecommendationEngine.isUnmatchable`, wrapping the same `tagBlocked` closure the
+  rail state is built from.** One predicate, so the detail screen and the rail cannot disagree about
+  one Work. It lives on the engine because ADR-0010 keeps `UpgradeAttemptMemory` out of the
+  environment, and the engine already holds the closure and already *is* an `EnvironmentObject`.
+- **Not published, deliberately.** A settled refusal reopened on a fourteen-day TTL is not something
+  that changes while a screen is open. A title opened mid-drain gains the notice on the next visit.
+- **Statement only, no action.** Unlike the rail notice, which can honestly say "read something from
+  MangaDex", there is no useful action here — and the real remedy is this ADR's override, which does
+  not exist. Telling someone to go read a *different* title because they opened this one is bad advice.
+- **The copy says "couldn't look up", not "couldn't match".** `suppresses` is true for *two*
+  outcomes and only one is a matching failure: `.unmatched` is, `.absentFromProvider(malId:)` is not —
+  there the title matched MyAnimeList and AniList simply has no entry for that id. Naming it as a
+  match failure would be false in that case, and the distinction is not one the reader can act on.
+- **A title with no Work shows nothing.** Works mint only at commitment points (ADR-0007), so a
+  browsed title has no recorded attempt; inferring refusal from the source instead would be guessing,
+  against this area's standing precision bias.
+
+One thing the device check corrected: the placement's premise was "More Like This is empty for this
+title, from the same cause." That is **not** automatically true — `MoreLikeThisProvider` resolves via
+`MALEntityResolver.malId(for:)`, which is **Listing-keyed and independent** of the Work-level attempt
+memory. They agree in the ordinary case (a Work minted from one Listing carries that Listing's title,
+so both matchers see the same string), but they are two resolvers and can differ. The notice is
+therefore gated on the rail being empty *and* the Work being refused, never on the refusal alone.
+
 **Revisit when** a Work's absence from recommendations is reported as wrong, or when a third source
 lands and the Listing → Work case stops being hypothetical.
 

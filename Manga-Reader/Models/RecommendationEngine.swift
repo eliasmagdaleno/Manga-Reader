@@ -242,6 +242,23 @@ final class RecommendationEngine: ObservableObject {
         return .noTaggableSignal
     }
 
+    /// Whether a Work has been *refused* a catalog match, rather than merely not answered
+    /// yet — the per-title half of what `railState` says about the library as a whole.
+    ///
+    /// Lives here rather than reaching into `UpgradeAttemptMemory` from a view, because
+    /// ADR-0010 keeps that memory out of the environment: it publishes nothing, so a view
+    /// that could reach it could only misuse it. The engine already holds this predicate
+    /// and is already an `EnvironmentObject`, and "is this title shaping my
+    /// recommendations" is a recommender question — a second way to ask it is a second
+    /// thing that can drift.
+    ///
+    /// **Deliberately not published.** The value is a settled refusal reopened on a
+    /// fourteen-day TTL, not something that changes while a screen is open. A title opened
+    /// mid-drain shows nothing and gains the notice on the next visit; making a store
+    /// publish to close that gap would put a publisher on the drain's hot path to move one
+    /// label a few seconds earlier.
+    func isUnmatchable(_ work: Work) -> Bool { tagBlocked(work) }
+
     /// Groups reading history by Work — the seam where Listing-keyed edges meet Work
     /// identity (ADR-0007). **This mutates the store**, deliberately, in two ways:
     ///
