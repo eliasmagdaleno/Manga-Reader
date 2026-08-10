@@ -512,6 +512,47 @@ final class WorkStoreTests: XCTestCase {
         XCTAssertEqual(store.work(canonical.id)?.snapshot?.genres.map(\.name), ["Action"],
                        "the reading that produced these tags is not thrown away")
     }
+
+    // MARK: - noteTitles (ADR-0016 Decision 5)
+
+    /// The count comes back from the store rather than being re-read by the caller, because
+    /// the caller is holding a pre-harvest `Work` value and would fingerprint an `.unmatched`
+    /// outcome against a number that is already stale.
+    @MainActor func testNoteTitlesUnionsAndReturnsThePostAdditionCount() {
+        let store = makeStore()
+        let id = store.mint(from: listing("wc-1", source: "weebcentral", title: "Girlfriend, Girlfriend"))
+
+        let grown = store.noteTitles(["Kanojo mo Kanojo", "Girlfriend Girlfriend"], on: id)
+
+        XCTAssertEqual(grown, 3)
+        XCTAssertEqual(store.work(id)?.knownTitles.sorted(),
+                       ["Girlfriend Girlfriend", "Girlfriend, Girlfriend", "Kanojo mo Kanojo"])
+    }
+
+    /// Idempotent, which is what makes it safe for a queue that re-drains the same Work: a
+    /// second harvest of the same spellings must not keep nudging the count upward, or the
+    /// `.unmatched` fingerprint would change without anything having been learned.
+    @MainActor func testNoteTitlesIsIdempotentAndReturnsTheUnchangedCount() {
+        let store = makeStore()
+        let id = store.mint(from: listing("wc-1", source: "weebcentral", title: "Berserk"))
+
+        XCTAssertEqual(store.noteTitles(["Beruseruku"], on: id), 2)
+        XCTAssertEqual(store.noteTitles(["Beruseruku"], on: id), 2, "already known — a no-op")
+        XCTAssertEqual(store.noteTitles([], on: id), 2)
+        XCTAssertEqual(store.work(id)?.knownTitles.count, 2)
+    }
+
+    /// Follows the alias, like every other mutator here: a merged-away id must still land on
+    /// the survivor rather than silently dropping the harvest.
+    @MainActor func testNoteTitlesFollowsAMergeAlias() {
+        let store = makeStore()
+        let loser = store.mint(from: listing("wc-1", source: "weebcentral", title: "Sinui Tap"))
+        let winner = store.mint(from: listing("md-1", title: "Tower of God"))
+        store.merge(loser, into: winner)
+
+        XCTAssertEqual(store.noteTitles(["Kami no Tou"], on: loser), store.work(winner)?.knownTitles.count)
+        XCTAssertTrue(store.work(winner)?.knownTitles.contains("Kami no Tou") == true)
+    }
 }
 
 // MARK: - On-disk fixture

@@ -2640,9 +2640,9 @@ final class Manga_ReaderTests: XCTestCase {
         let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
         let resolver = MALEntityResolver(store: store, search: { title in
             title == "Solo Leveling" ? [MALCandidate(malId: 121, titles: ["Solo Leveling"])] : []
-        })
+        }, bridgeSearch: MALEntityResolver.noBridge)
 
-        let id = try await resolver.malId(for: work(["Only I Level Up", "Solo Leveling"]))
+        let id = try await resolver.resolve(work(["Only I Level Up", "Solo Leveling"])).malId
 
         XCTAssertEqual(id, 121)
         XCTAssertTrue(store.cache.isEmpty,
@@ -2655,10 +2655,11 @@ final class Manga_ReaderTests: XCTestCase {
     @MainActor func testWorkResolutionThrowsWhenEverySearchFailed() async {
         struct Boom: Error {}
         let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
-        let resolver = MALEntityResolver(store: store, search: { _ in throw Boom() })
+        let resolver = MALEntityResolver(store: store, search: { _ in throw Boom() },
+                                         bridgeSearch: MALEntityResolver.noBridge)
 
         do {
-            _ = try await resolver.malId(for: work(["Berserk"]))
+            _ = try await resolver.resolve(work(["Berserk"]))
             XCTFail("a transient failure must not be reported as a miss")
         } catch {}
     }
@@ -2672,9 +2673,9 @@ final class Manga_ReaderTests: XCTestCase {
         let resolver = MALEntityResolver(store: store, search: { title in
             if title == "Only I Level Up" { throw Boom() }
             return [MALCandidate(malId: 121, titles: ["Solo Leveling"])]
-        })
+        }, bridgeSearch: MALEntityResolver.noBridge)
 
-        let id = try await resolver.malId(for: work(["Only I Level Up", "Solo Leveling"]))
+        let id = try await resolver.resolve(work(["Only I Level Up", "Solo Leveling"])).malId
 
         XCTAssertEqual(id, 121)
     }
@@ -2685,9 +2686,9 @@ final class Manga_ReaderTests: XCTestCase {
         let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
         let resolver = MALEntityResolver(store: store, search: { _ in
             [MALCandidate(malId: 9, titles: ["Completely Different Story"])]
-        })
+        }, bridgeSearch: MALEntityResolver.noBridge)
 
-        let id = try await resolver.malId(for: work(["Berserk"]))
+        let id = try await resolver.resolve(work(["Berserk"])).malId
 
         XCTAssertNil(id)
     }
@@ -2701,11 +2702,11 @@ final class Manga_ReaderTests: XCTestCase {
         let resolver = MALEntityResolver(store: store, search: { _ in
             XCTFail("a cached Listing hit must answer without touching MAL")
             return []
-        })
+        }, bridgeSearch: MALEntityResolver.noBridge)
 
-        let id = try await resolver.malId(
-            for: work(["Whatever"],
-                      listings: [ListingKey(sourceId: "weebcentral", mangaId: "x")]))
+        let id = try await resolver.resolve(
+            work(["Whatever"],
+                 listings: [ListingKey(sourceId: "weebcentral", mangaId: "x")])).malId
 
         XCTAssertEqual(id, 55)
     }
@@ -2717,9 +2718,9 @@ final class Manga_ReaderTests: XCTestCase {
         let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
         let resolver = MALEntityResolver(store: store, titleSearchLimit: 1, search: { title in
             title == "Solo Leveling" ? [MALCandidate(malId: 121, titles: ["Solo Leveling"])] : []
-        })
+        }, bridgeSearch: MALEntityResolver.noBridge)
 
-        let id = try await resolver.malId(for: work(["Only I Level Up", "Solo Leveling"]))
+        let id = try await resolver.resolve(work(["Only I Level Up", "Solo Leveling"])).malId
 
         XCTAssertNil(id)
     }
@@ -2795,6 +2796,157 @@ final class Manga_ReaderTests: XCTestCase {
 
         XCTAssertNil(refused, "two entries at 1.000 — the guard refuses, correctly")
         XCTAssertEqual(resolved, 121_496)
+    }
+
+    // MARK: - MALEntityResolver, the MangaDex bridge (ADR-0016)
+
+    private func mdListing(_ id: String, _ title: String,
+                           alts: [String] = [], mal: Int? = nil) -> Manga {
+        Manga(id: id, sourceId: "mangadex", title: title, description: "", status: "unknown",
+              year: nil, coverURL: nil, malId: mal, altTitles: alts.isEmpty ? nil : alts)
+    }
+
+    /// The candidate set that made ADR-0016 Decision 3 necessary, taken from a live
+    /// `GET /manga?title=Tower of God`. `Sinui Tap` is the right answer; `Tower of God
+    /// (Book Version)` is a variant carrying **no** mal link whose alt titles contain the
+    /// canonical English title verbatim, so the two tie at exactly 1.000.
+    private var towerOfGodCandidates: [Manga] {
+        [mdListing("md-sinui", "Sinui Tap",
+                   alts: ["신의 탑", "Kami no Tou", "Tower of God", "Sin-ui Tab"], mal: 122663),
+         mdListing("md-book", "Tower of God (Book Version)",
+                   alts: ["신의 탑", "Tower of God"]),
+         mdListing("md-urek", "Urek Mazino",
+                   alts: ["Tower of God: Urek Mazino", "우렉 마지노"], mal: 181485)]
+    }
+
+    /// **The regression this decision exists for.** The first assertion is the mutation
+    /// proof: matched as one undifferentiated pool — the obvious implementation — the
+    /// ambiguity guard rejects the most obvious input the bridge will ever receive, because
+    /// the variant ties the real series. Partitioning on "does this entry carry an id at
+    /// all" leaves a 0.5 margin and the correct answer.
+    @MainActor func testBridgeResolvesTowerOfGodThatAnUnpartitionedPoolCannot() async throws {
+        let candidates = towerOfGodCandidates
+
+        let unpartitioned = MALTitleMatcher().bestMatch(
+            sourceTitles: ["Tower of God"],
+            candidates: candidates.map { (id: $0.id, titles: [$0.title] + ($0.altTitles ?? [])) })
+        XCTAssertNil(unpartitioned,
+                     "two candidates tie at 1.000, so the guard must reject — this is the bug")
+
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store,
+                                         search: { _ in [] },              // MAL knows nothing
+                                         bridgeSearch: { _ in candidates })
+
+        let resolution = try await resolver.resolve(work(["Tower of God"]))
+
+        XCTAssertEqual(resolution.malId, 122663)
+        XCTAssertTrue(resolution.harvestedTitles.contains("Kami no Tou"),
+                      "the matched entry's spellings come back for the caller to harvest")
+    }
+
+    /// The bridge is a fallback, not a second opinion: a title MAL matches must not cost a
+    /// MangaDex request.
+    @MainActor func testBridgeIsNotConsultedWhenMALAlreadyMatched() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store,
+                                         search: { _ in [MALCandidate(malId: 2, titles: ["Berserk"])] },
+                                         bridgeSearch: { _ in
+            XCTFail("the bridge must only run after MAL has produced no confident match")
+            return []
+        })
+
+        let resolution = try await resolver.resolve(work(["Berserk"]))
+        XCTAssertEqual(resolution.malId, 2)
+    }
+
+    /// Ordering is not an optimization (ADR-0016 Decision 3). The id-less variant scores
+    /// *better* here — it is an exact match on the source spelling while the id-bearing
+    /// entry matches only via an alternate — and it must still lose, because it cannot
+    /// answer the question.
+    @MainActor func testBridgeMatchesTheIdBearingPoolEvenWhenAVariantScoresHigher() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { _ in [] }, bridgeSearch: { _ in
+            [self.mdListing("md-colour", "One Punch-Man (Fan Colored)", alts: ["One Punch Man"]),
+             self.mdListing("md-real", "Wanpanman", alts: ["One Punch-Man"], mal: 44347)]
+        })
+
+        let resolution = try await resolver.resolve(work(["One Punch Man"]))
+        XCTAssertEqual(resolution.malId, 44347)
+    }
+
+    /// Decision 6: the right series, no mal link. MAL rejected one spelling and several more
+    /// are now in hand, so it gets asked once more — with the evidence it was missing.
+    @MainActor func testBridgeRetriesMALWithHarvestedSpellingsWhenTheEntryHasNoMalId() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        var searched: [String] = []
+        let resolver = MALEntityResolver(store: store, search: { title in
+            searched.append(title)
+            // MAL only answers to the native spelling, which the source never knew.
+            return title == "Kanojo mo Kanojo" ? [MALCandidate(malId: 777, titles: ["Kanojo mo Kanojo"])] : []
+        }, bridgeSearch: { _ in
+            [self.mdListing("md-x", "Girlfriend Girlfriend", alts: ["Kanojo mo Kanojo"])]
+        })
+
+        let resolution = try await resolver.resolve(work(["Girlfriend, Girlfriend"]))
+
+        XCTAssertEqual(resolution.malId, 777)
+        XCTAssertEqual(resolution.harvestedTitles, ["Girlfriend Girlfriend", "Kanojo mo Kanojo"])
+        XCTAssertTrue(searched.contains("Kanojo mo Kanojo"),
+                      "the harvested spelling is the whole point of the re-search")
+    }
+
+    /// A failed re-search still returns the harvest. The titles are what reopen the Work on
+    /// a later pass, so they must not be contingent on this one request succeeding.
+    @MainActor func testBridgeKeepsTheHarvestWhenTheMALRetryFails() async throws {
+        struct Boom: Error {}
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        var callCount = 0
+        let resolver = MALEntityResolver(store: store, search: { _ in
+            callCount += 1
+            if callCount == 1 { return [] }      // first round: a real miss
+            throw Boom()                          // the retry: an outage
+        }, bridgeSearch: { _ in
+            [self.mdListing("md-x", "Girlfriend Girlfriend", alts: ["Kanojo mo Kanojo"])]
+        })
+
+        let resolution = try await resolver.resolve(work(["Girlfriend, Girlfriend"]))
+
+        XCTAssertNil(resolution.malId)
+        XCTAssertEqual(resolution.harvestedTitles, ["Girlfriend Girlfriend", "Kanojo mo Kanojo"])
+    }
+
+    /// Same rule as the MAL round: a transient bridge failure throws so the queue records
+    /// nothing. An outage must not be remembered as "no catalog has this".
+    @MainActor func testBridgeThrowsWhenTheMangaDexSearchFailed() async {
+        struct Boom: Error {}
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { _ in [] },
+                                         bridgeSearch: { _ in throw Boom() })
+
+        do {
+            _ = try await resolver.resolve(work(["Berserk"]))
+            XCTFail("a transient bridge failure must not be reported as a miss")
+        } catch {}
+    }
+
+    /// Decision 7: the Listing-level resolver is bridged too, because the 2026-08-08 device
+    /// check established the two resolvers are independent and can disagree.
+    @MainActor func testListingLevelResolutionBridgesAndCachesTheHit() async {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        let resolver = MALEntityResolver(store: store, search: { _ in
+            [MALCandidate(malId: 9, titles: ["Completely Different Story"])]
+        }, bridgeSearch: { _ in
+            [self.mdListing("md-real", "Sinui Tap", alts: ["Tower of God"], mal: 122663)]
+        })
+        let listing = Manga(id: "wc-1", sourceId: "weebcentral", title: "Tower of God",
+                            description: "", status: "unknown", year: nil, coverURL: nil, malId: nil)
+
+        let bridged = await resolver.malId(for: listing)
+        XCTAssertEqual(bridged, 122663)
+        XCTAssertEqual(store.resolution(sourceId: "weebcentral", mangaId: "wc-1"),
+                       .resolved(malId: 122663),
+                       "a Listing-level answer has a Listing to key on, unlike a Work-level one")
     }
 
     // MARK: - MoreLikeThis.pickMatch

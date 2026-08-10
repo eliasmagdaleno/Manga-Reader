@@ -234,6 +234,31 @@ final class WorkStore: ObservableObject {
         absorb(ids, into: resolved, title: "")
     }
 
+    /// Adds spellings to a Work's `knownTitles`, unioning with what's already there.
+    /// Returns the Work's title count **after** the addition, or nil if the id resolves
+    /// to nothing.
+    ///
+    /// The count is returned rather than left to the caller to re-read because the caller
+    /// that needs it — the upgrade queue, fingerprinting an `.unmatched` outcome on
+    /// `knownTitlesCount` — would otherwise be holding the pre-harvest `Work` value and
+    /// record a count that is already stale. Recording the old count reopens the Work on
+    /// the very next pass, re-running searches that just failed with these exact titles
+    /// (ADR-0016 Decision 5).
+    ///
+    /// `knownTitles` only ever grows (ADR-0009), and `noteTitle` de-duplicates, so this is
+    /// idempotent: harvesting the same alternates twice is a no-op with the same count.
+    @discardableResult
+    func noteTitles(_ titles: [String], on id: WorkID) -> Int? {
+        loadIfNeeded()
+        guard let resolved = resolve(id), var work = works[resolved] else { return nil }
+        let before = work.knownTitles.count
+        for title in titles { work.noteTitle(title) }
+        guard work.knownTitles.count != before else { return before }
+        works[resolved] = work
+        markDirty()
+        return work.knownTitles.count
+    }
+
     /// Collapses `loser` into `winner`, which happens whenever an external id or a
     /// manual link arrives after both Works already exist.
     ///
