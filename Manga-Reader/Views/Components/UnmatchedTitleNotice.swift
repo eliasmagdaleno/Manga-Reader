@@ -28,9 +28,21 @@ struct UnmatchedTitleNotice: View {
             InkSectionHeader("More Like This", eyebrow: "Nothing to compare")
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("We couldn't match this title to a catalog.")
+                // "couldn't look up", not "couldn't match": `suppresses` is true for two
+                // outcomes, and only one of them is a failure to match. `.unmatched` is —
+                // MAL returned candidates and none cleared the matcher. `.absentFromProvider`
+                // is not: the title matched MAL fine and AniList simply has no entry for that
+                // id. Wording it as a match failure would be flatly false in that second case,
+                // and the notice cannot tell the reader which one they have without exposing
+                // machinery they have no use for.
+                Text("We couldn't look this title up in a catalog.")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Ink.primary)
+                // Accurate for a *refused* Work specifically. An untagged Work does carry
+                // engagement weight (`TasteProfile.swift:110`), but that weight only orders
+                // the upgrade queue (ADR-0009) — it never reaches the tag vector or the seeds,
+                // and a refused Work is filtered out of the drain besides. So it genuinely
+                // contributes nothing to recommendations.
                 Text("There's nothing to compare it against, so we can't suggest similar "
                      + "titles — and reading it isn't shaping your For You recommendations "
                      + "either.")

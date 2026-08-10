@@ -50,6 +50,10 @@ Four things about it are decisions rather than details:
 - **Statement only, no action.** Unlike the rail notice, which can honestly say "read something from
   MangaDex", there is no useful action here — and the real remedy is this ADR's override, which does
   not exist. Telling someone to go read a *different* title because they opened this one is bad advice.
+- **The copy says "couldn't look up", not "couldn't match".** `suppresses` is true for *two*
+  outcomes and only one is a matching failure: `.unmatched` is, `.absentFromProvider(malId:)` is not —
+  there the title matched MyAnimeList and AniList simply has no entry for that id. Naming it as a
+  match failure would be false in that case, and the distinction is not one the reader can act on.
 - **A title with no Work shows nothing.** Works mint only at commitment points (ADR-0007), so a
   browsed title has no recorded attempt; inferring refusal from the source instead would be guessing,
   against this area's standing precision bias.
