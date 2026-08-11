@@ -221,6 +221,60 @@ final class Manga_ReaderUITests: XCTestCase {
     /// logic bug. The rail is hidden until there's enough reading signal, so this asserts
     /// the app launches to a populated Home and — if a "For You" rail is present — it has
     /// at least one card.
+    /// **One-off verification run for ADR-0018 amendment 1.** Not a CI test — it asserts against
+    /// a specific seeded simulator (`2A0D54DF-…`) whose `Wind Breaker` Work is refused with no
+    /// external id, and it stops being meaningful the moment that refusal ages out (~2026-08-23).
+    ///
+    /// Goes through **Search**, not History: the `Manga` a search result carries came straight off
+    /// the API and so holds `links.mal`, while a pre-amendment history entry holds `malId: nil`.
+    /// MangaDex returns the target (`9eb78304…`, mal 133081) first for this query; the second hit
+    /// is the Korean series (mal 103237), which is the pair that produced the 1.00/1.00 tie.
+    ///
+    /// Backgrounds the app at the end: `HistoryStore` throttles its writes and only flushes on
+    /// `.background`, so a run that just ends loses the entry it was verifying.
+    func testADR0018WindBreakerAcquiresMalIdThroughSearch() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.buttons["Search"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
+        field.tap()
+        field.typeText("Wind Breaker\n")
+
+        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Wind Breaker"))
+            .element(boundBy: 0)
+        XCTAssertTrue(result.waitForExistence(timeout: 25), "search should return Wind Breaker")
+        attach(app, name: "01-search-results")
+        result.tap()
+
+        // Detail page. Screenshot it before reading — this is where ADR-0015's notice lives, and
+        // the Work is still refused at this point, so the notice is the "before" state.
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 20), "should reach the detail page")
+        sleep(4)
+        attach(app, name: "02-detail-before-read")
+
+        // **Add to Library, not read.** MangaDex serves no chapters for this title (the detail
+        // page reads "0 AVAILABLE"), so the reader path is unavailable — and the seeded history
+        // entry points at a chapter it no longer serves. `LibraryStore.toggle` mints from this
+        // same API-sourced `Manga` (`LibraryStore.swift:138`), so it absorbs `mal: 133081` onto the
+        // existing Work under `ListingKey(mangadex, 9eb78304…)`, which is the condition
+        // `suppresses()` reads. This verifies Decision 3 (the guard) — Decision 1's history leg
+        // stays unit-tested only, because no refused Work on this simulator is re-readable.
+        let addToLibrary = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Add to Library"))
+            .firstMatch
+        XCTAssertTrue(addToLibrary.waitForExistence(timeout: 20), "Add to Library should be present")
+        addToLibrary.tap()
+        sleep(4)
+        attach(app, name: "03-after-library-add")
+
+        // Background to force `history.flush()` / `works.flush()`.
+        XCUIDevice.shared.press(.home)
+        sleep(3)
+    }
+
     func testForYouRailPopulatesWithCompositeProvider() throws {
         let app = XCUIApplication()
         app.launch()

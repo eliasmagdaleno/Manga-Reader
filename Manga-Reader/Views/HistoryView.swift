@@ -135,9 +135,12 @@ struct HistoryView: View {
     }
 }
 
-private extension ReadingEntry {
+// Internal rather than fileprivate: `asManga` is the Manga that reaches the reader on the
+// resume path, so it is what `HistoryStore.record` reads `malId` off — behaviour with a test
+// behind it (ADR-0018 amendment 1), not a view-local convenience.
+extension ReadingEntry {
     var asManga: Manga {
-        Manga(id: mangaId, sourceId: sourceId ?? MangaDexSource.sourceID, title: mangaTitle, description: "", status: "unknown", year: nil, coverURL: coverURL, malId: nil)
+        Manga(id: mangaId, sourceId: sourceId ?? MangaDexSource.sourceID, title: mangaTitle, description: "", status: "unknown", year: nil, coverURL: coverURL, malId: malId)
     }
     var asChapter: Chapter {
         Chapter(id: chapterId, number: chapterNumber, title: nil)
