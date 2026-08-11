@@ -66,10 +66,14 @@ rewinds the Work to an unresolved one and re-searches forever.
 
 **Bridge** — resolving an external id *through* a third catalog that already carries it, rather than
 from the provider that owns it. In practice: a title MyAnimeList's search cannot match is searched on
-MangaDex, whose entries carry `links.mal` for free and publish **alt titles** the matcher can use. A
-bridge asserts only the **id** — never a Listing, even though it has just identified one, because
-that is the authoritative cross-source claim a **manual link override** makes and this is a fuzzy
-match ([ADR-0016](adr/0016-mangadex-as-a-resolution-bridge.md)).
+MangaDex, whose entries carry `links.mal` for free. Scoped to Works **MangaDex does not already
+serve** — where it does, the absence of `links.mal` on the entry already fetched is an *answer*, not
+a gap, so bridging would be circular. A bridge asserts only the **id** — never a Listing, even though
+it has just identified one, because that is the authoritative cross-source claim a **manual link
+override** makes and this is a fuzzy match. Where the right series is identified but carries no link,
+its spellings are **harvested** into `knownTitles` — which is what reopens the Work on a later pass —
+and MyAnimeList is *not* re-searched with them
+([ADR-0019](adr/0019-bridging-resolution-for-sources-that-publish-no-external-ids.md)).
 
 **Reverse resolution** — the other direction: external id → a Listing you can actually open.
 Currently MangaDex-only.
