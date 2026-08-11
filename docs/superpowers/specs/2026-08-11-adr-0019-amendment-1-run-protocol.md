@@ -33,6 +33,29 @@ the rate reproducing.
 The cohort is **not reproducible** — WeebCentral's ordering shifts daily. That is a known and
 accepted property, recorded in ADR-0019's Sample honesty section.
 
+### Amendment A (before pass 1) — `limit` is capped at 32, so the cohort paginates
+
+**`limit=80` and `limit=32` return the identical response**, byte for byte: 159,456 bytes, 32 unique
+series. The endpoint caps a page at 32 and ignores anything larger. The rule above could not have
+been executed as written.
+
+The cohort rule becomes: **`sort=Popularity`, `offset=0`, `32`, `64`** — three pages, 96 titles,
+every one seeded, still nothing inspected or dropped.
+
+**Why this is not the failure this protocol exists to prevent.** No resolution outcome had been
+observed when this was found — page 1 had been seeded and nothing had been drained, with the bridge
+switch untouched. This changes *how many* titles are drawn by a rule that was already fixed; it does
+not change *which* titles, and it cannot be steered by a result that does not exist yet. The
+distinction that matters is between a rule that turned out to be inexecutable and a rule adjusted
+after seeing what it produced. This is the first, and it is committed before pass 1 for the same
+reason the original was committed before the fetch.
+
+The 31 Works from page 1 are already seeded and are kept: the amended rule includes page 1 unchanged.
+
+**Worth carrying past this run:** a `limit` silently capped by the server is the same defect class as
+MangaDex's `/chapter` cap, which this project already knows about. Neither endpoint errors — both
+just hand back less than asked. Count what came back; never assume `limit` was honored.
+
 ## Method
 
 The bridge is already live in shipped code, so a refusal cohort cannot be observed by simply
