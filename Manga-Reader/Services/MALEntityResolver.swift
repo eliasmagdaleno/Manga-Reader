@@ -204,8 +204,7 @@ final class MALEntityResolver {
         }
 
         // Ordering is not an optimization: matching the id-less pool first would let a
-        // variant win outright and route a Work into the re-search below while a correct id
-        // sat in the other pool.
+        // variant win outright and hide a correct id sitting in the other pool.
         guard let matchedListingId = matcher.bestMatch(
                 sourceTitles: sourceTitles,
                 candidates: idLess.map { (id: $0.id, titles: Self.titles(of: $0)) }),
@@ -214,33 +213,22 @@ final class MALEntityResolver {
             return .unresolved
         }
 
-        // Decision 6: the right series, no id. MAL rejected one spelling and several more
-        // are now in hand — the missing evidence, not a second guess at the same question.
-        let harvested = Self.titles(of: identified)
-        let newSpellings = harvested.filter { spelling in
-            !sourceTitles.contains { $0.caseInsensitiveCompare(spelling) == .orderedSame }
-        }
-        guard !newSpellings.isEmpty else { return WorkResolution(malId: nil, harvestedTitles: harvested) }
-
-        var retryPool: [Int: MALCandidate] = [:]
-        for title in newSpellings.prefix(titleSearchLimit) {
-            do {
-                for candidate in try await search(title) where retryPool[candidate.malId] == nil {
-                    retryPool[candidate.malId] = candidate
-                }
-            } catch {
-                // A failed re-search leaves the harvest intact and reports no id. The titles
-                // are still returned, so the Work reopens on its own next pass rather than
-                // needing this exact request to have succeeded.
-                return WorkResolution(malId: nil, harvestedTitles: harvested)
-            }
-        }
-        let retryCandidates = retryPool.values
-            .sorted { $0.malId < $1.malId }
-            .map { (id: $0.malId, titles: $0.titles) }
-        let matched = matcher.bestMatch(sourceTitles: sourceTitles + harvested,
-                                        candidates: retryCandidates)
-        return WorkResolution(malId: matched, harvestedTitles: harvested)
+        // The right series, no id. **Harvest the spellings; do not re-search MyAnimeList
+        // with them** (ADR-0019).
+        //
+        // ADR-0016's Decision 6 did re-search here. Measured on WeebCentral it fired four
+        // times, spent 10 of the pass's 26 requests, and recovered nothing — so ADR-0019
+        // declines to carry it over. That is *lack of evidence*, not refutation: four
+        // firings is a sample of four, and the round would be worth revisiting on a source
+        // that actually publishes alt titles, where the fan-out it feeds has something to
+        // work with.
+        //
+        // The harvest itself stays, and the two must not be confused. It costs nothing —
+        // the spellings are already in the response — and it is what grows `knownTitles`,
+        // which is what reopens an `.unmatched` fingerprint on a later pass. Cutting it
+        // alongside the re-search would lose the one part of this branch that pays for
+        // itself.
+        return WorkResolution(malId: nil, harvestedTitles: Self.titles(of: identified))
     }
 
     /// Every spelling a Listing goes by: its display title first, then its alternates.

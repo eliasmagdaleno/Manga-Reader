@@ -2875,14 +2875,22 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(resolution.malId, 44347)
     }
 
-    /// Decision 6: the right series, no mal link. MAL rejected one spelling and several more
-    /// are now in hand, so it gets asked once more — with the evidence it was missing.
-    @MainActor func testBridgeRetriesMALWithHarvestedSpellingsWhenTheEntryHasNoMalId() async throws {
+    /// **ADR-0019's Round B cut, pinned in both directions.** When MangaDex identifies the
+    /// right series but it carries no mal link, the bridge harvests the spellings and stops
+    /// — it does **not** re-search MyAnimeList with them, which is what ADR-0016's Decision
+    /// 6 did for 38% of the pass's requests and zero recoveries.
+    ///
+    /// Inverted from `testBridgeRetriesMALWithHarvestedSpellings…`, deliberately, rather
+    /// than deleted alongside it: the harvest and the re-search are separable and only one
+    /// of them was cut. Restoring the re-search fails the `searched` assertion; pruning the
+    /// harvest along with it fails the `harvestedTitles` one. Both failure modes are live —
+    /// the pair reads as one feature until you look.
+    @MainActor func testBridgeHarvestsSpellingsWithoutReSearchingMAL() async throws {
         let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
         var searched: [String] = []
         let resolver = MALEntityResolver(store: store, search: { title in
             searched.append(title)
-            // MAL only answers to the native spelling, which the source never knew.
+            // MAL *would* answer to the native spelling — and is never asked, by design.
             return title == "Kanojo mo Kanojo" ? [MALCandidate(malId: 777, titles: ["Kanojo mo Kanojo"])] : []
         }, bridgeSearch: { _ in
             [self.mdListing("md-x", "Girlfriend Girlfriend", alts: ["Kanojo mo Kanojo"])]
@@ -2890,30 +2898,11 @@ final class Manga_ReaderTests: XCTestCase {
 
         let resolution = try await resolver.resolve(work(["Girlfriend, Girlfriend"]))
 
-        XCTAssertEqual(resolution.malId, 777)
-        XCTAssertEqual(resolution.harvestedTitles, ["Girlfriend Girlfriend", "Kanojo mo Kanojo"])
-        XCTAssertTrue(searched.contains("Kanojo mo Kanojo"),
-                      "the harvested spelling is the whole point of the re-search")
-    }
-
-    /// A failed re-search still returns the harvest. The titles are what reopen the Work on
-    /// a later pass, so they must not be contingent on this one request succeeding.
-    @MainActor func testBridgeKeepsTheHarvestWhenTheMALRetryFails() async throws {
-        struct Boom: Error {}
-        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
-        var callCount = 0
-        let resolver = MALEntityResolver(store: store, search: { _ in
-            callCount += 1
-            if callCount == 1 { return [] }      // first round: a real miss
-            throw Boom()                          // the retry: an outage
-        }, bridgeSearch: { _ in
-            [self.mdListing("md-x", "Girlfriend Girlfriend", alts: ["Kanojo mo Kanojo"])]
-        })
-
-        let resolution = try await resolver.resolve(work(["Girlfriend, Girlfriend"]))
-
-        XCTAssertNil(resolution.malId)
-        XCTAssertEqual(resolution.harvestedTitles, ["Girlfriend Girlfriend", "Kanojo mo Kanojo"])
+        XCTAssertNil(resolution.malId, "no id: the entry has no mal link and MAL is not re-asked")
+        XCTAssertEqual(resolution.harvestedTitles, ["Girlfriend Girlfriend", "Kanojo mo Kanojo"],
+                       "the harvest survives the Round B cut — it is what reopens the Work")
+        XCTAssertEqual(searched, ["Girlfriend, Girlfriend"],
+                       "exactly the first round; a harvested spelling must never be searched")
     }
 
     /// Same rule as the MAL round: a transient bridge failure throws so the queue records
