@@ -137,3 +137,20 @@ The app builds and the core reading loop is implemented.
 - Design/spec/plan for shipped work live in `docs/superpowers/{specs,plans}/`.
 
 Still minimal: no cross-device sync, no per-chapter read/unread marks, manual refresh only.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `eliasmagdaleno/Manga-Reader`, via the `gh` CLI.
+See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical roles, each label string equal to its name (`needs-triage`, `needs-info`,
+`ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context. The glossary is `docs/glossary.md` — **not** `CONTEXT.md`, which does not exist
+here — and decisions are the numbered ADRs in `docs/adr/`. See `docs/agents/domain.md`.
