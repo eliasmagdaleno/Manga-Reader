@@ -139,11 +139,30 @@ final class MALEntityResolver {
         // for the full TTL on the strength of one network blip.
         if let failure { throw failure }
 
-        // MAL had its chance on every spelling this Work knows. Ask MangaDex (ADR-0016).
+        // MAL had its chance on every spelling this Work knows. Ask MangaDex — unless this
+        // Work is already MangaDex's own (ADR-0019).
+        guard Self.isBridgeable(work) else { return .unresolved }
         return try await bridged(sourceTitles: work.knownTitles)
     }
 
-    // MARK: - The MangaDex bridge (ADR-0016)
+    // MARK: - The MangaDex bridge (ADR-0016, scoped by ADR-0019)
+
+    /// Whether the bridge has anything to offer this Work.
+    ///
+    /// **The gate is the Work, not the source.** A Work that already carries an
+    /// authoritative external id never gets here — `resolve` returned it at the top
+    /// (ADR-0018) — so the only thing left to exclude is the circular case: a Work whose
+    /// Listing MangaDex already serves. MangaDex publishes `links.mal` on that entry for
+    /// free, and its absence is an *answer*, not a gap. Searching MangaDex for a title
+    /// MangaDex already handed us cannot produce a link it declined to publish; it can only
+    /// spend requests and, worse, match some *other* series' entry.
+    ///
+    /// Phrased against the Work rather than against a registry of sources on purpose: a new
+    /// source needs no registration to be bridgeable, and this composes with ADR-0018
+    /// instead of duplicating what it knows.
+    private static func isBridgeable(_ work: Work) -> Bool {
+        !work.listings.contains { $0.sourceId == MangaDexSource.sourceID }
+    }
 
     /// Resolves through MangaDex: search it by title, and take `links.mal` off the entry
     /// that matches. Reached only after MyAnimeList's own search has produced no confident
@@ -273,6 +292,15 @@ final class MALEntityResolver {
             //    Harvested spellings are dropped on this path rather than stored: there is
             //    no Work here to append them to, and this cache is keyed by Listing. The
             //    Work-level path is where they persist.
+            //
+            //    Scoped by ADR-0019, mirroring `isBridgeable`: a MangaDex Listing does not
+            //    get bridged through MangaDex. Step 1 above already returned if it carried
+            //    `links.mal`, so reaching here means MangaDex published none — searching it
+            //    again asks a question it has already answered.
+            guard manga.sourceId != MangaDexSource.sourceID else {
+                store.record(sourceId: manga.sourceId, mangaId: manga.id, .unresolved(checkedAt: Date()))
+                return nil
+            }
             do {
                 if let bridgedId = try await bridged(sourceTitles: Self.titles(of: manga)).malId {
                     store.record(sourceId: manga.sourceId, mangaId: manga.id, .resolved(malId: bridgedId))

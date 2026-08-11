@@ -2783,16 +2783,19 @@ final class Manga_ReaderTests: XCTestCase {
     /// cost ADR-0017 Decision 2 accepts openly. That is what it is demonstrating.
     @MainActor func testAProseTwinIsWhatRefusesTheWorkNotTheThreshold() async throws {
         let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        // `noBridge` on the refusing resolver, because a Work-level miss now falls through
+        // to the bridge and the default one is live (ADR-0019). The refusal this test is
+        // about is MAL's, and it must not be able to reach the network to demonstrate it.
         let withNovel = MALEntityResolver(store: store, search: { _ in
             [MALCandidate(malId: 121_496, titles: ["Solo Leveling"]),
              MALCandidate(malId: 119_184, titles: ["Solo Leveling"])]   // the novel
-        })
+        }, bridgeSearch: MALEntityResolver.noBridge)
         let filtered = MALEntityResolver(store: store, search: { _ in
             [MALCandidate(malId: 121_496, titles: ["Solo Leveling"])]
-        })
+        }, bridgeSearch: MALEntityResolver.noBridge)
 
-        let refused = try await withNovel.malId(for: work(["Solo Leveling"]))
-        let resolved = try await filtered.malId(for: work(["Solo Leveling"]))
+        let refused = try await withNovel.resolve(work(["Solo Leveling"])).malId
+        let resolved = try await filtered.resolve(work(["Solo Leveling"])).malId
 
         XCTAssertNil(refused, "two entries at 1.000 — the guard refuses, correctly")
         XCTAssertEqual(resolved, 121_496)
@@ -2873,6 +2876,61 @@ final class Manga_ReaderTests: XCTestCase {
 
         let resolution = try await resolver.resolve(work(["One Punch Man"]))
         XCTAssertEqual(resolution.malId, 44347)
+    }
+
+    /// **ADR-0019's scope gate, Work level.** A Work MangaDex already serves does not get
+    /// bridged through MangaDex: `links.mal` was absent from the entry the app already
+    /// fetched, and that absence is an answer. Asserted on the request, not the result —
+    /// both configurations return nil, so only `bridgeSearch` going uncalled distinguishes
+    /// "declined to ask" from "asked and found nothing".
+    @MainActor func testAMangaDexWorkIsNotBridgedThroughMangaDex() async throws {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        var bridgeCalls = 0
+        func countingResolver() -> MALEntityResolver {
+            MALEntityResolver(store: store, search: { _ in [] }, bridgeSearch: { _ in
+                bridgeCalls += 1
+                return [self.mdListing("md-real", "Sinui Tap", alts: ["Tower of God"], mal: 122663)]
+            })
+        }
+
+        let mangadexWork = work(["Tower of God"],
+                                listings: [ListingKey(sourceId: "mangadex", mangaId: "md-1")])
+        let scrapedWork = work(["Tower of God"],
+                               listings: [ListingKey(sourceId: "weebcentral", mangaId: "wc-1")])
+
+        let refused = try await countingResolver().resolve(mangadexWork)
+        XCTAssertNil(refused.malId)
+        XCTAssertEqual(bridgeCalls, 0, "MangaDex is not asked about its own Listing")
+
+        let bridged = try await countingResolver().resolve(scrapedWork)
+        XCTAssertEqual(bridged.malId, 122663, "the control: a scraped Work does bridge")
+        XCTAssertEqual(bridgeCalls, 1)
+    }
+
+    /// The same gate on the Listing-level path, which has no Work to reason about and so
+    /// keys on `sourceId` directly. A refusal here is still *recorded* — it is a real
+    /// answer, not a transient failure, and must occupy its cache slot.
+    @MainActor func testAMangaDexListingIsNotBridgedAndItsRefusalIsRecorded() async {
+        let store = EntityResolutionStore(defaults: UserDefaults(suiteName: "t.\(UUID())")!)
+        var bridgeCalls = 0
+        let resolver = MALEntityResolver(store: store, search: { _ in
+            [MALCandidate(malId: 9, titles: ["Completely Different Story"])]
+        }, bridgeSearch: { _ in
+            bridgeCalls += 1
+            return [self.mdListing("md-real", "Sinui Tap", alts: ["Tower of God"], mal: 122663)]
+        })
+        let listing = Manga(id: "md-1", sourceId: "mangadex", title: "Tower of God",
+                            description: "", status: "unknown", year: nil, coverURL: nil, malId: nil)
+
+        let id = await resolver.malId(for: listing)
+
+        XCTAssertNil(id)
+        XCTAssertEqual(bridgeCalls, 0)
+        if case .resolved = store.resolution(sourceId: "mangadex", mangaId: "md-1") {
+            XCTFail("a declined bridge must not look like a hit")
+        }
+        XCTAssertNotNil(store.resolution(sourceId: "mangadex", mangaId: "md-1"),
+                        "the refusal is an answer and is cached, not left to be re-asked")
     }
 
     /// **ADR-0019's Round B cut, pinned in both directions.** When MangaDex identifies the
