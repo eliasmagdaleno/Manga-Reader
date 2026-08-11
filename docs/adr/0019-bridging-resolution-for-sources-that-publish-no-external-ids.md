@@ -1,6 +1,8 @@
 # ADR-0019 — Bridging resolution for sources that publish no external ids
 
-- **Status:** **Accepted (2026-08-11)**, pending the acceptance evidence registered in Decision 6
+- **Status:** **Accepted (2026-08-11)**, pending the acceptance evidence registered in Decision 6 —
+  **as amended by Amendment 1**, which corrects Decision 6 to a claim the in-app run can actually
+  falsify. Read Amendment 1, not Decision 6, for what has to be run
 - **Amends:** [ADR-0016](0016-mangadex-as-a-resolution-bridge.md) — by **activating the reopening
   clause ADR-0016 wrote for itself**. It does **not** supersede or un-reject it: 0016 stays
   Rejected-for-MangaDex, and its rejection is the more valuable half of the record
@@ -122,22 +124,79 @@ makes (ADR-0005, still parked), and this is a fuzzy match.
 
 ### 6. Acceptance evidence, registered before the run
 
-The offline measurement is what licenses this ADR; it cannot also be what accepts it. The evidence
-is the app doing it, in the shape ADR-0018's verification used:
+**Superseded by Amendment 1 below, which was written before the run.** The original text is kept
+verbatim because the amendment is a correction to it and the pair is the record.
 
-- **Registered prediction, now, unadjustable: 5 of 16 refusals recover, all correct.**
-- A WeebCentral library on the seeded simulator, refusal count before and after a background pass,
-  with every recovered id hand-checked against the series.
-- **Deadline: ~2026-08-23**, when the seeded sim's remaining refusals age out of their 14-day TTL.
-  After that the fixture is gone and this has to be re-seeded.
+> The offline measurement is what licenses this ADR; it cannot also be what accepts it. The evidence
+> is the app doing it, in the shape ADR-0018's verification used:
+>
+> - **Registered prediction, now, unadjustable: 5 of 16 refusals recover, all correct.**
+> - A WeebCentral library on the seeded simulator, refusal count before and after a background pass,
+>   with every recovered id hand-checked against the series.
+> - **Deadline: ~2026-08-23**, when the seeded sim's remaining refusals age out of their 14-day TTL.
+>   After that the fixture is gone and this has to be re-seeded.
+>
+> Registering the number is the whole mechanism. A prediction adjusted after seeing the result is not
+> a prediction — the same reason the cost thresholds were committed in their own commit.
 
-Registering the number is the whole mechanism. A prediction adjusted after seeing the result is not
-a prediction — the same reason the cost thresholds were committed in their own commit.
+## Amendment 1 (2026-08-11) — Decision 6 registered evidence the fixture cannot produce
+
+**Written before the verification run, not after it.** Decision 6 registered "5 of 16 refusals
+recover, all correct" as the in-app acceptance evidence. That number **cannot be produced in the
+app**, and the reason is not a detail — it is the difference between the claim being verifiable and
+the claim being decoration.
+
+- The seeded sim's three surviving refusals are the **invented placeholder titles**, unresolvable by
+  construction. That is exactly why they were chosen as negative controls; it also means none of them
+  can recover.
+- `Wind Breaker`, the only real refusal on that sim, was **consumed by the previous session's
+  ADR-0018 verification** — correctly, and irreversibly.
+- The 16-refusal cohort the number comes from is **not reproducible**. WeebCentral's popularity
+  ordering shifts day to day, so re-deriving it by offset draws different titles.
+
+**The failure is a category error, and it is worth naming precisely: 5-of-16 is a *rate*, and rates
+are not what an in-app run measures.** The offline harness sampled a cohort; the app processes
+whatever library it has. Decision 6 registered a measurement from one instrument as the acceptance
+criterion for a different one.
+
+### What replaces it
+
+The 5-of-16 figure **stands, as an offline claim**, on the harness and the doc that produced it. It
+is not withdrawn and it is not re-verified in-app.
+
+The in-app run verifies the **mechanism**, on a freshly seeded WeebCentral library. Registered now,
+unadjustably, before seeding:
+
+- **On a fresh cohort of at least 10 refusals: at least 2 recover, and 0 recovered ids are wrong.**
+- The full chain is observed, as ADR-0018's verification observed its own: refusal → bridge fires →
+  MangaDex entry matched → `links.mal` taken → id written to the Work → refusal cleared on the next
+  pass.
+- **The gate is observed refusing**: a MangaDex-sourced Work in the same library does **not** issue a
+  bridge request. A gate that never fires is indistinguishable from an absent one.
+- Every recovered id hand-checked against the series.
+
+The "at least 2 of 10" floor is deliberately below the offline 31%: a fresh cohort is a different
+sample and this is a check that the mechanism works in the app, not a re-measurement of the rate.
+**A run that recovers zero on ten refusals falsifies the mechanism** — that is the whole point of
+naming a floor rather than reporting whatever happens.
+
+**Deadline is unchanged in date and changed in meaning: ~2026-08-23.** It is no longer the sim's TTL
+protecting a fixture — the fixture has to be re-seeded regardless. It is the point past which the
+surrounding measurements are stale enough to be worth re-taking.
+
+### The lesson
+
+Registering a prediction in advance is only worth something if the prediction is one the planned
+experiment can falsify. Decision 6 had the discipline right — number committed first, unadjustable —
+and picked a number the experiment could not touch. **Check that the registered claim and the
+planned instrument are the same kind of thing.** This ADR chain has now made the inverse mistake
+twice: ADR-0016 diagnosed from the shape of the code rather than a response body, and this decision
+registered a rate against a run that measures behaviour.
 
 ## What would reverse this
 
-- The in-app run recovering **materially fewer than 5**, which would mean the offline harness models
-  something the app does not.
+- The in-app run **missing the floor registered in Amendment 1** — fewer than 2 recoveries on a
+  cohort of 10 refusals — which would mean the app does not do what the offline harness modelled.
 - Any **wrong** id. Precision-bias is not negotiable; a false link is worse than a refusal, and 0-for-16
   wrong is the result that made this shippable.
 - A second source measuring near-zero recovery, which would make this a WeebCentral special case
