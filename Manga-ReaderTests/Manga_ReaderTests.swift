@@ -2903,4 +2903,27 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(out.first?.reason, "Because you read S")
     }
 
+    // MARK: - ReadingEntry.asManga carries the id (ADR-0018 amendment 1)
+
+    /// Resuming from History rebuilds a `Manga` from the entry, and that `Manga` is what
+    /// `HistoryStore.record` reads `malId` off. Dropping it here re-creates the exact boundary
+    /// loss ADR-0018 was written to close — one layer further out.
+    func testHistoryEntryAsMangaCarriesMalId() {
+        let entry = ReadingEntry(id: UUID(), mangaId: "m1", mangaTitle: "Wind Breaker",
+                                 coverURL: nil, chapterId: "c1", chapterNumber: "1",
+                                 page: 0, pageCount: 10, updatedAt: Date(),
+                                 sourceId: "mangadex", fraction: 0, malId: 133_081)
+        XCTAssertEqual(entry.asManga.malId, 133_081)
+    }
+
+    /// The other half: an entry written before the field existed still rebuilds cleanly, and the
+    /// Work it mints stays a resolution question rather than acquiring a wrong answer.
+    func testHistoryEntryWithoutMalIdRebuildsWithNone() {
+        let entry = ReadingEntry(id: UUID(), mangaId: "m2", mangaTitle: "Legacy",
+                                 coverURL: nil, chapterId: "c1", chapterNumber: "1",
+                                 page: 0, pageCount: 10, updatedAt: Date(),
+                                 sourceId: "mangadex", fraction: 0)
+        XCTAssertNil(entry.asManga.malId)
+    }
+
 }
