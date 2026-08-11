@@ -3,7 +3,12 @@
 - **Status:** **Rejected (2026-08-10)** on measurement, after being built. Superseded by
   [ADR-0017](0017-excluding-novels-from-mal-resolution-candidates.md), which is the fix the
   measurement pointed at. Kept in full because the *reasoning* below is sound and the
-  *premise* is not — and that gap is the whole lesson
+  *premise* is not — and that gap is the whole lesson.
+  **Still Rejected for MangaDex-sourced titles.** The reopening clause below fired on 2026-08-11 for
+  a source that publishes no external ids, and the implementation was revived — scoped, and with
+  Decision 6 dropped — by
+  [ADR-0019](0019-bridging-resolution-for-sources-that-publish-no-external-ids.md). Read that ADR for
+  what ships; read this one for why it did not ship here
 - **Amends:** nothing, in the end. It *would* have amended ADR-0008's "resolution always goes
   through MyAnimeList" single-route rule; rejected, that rule stands untouched.
 - **Related:** ADR-0001 (Work vs Listing — the boundary Decision 4 refuses to cross),

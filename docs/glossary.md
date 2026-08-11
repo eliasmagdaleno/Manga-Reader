@@ -54,7 +54,8 @@ searched **once per known title** (capped, display title first) and the results 
 **one** candidate pool, which the matcher scores over the title cross-product. N searches, one
 ranked list, one ambiguity guard — never N matches and a maximum, which would have no runner-up to
 guard against ([ADR-0008](adr/0008-upgrade-queue-resolution-and-drain.md),
-[ADR-0009](adr/0009-upgrade-queue-construction.md)). Always goes through MyAnimeList; AniList is a
+[ADR-0009](adr/0009-upgrade-queue-construction.md)). MyAnimeList is asked first and, when it yields
+no confident match, MangaDex is asked as a **bridge** (below); AniList is a
 lookup-by-id provider and is never asked to search. **Novels are dropped from the candidate list**
 before matching: MAL files novels under `/manga` and a comic adaptation carries its source novel's
 title, so the two tie and the ambiguity guard refuses a Work it has no real doubt about — the single
@@ -62,6 +63,17 @@ largest measured cause of refusals
 ([ADR-0017](adr/0017-excluding-novels-from-mal-resolution-candidates.md)). A confident id is written
 to the Work **immediately**, before the metadata fetch — otherwise a transient provider failure
 rewinds the Work to an unresolved one and re-searches forever.
+
+**Bridge** — resolving an external id *through* a third catalog that already carries it, rather than
+from the provider that owns it. In practice: a title MyAnimeList's search cannot match is searched on
+MangaDex, whose entries carry `links.mal` for free. Scoped to Works **MangaDex does not already
+serve** — where it does, the absence of `links.mal` on the entry already fetched is an *answer*, not
+a gap, so bridging would be circular. A bridge asserts only the **id** — never a Listing, even though
+it has just identified one, because that is the authoritative cross-source claim a **manual link
+override** makes and this is a fuzzy match. Where the right series is identified but carries no link,
+its spellings are **harvested** into `knownTitles` — which is what reopens the Work on a later pass —
+and MyAnimeList is *not* re-searched with them
+([ADR-0019](adr/0019-bridging-resolution-for-sources-that-publish-no-external-ids.md)).
 
 **Reverse resolution** — the other direction: external id → a Listing you can actually open.
 Currently MangaDex-only.

@@ -69,9 +69,15 @@ final class MetadataUpgradeQueueTests: XCTestCase {
     /// A resolver whose MAL search is stubbed. The `EntityResolutionStore` is isolated
     /// but real, so the cache fast path is exercised rather than mocked away.
     @MainActor
-    private func makeResolver(search: @escaping MALEntityResolver.Search) -> MALEntityResolver {
+    /// `bridge` defaults to finding nothing (ADR-0016): the live default would otherwise put
+    /// a real MangaDex request behind every test here that misses on MAL. A test about the
+    /// bridge passes its own.
+    private func makeResolver(search: @escaping MALEntityResolver.Search,
+                              bridge: @escaping MALEntityResolver.BridgeSearch
+                                  = MALEntityResolver.noBridge) -> MALEntityResolver {
         MALEntityResolver(store: EntityResolutionStore(defaults: isolatedDefaults()),
-                          search: search)
+                          search: search,
+                          bridgeSearch: bridge)
     }
 
     private func isolatedDefaults() -> UserDefaults {
@@ -231,6 +237,35 @@ final class MetadataUpgradeQueueTests: XCTestCase {
         XCTAssertEqual(first, .upgraded(id), "a recorded answer is forward progress")
         XCTAssertNil(works.work(id)?.externalIds.mal, "nothing was matched, so nothing is written")
         XCTAssertEqual(second, .idle, "the recorded miss suppresses it")
+    }
+
+    /// ADR-0016 Decision 5, and the ordering trap inside it. The bridge identifies the right
+    /// series but it carries no mal link, so the Work stays unresolved — while gaining two
+    /// spellings. `.unmatched` is fingerprinted on `knownTitles.count`, so recording the
+    /// **pre**-harvest count would reopen the Work on the very next pass and re-run the
+    /// searches that just failed with these exact titles. The second drain asserts it does
+    /// not: the Work is suppressed, having been remembered against what it now knows.
+    @MainActor func testHarvestedSpellingsAreRecordedAgainstThePostHarvestTitleCount() async {
+        let works = makeStore()
+        let id = works.mint(from: listing("wc-1", source: "weebcentral", title: "Girlfriend, Girlfriend"))
+        let queue = makeQueue(works: works,
+                              resolver: makeResolver(search: { _ in [] }, bridge: { _ in
+                                  [Manga(id: "md-x", sourceId: "mangadex",
+                                         title: "Girlfriend Girlfriend", description: "",
+                                         status: "ongoing", year: nil, coverURL: nil, malId: nil,
+                                         altTitles: ["Kanojo mo Kanojo"])]
+                              }))
+
+        let first = await queue.drainOnce(now: noon)
+        let second = await queue.drainOnce(now: noon)
+
+        XCTAssertEqual(first, .upgraded(id))
+        XCTAssertNil(works.work(id)?.externalIds.mal, "no mal link to take, so nothing is written")
+        XCTAssertEqual(works.work(id)?.knownTitles.sorted(),
+                       ["Girlfriend Girlfriend", "Girlfriend, Girlfriend", "Kanojo mo Kanojo"],
+                       "both spellings the bridge learned are kept (ADR-0009: knownTitles only grows)")
+        XCTAssertEqual(second, .idle,
+                       "recorded against the post-harvest count, so the harvest cannot reopen it")
     }
 
     /// A 4xx is a statement about the *request*, not the network: reissuing it unchanged

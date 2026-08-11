@@ -24,6 +24,21 @@ struct Manga: Identifiable, Codable, Equatable {    // Conform to Identifiable s
     let year: Int?                                  // Optional year of publication.
     let coverURL: URL?                              // ✅ Pre-built cover URL (nil if none).
     let malId: Int?                                 // Canonical MyAnimeList id, if known (nil for sources without one).
+    // Every other spelling the source knows this manga by — romaji, native, regional.
+    // Matcher fuel for ADR-0016's bridge: matching one spelling against one spelling is
+    // the weakness the bridge exists to route around, so this is the field that makes it
+    // worth building. Empty/absent for sources that publish no alternates.
+    //
+    // `var` and optional, deliberately, and it is the only such property here. Both fall
+    // out of ADR-0011's pool cache persisting this type whole:
+    //   • optional → the synthesized decoder uses `decodeIfPresent`, so cache files
+    //     written before this field existed still decode instead of being read as a miss
+    //     and re-fetched.
+    //   • `var` → Swift gives an optional `var` an implicit `= nil` in the memberwise
+    //     initializer (a `let` optional gets no such default), which is what keeps ~40
+    //     existing construction sites compiling untouched.
+    // Read it as `altTitles ?? []`; nil and empty mean the same thing to every consumer.
+    var altTitles: [String]?
 }
 
 /// A small item representing “latest updates” (which chapter just arrived for a manga).
@@ -75,6 +90,10 @@ struct MangaData: Decodable {                       // Represents a single manga
 /// Raw attributes for a manga from the API.
 struct MangaAttributes: Decodable {                 // Raw payload we convert into our Manga struct.
     let title: [String: String]                     // Title in multiple locales; e.g., ["en": "Name"].
+    // One single-key locale map per alternate, verified against the live API — NOT one
+    // merged map, so the same locale can appear repeatedly and the values are what matter,
+    // never the keys. Optional because entries with no alternates omit the key entirely.
+    let altTitles: [[String: String]]?
     let description: [String: String]?              // Optional descriptions per locale.
     let status: String?                             // Ongoing/Completed/etc. (may be missing).
     let year: Int?                                  // Optional publication year.
@@ -97,7 +116,17 @@ struct MangaAttributes: Decodable {                 // Raw payload we convert in
             .attributes?.fileName
         // 5) Build a thumbnail URL (512px) if we found a filename; otherwise nil.
         let cover = fileName.flatMap { mangaCoverURL(mangaId: id, fileName: $0, size: .w512) }
-        // 6) Produce our finalized Manga value with the pre-attached cover URL.
+        // 6) Flatten the locale maps into a plain title list. Order is preserved as the API
+        //    gave it (locale keys are not sorted, so the values are the only stable thing),
+        //    blanks dropped, duplicates dropped, and the display title excluded — `title`
+        //    already carries it, and a matcher that sees it twice scores it no differently.
+        var seen: Set<String> = [resolvedTitle]
+        let resolvedAltTitles = (altTitles ?? [])
+            .flatMap(\.values)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && seen.insert($0).inserted }
+
+        // 7) Produce our finalized Manga value with the pre-attached cover URL.
         return Manga(
             id: id,
             sourceId: MangaDexSource.sourceID,          // Everything from this API belongs to the MangaDex source.
@@ -106,7 +135,8 @@ struct MangaAttributes: Decodable {                 // Raw payload we convert in
             status: resolvedStatus,
             year: year,
             coverURL: cover,
-            malId: links?["mal"].flatMap(Int.init)      // Free cross-source identity when MangaDex provides it.
+            malId: links?["mal"].flatMap(Int.init),     // Free cross-source identity when MangaDex provides it.
+            altTitles: resolvedAltTitles.isEmpty ? nil : resolvedAltTitles
         )
     }
 }

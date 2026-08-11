@@ -134,9 +134,9 @@ final class MetadataUpgradeQueue: ObservableObject {
             return .idle
         }
 
-        let resolved: Int?
+        let resolved: MALEntityResolver.WorkResolution
         do {
-            resolved = try await resolver.malId(for: work)
+            resolved = try await resolver.resolve(work)
         } catch let error where permanentStatus(of: error) != nil {
             // An *answer*, not an outage. Recorded as `.unmatched` because that is exactly
             // the reopen condition wanted: a new synonym changes the query, and nothing
@@ -157,18 +157,35 @@ final class MetadataUpgradeQueue: ObservableObject {
                 """)
             return fail(work.id)
         }
-        guard let malId = resolved else {
-            // MAL had candidates and none cleared the threshold. That is an answer, and
-            // it is fingerprinted on the title count so a new synonym reopens it at once.
+        // Harvest before recording anything (ADR-0016 Decision 5). `knownTitles` is
+        // monotonic, and `.unmatched` is fingerprinted on its count, so the post-harvest
+        // count is the only correct one to record: writing the stale pre-harvest count would
+        // reopen this Work on the very next pass and re-run the searches that just failed
+        // with these exact titles.
+        var knownTitlesCount = work.knownTitles.count
+        if !resolved.harvestedTitles.isEmpty,
+           let grown = works.noteTitles(resolved.harvestedTitles, on: work.id) {
+            Self.log.debug("""
+                harvested \(resolved.harvestedTitles.count, privacy: .public) spelling(s) for \
+                "\(self.label(work), privacy: .public)" — \(knownTitlesCount, privacy: .public) \
+                → \(grown, privacy: .public) known titles
+                """)
+            knownTitlesCount = grown
+        }
+
+        guard let malId = resolved.malId else {
+            // Neither MAL nor the MangaDex bridge produced a confident match. That is an
+            // answer, and it is fingerprinted on the title count so a new synonym reopens
+            // it at once — against the harvested count, per the note above.
             //
             // This is the common outcome for anything MAL does not carry — doujinshi,
             // scanlation-only releases — and it is why a library can sit permanently
             // below ADR-0011's three-resolved-Works gate.
             Self.log.info("""
-                unmatched "\(self.label(work), privacy: .public)" — no MAL candidate cleared \
-                the threshold (\(work.knownTitles.count, privacy: .public) known titles)
+                unmatched "\(self.label(work), privacy: .public)" — nothing cleared the \
+                threshold (\(knownTitlesCount, privacy: .public) known titles)
                 """)
-            memory.record(.unmatched(knownTitlesCount: work.knownTitles.count), for: work.id, now: now)
+            memory.record(.unmatched(knownTitlesCount: knownTitlesCount), for: work.id, now: now)
             return progress(work.id)
         }
 
