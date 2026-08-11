@@ -70,4 +70,98 @@ the cheapest possible case and a merged multi-title Work would cost up to 6.
 
 ## Results
 
-_(To be filled in by the run. Nothing above this line changes afterwards.)_
+**Both thresholds pass, comfortably.** Harness: `scripts/bridge_cost.py`, run once against the live
+MangaDex and MAL APIs over the same 16 refusals.
+
+| Metric | Threshold | Measured | |
+|---|---|---|---|
+| Extra requests per **recovered id** | ≤ 10 | **5.2** | pass |
+| Extra requests per **library title** | ≤ 1.0 | **0.41** | pass |
+| Extra requests per refusal | _(reported)_ | 1.62 | |
+| Total extra requests | | 26 (16 MangaDex + 10 MAL) | |
+| Recovered | | **5 of 16, 5 correct, 0 wrong** | |
+
+**The prediction held.** Round A cost exactly **1 request** for all 16 — WeebCentral publishes no
+alternate titles, so each Work has one known title and the `min(knownTitles, 3)` fan-out never
+binds. ADR-0016's assumed **2–5 extra requests per refusal** was an overestimate for this shape of
+Work: the measured figure is 1.62, and the 0.62 above 1.0 is entirely Round B.
+
+### Per-refusal detail
+
+| Title | Outcome | A | B | id |
+|---|---|---|---|---|
+| Xia Ke Xing | recovered round A | 1 | 0 | 18497 |
+| The Vigilante of the Kingcraft Paradise | recovered round A | 1 | 0 | 90759 |
+| Junjou Romantica | recovered round A | 1 | 0 | 765 |
+| The Grandmaster of Demonic Cultivation | recovered round A | 1 | 0 | 137200 |
+| Level 1 kara Hajimaru Shoukan Musou ~…~ | recovered round A | 1 | 0 | 146287 |
+| Koi Inu | round B missed | 1 | 3 | — |
+| Ling Bao Zhi | round B missed | 1 | 3 | — |
+| Sozo no Eterunite | round B missed | 1 | 2 | — |
+| Together with Zun-chan! | round B missed | 1 | 2 | — |
+| Vairocana | identified, no new titles | 1 | 0 | — |
+| Sweet HR | no match | 1 | 0 | — |
+| Kin no Tamago (Katsuwo) | no match | 1 | 0 | — |
+| Yoruhime-sama | empty pool | 1 | 0 | — |
+| Beyond Virtual | empty pool | 1 | 0 | — |
+| Brothers (NARUSE Yoshiki) | empty pool | 1 | 0 | — |
+| Miquiztli | empty pool | 1 | 0 | — |
+
+**Correctness checked, not assumed.** All five recovered ids match the independently-derived
+`links.mal` column in the resolvability measurement exactly. Five recoveries, five correct, none
+wrong — the same rule that measurement set, that a recovery count without a correctness check
+behind it is worth less than no number.
+
+**Every recovery came from Round A.** Round B — harvest MangaDex's alt titles, re-search MAL —
+fired four times, cost 10 of the 26 requests (38% of total spend), and **recovered nothing**. It is
+the entire reason the per-refusal figure exceeds 1.0.
+
+### Wall-clock
+
+**Reported, not gating.** Not separately instrumented; the honest derivation is request count times
+round-trip. Measured MangaDex RTT over five calls: median **0.40s** (range 0.06–0.43). None of the
+bridge's requests pass through `AniListRateLimiter` — it wraps only the AniList fetch
+(`MetadataUpgradeQueue.swift:200`) — so the bridge is unpaced and adds roughly **26 × 0.4s ≈ 10s**
+across a 64-title library drain, in the background, spread over the whole pass. Not a factor.
+
+## What the numbers do and do not license
+
+**They remove the cost blocker on ADR-0019.** That is all. Passing a threshold is not an argument
+that the bridge should be built; it is the removal of the reason it could not be considered. The
+decision is still a decision, and it is now takeable on a complete ledger:
+
+- **Benefit:** 5 of 16 refusals recover, all correct. A 64-title WeebCentral library goes from
+  47 resolved to 52.
+- **Cost:** 26 extra requests per full pass, 0.41 per library title, ~10s of background wall-clock.
+- **Still refused:** 11 of 16. MangaDex either does not carry them or carries them with no
+  `links.mal`, and no version of this proposal reaches them.
+
+**A live question this raises for ADR-0019: drop Round B.** It cost 38% of the spend and recovered
+nothing here. On this evidence the bridge is *cheaper and no less effective* as Round A alone —
+1.00 extra requests per refusal, 3.2 per recovered id. Four cases is a small sample to kill a
+mechanism on, and Round B is ADR-0016's Decision 6 with its own reasoning, so this is a question for
+the ADR rather than a conclusion. But it should not be carried over unexamined.
+
+## Hazards
+
+1. **One known title per Work is the cheapest possible case.** WeebCentral publishes no alternates.
+   A Work merged across sources, or one that has already harvested spellings, fans out to
+   `min(knownTitles, 3)` and can cost up to 6. The measured 1.62 is a floor for this source, not a
+   general figure — and notably, a Work whose titles grew *because* of a previous bridge harvest is
+   more expensive on its next pass. That feedback is unmeasured.
+2. **Round A cost is bounded by construction, so the interesting variance is all in Round B.**
+   Round B fired on 4 of 16 here. A source whose titles more often match MangaDex variants carrying
+   no `mal` link would fire it more often and shift the per-refusal figure up.
+3. **The harness truncated a title on its first run, and it cost a recovery.** The resolvability
+   doc's table abbreviates `Level 1 kara Hajimaru Shoukan Musou ~…~` with an ellipsis; copying that
+   into the input list scored 0.4-ish against MangaDex's full title and produced a spurious
+   `no-match`. With the real title it ties at 1.000 and recovers in one request. **A source title is
+   an input, not prose** — the fix is in the script with a comment, but the near-miss is the hazard:
+   the first run reported 4 recoveries and would have understated the benefit by 20% had the
+   discrepancy against the known ground truth of 5 not been chased.
+4. **Same port, same caveat as before.** The matcher is `wc_resolve.py`'s, validated against four
+   in-app ADR-0017 results. A divergence from `MALTitleMatcher.swift` remains invisible from here.
+5. **Requests are counted, not the app's actual HTTP.** The harness replicates
+   `bridged(sourceTitles:)`'s sequence from the branch; it does not run the Swift. A caching or
+   dedupe path in `MangaDexAPI` that the read missed would make the real cost lower, never higher.
+
