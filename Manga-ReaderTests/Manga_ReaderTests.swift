@@ -98,12 +98,35 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertEqual(store.entries.first?.sourceId, "weebcentral")
     }
 
+    /// ADR-0018: MangaDex hands back `links.mal` on the request the app already makes,
+    /// and history is where that id used to be dropped.
+    @MainActor func testReadingEntryRecordsMalIdFromListing() {
+        let store = makeHistoryStore()
+        let manga = Manga(id: "orv", sourceId: "mangadex", title: "Omniscient Reader",
+                          description: "", status: "ongoing", year: nil, coverURL: nil,
+                          malId: 132214)
+        store.record(manga: manga, chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 0), pageCount: 5)
+        XCTAssertEqual(store.entries.first?.malId, 132214)
+    }
+
+    /// A source with no external id of its own is unchanged — the field is absent, not zero.
+    @MainActor func testReadingEntryRecordsNoMalIdWhenSourcePublishesNone() {
+        let store = makeHistoryStore()
+        store.record(manga: sampleManga("m", sourceId: "weebcentral"),
+                     chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 0), pageCount: 5)
+        XCTAssertNil(store.entries.first?.malId)
+    }
+
     func testReadingEntryDecodesLegacyJSONAsNil() throws {
         // JSON saved before sourceId existed.
         let legacy = #"{"id":"00000000-0000-0000-0000-000000000000","mangaId":"m","mangaTitle":"T","coverURL":null,"chapterId":"c","chapterNumber":"1","page":0,"pageCount":5,"updatedAt":0}"#
             .data(using: .utf8)!
         let entry = try JSONDecoder().decode(ReadingEntry.self, from: legacy)
         XCTAssertNil(entry.sourceId)
+        // ADR-0018: and before malId existed. Every entry already on disk is one of these.
+        XCTAssertNil(entry.malId)
     }
 
     // MARK: - Chapter ordering & resume
@@ -1688,6 +1711,27 @@ final class Manga_ReaderTests: XCTestCase {
 
     private func scored(_ id: String) -> ScoredManga {
         ScoredManga(manga: sampleManga(id), score: 1, reason: "More Action")
+    }
+
+    /// ADR-0018's whole point: the id MangaDex published survives history and reaches the
+    /// Work, so `MALEntityResolver` short-circuits instead of fuzzy-searching for an id
+    /// the API already handed us.
+    @MainActor func testResolveSignalsCarriesMalIdIntoMintedWork() async throws {
+        let history = makeHistoryStore()
+        let works = makeWorkStore()
+        let manga = Manga(id: "orv", sourceId: "mangadex", title: "Omniscient Reader",
+                          description: "", status: "ongoing", year: nil, coverURL: nil,
+                          malId: 132214)
+        history.record(manga: manga, chapter: ch("1"), position: ReadingPosition(page: 9),
+                       pageCount: 10)
+
+        let engine = makeEngine(history: history, tasteStore: makeTasteStore(),
+                                provider: FixedPoolProvider(pool: []), workStore: works)
+        await engine.refresh()
+
+        let id = try XCTUnwrap(works.workId(externalId: ExternalIDs(mal: 132214, anilist: nil)),
+                               "the minted Work should carry the id the listing published")
+        XCTAssertEqual(works.work(id)?.externalIds.mal, 132214)
     }
 
     @MainActor func testEngineColdStartHidesRailBelowThreshold() async throws {

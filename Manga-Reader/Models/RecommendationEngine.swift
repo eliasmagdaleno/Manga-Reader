@@ -323,7 +323,10 @@ final class RecommendationEngine: ObservableObject {
         for entry in history.entries {
             let listing = Manga(id: entry.mangaId, sourceId: entry.sourceId ?? "mangadex",
                                 title: entry.mangaTitle, description: "", status: "unknown",
-                                year: nil, coverURL: entry.coverURL, malId: nil)
+                                // Not `nil`: an id the source published is carried on the
+                                // entry, and `mint` absorbs it so the Work is never a
+                                // resolution question (ADR-0018).
+                                year: nil, coverURL: entry.coverURL, malId: entry.malId)
             let id = workStore.mint(from: listing)
             if entriesByWork[id] == nil { order.append(id) }
             entriesByWork[id, default: []].append(entry)

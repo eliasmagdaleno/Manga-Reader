@@ -87,6 +87,13 @@ final class UpgradeAttemptMemory {
 
         switch attempt.outcome {
         case .unmatched(let count):
+            // An authoritative id ends the question this refusal was an answer to
+            // (ADR-0018). Checked here rather than folded into the recorded fingerprint
+            // because a stored flag would say what was true when the refusal happened,
+            // and the question is what is true now. Note this also un-blocks the Work
+            // for `tagBlocked` — ADR-0015's notice and the taste profile both read it,
+            // and both were making the same false claim.
+            if work.externalIds.mal != nil { return false }
             // Compared for *inequality*, not growth. `knownTitles` only appends, so the
             // two are equivalent today — but if that ever stops being true, re-asking is
             // the safe failure and staying silent is not.

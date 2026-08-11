@@ -20,9 +20,9 @@ final class UpgradeAttemptMemoryTests: XCTestCase {
         return UpgradeAttemptMemory(directory: dir)
     }
 
-    private func work(_ id: WorkID, titles: [String]) -> Work {
+    private func work(_ id: WorkID, titles: [String], mal: Int? = nil) -> Work {
         Work(id: id, displayTitle: titles.first ?? "", knownTitles: titles,
-             externalIds: ExternalIDs(), listings: [], snapshot: nil)
+             externalIds: ExternalIDs(mal: mal, anilist: nil), listings: [], snapshot: nil)
     }
 
     /// A miss means "no confident match **given these titles**", so the title count is the
@@ -38,6 +38,32 @@ final class UpgradeAttemptMemoryTests: XCTestCase {
         XCTAssertFalse(memory.suppresses(work(id, titles: ["Only I Level Up", "Solo Leveling"]),
                                          now: noon),
                        "a new title is new evidence — re-ask now, don't wait for the TTL")
+    }
+
+    /// ADR-0018. Learning an authoritative id adds no *title*, so the fingerprint above
+    /// cannot see the one change that most obviously settles the question. Without this
+    /// the Work sits refused for the rest of the TTL while holding the right answer —
+    /// and, through `tagBlocked`, tells the reader we cannot identify it.
+    @MainActor func testAnUnmatchedWorkIsReopenedByLearningAnAuthoritativeId() {
+        let memory = makeMemory()
+        let id = WorkID()
+        memory.record(.unmatched(knownTitlesCount: 1), for: id, now: noon)
+
+        XCTAssertTrue(memory.suppresses(work(id, titles: ["Jeonjijeok Dokja Sijeom"]), now: noon))
+        XCTAssertFalse(memory.suppresses(work(id, titles: ["Jeonjijeok Dokja Sijeom"], mal: 132214),
+                                         now: noon),
+                       "a Work carrying an id has stopped being a resolution case")
+    }
+
+    /// The guard is about *resolution* refusals only. `.absentFromProvider` is recorded
+    /// against a Work that already has an id, so reading it as evidence of resolution
+    /// would negate the outcome entirely and re-request the same 404 on every drain.
+    @MainActor func testAnAbsentFromProviderWorkIsStillSuppressedDespiteItsId() {
+        let memory = makeMemory()
+        let id = WorkID()
+        memory.record(.absentFromProvider(malId: 123), for: id, now: noon)
+
+        XCTAssertTrue(memory.suppresses(work(id, titles: ["A"], mal: 123), now: noon))
     }
 
     /// The asymmetry that justifies two outcomes rather than one timestamp. Once
