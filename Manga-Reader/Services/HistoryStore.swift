@@ -28,6 +28,12 @@ struct ReadingEntry: Codable, Identifiable, Hashable {
     /// `ReadingPosition` so entries saved before it existed decode unchanged — the
     /// default reads as "the top of `page`", which is exactly the old behaviour.
     var fraction: Double = 0
+    /// The MyAnimeList id the *source* published, if it publishes one — MangaDex returns
+    /// it as `links.mal` on the response the app already fetches. Carried here so the
+    /// Work minted from this entry is born with it and never becomes a resolution
+    /// question (ADR-0018). `nil` means the source published none, or the entry predates
+    /// this field; both are answered the same way, by resolving.
+    var malId: Int? = nil
 
     /// The two fields as the one value the rest of the app passes around. They are
     /// only meaningful together: a `fraction` belongs to the `page` it was captured on.
@@ -38,7 +44,7 @@ struct ReadingEntry: Codable, Identifiable, Hashable {
 
     init(id: UUID, mangaId: String, mangaTitle: String, coverURL: URL?, chapterId: String,
          chapterNumber: String, page: Int, pageCount: Int, updatedAt: Date,
-         sourceId: String? = nil, fraction: Double = 0) {
+         sourceId: String? = nil, fraction: Double = 0, malId: Int? = nil) {
         self.id = id
         self.mangaId = mangaId
         self.mangaTitle = mangaTitle
@@ -50,6 +56,7 @@ struct ReadingEntry: Codable, Identifiable, Hashable {
         self.updatedAt = updatedAt
         self.sourceId = sourceId
         self.fraction = fraction
+        self.malId = malId
     }
 
     /// Hand-written **only** to make `fraction` tolerate its own absence.
@@ -73,6 +80,9 @@ struct ReadingEntry: Codable, Identifiable, Hashable {
         updatedAt = try c.decode(Date.self, forKey: .updatedAt)
         sourceId = try c.decodeIfPresent(String.self, forKey: .sourceId)
         fraction = try c.decodeIfPresent(Double.self, forKey: .fraction) ?? 0
+        // `Optional`, so a bare default would have sufficed — spelled out only because
+        // this decoder is hand-written and silence here would read as an oversight.
+        malId = try c.decodeIfPresent(Int.self, forKey: .malId)
     }
 }
 
@@ -146,7 +156,8 @@ final class HistoryStore: ObservableObject {
                              coverURL: manga.coverURL, chapterId: chapter.id,
                              chapterNumber: chapter.number, page: position.page,
                              pageCount: pageCount, updatedAt: Date(),
-                             sourceId: manga.sourceId, fraction: position.fraction),
+                             sourceId: manga.sourceId, fraction: position.fraction,
+                             malId: manga.malId),
                 at: 0
             )
         }
