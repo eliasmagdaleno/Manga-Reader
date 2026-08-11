@@ -55,9 +55,12 @@ on WeebCentral they are reach failures. Same mechanism, different source, opposi
 
 ## What to do first
 
-**Decide what ADR-0019's Decision 6 can honestly be, then run it — before ~2026-08-23.**
+**Seed a real WeebCentral library on the sim and run ADR-0019's Amendment 1 — before ~2026-08-23.**
 
-Decision 6 registered, before the fact and unadjustably, that **5 of 16 refusals recover, all
+**The amendment is written** (`ADR-0019 Amendment 1`), so the deciding half of this item is done.
+What remains is the run.
+
+Decision 6 had registered, before the fact and unadjustably, that **5 of 16 refusals recover, all
 correct**, to be verified in-app on the seeded sim. **That evidence cannot be produced by the
 current fixture, and this was spotted after the ADR was written, not before:**
 
@@ -68,13 +71,12 @@ current fixture, and this was spotted after the ADR was written, not before:**
 - The 16-refusal cohort is **not reproducible** — WeebCentral's popularity ordering shifts daily, so
   re-deriving it by offset draws different titles.
 
-So the realistic in-app run verifies **that the mechanism fires and recovers correct ids**, not the
-5-of-16 rate — which stays an offline claim. **Amend Decision 6 to say that plainly, in writing,
-before the run**, the same discipline that governed the thresholds and the prediction. Silently
-running a weaker check against a stronger registered claim is the failure mode this whole ADR chain
-exists to prevent.
+Amendment 1 resolves this: the 5-of-16 figure **stands as an offline claim** and is not re-verified
+in-app, and the in-app run instead registers a claim it can actually falsify — **on a fresh cohort of
+≥10 refusals, ≥2 recover and 0 are wrong**, with the full chain observed and **the gate observed
+refusing** a MangaDex-sourced Work. A run that recovers zero on ten falsifies the mechanism.
 
-Doing this needs a **real WeebCentral library seeded on the sim**. That same seeding is what
+Running it needs a **real WeebCentral library seeded on the sim**. That same seeding is what
 **ADR-0018's Decision 1 in-app leg** has been blocked on for two sessions — no refused Work on the
 current sim is re-readable. **Do them as one piece of work.**
 
