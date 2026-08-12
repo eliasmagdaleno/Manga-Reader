@@ -275,6 +275,43 @@ final class Manga_ReaderUITests: XCTestCase {
         sleep(3)
     }
 
+    /// **The seeding control for the ADR-0019 Amendment 1 run**, not a CI test.
+    ///
+    /// The run plants 80 WeebCentral Works into `works.json` rather than adding them by
+    /// hand. The protocol
+    /// (`docs/superpowers/specs/2026-08-11-adr-0019-amendment-1-run-protocol.md`) allows
+    /// that only if the planted shape is *checked* against one the app really produces —
+    /// so this mints exactly one, through `Add to Library`, and the run diffs its stored
+    /// entry against a planted one before pass 1 starts.
+    ///
+    /// Asserts nothing about resolution. Its output is the file the app writes.
+    func testMintOneWeebCentralWorkThroughTheRealPath() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let weeb = app.buttons["Browse WeebCentral"]
+        XCTAssertTrue(weeb.waitForExistence(timeout: 15), "the WeebCentral source chip should exist")
+        weeb.tap()
+
+        let card = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 60),
+                      "WeebCentral should load cover cards — a failure here is Cloudflare, not logic")
+        attach(app, name: "seed-01-weebcentral-home")
+        card.tap()
+
+        let addToLibrary = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Add to Library"))
+            .firstMatch
+        XCTAssertTrue(addToLibrary.waitForExistence(timeout: 45), "should reach a WeebCentral detail page")
+        attach(app, name: "seed-02-detail")
+        addToLibrary.tap()
+        sleep(4)
+        attach(app, name: "seed-03-after-add")
+
+        // Background to force the stores to flush; a run that just ends loses the write.
+        XCUIDevice.shared.press(.home)
+        sleep(3)
+    }
+
     func testForYouRailPopulatesWithCompositeProvider() throws {
         let app = XCUIApplication()
         app.launch()

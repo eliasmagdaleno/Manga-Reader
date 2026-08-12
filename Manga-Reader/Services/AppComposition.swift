@@ -66,8 +66,15 @@ struct AppComposition {
         // rail, deciding whether to explain itself (ADR-0015) — and if they saw different
         // records the notice would contradict the drain.
         let memory = UpgradeAttemptMemory(directory: directory)
+        // Nil in production and in every build that is not Debug — see
+        // `VerificationSwitches`. `MetadataUpgradeQueue` then builds its own resolver
+        // exactly as it did before this line existed, so the shipped graph is unchanged.
+        var resolverOverride: MALEntityResolver?
+        #if DEBUG
+        resolverOverride = VerificationSwitches.resolver()
+        #endif
         let upgrades = MetadataUpgradeQueue(works: wk, anilist: anilist, rateLimiter: limiter,
-                                            memory: memory)
+                                            resolver: resolverOverride, memory: memory)
 
         let vocab = TagVocabularyStore(fetch: { try await limiter.run { try await anilist.tagVocabulary() } })
         let pool = AniListPoolStore()
