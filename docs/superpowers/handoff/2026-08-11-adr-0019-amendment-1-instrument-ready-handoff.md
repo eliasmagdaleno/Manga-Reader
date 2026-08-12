@@ -1,5 +1,10 @@
 # Session Handoff — 2026-08-11 (late): Amendment 1's instrument is built and validated, the run has not started
 
+> **SUPERSEDED, same session, by `2026-08-11-adr-0019-amendment-1-verified-handoff.md`.** The run
+> described below as "not started" was run and passed: 25 refusals, 8 recovered, 0 wrong. This file
+> is kept only because its "what was built / what was validated" sections are the record of the
+> instrument. **Do not work from its pickup list.**
+
 **Audience:** the next session. Supersedes nothing — it is a *mid-task* handoff inside the single
 item `2026-08-11-adr-0019-shipped-handoff.md` named as "What to do first". That handoff is still the
 context; read it first.
