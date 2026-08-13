@@ -108,12 +108,21 @@ from the taste profile. Adding the field there would fix nothing measured.
    decision recorded in `AppCompositionTests`' header, and Decision 3 changes behaviour inside it.
    Verified by unit tests on `suppresses()` itself, which is where the logic lives — but the wiring
    from there to the rendered notice remains untested, as before.
-3. ~~**Unmeasured in the app.**~~ **Closed 2026-08-11** for Decision 3 — see
+3. ~~**Unmeasured in the app.**~~ **Fully closed 2026-08-13.** Decision 1's leg is verified in
+   `docs/superpowers/specs/2026-08-13-adr-0018-decision-1-verified.md`: a Berserk read reached
+   through Search wrote `malId: 2` onto the new history entry, above the seeded pre-0018 entry for
+   the same manga that still reads `malId: null`; resuming it from History prepended new entries
+   still carrying the id, which is `ReadingEntry.asManga` — the line Amendment 1 fixed — holding on
+   the resume route. A WeebCentral read wrote `malId: nil`, correctly: that source publishes no ids.
+   **Decision 2 remains unverified and unverifiable this way** — a wrong `links.mal` is Hazard 1,
+   accepted by name. Original note, for Decision 3, follows. **Closed 2026-08-11** for Decision 3 — see
    `docs/superpowers/specs/2026-08-11-adr-0018-in-app-verification.md`. On the seeded simulator a
    refused `Wind Breaker` Work acquired `mal: 133081` through an ordinary library add, and the next
    launch cleared its refusal and left it holding 28 AniList tags; the placeholder control was
-   untouched. **Decision 1's in-app leg is still unverified** — no refused Work on that simulator is
-   re-readable — and remains unit-tested only.
+   untouched. ~~**Decision 1's in-app leg is still unverified** — no refused Work on that simulator
+   is re-readable — and remains unit-tested only.~~ **Superseded 2026-08-13**, and its reasoning was
+   wrong in a way worth keeping: what the leg needed was not a re-readable *refused* Work but a
+   re-readable Work whose *source publishes an id*. Berserk qualified the whole time.
 
 ## Revisit triggers
 

@@ -312,6 +312,127 @@ final class Manga_ReaderUITests: XCTestCase {
         sleep(3)
     }
 
+    // MARK: - ADR-0018 Decision 1, in-app (2026-08-13)
+
+    /// The three legs below verify **Decision 1** — *history carries the id its source published* —
+    /// which `2026-08-11-adr-0018-in-app-verification.md` explicitly could not reach. Protocol and
+    /// registered predictions: `docs/superpowers/specs/2026-08-13-adr-0018-decision-1-run-protocol.md`.
+    ///
+    /// **Not CI tests.** They are instruments, pinned to the seeded simulator (`2A0D54DF-…`) and to
+    /// live network, and leg B's fixture expires with its refusal TTL (~2026-08-23). They assert
+    /// what the UI can see; **the actual verification is the plist** each one leaves behind, because
+    /// `ReadingEntry.malId` is never rendered.
+    ///
+    /// **Run them in order, one at a time.** Leg C is only meaningful if leg B ran between: `record`
+    /// updates the newest entry in place when manga and chapter match, so Berserk has to be
+    /// displaced from the top of history or the resume writes nothing new.
+    ///
+    /// Every one presses home before returning — `HistoryStore` throttles its writes and flushes on
+    /// `.background`, and a run that just ends loses the entry it was verifying.
+
+    /// **Leg A — the substantive one.** Berserk (`801513ba…`, `links.mal = 2`) reached through
+    /// Search, so the `Manga` handed to the reader came off the API carrying its published id.
+    /// Berserk is already in this sim's history from the pre-0018 seeding with `malId: null` under
+    /// the same `mangaId`, so the before-state is on record rather than asserted.
+    func testADR0018Decision1MangaDexReadWritesThePublishedId() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.buttons["Search"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
+        field.tap()
+        field.typeText("Berserk\n")
+
+        // MangaDex returns `Boushoku no Berserk` (mal 113958) ahead of the target for this query.
+        // Excluding it by label is load-bearing: the wrong hit would write a real id and read as a
+        // pass.
+        let target = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS[c] %@ AND NOT (label CONTAINS[c] %@)",
+                        "Berserk", "Boushoku")
+        ).element(boundBy: 0)
+        XCTAssertTrue(target.waitForExistence(timeout: 25), "search should return Berserk itself")
+        attach(app, name: "legA-01-search-results")
+        target.tap()
+
+        readFirstChapter(app, label: "legA")
+    }
+
+    /// **Leg B — the weaker half, and the displacer leg C needs.** A real, still-refused WeebCentral
+    /// title. WeebCentral publishes no external ids, so the expected entry carries `malId: nil`:
+    /// this shows the write happens on the scraped-source path and that nothing invents an id, not
+    /// that an id survives.
+    func testADR0018Decision1WeebCentralReadWritesNoId() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        let weeb = app.buttons["Browse WeebCentral"]
+        XCTAssertTrue(weeb.waitForExistence(timeout: 15), "the WeebCentral source chip should exist")
+        weeb.tap()
+        sleep(2)
+
+        app.buttons["Search"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
+        field.tap()
+        field.typeText("Othello\n")
+
+        let target = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Othello"))
+            .element(boundBy: 0)
+        XCTAssertTrue(target.waitForExistence(timeout: 45),
+                      "WeebCentral search should return Othello — a failure here is Cloudflare, not logic")
+        attach(app, name: "legB-01-search-results")
+        target.tap()
+
+        readFirstChapter(app, label: "legB")
+    }
+
+    /// **Leg C — the resume route.** Amendment 1 found `ReadingEntry.asManga` hardcoding
+    /// `malId: nil`, which broke exactly this path. Resuming leg A's entry from History must
+    /// prepend a **new** entry still carrying `mal 2`; the plist check is on the entry's UUID being
+    /// new, since a silent in-place update would preserve the value while proving nothing.
+    func testADR0018Decision1ResumeFromHistoryKeepsTheId() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.buttons["History"].tap()
+        let row = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS[c] %@ AND NOT (label CONTAINS[c] %@)",
+                        "Berserk", "Boushoku")
+        ).element(boundBy: 0)
+        XCTAssertTrue(row.waitForExistence(timeout: 15), "leg A's Berserk entry should be in History")
+        attach(app, name: "legC-01-history")
+        row.tap()
+
+        turnPagesAndBackground(app, label: "legC")
+    }
+
+    /// Opens the first chapter row on a detail page and reads far enough to commit.
+    private func readFirstChapter(_ app: XCUIApplication, label: String) {
+        let chapter = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "CH·"))
+            .element(boundBy: 0)
+        XCTAssertTrue(chapter.waitForExistence(timeout: 45), "the detail page should list a chapter")
+        attach(app, name: "\(label)-02-detail")
+        chapter.tap()
+
+        turnPagesAndBackground(app, label: label)
+    }
+
+    /// Turns pages in both directions — the reader's advancing direction depends on the stored
+    /// R→L setting, and a swipe the wrong way at page 0 moves nothing — then waits out
+    /// `HistoryStore`'s 2s throttle and backgrounds to force the flush.
+    private func turnPagesAndBackground(_ app: XCUIApplication, label: String) {
+        sleep(8)
+        attach(app, name: "\(label)-03-reader-opened")
+        for _ in 0..<3 { app.swipeLeft(velocity: .fast); usleep(700_000) }
+        for _ in 0..<3 { app.swipeRight(velocity: .fast); usleep(700_000) }
+        sleep(4)
+        attach(app, name: "\(label)-04-reader-after-turns")
+
+        XCUIDevice.shared.press(.home)
+        sleep(4)
+    }
+
     func testForYouRailPopulatesWithCompositeProvider() throws {
         let app = XCUIApplication()
         app.launch()
