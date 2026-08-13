@@ -1,8 +1,14 @@
 # ADR-0019 — Bridging resolution for sources that publish no external ids
 
-- **Status:** **Accepted (2026-08-11)**, pending the acceptance evidence registered in Decision 6 —
-  **as amended by Amendment 1**, which corrects Decision 6 to a claim the in-app run can actually
-  falsify. Read Amendment 1, not Decision 6, for what has to be run
+- **Status:** **Accepted (2026-08-11), and verified in the app the same day.** Amendment 1's
+  registered claim was met: on a fresh 96-title WeebCentral library, **25 refusals → 8 recovered, 0
+  wrong**, against a registered floor of ≥2-of-≥10. See
+  [the verification](../superpowers/specs/2026-08-11-adr-0019-amendment-1-verified.md), and its
+  protocol, committed before the run.
+  **One leg is unverified: the gate was never observed refusing** — every MangaDex-sourced Work in
+  the library already carried a `mal` id and so returned on ADR-0018's fast path without ever
+  reaching `isBridgeable`. Recorded as not observed rather than as passed; the gate rests on its
+  unit tests. Read Amendment 1, not Decision 6
 - **Amends:** [ADR-0016](0016-mangadex-as-a-resolution-bridge.md) — by **activating the reopening
   clause ADR-0016 wrote for itself**. It does **not** supersede or un-reject it: 0016 stays
   Rejected-for-MangaDex, and its rejection is the more valuable half of the record
@@ -209,3 +215,19 @@ then killed by one live response body that a `media_type` filter answered for fr
 expensive lesson in `docs/adr/`, and it stays intact and Rejected. This ADR revives the
 *implementation*, on a *different source*, for the *opposite reason*. Per `docs/agents/domain.md`,
 that is what a revival looks like here: a new ADR, not an edit to an old one.
+
+## Outcome of the Amendment 1 run (2026-08-11)
+
+**Met.** 96-title WeebCentral cohort, seeded unfiltered; **25 refusals, 8 recovered (32%), 0 wrong**,
+every recovered refusal cleared on the next pass. Registered floor was ≥2 recoveries on ≥10
+refusals. Full write-up and hand-checks:
+[`2026-08-11-adr-0019-amendment-1-verified.md`](../superpowers/specs/2026-08-11-adr-0019-amendment-1-verified.md).
+
+Two things the run does **not** license, stated here because this is where a later reader will look:
+
+- **The gate is still unverified in-app.** Not a failure, and not a pass — nothing asked, because
+  ADR-0017's novel filter has made a MangaDex-sourced Work that misses on MAL rare. It stays covered
+  by unit tests until a library contains one.
+- **32% is not a re-measurement of the offline 31%.** That the two agree to a point is a coincidence
+  worth exactly nothing: a different cohort on a different instrument. Amendment 1's whole argument
+  is that an in-app run measures a mechanism, not a rate. Do not cite the agreement as corroboration.
