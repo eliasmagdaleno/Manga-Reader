@@ -76,3 +76,41 @@ silently absent.
 
 `upgrade-attempts.json` is **not** deleted — nothing here needs a closed cohort, and deleting it
 would destroy both this run's control status and ADR-0018 leg B's fixture.
+
+## Amendment A (before the logged drain) — the control failed, and so did the method that picked it
+
+**Registered failure mode 2 fired.** Guyabano Holiday resolved on MAL — `mal: 121435`,
+`anilist: 105580` — so it never needed the bridge and logged nothing. The run as first executed is
+**inconclusive**, exactly as this protocol said it would be, and is reported that way rather than as
+a gate observation.
+
+**The selection method was wrong, not just unlucky.** MAL's `q=` search returns *Shissou Holiday*,
+*Holiday Love*, *Holiday* for `Guyabano Holiday` — while MAL holds an entry titled exactly
+`Guyabano Holiday` (`グヤバノ・ホリデー`), which the app found. So: **absence from MAL's `q=` results
+is not absence from MAL.** Picking a fixture by "MAL's top hits look unrelated" cannot establish a
+miss, and every fixture chosen that way in this protocol is suspect on the same grounds.
+
+**The subject is unaffected but was observed unlogged.** Dyo Adélfia was attempted during the
+seeding test at 15:29:45 — before `ADR0019_BRIDGE_LOG` was set — and refused as
+`.unmatched(knownTitlesCount: 1)` with `externalIds: {}`, which is prediction 3 met. Its refusal
+then TTL-suppressed it, so the logged drain that followed attempted nothing at all and wrote no log
+file. **No query was logged for either fixture, and that silence is worth nothing** until a control
+is proven to log.
+
+### The correction
+
+Use controls the **app itself has already refused**, rather than ones a weak search endpoint implies
+it would. The sim holds 17 such WeebCentral Works from the ADR-0019 Amendment 1 run — empirical
+MAL misses, each measured by this app. Their only obstacle is TTL suppression until ~08-25.
+
+So, **declared surgical edit**: remove exactly two entries from `upgrade-attempts.json` — the
+subject `Dyo Adélfia` (so it re-attempts under logging) and the control `Koi Inu`
+(`weebcentral / 01J76XYBCVMXT396YDSP40ZW0D`, refused `.unmatched(1)`). Nothing else in the file is
+touched, and **Othello is deliberately left alone** — it is ADR-0018 leg B's fixture.
+
+Removing an attempt record only lifts suppression; it does not touch `works.json`, the resolver, or
+the gate. The hazard is that it is a hand edit to the app's own store mid-run, which is why it is
+written down here, before it is made, rather than mentioned afterwards.
+
+Guyabano Holiday is left in the library as it now stands, resolved. It is no longer a control and is
+not counted as one.

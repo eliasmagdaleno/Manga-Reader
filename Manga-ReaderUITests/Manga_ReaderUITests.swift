@@ -433,6 +433,80 @@ final class Manga_ReaderUITests: XCTestCase {
         sleep(4)
     }
 
+    // MARK: - ADR-0019, the gate leg (2026-08-13)
+
+    /// Seeds the two fixtures the gate run needs, through `Add to Library` on each source.
+    /// Protocol and registered predictions:
+    /// `docs/superpowers/specs/2026-08-13-adr-0019-gate-run-protocol.md`.
+    ///
+    /// **Adds only. Asserts nothing about resolution** — the drain happens afterwards under
+    /// `simctl launch` with `ADR0019_BRIDGE_LOG` set, because another `xcodebuild test` would
+    /// reinstall and move the data container out from under the log path.
+    ///
+    /// - **Dyo Adélfia** (`mangadex / 347c8a31-…`) is the subject: MangaDex publishes no
+    ///   `links.mal` for it and MAL misses it, so it is a Work that reaches `isBridgeable` with a
+    ///   MangaDex Listing — the case ADR-0019 Decision 2 was written for.
+    /// - **Guyabano Holiday** (`weebcentral / 01J76XYFWD7H55VKCWTYGFGTZY`) is the control, and has
+    ///   to be a *fresh* title: the sim's 17 refused WeebCentral Works stay TTL-suppressed until
+    ///   ~2026-08-25 and would log nothing at all.
+    ///
+    /// Searches `Dyo` rather than the full title — the accent in `Adélfia` is not worth typing
+    /// through the simulator keyboard.
+    /// One fixture per test, on a fresh launch each: driving both in one pass meant navigating
+    /// Search → Detail → Home → a different source chip → Search again, and the second search field
+    /// never came back. Not worth debugging for an instrument.
+    func testADR0019SeedGateSubject() throws {
+        let app = XCUIApplication()
+        app.launch()
+        addFirstResultToLibrary(app, source: "Browse MangaDex", query: "Dyo",
+                                match: "Dyo", label: "gate-subject")
+        XCUIDevice.shared.press(.home)
+        sleep(4)
+    }
+
+    func testADR0019SeedGateControl() throws {
+        let app = XCUIApplication()
+        app.launch()
+        addFirstResultToLibrary(app, source: "Browse WeebCentral", query: "Guyabano",
+                                match: "Guyabano", label: "gate-control")
+        XCUIDevice.shared.press(.home)
+        sleep(4)
+    }
+
+    private func addFirstResultToLibrary(_ app: XCUIApplication, source: String,
+                                         query: String, match: String, label: String) {
+        let chip = app.buttons[source]
+        if chip.waitForExistence(timeout: 15) { chip.tap(); sleep(2) }
+
+        app.buttons["Search"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
+        field.tap()
+        // The field keeps the previous query on the second pass through here. Its placeholder
+        // reads as a value too, so clear only when the field actually offers a clear button.
+        let clear = field.buttons.firstMatch
+        if clear.exists { clear.tap(); field.tap() }
+        field.typeText("\(query)\n")
+
+        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", match))
+            .element(boundBy: 0)
+        XCTAssertTrue(result.waitForExistence(timeout: 45), "search should return \(match)")
+        attach(app, name: "\(label)-01-results")
+        result.tap()
+
+        let add = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Add to Library"))
+            .firstMatch
+        XCTAssertTrue(add.waitForExistence(timeout: 45), "should reach \(match)'s detail page")
+        attach(app, name: "\(label)-02-detail")
+        add.tap()
+        sleep(3)
+        attach(app, name: "\(label)-03-added")
+
+        // Back to Home so the next pass starts from the source chips.
+        app.buttons["Home"].tap()
+        sleep(1)
+    }
+
     func testForYouRailPopulatesWithCompositeProvider() throws {
         let app = XCUIApplication()
         app.launch()
