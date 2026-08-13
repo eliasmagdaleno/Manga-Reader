@@ -78,3 +78,15 @@ protocol registered "the control resolves" as a named failure mode in advance.
 
 Reproducing it needs `VerificationSwitches.swift`, which is deleted in the same change as this
 write-up per its own deadline; recovering it is `git show` on this commit's parent.
+
+## Disposition of the seeding tests — decided 2026-08-13, after the run
+
+`testADR0019SeedGateSubject` and `testADR0019SeedGateControl`, with their `addFirstResultToLibrary`
+helper, are **deleted**. They asserted nothing — they existed only to push two fixtures into the
+library so the `simctl launch` drain had something to attempt — and that drain is done and recorded
+above. Re-running them would seed the same two Works into an already-seeded sim.
+
+`git show 7f434b8` recovers them if a second gate run is ever needed. Carry the finding that killed
+the first attempt along with them: a *fresh* control is not sufficient. The control has to be a Work
+this app has already refused, and its TTL suppression has to be lifted first, or the drain asks
+nothing and the empty log reads exactly like a passing gate.

@@ -314,18 +314,26 @@ final class Manga_ReaderUITests: XCTestCase {
 
     // MARK: - ADR-0018 Decision 1, in-app (2026-08-13)
 
-    /// The three legs below verify **Decision 1** — *history carries the id its source published* —
+    /// The two legs below verify **Decision 1** — *history carries the id its source published* —
     /// which `2026-08-11-adr-0018-in-app-verification.md` explicitly could not reach. Protocol and
-    /// registered predictions: `docs/superpowers/specs/2026-08-13-adr-0018-decision-1-run-protocol.md`.
+    /// registered predictions: `docs/superpowers/specs/2026-08-13-adr-0018-decision-1-run-protocol.md`;
+    /// the run itself is `…-adr-0018-decision-1-verified.md`.
     ///
     /// **Not CI tests.** They are instruments, pinned to the seeded simulator (`2A0D54DF-…`) and to
-    /// live network, and leg B's fixture expires with its refusal TTL (~2026-08-23). They assert
-    /// what the UI can see; **the actual verification is the plist** each one leaves behind, because
-    /// `ReadingEntry.malId` is never rendered.
+    /// live network. They assert what the UI can see; **the actual verification is the plist** each
+    /// one leaves behind, because `ReadingEntry.malId` is never rendered.
     ///
-    /// **Run them in order, one at a time.** Leg C is only meaningful if leg B ran between: `record`
-    /// updates the newest entry in place when manga and chapter match, so Berserk has to be
-    /// displaced from the top of history or the resume writes nothing new.
+    /// **Both fixtures are MangaDex titles on purpose.** The original leg B — a still-refused
+    /// WeebCentral read, showing the scraped path writes `malId: nil` — was deleted on 2026-08-13
+    /// because its fixture aged out with the 14-day refusal TTL (~2026-08-25) and it could not be
+    /// re-pointed without hand-picking a fresh refusal each time. Its result is recorded in the run
+    /// write-up; recover the test itself from `git show 7f434b8` if the scraped path needs
+    /// re-checking, and expect to find a new fixture for it.
+    ///
+    /// **Run them in order, one at a time.** Leg C used to depend on leg B running between to
+    /// displace Berserk from the top of history — `record` updates the newest entry in place when
+    /// manga *and* chapter match, so an undisplaced resume writes nothing new. Leg C now displaces
+    /// Berserk itself, which is what makes it standalone.
     ///
     /// Every one presses home before returning — `HistoryStore` throttles its writes and flushes on
     /// `.background`, and a run that just ends loses the entry it was verifying.
@@ -358,41 +366,47 @@ final class Manga_ReaderUITests: XCTestCase {
         readFirstChapter(app, label: "legA")
     }
 
-    /// **Leg B — the weaker half, and the displacer leg C needs.** A real, still-refused WeebCentral
-    /// title. WeebCentral publishes no external ids, so the expected entry carries `malId: nil`:
-    /// this shows the write happens on the scraped-source path and that nothing invents an id, not
-    /// that an id survives.
-    func testADR0018Decision1WeebCentralReadWritesNoId() throws {
-        let app = XCUIApplication()
-        app.launch()
-
-        let weeb = app.buttons["Browse WeebCentral"]
-        XCTAssertTrue(weeb.waitForExistence(timeout: 15), "the WeebCentral source chip should exist")
-        weeb.tap()
-        sleep(2)
-
-        app.buttons["Search"].tap()
-        let field = app.searchFields.firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
-        field.tap()
-        field.typeText("Othello\n")
-
-        let target = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Othello"))
-            .element(boundBy: 0)
-        XCTAssertTrue(target.waitForExistence(timeout: 45),
-                      "WeebCentral search should return Othello — a failure here is Cloudflare, not logic")
-        attach(app, name: "legB-01-search-results")
-        target.tap()
-
-        readFirstChapter(app, label: "legB")
-    }
-
     /// **Leg C — the resume route.** Amendment 1 found `ReadingEntry.asManga` hardcoding
     /// `malId: nil`, which broke exactly this path. Resuming leg A's entry from History must
     /// prepend a **new** entry still carrying `mal 2`; the plist check is on the entry's UUID being
     /// new, since a silent in-place update would preserve the value while proving nothing.
+    ///
+    /// Reads Junjou Romantica first purely to displace Berserk from the top of history — an
+    /// undisplaced resume matches on manga *and* chapter and updates in place, which would preserve
+    /// `mal 2` while proving nothing. It is a MangaDex title, so unlike the deleted leg B it carries
+    /// no refusal TTL and does not expire. The displacer's own entry is not the subject of any
+    /// assertion.
+    ///
+    /// **A displacer needs readable chapters, which is not the same as existing.** The first
+    /// candidate here was Wind Breaker: search found it and the detail page opened correctly, but
+    /// that entry reads `0 AVAILABLE / No chapters yet.` in English, so there was nothing to open
+    /// and nothing was displaced. Junjou Romantica was checked against `/chapter` with
+    /// `translatedLanguage[]=en` before being used (134), as were both titles its search returns.
     func testADR0018Decision1ResumeFromHistoryKeepsTheId() throws {
         let app = XCUIApplication()
+        app.launch()
+
+        // --- displacement, not the measurement ---
+        app.buttons["Search"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
+        field.tap()
+        field.typeText("Junjou Romantica\n")
+
+        let displacer = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS[c] %@", "Junjou")
+        ).element(boundBy: 0)
+        XCTAssertTrue(displacer.waitForExistence(timeout: 25),
+                      "search should return Junjou Romantica, leg C's displacer")
+        attach(app, name: "legC-00-displacer-search")
+        displacer.tap()
+        readFirstChapter(app, label: "legC-displacer")
+
+        // --- the measurement ---
+        // Relaunch rather than re-activate: `readFirstChapter` leaves the app backgrounded *in the
+        // reader*, and the tab bar is not reachable from there. The relaunch is also what makes the
+        // displacer's write durable before the resume reads it back.
+        app.terminate()
         app.launch()
 
         app.buttons["History"].tap()
@@ -433,79 +447,18 @@ final class Manga_ReaderUITests: XCTestCase {
         sleep(4)
     }
 
-    // MARK: - ADR-0019, the gate leg (2026-08-13)
-
-    /// Seeds the two fixtures the gate run needs, through `Add to Library` on each source.
-    /// Protocol and registered predictions:
-    /// `docs/superpowers/specs/2026-08-13-adr-0019-gate-run-protocol.md`.
-    ///
-    /// **Adds only. Asserts nothing about resolution** — the drain happens afterwards under
-    /// `simctl launch` with `ADR0019_BRIDGE_LOG` set, because another `xcodebuild test` would
-    /// reinstall and move the data container out from under the log path.
-    ///
-    /// - **Dyo Adélfia** (`mangadex / 347c8a31-…`) is the subject: MangaDex publishes no
-    ///   `links.mal` for it and MAL misses it, so it is a Work that reaches `isBridgeable` with a
-    ///   MangaDex Listing — the case ADR-0019 Decision 2 was written for.
-    /// - **Guyabano Holiday** (`weebcentral / 01J76XYFWD7H55VKCWTYGFGTZY`) is the control, and has
-    ///   to be a *fresh* title: the sim's 17 refused WeebCentral Works stay TTL-suppressed until
-    ///   ~2026-08-25 and would log nothing at all.
-    ///
-    /// Searches `Dyo` rather than the full title — the accent in `Adélfia` is not worth typing
-    /// through the simulator keyboard.
-    /// One fixture per test, on a fresh launch each: driving both in one pass meant navigating
-    /// Search → Detail → Home → a different source chip → Search again, and the second search field
-    /// never came back. Not worth debugging for an instrument.
-    func testADR0019SeedGateSubject() throws {
-        let app = XCUIApplication()
-        app.launch()
-        addFirstResultToLibrary(app, source: "Browse MangaDex", query: "Dyo",
-                                match: "Dyo", label: "gate-subject")
-        XCUIDevice.shared.press(.home)
-        sleep(4)
-    }
-
-    func testADR0019SeedGateControl() throws {
-        let app = XCUIApplication()
-        app.launch()
-        addFirstResultToLibrary(app, source: "Browse WeebCentral", query: "Guyabano",
-                                match: "Guyabano", label: "gate-control")
-        XCUIDevice.shared.press(.home)
-        sleep(4)
-    }
-
-    private func addFirstResultToLibrary(_ app: XCUIApplication, source: String,
-                                         query: String, match: String, label: String) {
-        let chip = app.buttons[source]
-        if chip.waitForExistence(timeout: 15) { chip.tap(); sleep(2) }
-
-        app.buttons["Search"].tap()
-        let field = app.searchFields.firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
-        field.tap()
-        // The field keeps the previous query on the second pass through here. Its placeholder
-        // reads as a value too, so clear only when the field actually offers a clear button.
-        let clear = field.buttons.firstMatch
-        if clear.exists { clear.tap(); field.tap() }
-        field.typeText("\(query)\n")
-
-        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", match))
-            .element(boundBy: 0)
-        XCTAssertTrue(result.waitForExistence(timeout: 45), "search should return \(match)")
-        attach(app, name: "\(label)-01-results")
-        result.tap()
-
-        let add = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Add to Library"))
-            .firstMatch
-        XCTAssertTrue(add.waitForExistence(timeout: 45), "should reach \(match)'s detail page")
-        attach(app, name: "\(label)-02-detail")
-        add.tap()
-        sleep(3)
-        attach(app, name: "\(label)-03-added")
-
-        // Back to Home so the next pass starts from the source chips.
-        app.buttons["Home"].tap()
-        sleep(1)
-    }
+    // MARK: - ADR-0019, the gate leg (2026-08-13) — REMOVED 2026-08-13
+    //
+    // The two seeding tests that lived here (`testADR0019SeedGateSubject`,
+    // `testADR0019SeedGateControl`) and their `addFirstResultToLibrary` helper are deleted.
+    // They asserted nothing — they only pushed two fixtures into the library so the drain that
+    // followed under `simctl launch` had something to attempt — and that drain is done and
+    // written up in `docs/superpowers/specs/2026-08-13-adr-0019-gate-verified.md`. Re-running
+    // them would seed the same two Works into an already-seeded sim.
+    //
+    // Recover them from `git show 7f434b8` if a second gate run is ever needed. Note the finding
+    // that killed the first attempt: a fresh control is not enough, it has to be a Work this app
+    // has already refused, and its TTL suppression has to be lifted or the drain asks nothing.
 
     func testForYouRailPopulatesWithCompositeProvider() throws {
         let app = XCUIApplication()
