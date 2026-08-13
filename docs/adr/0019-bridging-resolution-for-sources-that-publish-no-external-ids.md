@@ -5,10 +5,11 @@
   wrong**, against a registered floor of ≥2-of-≥10. See
   [the verification](../superpowers/specs/2026-08-11-adr-0019-amendment-1-verified.md), and its
   protocol, committed before the run.
-  **One leg is unverified: the gate was never observed refusing** — every MangaDex-sourced Work in
-  the library already carried a `mal` id and so returned on ADR-0018's fast path without ever
-  reaching `isBridgeable`. Recorded as not observed rather than as passed; the gate rests on its
-  unit tests. Read Amendment 1, not Decision 6
+  ~~One leg is unverified: the gate was never observed refusing.~~ **Closed 2026-08-13** — a
+  MangaDex-sourced Work with no `links.mal` (`Dyo Adélfia`) was refused with **0** bridge queries
+  while a WeebCentral control was refused after **3**, one second apart in the same drain. See
+  [the gate verification](../superpowers/specs/2026-08-13-adr-0019-gate-verified.md).
+  **ADR-0019 is now verified in full.** Read Amendment 1, not Decision 6
 - **Amends:** [ADR-0016](0016-mangadex-as-a-resolution-bridge.md) — by **activating the reopening
   clause ADR-0016 wrote for itself**. It does **not** supersede or un-reject it: 0016 stays
   Rejected-for-MangaDex, and its rejection is the more valuable half of the record
@@ -225,9 +226,10 @@ refusals. Full write-up and hand-checks:
 
 Two things the run does **not** license, stated here because this is where a later reader will look:
 
-- **The gate is still unverified in-app.** Not a failure, and not a pass — nothing asked, because
-  ADR-0017's novel filter has made a MangaDex-sourced Work that misses on MAL rare. It stays covered
-  by unit tests until a library contains one.
+- ~~**The gate is still unverified in-app.**~~ Not a failure, and not a pass — nothing asked. **Now
+  observed, 2026-08-13**: such a Work turns out to be easy to come by after all (36 of 60 recent
+  MangaDex entries publish no `links.mal`), and one of them was refused without a single bridge
+  query while a control in the same drain issued three.
 - **32% is not a re-measurement of the offline 31%.** That the two agree to a point is a coincidence
   worth exactly nothing: a different cohort on a different instrument. Amendment 1's whole argument
   is that an in-app run measures a mechanism, not a rate. Do not cite the agreement as corroboration.
