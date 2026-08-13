@@ -1,4 +1,14 @@
-# Session Handoff — 2026-08-13: ADR-0018 fully verified, the ADR-0019 gate leg is next
+# Session Handoff — 2026-08-13: ADR-0018 and ADR-0019 both fully verified
+
+**Updated later the same session — the gate leg below is now DONE.** See
+`docs/superpowers/specs/2026-08-13-adr-0019-gate-verified.md`: `Dyo Adélfia` (MangaDex, no
+`links.mal`) was refused with **0** bridge queries while the control `Koi Inu` was refused after
+**3**, one second apart in the same drain. `VerificationSwitches.swift` is deleted per its deadline.
+The first attempt failed — the intended control resolved on MAL, because **absence from MAL's `q=`
+search is not absence from MAL** — and that is the most reusable finding here. PR #49 carries both
+legs. Everything below is the state as of mid-session; its "Next" section is now history.
+
+## (original) ADR-0018 fully verified, the ADR-0019 gate leg is next
 
 **Audience:** the next session. Supersedes `2026-08-11-adr-0019-amendment-1-verified-handoff.md` —
 its items 1 and 2 are the only live work, and **item 2 is now done**.
