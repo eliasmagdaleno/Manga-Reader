@@ -8,17 +8,23 @@ supersedes this session's own mid-task handoff.
 
 | | |
 |---|---|
-| Branch | **`adr-0019-amendment-1-run`**, 3 commits ahead of `0ccde90`, **not yet pushed / no PR** |
+| Branch | **`adr-0019-amendment-1-run`**, pushed — **[PR #48](https://github.com/eliasmagdaleno/Manga-Reader/pull/48) open, CI green** (SwiftLint + Build & unit tests both COMPLETED/SUCCESS, non-empty output confirmed). **Unmerged as of 2026-08-13.** |
 | Tests | **468**, 1 skipped, 0 failures — unchanged |
 | ADRs | 0019 now **Accepted and verified**, with one leg recorded as not observed |
 | Sim | `2A0D54DF-…` now holds a **96-title WeebCentral library**, 17 still-refused |
 | `project.pbxproj` | churned on its own and was reverted; **check it before every `git add`** |
 
-Three commits, deliberately in this order — the ordering is the evidence, not bookkeeping:
+**First thing to decide: merge #48.** Nothing below depends on it being merged, but item 2 will
+touch the same sim, so merging first keeps the next branch off a stale base. One open review
+question is carried in the PR body: whether `VerificationSwitches.swift` should live in the tree at
+all (see item 3).
+
+Four commits, deliberately in this order — the ordering is the evidence, not bookkeeping:
 
 1. `a635308` — the protocol, before any cohort was fetched
 2. `01bde8c` — one amendment, before pass 1, with nothing drained
 3. `8ad2736` — the run and its results
+4. `c27525f` — this handoff
 
 ## The result
 
