@@ -77,3 +77,45 @@ each install** — resolve it by newest mtime rather than pinning the path, whic
 needs a closed cohort, and deleting it would have destroyed leg B's refusal.
 
 Leg B's fixture expires with its TTL, on or about **2026-08-23**. Leg A's does not expire.
+
+## Disposition of the instruments — decided 2026-08-13, after the run
+
+The PR that carried this run left one question open: whether tests pinned to a seeded sim, live
+network and expiring fixtures should stay in the tree past their expiry. Resolved as follows, and
+the resolution is *per leg* rather than for the set — the legs did not have the same shelf life.
+
+**Leg B is deleted.** It was the only leg whose fixture genuinely expired: it needed a WeebCentral
+title *still under refusal*, which is a 14-day property, so keeping it meant hand-picking a fresh
+refused title every fortnight for a leg that was already the weaker half — it showed the scraped
+path writes no id, not that an id survives. Its result stands recorded above. `git show 7f434b8`
+recovers the test if the scraped path ever needs re-checking; expect to source a new fixture.
+
+**Leg C is now standalone and no longer expires.** It had depended on leg B running between A and C
+purely to displace Berserk from the top of history, so deleting B would have quietly broken it —
+`record` updates in place on a manga+chapter match, and an undisplaced resume writes nothing new
+while still reading `mal 2`. It now displaces Berserk itself with a MangaDex title.
+
+**Leg A is unchanged.** Its fixture is Berserk; it never expired.
+
+### The rewrite was re-run, not just re-compiled
+
+A displacer needs *readable* chapters, which is not the same as existing. The first candidate was
+Wind Breaker, already in the sim's library: search found it and the detail page opened correctly,
+but that entry carries `0 AVAILABLE / No chapters yet.` in English — nothing to open, nothing
+displaced, and the failure surfaced as a chapter-row timeout that reads like a network flake.
+Junjou Romantica was checked against `/chapter` with `translatedLanguage[]=en` (134) *before* being
+used, as were both titles its search returns, since the test taps result 0.
+
+The rewritten leg C then ran green, and the plist confirms it still measures rather than merely
+passing — three **new** Berserk UUIDs, all `malId: 2`, above the displacer's own entries and
+distinct from the earlier run's:
+
+| Time (UTC) | Title | Ch | malId | Entry |
+|---|---|---|---|---|
+| 23:14:26 | Berserk | 386 | 2 | `CB91A512` |
+| 23:14:21 | Berserk | 385 | 2 | `DA2FE17A` |
+| 23:14:12 | Berserk | 386 | 2 | `9F98E169` |
+| 23:13:54 | Junjou Romantica | 100.96 | 765 | `E78D6907` (displacer) |
+| 22:08:51 | Berserk | 386 | 2 | `422BDD2B` (earlier run) |
+
+History is now 25 entries; the sim gained Junjou Romantica reading history it did not have before.
