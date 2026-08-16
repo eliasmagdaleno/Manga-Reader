@@ -117,6 +117,49 @@ on the population under test is the fix.
 The AniList arm is expected to reach n faster, its catalogue being wider than MangaDex's. That is a
 prediction, not an assumption; the run reports each arm's unresolved rate.
 
+## Amendment 1 (2026-08-15) — the frames cannot reach the registered n
+
+**Written before the run, not after it.** The sampling rule above registered 60 unresolved rows per
+arm without checking what the frames hold. They do not hold it:
+
+| Arm | Frame at shipped parameters | Expected unresolved at ~10% |
+|---|---|---|
+| MAL recs | **107 rows** — 86 seeds, of which 49 return no recommendations at all (`recs.json`, 2026-08-15) | ~10 |
+| AniList pool | **60 media** — 5 seeded pairs × `poolPerPairLimit = 12`; only `poolResolveLimit = 12` resolve per refresh | ~6 |
+
+This is ADR-0019 Amendment 1's lesson recurring: **a registered claim the planned instrument cannot
+produce.** Running as written would guarantee a second consecutive inconclusive verdict, which is
+not a measurement — it is a way of spending requests to learn nothing.
+
+### What changes
+
+Only the frames. **The gates are untouched.**
+
+- **MAL arm draws at hop 2.** The library's recommendations become seeds, and *their*
+  recommendations are the rows. The unit is unchanged — a MAL recommendation slot — one hop out
+  from the library.
+- **AniList arm draws from the top 20 seeded pairs at `perPage: 50`**, rather than 5 × 12. Same
+  conjunctive `tag_in` query, same rank-60 floor, deeper into each pair's popularity ordering.
+
+### The bias this introduces, and its direction
+
+Both widenings sample **further down the tail**, where MangaDex's coverage is thinner. Expect the
+unresolved rate to rise (which is what makes n reachable) and the **recovery rate to fall**, because
+a tail title is more often genuinely absent from MangaDex than merely mis-searched.
+
+**So the recovery gate becomes conservative.** A pass on this frame is a stronger result than a pass
+on the shipped head would have been. A failure is correspondingly *weaker* evidence, and the
+write-up must say so rather than reporting a bare miss — the honest reading of a sub-15% result here
+is "not demonstrated on a tail-heavy frame", not "the lever does not work".
+
+### Harness departures from the app, declared
+
+`scripts/search_width.py` reconstructs the AniList arm's seeded pairs outside the app and cannot
+reach two inputs: `TasteProfile.workWeights` (so every Work votes 1.0 for engagement rather than its
+read-weighted value) and AniList's cached tag vocabulary (so `seedExcludedTagCategories` is applied
+as a flat name list). Both affect *which* pairs seed, not how a row is resolved, which is what the
+gates measure.
+
 ## Pre-registered gates
 
 Per arm. Each is a number the run produces and which can come out either way.
