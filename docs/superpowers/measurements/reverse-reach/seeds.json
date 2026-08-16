@@ -1,0 +1,608 @@
+{
+ "works": 107,
+ "seeds": [
+  {
+   "malId": 2,
+   "title": "Berserk",
+   "sources": [
+    "mangadex"
+   ]
+  },
+  {
+   "malId": 642,
+   "title": "Vinland Saga",
+   "sources": [
+    "mangadex"
+   ]
+  },
+  {
+   "malId": 656,
+   "title": "Vagabond",
+   "sources": [
+    "mangadex"
+   ]
+  },
+  {
+   "malId": 765,
+   "title": "Junjou Romantica",
+   "sources": [
+    "mangadex",
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 782,
+   "title": "Blood+ A",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 1648,
+   "title": "Tengen Toppa Gurren Lagann",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 1733,
+   "title": "Spiral Alive",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 2686,
+   "title": "Ai wo Utau Yori Ore ni Oborero",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 3686,
+   "title": "Taiyou Ouji",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 3849,
+   "title": "The Other Side of the Mirror",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 4127,
+   "title": "Biohazard Umbrella Chronicles - Houkai e no Jokyoku",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 4456,
+   "title": "Suzunari",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 7946,
+   "title": "The Gorgeous Life of Strawberry-chan",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 10171,
+   "title": "Yasashii Te",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 10553,
+   "title": "Cream Caramel",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 10865,
+   "title": "Touhou Shinigami - Meteor Methuselah Gaiden",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 12614,
+   "title": "Oretachi ni Ai wa Nai",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 13649,
+   "title": "Orichalcum Reycal",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 13853,
+   "title": "Alexandros - Dream for World Conquest",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 15609,
+   "title": "Ibara no Okite",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 16499,
+   "title": "Yuzuko Peppermint",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 16909,
+   "title": "Young Gun Carnaval",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 17255,
+   "title": "Kaijidou Mokuroku",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 19205,
+   "title": "Kaichou-san no Koneko",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 20365,
+   "title": "LovePlus: Kanojo no Kako",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 21362,
+   "title": "Baby Blue",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 22093,
+   "title": "Hayabusa - Sanada Dengekichou",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 22198,
+   "title": "Bomba!",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 22311,
+   "title": "Akumu no Elevator",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 22427,
+   "title": "Asa ga Kuru Tabi",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 23098,
+   "title": "Otoko o Misete yo Kurata-kun!",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 24943,
+   "title": "Kimi to Boku no Ashiato - Time Travel Kasuga Kenkyuusho",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 25848,
+   "title": "Hana (MATSUMOTO Taiyou)",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 26034,
+   "title": "Juushin Liger",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 26967,
+   "title": "Perfect Rose",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 28513,
+   "title": "Momi-Baraishi",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 30579,
+   "title": "City of Darkness Side Story",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 31053,
+   "title": "Udon no Hito",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 31531,
+   "title": "Naisho no Jikan",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 33309,
+   "title": "Papa no Iu Koto o Kikinasai! - Usagi no Mark",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 33463,
+   "title": "Ousama to Fushigi no Shiro",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 34091,
+   "title": "Rec - Kimi ga Naita Hi",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 34773,
+   "title": "Detarame Mousouryoku Opera",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 34909,
+   "title": "Koi no Surisasu",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 35475,
+   "title": "G (KOIKE Keiichi)",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 37463,
+   "title": "Bodaiju Ryou no Aria",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 40311,
+   "title": "Josephine the French Rose",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 40929,
+   "title": "Mistrea",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 41127,
+   "title": "Kage ni Saku Hana",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 49127,
+   "title": "Magical Star Kanon 100%",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 51237,
+   "title": "Kouboku no Keibu",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 51293,
+   "title": "Toscana no Yuuutsu",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 52219,
+   "title": "Kyou mo Uchi de Machi Awase",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 54477,
+   "title": "Bamboo Blade C",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 58497,
+   "title": "Shinigami Tantei to Yuuutsu Onsen",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 60483,
+   "title": "Cafe - Cafe",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 68815,
+   "title": "Demon Possession",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 68825,
+   "title": "Hatsukoi Dandelion",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 79467,
+   "title": "Mysteria Romantica",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 80381,
+   "title": "Basuke no Megami-sama",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 80903,
+   "title": "Sleipnir",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 81687,
+   "title": "Hana no Niwa Ame no Mai",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 86598,
+   "title": "Mahou Shoujo Yongou-chan",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 88125,
+   "title": "Shut-In Shoutarou Kominami Takes on the World",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 90313,
+   "title": "Shinobi no Ban",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 90759,
+   "title": "The Vigilante of the Kingcraft Paradise",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 92126,
+   "title": "Geidaisei Yasaka Kyouya no Suuki na Bouken",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 93224,
+   "title": "Atrail - Nisekawiteki Nichijou to Senmitsu Element",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 96205,
+   "title": "Azufareo no Sobayounin",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 97644,
+   "title": "Shakunetsu no Takkyu Musume",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 104959,
+   "title": "Napping Princess - The Story of the Unknown Me",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 121435,
+   "title": "Guyabano Holiday",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 121702,
+   "title": "New Nurse Station",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 128239,
+   "title": "Seidon no Ryuu",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 132112,
+   "title": "Who Wants to Play",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 132214,
+   "title": "Jeonjijeok Dokja Sijeom",
+   "sources": [
+    "mangadex"
+   ]
+  },
+  {
+   "malId": 133081,
+   "title": "Wind Breaker",
+   "sources": [
+    "mangadex"
+   ]
+  },
+  {
+   "malId": 135697,
+   "title": "Cells at Work! Neo Bacteria!",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 135722,
+   "title": "Miquiztli II - Taiyou no Shinigami",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 137200,
+   "title": "The Grandmaster of Demonic Cultivation",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 146287,
+   "title": "Level 1 kara Hajimaru Shoukan Musou: Ore dake Tsukaeru Ura Dungeon de, Subete no Tenseisha wo Bucchigiru",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 146878,
+   "title": "Return of the Blossoming Blade",
+   "sources": [
+    "mangadex"
+   ]
+  },
+  {
+   "malId": 156588,
+   "title": "ONI: Road to Be the Mightiest Oni - Episode Zero",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 171043,
+   "title": "Second Hand Love",
+   "sources": [
+    "weebcentral"
+   ]
+  },
+  {
+   "malId": 172429,
+   "title": "Na Honjaman Level Up: Ragnarok",
+   "sources": [
+    "mangadex"
+   ]
+  },
+  {
+   "malId": 180219,
+   "title": "Mocha the Cat and His Forever Family",
+   "sources": [
+    "weebcentral"
+   ]
+  }
+ ]
+}
