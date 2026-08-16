@@ -160,7 +160,41 @@ read-weighted value) and AniList's cached tag vocabulary (so `seedExcludedTagCat
 as a flat name list). Both affect *which* pairs seed, not how a row is resolved, which is what the
 gates measure.
 
-## Pre-registered gates
+## Amendment 2 (2026-08-15) — the AniList frame extends to 40 pairs, and this one was written after seeing numbers
+
+**Declared with the awkward part first: the 20-pair run had already been scored when this was
+written.** Amendment 1 was written before any request; this one was not, and no framing recovers
+that. What follows is the case for extending anyway, and the record of what was known when.
+
+The 20-pair frame **exhausted at 399 rows with 55 unresolved** — short of the registered 60. It
+stopped by running out of rows, not by meeting either registered stopping condition; the 1500-query
+cap was untouched at 399. The registered stopping rule was therefore never satisfied in either
+direction.
+
+**What was known at the time of writing:** recovery 36 of 55 (65.5%), cost 2.92 extra requests per
+recovered card, zero wrong strong-arm picks, 35 of 36 recoveries through the exact-`malId` arm.
+
+### What changes, and what constrains it
+
+- **The AniList frame extends to the top 40 seeded pairs**, from 20. Ordering is by descending seed
+  weight, the rule fixed in Amendment 1 — the next pairs are determined by that ordering, **not by
+  their results**, which are unknown until measured.
+- **The arm re-runs whole rather than appending.** One consistent pass against live MangaDex beats
+  splicing two runs taken at different times.
+- **Both results are reported.** The 55-row numbers above stay in the write-up beside the extended
+  ones, so the pre-extension state is visible rather than overwritten.
+- **The gates and the stopping rule are untouched.**
+
+### Why this is still worth doing, and where it is weak
+
+The extension is mechanical, and the marginal rows cannot plausibly move a 65.5% rate below a 15%
+floor — which is exactly the reason it is *safe* and exactly the reason it is *suspect*: an
+extension that cannot change the verdict is one whose only function is to satisfy a threshold that
+was already missed. The defensible reading is that n was set to make the rate trustworthy, the rate
+is far from its floor, and closing n removes the one objection to an otherwise complete arm.
+
+**A reader who discounts this arm to "descriptive, n=55" is not making an error.** That reading is
+preserved deliberately, and the write-up must carry it.
 
 Per arm. Each is a number the run produces and which can come out either way.
 
