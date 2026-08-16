@@ -41,6 +41,7 @@ import subprocess
 import sys
 import time
 import unicodedata
+import urllib.parse
 
 # The UA pinned in WebViewService.swift:74 — cf_clearance is bound to it.
 WC_UA = ("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) "
@@ -77,10 +78,14 @@ def curl(url, headers=(), ua=API_UA):
 
 
 def q(text, limit=100):
-    """Percent-encode a title for a query string the way the app's URLQueryItem would."""
-    return "".join(c if c.isalnum() else "%%%02X" % ord(c)
-                   for c in text[:limit].encode("utf-8").decode("utf-8", "ignore")
-                   if ord(c) < 0x10000).replace("%20%20", "%20")
+    """Percent-encode a title for a query string the way the app's URLQueryItem would.
+
+    Must encode UTF-8 BYTES. Python's str.isalnum() is true for CJK and other non-ASCII
+    letters, so a naive "keep alphanumerics" pass emits raw multibyte characters and
+    MangaDex answers 400 — on exactly the Japanese-titled recommendations this
+    measurement most needs to see.
+    """
+    return urllib.parse.quote(text[:limit], safe="")
 
 
 # --- MALTitleMatcher, ported (ADR-0008) -------------------------------------

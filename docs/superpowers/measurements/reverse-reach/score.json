@@ -1,0 +1,28 @@
+{
+ "easy": {
+  "n": 90,
+  "picks": 42,
+  "refusals": 48,
+  "searchFailures": 0,
+  "yield": 0.4667,
+  "correct": 41,
+  "precision": 0.9762,
+  "wrong": [
+   {
+    "mal": 4207,
+    "malTitle": "Boku no Hatsukoi wo Kimi ni Sasagu",
+    "wcTitle": "Boku no Hatsukoi wo Kimi ni Sasagu",
+    "score": 1.0
+   }
+  ]
+ },
+ "hard": {
+  "n": 10,
+  "picks": 6,
+  "refusals": 4,
+  "searchFailures": 0,
+  "yield": 0.6
+ },
+ "adjudicationSample": 6,
+ "note": "Verdict is NOT computed here. Apply the pre-registered gates from the protocol spec by hand, including the inconclusive thresholds."
+}
