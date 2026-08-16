@@ -1,0 +1,10284 @@
+{
+ "rows": [
+  {
+   "malId": 583,
+   "title": "Claymore",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    23390,
+    70
+   ],
+   "titles": [
+    "Claymore",
+    "CLAYMORE"
+   ]
+  },
+  {
+   "malId": 656,
+   "title": "Vagabond",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    642,
+    736,
+    7375,
+    658,
+    727,
+    22,
+    3285,
+    3868,
+    657,
+    14582
+   ],
+   "titles": [
+    "Vagabond",
+    "バガボンド"
+   ]
+  },
+  {
+   "malId": 642,
+   "title": "Vinland Saga",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    656,
+    16765,
+    23685,
+    85968,
+    11514,
+    731,
+    481,
+    11701
+   ],
+   "titles": [
+    "Vinland Saga",
+    "ヴィンランド・サガ",
+    "Sayounara ga Chikai node",
+    "For Our Farewell Is Near",
+    "Because Goodbyes Are Coming Soon",
+    "\"Assasin's Creed Valhalla\" Collab Bangai-hen",
+    "Assassin's Creed x Vinland Saga",
+    "Assassin's Creed Valhalla x Vinland Saga"
+   ]
+  },
+  {
+   "malId": 23390,
+   "title": "Shingeki no Kyojin",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    642,
+    583,
+    564,
+    731
+   ],
+   "titles": [
+    "Shingeki no Kyojin",
+    "Attack on Titan",
+    "進撃の巨人"
+   ]
+  },
+  {
+   "malId": 564,
+   "title": "Gantz",
+   "hop": 1,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    583,
+    23390,
+    98270,
+    731
+   ],
+   "titles": [
+    "Gantz",
+    "GANTZ",
+    "Gantz/Osaka"
+   ]
+  },
+  {
+   "malId": 1474,
+   "title": "Devilman",
+   "hop": 1,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    116778,
+    98270,
+    8571,
+    14377
+   ],
+   "titles": [
+    "Devilman",
+    "デビルマン",
+    "Devilman: The Classic Collection"
+   ]
+  },
+  {
+   "malId": 736,
+   "title": "Shin Angyo Onshi",
+   "hop": 1,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    70,
+    14073
+   ],
+   "titles": [
+    "Shin Angyo Onshi",
+    "Blade of the Phantom Master",
+    "新暗行御史",
+    "Phantom Master: Dark Hero from Ruined Empire",
+    "Shin-am Heng-uhsah",
+    "The New Secret Royal Inspector"
+   ]
+  },
+  {
+   "malId": 70,
+   "title": "Übel Blatt",
+   "hop": 1,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    736
+   ],
+   "titles": [
+    "Übel Blatt",
+    "Ubel Blatt",
+    "Übel Blatt ～ユーベルブラット～",
+    "Evil Blade"
+   ]
+  },
+  {
+   "malId": 116778,
+   "title": "Chainsaw Man",
+   "hop": 1,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    2,
+    1474,
+    98270,
+    147217
+   ],
+   "titles": [
+    "Chainsaw Man",
+    "チェンソーマン"
+   ]
+  },
+  {
+   "malId": 98270,
+   "title": "Fire Punch",
+   "hop": 1,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    2,
+    1474,
+    116778,
+    3868,
+    147217
+   ],
+   "titles": [
+    "Fire Punch",
+    "ファイアパンチ"
+   ]
+  },
+  {
+   "malId": 2,
+   "title": "Berserk",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642,
+    656,
+    583,
+    23390,
+    564,
+    1474,
+    736,
+    70,
+    116778,
+    98270,
+    16765,
+    23685,
+    11701,
+    658,
+    727
+   ],
+   "titles": [
+    "Berserk",
+    "ベルセルク",
+    "Berserk: The Prototype"
+   ]
+  },
+  {
+   "malId": 16765,
+   "title": "Kingdom",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642,
+    23685,
+    11701
+   ],
+   "titles": [
+    "Kingdom",
+    "キングダム"
+   ]
+  },
+  {
+   "malId": 23685,
+   "title": "Wolfsmund",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642
+   ],
+   "titles": [
+    "Wolfsmund",
+    "狼の口 ヴォルフスムント",
+    "Wolf's Mouth: Wolfsmund",
+    "Ookami no Kuchi"
+   ]
+  },
+  {
+   "malId": 85968,
+   "title": "Golden Kamuy",
+   "hop": 1,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642,
+    658,
+    1706
+   ],
+   "titles": [
+    "Golden Kamuy",
+    "ゴールデンカムイ"
+   ]
+  },
+  {
+   "malId": 11514,
+   "title": "Otoyomegatari",
+   "hop": 1,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642,
+    85968
+   ],
+   "titles": [
+    "Otoyomegatari",
+    "A Bride's Story",
+    "乙嫁語り",
+    "Young Bride's Story",
+    "Otoyome-gatari",
+    "The Bride's Stories",
+    "Pariya-san wa Otoshigoro"
+   ]
+  },
+  {
+   "malId": 731,
+   "title": "Eden: It's an Endless World!",
+   "hop": 1,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642,
+    481
+   ],
+   "titles": [
+    "Eden: It's an Endless World!",
+    "EDEN ～It's an Endless World!～"
+   ]
+  },
+  {
+   "malId": 481,
+   "title": "Planetes",
+   "hop": 1,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642,
+    731
+   ],
+   "titles": [
+    "Planetes",
+    "プラネテス ΠΛΑΝΗΤΕΣ"
+   ]
+  },
+  {
+   "malId": 11701,
+   "title": "Shut Hell",
+   "hop": 1,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    642
+   ],
+   "titles": [
+    "Shut Hell",
+    "シュトヘル",
+    "Akuryou"
+   ]
+  },
+  {
+   "malId": 7375,
+   "title": "Kokou no Hito",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656,
+    481,
+    727,
+    3285,
+    657
+   ],
+   "titles": [
+    "Kokou no Hito",
+    "The Climber",
+    "孤高の人"
+   ]
+  },
+  {
+   "malId": 658,
+   "title": "Mugen no Juunin",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656,
+    85968,
+    22,
+    3868
+   ],
+   "titles": [
+    "Mugen no Juunin",
+    "Blade of the Immortal",
+    "無限の住人",
+    "Inhabitant of Infinity"
+   ]
+  },
+  {
+   "malId": 727,
+   "title": "Shamo",
+   "hop": 1,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656,
+    7375,
+    3285
+   ],
+   "titles": [
+    "Shamo",
+    "軍鶏"
+   ]
+  },
+  {
+   "malId": 22,
+   "title": "Rurouni Kenshin: Meiji Kenkaku Romantan",
+   "hop": 1,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656,
+    658
+   ],
+   "titles": [
+    "Rurouni Kenshin: Meiji Kenkaku Romantan",
+    "Rurouni Kenshin: Meiji Swordsman Romantic Story",
+    "るろうに剣心 -明治剣客浪漫譚-",
+    "Samurai X",
+    "Sengoku no Mikazuki",
+    "Crescent Moon in the Warring States",
+    "Crescent Moon Over a Country At War",
+    "Meteor Strike"
+   ]
+  },
+  {
+   "malId": 3285,
+   "title": "Holyland",
+   "hop": 1,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656,
+    7375,
+    727
+   ],
+   "titles": [
+    "Holyland",
+    "ホーリーランド",
+    "Holy Land"
+   ]
+  },
+  {
+   "malId": 3868,
+   "title": "Shigurui",
+   "hop": 1,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656
+   ],
+   "titles": [
+    "Shigurui",
+    "シグルイ",
+    "Death Frenzy",
+    "Crazy for Death"
+   ]
+  },
+  {
+   "malId": 657,
+   "title": "Real",
+   "hop": 1,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    656,
+    7375
+   ],
+   "titles": [
+    "Real",
+    "リアル"
+   ]
+  },
+  {
+   "malId": 14582,
+   "title": "Gamaran",
+   "hop": 1,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    656
+   ],
+   "titles": [
+    "Gamaran",
+    "我間乱 〜GAMARAN〜"
+   ]
+  },
+  {
+   "malId": 332,
+   "title": "Gravitation",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    765
+   ],
+   "titles": [
+    "Gravitation",
+    "グラビテーション"
+   ]
+  },
+  {
+   "malId": 3054,
+   "title": "Yume no Kodomo",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    765
+   ],
+   "titles": [
+    "Yume no Kodomo",
+    "夢の子供"
+   ]
+  },
+  {
+   "malId": 15038,
+   "title": "Houkago no Charisma",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    782
+   ],
+   "titles": [
+    "Houkago no Charisma",
+    "Afterschool Charisma",
+    "放課後のカリスマ"
+   ]
+  },
+  {
+   "malId": 747,
+   "title": "Blood+",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    782
+   ],
+   "titles": [
+    "Blood+",
+    "Blood Plus"
+   ]
+  },
+  {
+   "malId": 8571,
+   "title": "Shin Getter Robo",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648
+   ],
+   "titles": [
+    "Shin Getter Robo",
+    "真ゲッターロボ",
+    "Shin Getter"
+   ]
+  },
+  {
+   "malId": 37601,
+   "title": "Sensei no Bulge",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648
+   ],
+   "titles": [
+    "Sensei no Bulge",
+    "Barrage",
+    "戦星のバルジ",
+    "Sensei no Baruji",
+    "Sensei no Balge",
+    "Bulge of the Battle Star",
+    "Bulge of the War Planet"
+   ]
+  },
+  {
+   "malId": 8967,
+   "title": "Onanie Master Kurosawa",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648,
+    21
+   ],
+   "titles": [
+    "Onanie Master Kurosawa",
+    "Onani Master Kurosawa",
+    "オナニーマスター黒沢",
+    "Masturbation Master Kurosawa"
+   ]
+  },
+  {
+   "malId": 14377,
+   "title": "Shin Mazinger Zero",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648,
+    1474,
+    18074
+   ],
+   "titles": [
+    "Shin Mazinger Zero",
+    "真マジンガーZERO"
+   ]
+  },
+  {
+   "malId": 18074,
+   "title": "Getter Robo Saga",
+   "hop": 1,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648,
+    14377
+   ],
+   "titles": [
+    "Getter Robo Saga",
+    "ゲッターロボ",
+    "Getter Robo"
+   ]
+  },
+  {
+   "malId": 21,
+   "title": "Death Note",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1733,
+    22198,
+    23685,
+    8967,
+    534,
+    448,
+    28743
+   ],
+   "titles": [
+    "Death Note",
+    "DEATH NOTE"
+   ]
+  },
+  {
+   "malId": 534,
+   "title": "Spiral: Suiri no Kizuna",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1733,
+    1061
+   ],
+   "titles": [
+    "Spiral: Suiri no Kizuna",
+    "Spiral: Bonds of Reasoning",
+    "スパイラル～推理の絆～"
+   ]
+  },
+  {
+   "malId": 5901,
+   "title": "Pheromomania Syndrome",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686,
+    103,
+    2699
+   ],
+   "titles": [
+    "Pheromomania Syndrome",
+    "女子妄想症候群〈フェロモマニアシンドローム〉",
+    "Joshi Mousou Shoukougun"
+   ]
+  },
+  {
+   "malId": 678,
+   "title": "Kaikan♥Phrase",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686
+   ],
+   "titles": [
+    "Kaikan♥Phrase",
+    "Sensual Phrase",
+    "快感♥フレーズ",
+    "Ecstasy Phrase"
+   ]
+  },
+  {
+   "malId": 103,
+   "title": "Never Give Up!",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686,
+    5901,
+    2699
+   ],
+   "titles": [
+    "Never Give Up!",
+    "ネバギバ！",
+    "Sakura"
+   ]
+  },
+  {
+   "malId": 7939,
+   "title": "Danshi Kinshi!!",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686
+   ],
+   "titles": [
+    "Danshi Kinshi!!",
+    "男子禁止っ！！",
+    "Danshi Kinshitsu!!",
+    "Danshi Kinshitsu",
+    "Boy Prohibition",
+    "Youth Prohibition!!"
+   ]
+  },
+  {
+   "malId": 2699,
+   "title": "Vanilla Ice",
+   "hop": 1,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686,
+    5901,
+    103
+   ],
+   "titles": [
+    "Vanilla Ice",
+    "바닐라 아이스"
+   ]
+  },
+  {
+   "malId": 4270,
+   "title": "Hotaru no Hikari",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3686,
+    392
+   ],
+   "titles": [
+    "Hotaru no Hikari",
+    "Hotaru's Way",
+    "ホタルノヒカリ",
+    "Light of the Firefly"
+   ]
+  },
+  {
+   "malId": 443,
+   "title": "Mars",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3849
+   ],
+   "titles": [
+    "Mars",
+    "MARS"
+   ]
+  },
+  {
+   "malId": 29,
+   "title": "Paradise Kiss",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3849
+   ],
+   "titles": [
+    "Paradise Kiss",
+    "パラダイス・キス",
+    "ParaKiss"
+   ]
+  },
+  {
+   "malId": 448,
+   "title": "Tenshi Kinryouku",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3849
+   ],
+   "titles": [
+    "Tenshi Kinryouku",
+    "Angel Sanctuary",
+    "天使禁猟区"
+   ]
+  },
+  {
+   "malId": 32315,
+   "title": "Biohazard: Marhawa Desire",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4127
+   ],
+   "titles": [
+    "Biohazard: Marhawa Desire",
+    "Resident Evil: Marhawa Desire",
+    "バイオハザード～マルハワデザイア～"
+   ]
+  },
+  {
+   "malId": 14073,
+   "title": "Akaboshi: Ibun Suikoden",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    10865,
+    736
+   ],
+   "titles": [
+    "Akaboshi: Ibun Suikoden",
+    "AKABOSHI-異聞水滸伝-",
+    "Morning Star"
+   ]
+  },
+  {
+   "malId": 4192,
+   "title": "Ojousama wa Oyome-sama.",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    12614
+   ],
+   "titles": [
+    "Ojousama wa Oyome-sama.",
+    "お嬢様はお嫁様。",
+    "The Lady Is a Bride"
+   ]
+  },
+  {
+   "malId": 10619,
+   "title": "Heureka",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13853
+   ],
+   "titles": [
+    "Heureka",
+    "Eureka",
+    "ヘウレーカ"
+   ]
+  },
+  {
+   "malId": 23532,
+   "title": "Present wa Shinju",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15609
+   ],
+   "titles": [
+    "Present wa Shinju",
+    "プレゼントは真珠",
+    "Yume Kurai",
+    "Dark Dream",
+    "Dream Eater",
+    "Yuki no Kanon"
+   ]
+  },
+  {
+   "malId": 39813,
+   "title": "Akuma no Youna Anata",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15609
+   ],
+   "titles": [
+    "Akuma no Youna Anata",
+    "悪魔のような花婿〈あなた〉",
+    "Akuma no You na Hanamuko"
+   ]
+  },
+  {
+   "malId": 26149,
+   "title": "Ojousama no Untenshu",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15609
+   ],
+   "titles": [
+    "Ojousama no Untenshu",
+    "The Heiress and the Chauffeur",
+    "お嬢様の運転手",
+    "Ojou-sama no Untenshu",
+    "Ruka to Touzoku",
+    "Ruka and the Thief",
+    "Romance for My Lady",
+    "The Young Lady's Chauffeur"
+   ]
+  },
+  {
+   "malId": 28075,
+   "title": "Zerozaki Soushiki no Ningen Shiken",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16909
+   ],
+   "titles": [
+    "Zerozaki Soushiki no Ningen Shiken",
+    "零崎双識の人間試験",
+    "Zerozaki Soushiki's Humanity Test"
+   ]
+  },
+  {
+   "malId": 28743,
+   "title": "Dendrobates",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16909
+   ],
+   "titles": [
+    "Dendrobates",
+    "デンドロバテス"
+   ]
+  },
+  {
+   "malId": 5734,
+   "title": "Cosplay★Animal",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    19205
+   ],
+   "titles": [
+    "Cosplay★Animal",
+    "Cosplay Animal",
+    "コスプレ★アニマル",
+    "Sundome!",
+    "Karada no Iinari♥",
+    "Tenshi no Yubisaki Akuma no Kuchibiru"
+   ]
+  },
+  {
+   "malId": 422,
+   "title": "Yamato Nadeshiko Shichihenge♥",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26967
+   ],
+   "titles": [
+    "Yamato Nadeshiko Shichihenge♥",
+    "The Wallflower: Yamatonadeshiko Shichihenge",
+    "ヤマトナデシコ七変化♥",
+    "My Fair Lady",
+    "Sunako of Many Forms",
+    "Perfect Girl Evolution",
+    "YamaNade"
+   ]
+  },
+  {
+   "malId": 57491,
+   "title": "Sono Otoko, Amatou ni Tsuki",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053
+   ],
+   "titles": [
+    "Sono Otoko, Amatou ni Tsuki",
+    "その男、甘党につき"
+   ]
+  },
+  {
+   "malId": 392,
+   "title": "Kimi wa Pet",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053,
+    4270,
+    13099
+   ],
+   "titles": [
+    "Kimi wa Pet",
+    "Tramps Like Us",
+    "きみはペット",
+    "My Pet Momo",
+    "You are my Pet",
+    "You're My Pet"
+   ]
+  },
+  {
+   "malId": 13099,
+   "title": "Bitou Lollipop",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053
+   ],
+   "titles": [
+    "Bitou Lollipop",
+    "微糖ロリポップ"
+   ]
+  },
+  {
+   "malId": 18896,
+   "title": "Sekine-kun no Koi",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053
+   ],
+   "titles": [
+    "Sekine-kun no Koi",
+    "Sekine's Love",
+    "関根くんの恋",
+    "A Gentleman Good at Knitting is not Good at Knitting the Love"
+   ]
+  },
+  {
+   "malId": 28226,
+   "title": "Bonnouji",
+   "hop": 1,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053
+   ],
+   "titles": [
+    "Bonnouji",
+    "煩悩寺"
+   ]
+  },
+  {
+   "malId": 16908,
+   "title": "Himitsu no Ai-chan",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31531,
+    2921,
+    24744
+   ],
+   "titles": [
+    "Himitsu no Ai-chan",
+    "ヒミツのアイちゃん",
+    "Ai-chan's Secret",
+    "Tenohira no...",
+    "18 made ni Shitai xx na Koto!",
+    "Yadogiri no Shita de Bokura wa Kiss wo Suru",
+    "Koisuru Tantei"
+   ]
+  },
+  {
+   "malId": 2921,
+   "title": "Kaichou wa Maid-sama!",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31531,
+    16908
+   ],
+   "titles": [
+    "Kaichou wa Maid-sama!",
+    "Maid-sama!",
+    "会長はメイド様!",
+    "Class President Is a Maid!",
+    "Toumei na Sekai",
+    "Transparent World"
+   ]
+  },
+  {
+   "malId": 24744,
+   "title": "Liar x Liar",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31531,
+    16908
+   ],
+   "titles": [
+    "Liar x Liar",
+    "ライアー×ライアー"
+   ]
+  },
+  {
+   "malId": 13059,
+   "title": "Ugly Duckling to Swan",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31531
+   ],
+   "titles": [
+    "Ugly Duckling to Swan",
+    "미운오리 백조되기",
+    "Miunohri to Swan",
+    "Miunohri Baekjodoigi"
+   ]
+  },
+  {
+   "malId": 3523,
+   "title": "Itazura na Kiss",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    33463
+   ],
+   "titles": [
+    "Itazura na Kiss",
+    "イタズラなKiss",
+    "It Started With a Kiss",
+    "Teasing Kiss",
+    "Mischievous Kiss",
+    "Boku ga Naku",
+    "Pink no Yuki ga Futtara"
+   ]
+  },
+  {
+   "malId": 11734,
+   "title": "Watashitachi no Shiawase na Jikan",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091,
+    35573,
+    1162,
+    65923
+   ],
+   "titles": [
+    "Watashitachi no Shiawase na Jikan",
+    "私たちの幸せな時間",
+    "Watashi-tachi no Shiawase na Jikan",
+    "Our Happy Hours",
+    "Our Happy Time"
+   ]
+  },
+  {
+   "malId": 35573,
+   "title": "Orange",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091,
+    11734,
+    35035
+   ],
+   "titles": [
+    "Orange",
+    "orange",
+    "Haru-iro Astronaut",
+    "Spring-Colored Astronaut",
+    "orange: Mirai",
+    "orange: future"
+   ]
+  },
+  {
+   "malId": 26965,
+   "title": "Sekai no Hate",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091
+   ],
+   "titles": [
+    "Sekai no Hate",
+    "The End of the World",
+    "セカイの果て"
+   ]
+  },
+  {
+   "malId": 4207,
+   "title": "Boku no Hatsukoi wo Kimi ni Sasagu",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091,
+    35035
+   ],
+   "titles": [
+    "Boku no Hatsukoi wo Kimi ni Sasagu",
+    "Secret Unrequited Love",
+    "僕の初恋をキミに捧ぐ",
+    "BokuKimi",
+    "Kare wa Ike mo Shinai Sarukoen wo Mezasu",
+    "Motto Ikitai...",
+    "I Give My First Love to You"
+   ]
+  },
+  {
+   "malId": 35035,
+   "title": "Kyou no Kira-kun",
+   "hop": 1,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091,
+    35573,
+    4207
+   ],
+   "titles": [
+    "Kyou no Kira-kun",
+    "Kira-kun Today",
+    "きょうのキラ君",
+    "Today's Kira-kun"
+   ]
+  },
+  {
+   "malId": 1162,
+   "title": "Bitter Virgin",
+   "hop": 1,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091,
+    11734,
+    4207
+   ],
+   "titles": [
+    "Bitter Virgin",
+    "ビターバージン"
+   ]
+  },
+  {
+   "malId": 65923,
+   "title": "Once Again",
+   "hop": 1,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091
+   ],
+   "titles": [
+    "Once Again",
+    "初•末 ONCE AGAIN"
+   ]
+  },
+  {
+   "malId": 9004,
+   "title": "Kono Yo no Owari e no Tabi",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35475
+   ],
+   "titles": [
+    "Kono Yo no Owari e no Tabi",
+    "この世の終りへの旅",
+    "Journey to the End of the World"
+   ]
+  },
+  {
+   "malId": 91432,
+   "title": "Katajikenai",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35475
+   ],
+   "titles": [
+    "Katajikenai",
+    "かたじけない"
+   ]
+  },
+  {
+   "malId": 18570,
+   "title": "Ultra Heaven",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35475
+   ],
+   "titles": [
+    "Ultra Heaven",
+    "ウルトラヘヴン"
+   ]
+  },
+  {
+   "malId": 89265,
+   "title": "Classi9",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    37463
+   ],
+   "titles": [
+    "Classi9",
+    "Classic"
+   ]
+  },
+  {
+   "malId": 660,
+   "title": "Versailles no Bara",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    40311
+   ],
+   "titles": [
+    "Versailles no Bara",
+    "The Rose of Versailles",
+    "ベルサイユのばら",
+    "Berusaiyu no Bara",
+    "Lady Oscar",
+    "Rose of Versailles"
+   ]
+  },
+  {
+   "malId": 21525,
+   "title": "Akatsuki no Yona",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    41127,
+    95920
+   ],
+   "titles": [
+    "Akatsuki no Yona",
+    "Yona of the Dawn",
+    "暁のヨナ",
+    "Yona: The Girl Standing in the Blush of Dawn"
+   ]
+  },
+  {
+   "malId": 1061,
+   "title": "Meitantei Conan",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    58497,
+    534
+   ],
+   "titles": [
+    "Meitantei Conan",
+    "Case Closed",
+    "名探偵コナン",
+    "Detective Conan",
+    "Detective Conan Kaito Kid Special Collection"
+   ]
+  },
+  {
+   "malId": 12837,
+   "title": "Crazy Girl Shin Bia-Ah",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    79467
+   ],
+   "titles": [
+    "Crazy Girl Shin Bia-Ah",
+    "크레이지걸 신비아 異界로 가다!!",
+    "Crazy Girl Shin Bia-Ah Goes to the Alien World!!"
+   ]
+  },
+  {
+   "malId": 79891,
+   "title": "Urakata!!",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    88125
+   ],
+   "titles": [
+    "Urakata!!",
+    "Behind the Scenes!!",
+    "ウラカタ!!"
+   ]
+  },
+  {
+   "malId": 95920,
+   "title": "Niehime to Kemono no Ou",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    96205
+   ],
+   "titles": [
+    "Niehime to Kemono no Ou",
+    "Sacrificial Princess and the King of Beasts",
+    "贄姫と獣の王",
+    "Princess of the sacrifice & King of the beast"
+   ]
+  },
+  {
+   "malId": 6310,
+   "title": "Saki",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    97644
+   ],
+   "titles": [
+    "Saki",
+    "咲-Saki-"
+   ]
+  },
+  {
+   "malId": 121496,
+   "title": "Solo Leveling",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214,
+    147217,
+    130216,
+    132247,
+    146909
+   ],
+   "titles": [
+    "Solo Leveling",
+    "나 혼자만 레벨업",
+    "Na Honjaman Level Up",
+    "I Level Up Alone"
+   ]
+  },
+  {
+   "malId": 148985,
+   "title": "The Novel's Extra",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ],
+   "titles": [
+    "The Novel's Extra",
+    "소설 속 엑스트라",
+    "Soseol Sok Extra"
+   ]
+  },
+  {
+   "malId": 147217,
+   "title": "The World After the Fall",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ],
+   "titles": [
+    "The World After the Fall",
+    "멸망 이후의 세계",
+    "Myeolmang Ihu-ui Segye",
+    "The World After the End"
+   ]
+  },
+  {
+   "malId": 130216,
+   "title": "Tomb Raider King",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214,
+    121496,
+    132247,
+    147538
+   ],
+   "titles": [
+    "Tomb Raider King",
+    "도굴왕",
+    "Dogul-wang"
+   ]
+  },
+  {
+   "malId": 132247,
+   "title": "A Returner's Magic Should Be Special",
+   "hop": 1,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214,
+    130216
+   ],
+   "titles": [
+    "A Returner's Magic Should Be Special",
+    "귀환자의 마법은 특별해야 합니다",
+    "Gwihwanja-ui Mabeop-eun Teukbyeol-haeya Hamnida"
+   ]
+  },
+  {
+   "malId": 146909,
+   "title": "SSS-Class Revival Hunter",
+   "hop": 1,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214,
+    121496,
+    147389
+   ],
+   "titles": [
+    "SSS-Class Revival Hunter",
+    "SSS급 죽어야 사는 헌터",
+    "SSS-Class Suicide Hunter",
+    "SSS-geup Jugeoya Saneun Hunter"
+   ]
+  },
+  {
+   "malId": 147317,
+   "title": "Lout of Count's Family",
+   "hop": 1,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ],
+   "titles": [
+    "Lout of Count's Family",
+    "백작가의 망나니가 되었다",
+    "Trash of the Count's Family",
+    "Baekjakga-ui Mangnani-ga Doeeotda"
+   ]
+  },
+  {
+   "malId": 147538,
+   "title": "Return to Player",
+   "hop": 1,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214,
+    130216
+   ],
+   "titles": [
+    "Return to Player",
+    "리턴 투 플레이어"
+   ]
+  },
+  {
+   "malId": 147272,
+   "title": "The Greatest Estate Developer",
+   "hop": 1,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    132214,
+    146878,
+    147317,
+    147389
+   ],
+   "titles": [
+    "The Greatest Estate Developer",
+    "역대급 영지 설계사",
+    "The World's Best Engineer",
+    "The Greatest Estate Designer",
+    "Yeokdaegeup Yeongji Seolgyesa"
+   ]
+  },
+  {
+   "malId": 147318,
+   "title": "How to Use a Returner",
+   "hop": 1,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    132214
+   ],
+   "titles": [
+    "How to Use a Returner",
+    "회귀자 사용설명서",
+    "Regressor Instruction Manual",
+    "Hoegwija Sayong Seolmyeongseo"
+   ]
+  },
+  {
+   "malId": 104565,
+   "title": "Tokyo卍Revengers",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    133081
+   ],
+   "titles": [
+    "Tokyo卍Revengers",
+    "Tokyo Revengers",
+    "東京卍リベンジャーズ",
+    "Tokyo Manji Revengers"
+   ]
+  },
+  {
+   "malId": 29983,
+   "title": "Noblesse",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    133081,
+    153969
+   ],
+   "titles": [
+    "Noblesse",
+    "노블레스"
+   ]
+  },
+  {
+   "malId": 158723,
+   "title": "Juvenile Offender",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    133081,
+    170678
+   ],
+   "titles": [
+    "Juvenile Offender",
+    "촉법소년",
+    "Chokbeop Sonyeon"
+   ]
+  },
+  {
+   "malId": 170678,
+   "title": "King of the Arena",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    133081,
+    158723
+   ],
+   "titles": [
+    "King of the Arena",
+    "폭력의 왕",
+    "King of Violence",
+    "Pongnyeog-ui Wang"
+   ]
+  },
+  {
+   "malId": 1706,
+   "title": "JoJo no Kimyou na Bouken Part 7: Steel Ball Run",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    137200,
+    85968
+   ],
+   "titles": [
+    "JoJo no Kimyou na Bouken Part 7: Steel Ball Run",
+    "JoJo's Bizarre Adventure Part 7: Steel Ball Run",
+    "ジョジョの奇妙な冒険 Part7 STEEL BALL RUN",
+    "SBR"
+   ]
+  },
+  {
+   "malId": 153969,
+   "title": "Dusk Howler",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    137200,
+    147317,
+    147318
+   ],
+   "titles": [
+    "Dusk Howler",
+    "더스크 하울러"
+   ]
+  },
+  {
+   "malId": 147577,
+   "title": "Return of the Mad Demon",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878,
+    147389
+   ],
+   "titles": [
+    "Return of the Mad Demon",
+    "광마회귀",
+    "Return of the Crazy Demon",
+    "Gwangma Hoegwi"
+   ]
+  },
+  {
+   "malId": 148454,
+   "title": "The Grand Mudang Saga",
+   "hop": 1,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878
+   ],
+   "titles": [
+    "The Grand Mudang Saga",
+    "무당기협",
+    "Path of the Shaman",
+    "Wandering Warrior of Wudang",
+    "Mudang Gihyeop"
+   ]
+  },
+  {
+   "malId": 147389,
+   "title": "Log-in Murim",
+   "hop": 1,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878,
+    146909,
+    147577
+   ],
+   "titles": [
+    "Log-in Murim",
+    "로그인 무림",
+    "Murim Login",
+    "Login Murim"
+   ]
+  },
+  {
+   "malId": 147662,
+   "title": "Best Teacher Baek",
+   "hop": 1,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878
+   ],
+   "titles": [
+    "Best Teacher Baek",
+    "일타강사 백사부",
+    "Number One Star Instructor Master Baek",
+    "Ilta Gangsa Baek Sabu"
+   ]
+  },
+  {
+   "malId": 177365,
+   "title": "The Youngest Disciple of the Hwasan Sect",
+   "hop": 1,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878
+   ],
+   "titles": [
+    "The Youngest Disciple of the Hwasan Sect",
+    "화산파 막내제자가 되었다",
+    "I Became the Youngest Disciple of the Hwasan Sect",
+    "I Became the Youngest Disciple of the Mount Hua Sect",
+    "Hwasanpa Mangnae Jeja-ga Doeeotda"
+   ]
+  },
+  {
+   "malId": 142629,
+   "title": "Exorcist wo Otosenai",
+   "hop": 1,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    156588
+   ],
+   "titles": [
+    "Exorcist wo Otosenai",
+    "Make the Exorcist Fall in Love",
+    "エクソシストを堕とせない"
+   ]
+  },
+  {
+   "malId": 12,
+   "title": "Bleach",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    583,
+    14582,
+    29983
+   ],
+   "titles": [
+    "Bleach",
+    "BLEACH"
+   ]
+  },
+  {
+   "malId": 24,
+   "title": "D.Gray-man",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    583,
+    142629
+   ],
+   "titles": [
+    "D.Gray-man",
+    "D.Grey-man",
+    "D. Grayman",
+    "D. Gray-man"
+   ]
+  },
+  {
+   "malId": 37563,
+   "title": "Terra Formars",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    583,
+    23390,
+    564
+   ],
+   "titles": [
+    "Terra Formars",
+    "テラフォーマーズ"
+   ]
+  },
+  {
+   "malId": 96792,
+   "title": "Kimetsu no Yaiba",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    583
+   ],
+   "titles": [
+    "Kimetsu no Yaiba",
+    "Demon Slayer: Kimetsu no Yaiba",
+    "鬼滅の刃",
+    "Blade of Demon Destruction"
+   ]
+  },
+  {
+   "malId": 33327,
+   "title": "Tokyo Ghoul",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    583,
+    23390,
+    116778,
+    3285
+   ],
+   "titles": [
+    "Tokyo Ghoul",
+    "東京喰種トーキョーグール",
+    "Toukyou Kushu"
+   ]
+  },
+  {
+   "malId": 1076,
+   "title": "Vagrant Soldier Ares",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    583,
+    16765
+   ],
+   "titles": [
+    "Vagrant Soldier Ares",
+    "떠돌이 용병 아레스",
+    "Ares: Drifter Mercenaries"
+   ]
+  },
+  {
+   "malId": 933,
+   "title": "Elfen Lied",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    583,
+    747
+   ],
+   "titles": [
+    "Elfen Lied",
+    "エルフェンリート",
+    "Elven Song",
+    "Elfenlied",
+    "MOL",
+    "Digitopolis",
+    "memoria"
+   ]
+  },
+  {
+   "malId": 44489,
+   "title": "Houseki no Kuni",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    23390,
+    98270
+   ],
+   "titles": [
+    "Houseki no Kuni",
+    "Land of the Lustrous",
+    "宝石の国"
+   ]
+  },
+  {
+   "malId": 100128,
+   "title": "Yakusoku no Neverland",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    23390,
+    85968,
+    21
+   ],
+   "titles": [
+    "Yakusoku no Neverland",
+    "The Promised Neverland",
+    "約束のネバーランド"
+   ]
+  },
+  {
+   "malId": 25132,
+   "title": "Akame ga Kill!",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    23390
+   ],
+   "titles": [
+    "Akame ga Kill!",
+    "アカメが斬る!",
+    "Akame ga Kiru!"
+   ]
+  },
+  {
+   "malId": 43661,
+   "title": "Owari no Seraph",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    23390
+   ],
+   "titles": [
+    "Owari no Seraph",
+    "Seraph of the End: Vampire Reign",
+    "終わりのセラフ"
+   ]
+  },
+  {
+   "malId": 13723,
+   "title": "Sidonia no Kishi",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    23390
+   ],
+   "titles": [
+    "Sidonia no Kishi",
+    "Knights of Sidonia",
+    "シドニアの騎士",
+    "Knights of Cydonia",
+    "Cydonia no Kishi"
+   ]
+  },
+  {
+   "malId": 142,
+   "title": "Battle Royale",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    564
+   ],
+   "titles": [
+    "Battle Royale",
+    "バトル・ロワイアル"
+   ]
+  },
+  {
+   "malId": 3438,
+   "title": "Psyren",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    564
+   ],
+   "titles": [
+    "Psyren",
+    "PSYЯEN -サイレン-",
+    "Siren"
+   ]
+  },
+  {
+   "malId": 104314,
+   "title": "Jagaaaaaan",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    564
+   ],
+   "titles": [
+    "Jagaaaaaan",
+    "Jagaaan",
+    "ジャガーン",
+    "Jagan"
+   ]
+  },
+  {
+   "malId": 64465,
+   "title": "Inuyashiki",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    564
+   ],
+   "titles": [
+    "Inuyashiki",
+    "いぬやしき",
+    "Last Hero Inuyashiki"
+   ]
+  },
+  {
+   "malId": 33031,
+   "title": "Imawa no Kuni no Alice",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    564
+   ],
+   "titles": [
+    "Imawa no Kuni no Alice",
+    "Alice in Borderland",
+    "今際の国のアリス"
+   ]
+  },
+  {
+   "malId": 24561,
+   "title": "Kamisama no Iutoori",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    564
+   ],
+   "titles": [
+    "Kamisama no Iutoori",
+    "As the Gods Will",
+    "神さまの言うとおり",
+    "As the God of Death Dictates",
+    "Like God Says"
+   ]
+  },
+  {
+   "malId": 62887,
+   "title": "All You Need Is Kill",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    564
+   ],
+   "titles": [
+    "All You Need Is Kill",
+    "Edge of Tomorrow"
+   ]
+  },
+  {
+   "malId": 401,
+   "title": "Kiseijuu",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1474
+   ],
+   "titles": [
+    "Kiseijuu",
+    "Parasyte",
+    "寄生獣",
+    "Parasite",
+    "Parasitic Beasts"
+   ]
+  },
+  {
+   "malId": 1517,
+   "title": "JoJo no Kimyou na Bouken Part 1: Phantom Blood",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1474
+   ],
+   "titles": [
+    "JoJo no Kimyou na Bouken Part 1: Phantom Blood",
+    "JoJo's Bizarre Adventure Part 1: Phantom Blood",
+    "ジョジョの奇妙な冒険 ファントムブラッド",
+    "Dai Ichi Bu Jonathan Joestar: Sono Seishun"
+   ]
+  },
+  {
+   "malId": 37503,
+   "title": "Igyoujin Oniwakamaru",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1474
+   ],
+   "titles": [
+    "Igyoujin Oniwakamaru",
+    "異形人おに若丸",
+    "Ogyoujin Oniwakamaru",
+    "Oniwakamaru The Visitor"
+   ]
+  },
+  {
+   "malId": 1534,
+   "title": "Zetman",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1474,
+    29983
+   ],
+   "titles": [
+    "Zetman",
+    "ZETMAN"
+   ]
+  },
+  {
+   "malId": 7666,
+   "title": "Maou Dante",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1474
+   ],
+   "titles": [
+    "Maou Dante",
+    "魔王ダンテ",
+    "Demon Lord Dante"
+   ]
+  },
+  {
+   "malId": 1608,
+   "title": "Kyoushoku Soukou Guyver",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1474
+   ],
+   "titles": [
+    "Kyoushoku Soukou Guyver",
+    "Bio-Booster Armor Guyver",
+    "強殖装甲ガイバー",
+    "Guyver the Bioboosted Armor"
+   ]
+  },
+  {
+   "malId": 1823,
+   "title": "Banya: The Explosive Delivery Man",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    736
+   ],
+   "titles": [
+    "Banya: The Explosive Delivery Man",
+    "폭주배달부 반야",
+    "Hell's Angel Delivery Man Banya",
+    "Pok Ju Baedal Bu Banya"
+   ]
+  },
+  {
+   "malId": 42789,
+   "title": "Paladin",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    736
+   ],
+   "titles": [
+    "Paladin",
+    "팔라딘",
+    "Paladin: Inevitable Destiny"
+   ]
+  },
+  {
+   "malId": 79555,
+   "title": "Monte Cristo Hakushaku",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    736
+   ],
+   "titles": [
+    "Monte Cristo Hakushaku",
+    "The Count of Monte Cristo",
+    "モンテ・クリスト伯爵",
+    "Le Comte de Monte-Cristo"
+   ]
+  },
+  {
+   "malId": 3,
+   "title": "20th Century Boys",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    736,
+    731
+   ],
+   "titles": [
+    "20th Century Boys",
+    "20世紀少年",
+    "20 Seiki Shounen",
+    "Nijuu Seiki Shounen",
+    "Nijuusseiki Shounen",
+    "20thCB"
+   ]
+  },
+  {
+   "malId": 11069,
+   "title": "Akuma Bengoshi Kukabara",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    736
+   ],
+   "titles": [
+    "Akuma Bengoshi Kukabara",
+    "悪魔弁護士KUKABARA",
+    "Devil Advocate Kukabara",
+    "Demonic Attorney Kukabara",
+    "Demonic Lawyer Kukabara"
+   ]
+  },
+  {
+   "malId": 893,
+   "title": "Mahou Tsukai Kurohime",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    736
+   ],
+   "titles": [
+    "Mahou Tsukai Kurohime",
+    "Kurohime",
+    "魔砲使い 黒姫",
+    "Black Princess"
+   ]
+  },
+  {
+   "malId": 44485,
+   "title": "Nanatsu no Taizai",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    70,
+    37601
+   ],
+   "titles": [
+    "Nanatsu no Taizai",
+    "The Seven Deadly Sins",
+    "七つの大罪"
+   ]
+  },
+  {
+   "malId": 10376,
+   "title": "Cavalier of the Abyss",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    70
+   ],
+   "titles": [
+    "Cavalier of the Abyss",
+    "심연의 카발리어"
+   ]
+  },
+  {
+   "malId": 39281,
+   "title": "Gun x Clover",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    70
+   ],
+   "titles": [
+    "Gun x Clover",
+    "ガン×クローバー"
+   ]
+  },
+  {
+   "malId": 67615,
+   "title": "Tate no Yuusha no Nariagari",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    70
+   ],
+   "titles": [
+    "Tate no Yuusha no Nariagari",
+    "The Rising of the Shield Hero",
+    "盾の勇者の成り上がり"
+   ]
+  },
+  {
+   "malId": 13801,
+   "title": "Drifters",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    70,
+    11701,
+    15038
+   ],
+   "titles": [
+    "Drifters",
+    "ドリフターズ"
+   ]
+  },
+  {
+   "malId": 106733,
+   "title": "Ragna Crimson",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    70
+   ],
+   "titles": [
+    "Ragna Crimson",
+    "ラグナクリムゾン"
+   ]
+  },
+  {
+   "malId": 595,
+   "title": "Id",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    70,
+    29983
+   ],
+   "titles": [
+    "Id",
+    "이드",
+    "Id - The Greatest Fusion Fantasy"
+   ]
+  },
+  {
+   "malId": 113138,
+   "title": "Jujutsu Kaisen",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    116778
+   ],
+   "titles": [
+    "Jujutsu Kaisen",
+    "呪術廻戦",
+    "Sorcery Fight"
+   ]
+  },
+  {
+   "malId": 135496,
+   "title": "Dandadan",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    116778
+   ],
+   "titles": [
+    "Dandadan",
+    "ダンダダン"
+   ]
+  },
+  {
+   "malId": 1133,
+   "title": "Dorohedoro",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    116778,
+    85968
+   ],
+   "titles": [
+    "Dorohedoro",
+    "ドロヘドロ"
+   ]
+  },
+  {
+   "malId": 112318,
+   "title": "Jigokuraku",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    116778
+   ],
+   "titles": [
+    "Jigokuraku",
+    "Hell's Paradise: Jigokuraku",
+    "地獄楽",
+    "Paradition",
+    "Heavenhell"
+   ]
+  },
+  {
+   "malId": 143991,
+   "title": "After God",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    116778
+   ],
+   "titles": [
+    "After God",
+    "アフターゴッド"
+   ]
+  },
+  {
+   "malId": 127907,
+   "title": "Kaijuu 8-gou",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    116778
+   ],
+   "titles": [
+    "Kaijuu 8-gou",
+    "Kaiju No. 8",
+    "怪獣8号",
+    "8Kaijuu",
+    "Monster #8"
+   ]
+  },
+  {
+   "malId": 1131,
+   "title": "Freesia",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    98270
+   ],
+   "titles": [
+    "Freesia",
+    "フリージア"
+   ]
+  },
+  {
+   "malId": 171272,
+   "title": "MAD",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    98270
+   ],
+   "titles": [
+    "MAD"
+   ]
+  },
+  {
+   "malId": 149,
+   "title": "Blame!",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    98270,
+    18570
+   ],
+   "titles": [
+    "Blame!",
+    "BLAME!"
+   ]
+  },
+  {
+   "malId": 49865,
+   "title": "Ajin",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    98270
+   ],
+   "titles": [
+    "Ajin",
+    "Ajin: Demi-Human",
+    "亜人"
+   ]
+  },
+  {
+   "malId": 102785,
+   "title": "Ningyou no Kuni",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    98270
+   ],
+   "titles": [
+    "Ningyou no Kuni",
+    "Aposimz",
+    "人形の国",
+    "Country of Dolls"
+   ]
+  },
+  {
+   "malId": 13,
+   "title": "One Piece",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16765,
+    21525,
+    1706
+   ],
+   "titles": [
+    "One Piece",
+    "ONE PIECE"
+   ]
+  },
+  {
+   "malId": 1320,
+   "title": "The Ravages of Time",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16765
+   ],
+   "titles": [
+    "The Ravages of Time",
+    "火鳳燎原",
+    "Huǒ Fèng Liáo Yuán"
+   ]
+  },
+  {
+   "malId": 29799,
+   "title": "Ad Astra: Scipio to Hannibal",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16765,
+    10619
+   ],
+   "titles": [
+    "Ad Astra: Scipio to Hannibal",
+    "アド･アストラ-スキピオとハンニバル-",
+    "Ad Astra: Scipio and Hannibal"
+   ]
+  },
+  {
+   "malId": 2924,
+   "title": "Historie",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16765,
+    10619
+   ],
+   "titles": [
+    "Historie",
+    "Historié",
+    "ヒストリエ"
+   ]
+  },
+  {
+   "malId": 43913,
+   "title": "Feng Shen Ji",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16765
+   ],
+   "titles": [
+    "Feng Shen Ji",
+    "封神記",
+    "The Legend and the Hero",
+    "Chronicles of the God's Order"
+   ]
+  },
+  {
+   "malId": 2109,
+   "title": "Bokkou",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    16765
+   ],
+   "titles": [
+    "Bokkou",
+    "墨攻"
+   ]
+  },
+  {
+   "malId": 51233,
+   "title": "Arslan Senki",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    16765
+   ],
+   "titles": [
+    "Arslan Senki",
+    "The Heroic Legend of Arslan",
+    "アルスラーン戦記"
+   ]
+  },
+  {
+   "malId": 8997,
+   "title": "Bradherley no Basha",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    23685
+   ],
+   "titles": [
+    "Bradherley no Basha",
+    "ブラッドハーレーの馬車",
+    "Brad Harley no Basha",
+    "Bradherley's Coach"
+   ]
+  },
+  {
+   "malId": 8446,
+   "title": "Ikigami",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    23685
+   ],
+   "titles": [
+    "Ikigami",
+    "Ikigami: The Ultimate Limit",
+    "イキガミ",
+    "Death Paper",
+    "Death's Notice: The Ultimate Limit"
+   ]
+  },
+  {
+   "malId": 93564,
+   "title": "Reiri",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    23685
+   ],
+   "titles": [
+    "Reiri",
+    "レイリ"
+   ]
+  },
+  {
+   "malId": 4053,
+   "title": "Youhei Pierre",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    23685
+   ],
+   "titles": [
+    "Youhei Pierre",
+    "傭兵ピエール",
+    "Mercenary Pierre"
+   ]
+  },
+  {
+   "malId": 24637,
+   "title": "Bestiarius",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    23685
+   ],
+   "titles": [
+    "Bestiarius",
+    "闘獣士 ベスティアリウス",
+    "Toujuushi",
+    "Bestialious"
+   ]
+  },
+  {
+   "malId": 61835,
+   "title": "Dívčí Válka",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    23685
+   ],
+   "titles": [
+    "Dívčí Válka",
+    "Dívčí Válka: Maidens' War",
+    "乙女戦争〈ディーヴチー・ヴァールカ〉",
+    "Otome Sensou",
+    "Divci Valka",
+    "Maidens War"
+   ]
+  },
+  {
+   "malId": 85781,
+   "title": "Dungeon Meshi",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    85968
+   ],
+   "titles": [
+    "Dungeon Meshi",
+    "Delicious in Dungeon",
+    "ダンジョン飯",
+    "Dungeon Food"
+   ]
+  },
+  {
+   "malId": 12713,
+   "title": "Red",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    85968
+   ],
+   "titles": [
+    "Red",
+    "RED",
+    "Red: Living on the Edge"
+   ]
+  },
+  {
+   "malId": 41709,
+   "title": "Yuureitou",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    85968
+   ],
+   "titles": [
+    "Yuureitou",
+    "幽麗塔",
+    "The Ghost Tower"
+   ]
+  },
+  {
+   "malId": 102343,
+   "title": "Fumetsu no Anata e",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    85968
+   ],
+   "titles": [
+    "Fumetsu no Anata e",
+    "To Your Eternity",
+    "不滅のあなたへ",
+    "To You, the Immortal"
+   ]
+  },
+  {
+   "malId": 22986,
+   "title": "Ran to Haiiro no Sekai",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11514
+   ],
+   "titles": [
+    "Ran to Haiiro no Sekai",
+    "Ran and the Gray World",
+    "乱と灰色の世界",
+    "Ran and the Grey World",
+    "Ran and the Ash-Coloured World",
+    "Gray And Wonder Around Her"
+   ]
+  },
+  {
+   "malId": 114932,
+   "title": "Tenju no Kuni",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11514
+   ],
+   "titles": [
+    "Tenju no Kuni",
+    "Blissful Land",
+    "テンジュの国"
+   ]
+  },
+  {
+   "malId": 41847,
+   "title": "Soredemo Sekai wa Utsukushii",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11514
+   ],
+   "titles": [
+    "Soredemo Sekai wa Utsukushii",
+    "それでも世界は美しい",
+    "Sore demo Sekai wa Utsukushii",
+    "Even So, the World is Beautiful",
+    "The World Is Still Beautiful",
+    "SoreSeka"
+   ]
+  },
+  {
+   "malId": 75929,
+   "title": "Arte",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11514
+   ],
+   "titles": [
+    "Arte",
+    "アルテ"
+   ]
+  },
+  {
+   "malId": 92991,
+   "title": "Aoi Horus no Hitomi: Dansou no Joou no Monogatari",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11514
+   ],
+   "titles": [
+    "Aoi Horus no Hitomi: Dansou no Joou no Monogatari",
+    "碧いホルスの瞳 -男装の女王の物語-",
+    "The Blue Eye of Horus"
+   ]
+  },
+  {
+   "malId": 1268,
+   "title": "The Bride of the Water God",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11514
+   ],
+   "titles": [
+    "The Bride of the Water God",
+    "Bride of the Water God",
+    "하백의 신부"
+   ]
+  },
+  {
+   "malId": 14790,
+   "title": "Magi",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11514
+   ],
+   "titles": [
+    "Magi",
+    "Magi: The Labyrinth of Magic",
+    "マギ"
+   ]
+  },
+  {
+   "malId": 113937,
+   "title": "Hokuou Kizoku to Moukinzuma no Yukiguni Karigurashi",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    11514
+   ],
+   "titles": [
+    "Hokuou Kizoku to Moukinzuma no Yukiguni Karigurashi",
+    "A Nordic Noble and His Eagle Wife's Hunting Life in a Snowy Land",
+    "北欧貴族と猛禽妻の雪国狩り暮らし",
+    "The Snow Country Hunting Life of the Northern Nobleman and the Raptor Wife"
+   ]
+  },
+  {
+   "malId": 42001,
+   "title": "Song of the Long March",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    11514,
+    21525
+   ],
+   "titles": [
+    "Song of the Long March",
+    "長歌行",
+    "Choukakou",
+    "Chang Ge Xing"
+   ]
+  },
+  {
+   "malId": 664,
+   "title": "Akira",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    731,
+    18570
+   ],
+   "titles": [
+    "Akira",
+    "AKIRA"
+   ]
+  },
+  {
+   "malId": 698,
+   "title": "Shinseiki Evangelion",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    731
+   ],
+   "titles": [
+    "Shinseiki Evangelion",
+    "Neon Genesis Evangelion",
+    "新世紀エヴァンゲリオン"
+   ]
+  },
+  {
+   "malId": 111745,
+   "title": "Tengoku Daimakyou",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    731
+   ],
+   "titles": [
+    "Tengoku Daimakyou",
+    "Heavenly Delusion",
+    "天国大魔境",
+    "Heaven's Great Magical Barrier"
+   ]
+  },
+  {
+   "malId": 651,
+   "title": "Kaze no Tani no Nausicaä",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    731
+   ],
+   "titles": [
+    "Kaze no Tani no Nausicaä",
+    "Nausicaä of the Valley of the Wind",
+    "風の谷のナウシカ",
+    "Kaze no Tani no Nausicaa"
+   ]
+  },
+  {
+   "malId": 11054,
+   "title": "Billy Bat",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    731
+   ],
+   "titles": [
+    "Billy Bat",
+    "BILLY BAT"
+   ]
+  },
+  {
+   "malId": 3097,
+   "title": "Futatsu no Spica",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    481
+   ],
+   "titles": [
+    "Futatsu no Spica",
+    "Twin Spica",
+    "ふたつのスピカ"
+   ]
+  },
+  {
+   "malId": 14483,
+   "title": "Uchuu Kyoudai",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    481,
+    657
+   ],
+   "titles": [
+    "Uchuu Kyoudai",
+    "Space Brothers",
+    "宇宙兄弟",
+    "Uchu Kyodai"
+   ]
+  },
+  {
+   "malId": 26570,
+   "title": "ST&RS",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    481
+   ],
+   "titles": [
+    "ST&RS",
+    "ST&RS -スターズ-",
+    "Stars"
+   ]
+  },
+  {
+   "malId": 8563,
+   "title": "Diotima",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    481
+   ],
+   "titles": [
+    "Diotima",
+    "제멋대로 함선 디오티마",
+    "Diotima, The Random Space Vessel"
+   ]
+  },
+  {
+   "malId": 15037,
+   "title": "Dosei Mansion",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    481
+   ],
+   "titles": [
+    "Dosei Mansion",
+    "Saturn Apartments",
+    "土星マンション",
+    "She Came to Earth"
+   ]
+  },
+  {
+   "malId": 19074,
+   "title": "Stardust Memories",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    481
+   ],
+   "titles": [
+    "Stardust Memories",
+    "スターダストメモリーズ"
+   ]
+  },
+  {
+   "malId": 98578,
+   "title": "Kanata no Astra",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    481
+   ],
+   "titles": [
+    "Kanata no Astra",
+    "Astra Lost in Space",
+    "彼方のアストラ"
+   ]
+  },
+  {
+   "malId": 520,
+   "title": "Sengoku Tsukiyo",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11701
+   ],
+   "titles": [
+    "Sengoku Tsukiyo",
+    "Sengoku Nights",
+    "戦国月夜"
+   ]
+  },
+  {
+   "malId": 7010,
+   "title": "NG Life",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11701
+   ],
+   "titles": [
+    "NG Life",
+    "NGライフ",
+    "No Good Life"
+   ]
+  },
+  {
+   "malId": 553,
+   "title": "Threads of Time",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11701
+   ],
+   "titles": [
+    "Threads of Time",
+    "살례탑",
+    "Sal rye tap",
+    "Sal-Le-Top"
+   ]
+  },
+  {
+   "malId": 22956,
+   "title": "Yukarism",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11701
+   ],
+   "titles": [
+    "Yukarism",
+    "ゆかりズム",
+    "Yukari Zumu"
+   ]
+  },
+  {
+   "malId": 96437,
+   "title": "Angolmois: Genkou Kassenki",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11701
+   ],
+   "titles": [
+    "Angolmois: Genkou Kassenki",
+    "アンゴルモア 元寇合戦記"
+   ]
+  },
+  {
+   "malId": 1605,
+   "title": "Shoukoku no Altair",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11701
+   ],
+   "titles": [
+    "Shoukoku no Altair",
+    "Altair: A Record of Battles",
+    "将国のアルタイル",
+    "The Stratocracy of Altair",
+    "Anastasia no Shinei Taichou",
+    "Anastasia's Captain of the Guard",
+    "Rising Eagle of the General Nation"
+   ]
+  },
+  {
+   "malId": 4632,
+   "title": "Oyasumi Punpun",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    7375,
+    8967
+   ],
+   "titles": [
+    "Oyasumi Punpun",
+    "Goodnight Punpun",
+    "おやすみプンプン"
+   ]
+  },
+  {
+   "malId": 6946,
+   "title": "Glaucos",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    7375
+   ],
+   "titles": [
+    "Glaucos"
+   ]
+  },
+  {
+   "malId": 936,
+   "title": "Homunculus",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    7375,
+    9004,
+    18570
+   ],
+   "titles": [
+    "Homunculus",
+    "ホムンクルス"
+   ]
+  },
+  {
+   "malId": 41237,
+   "title": "Peak",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    7375
+   ],
+   "titles": [
+    "Peak",
+    "피크",
+    "Bukhansan Police Mountains Rescue Squad"
+   ]
+  },
+  {
+   "malId": 107931,
+   "title": "Blue Period",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    7375,
+    79891
+   ],
+   "titles": [
+    "Blue Period",
+    "ブルーピリオド"
+   ]
+  },
+  {
+   "malId": 1303,
+   "title": "Ashita no Joe",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    7375,
+    727
+   ],
+   "titles": [
+    "Ashita no Joe",
+    "Ashita no Joe: Fighting for Tomorrow",
+    "あしたのジョー",
+    "Rocky Joe",
+    "Tomorrow's Joe"
+   ]
+  },
+  {
+   "malId": 904,
+   "title": "Kozure Ookami",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    658
+   ],
+   "titles": [
+    "Kozure Ookami",
+    "Lone Wolf & Cub",
+    "子連れ狼",
+    "Lone Wolf and Cub"
+   ]
+  },
+  {
+   "malId": 4421,
+   "title": "C.A.T.",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    658
+   ],
+   "titles": [
+    "C.A.T.",
+    "密殺戰群",
+    "CAT",
+    "Confidential Assassination Troop"
+   ]
+  },
+  {
+   "malId": 373,
+   "title": "Meteor Methuselah",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    658
+   ],
+   "titles": [
+    "Meteor Methuselah",
+    "Immortal Rain",
+    "メテオ・メトセラ",
+    "Meteo Metosera"
+   ]
+  },
+  {
+   "malId": 7842,
+   "title": "Azumi",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    658
+   ],
+   "titles": [
+    "Azumi",
+    "あずみ"
+   ]
+  },
+  {
+   "malId": 29845,
+   "title": "Yagyuu Hijouken Samon",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    658
+   ],
+   "titles": [
+    "Yagyuu Hijouken Samon",
+    "柳生非情剣 SAMON",
+    "Samon, The Callous Swordsman, Yagyuu"
+   ]
+  },
+  {
+   "malId": 416,
+   "title": "Sidooh",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    658,
+    3868
+   ],
+   "titles": [
+    "Sidooh",
+    "SIDOOH―士道―"
+   ]
+  },
+  {
+   "malId": 7,
+   "title": "Hajime no Ippo",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    727
+   ],
+   "titles": [
+    "Hajime no Ippo",
+    "Hajime no Ippo: Fighting Spirit!",
+    "はじめの一歩",
+    "The Fighting!",
+    "Fighting Spirit",
+    "The Fighting! Ippo",
+    "Hajime no Ippo Gaiden: Naniwa Tiger"
+   ]
+  },
+  {
+   "malId": 15010,
+   "title": "Gekiryuuchi",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    727,
+    3285
+   ],
+   "titles": [
+    "Gekiryuuchi",
+    "激流血～OVER BLEED～",
+    "Over Bleed"
+   ]
+  },
+  {
+   "malId": 1461,
+   "title": "Sanctuary",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    727
+   ],
+   "titles": [
+    "Sanctuary",
+    "サンクチュアリ"
+   ]
+  },
+  {
+   "malId": 7482,
+   "title": "Rainbow: Nisha Rokubou no Shichinin",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    727
+   ],
+   "titles": [
+    "Rainbow: Nisha Rokubou no Shichinin",
+    "RAINBOW 二舎六房の七人"
+   ]
+  },
+  {
+   "malId": 932,
+   "title": "Koroshiya 1",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    727,
+    3868
+   ],
+   "titles": [
+    "Koroshiya 1",
+    "Ichi the Killer",
+    "殺し屋1〈イチ〉",
+    "Koroshiya Ichi"
+   ]
+  },
+  {
+   "malId": 40,
+   "title": "Black Cat",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    22
+   ],
+   "titles": [
+    "Black Cat",
+    "BLACK CAT",
+    "Stray Cat"
+   ]
+  },
+  {
+   "malId": 41,
+   "title": "Busou Renkin",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    22
+   ],
+   "titles": [
+    "Busou Renkin",
+    "Buso Renkin",
+    "武装錬金",
+    "Arms Alchemy",
+    "Embalming: Dead Body and Bride"
+   ]
+  },
+  {
+   "malId": 5664,
+   "title": "Nurarihyon no Mago",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    22
+   ],
+   "titles": [
+    "Nurarihyon no Mago",
+    "Nura: Rise of the Yokai Clan",
+    "ぬらりひょんの孫",
+    "Grandchild of Nurari Hyon",
+    "The Grandson of Nurarihyon"
+   ]
+  },
+  {
+   "malId": 703,
+   "title": "Trigun",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    22
+   ],
+   "titles": [
+    "Trigun",
+    "トライガン",
+    "Tri Gun"
+   ]
+  },
+  {
+   "malId": 704,
+   "title": "Trigun Maximum",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    22
+   ],
+   "titles": [
+    "Trigun Maximum",
+    "トライガンマキシマム"
+   ]
+  },
+  {
+   "malId": 513,
+   "title": "Samurai Deeper Kyou",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    22,
+    14582
+   ],
+   "titles": [
+    "Samurai Deeper Kyou",
+    "Samurai Deeper Kyo",
+    "SAMURAI DEEPER KYO",
+    "SDK"
+   ]
+  },
+  {
+   "malId": 473,
+   "title": "Peace Maker Kurogane",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    22
+   ],
+   "titles": [
+    "Peace Maker Kurogane",
+    "Peacemaker Kurogane",
+    "PEACE MAKER 鐵"
+   ]
+  },
+  {
+   "malId": 1072,
+   "title": "Kaze Hikaru",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    22,
+    660
+   ],
+   "titles": [
+    "Kaze Hikaru",
+    "風光る",
+    "The Wind Shines",
+    "Ooedo Shinsengumi!",
+    "Ooedo Shinsengumi! Kaze Hikaru Another World"
+   ]
+  },
+  {
+   "malId": 8586,
+   "title": "The Breaker",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3285,
+    153969
+   ],
+   "titles": [
+    "The Breaker",
+    "브레이커"
+   ]
+  },
+  {
+   "malId": 128231,
+   "title": "Weak Hero",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3285
+   ],
+   "titles": [
+    "Weak Hero",
+    "약한영웅",
+    "Yakhan Yeong-ung"
+   ]
+  },
+  {
+   "malId": 14090,
+   "title": "All Rounder Meguru",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3285
+   ],
+   "titles": [
+    "All Rounder Meguru",
+    "オールラウンダー廻",
+    "All-Rounder Meguru"
+   ]
+  },
+  {
+   "malId": 25300,
+   "title": "RRR",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3285
+   ],
+   "titles": [
+    "RRR",
+    "RRR ロックンロールリッキー",
+    "Rock 'n' Roll Ricky"
+   ]
+  },
+  {
+   "malId": 16604,
+   "title": "Tiji-kun!",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    3285
+   ],
+   "titles": [
+    "Tiji-kun!",
+    "ティジクン！",
+    "Tijikun",
+    "Teiji-kun!",
+    "Teijikun!",
+    "Tijikun!"
+   ]
+  },
+  {
+   "malId": 17554,
+   "title": "Chidaruma Kenpou: Onorera ni Tsugu",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3868
+   ],
+   "titles": [
+    "Chidaruma Kenpou: Onorera ni Tsugu",
+    "Bloody Stumps Samurai",
+    "血だるま剣法・おのれらに告ぐ",
+    "Bloody Daruma Swordsmanship: Heed my Words"
+   ]
+  },
+  {
+   "malId": 12451,
+   "title": "Wolf Guy: Ookami no Monshou",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3868
+   ],
+   "titles": [
+    "Wolf Guy: Ookami no Monshou",
+    "ウルフガイ -狼の紋章-",
+    "Wolf Guy: Emblem of the Wolf",
+    "Wolf Guy: Wolfen Crest"
+   ]
+  },
+  {
+   "malId": 6055,
+   "title": "Bestia",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3868
+   ],
+   "titles": [
+    "Bestia",
+    "The Deadly Poison of Love",
+    "ベスティア",
+    "Ryuugetsushou"
+   ]
+  },
+  {
+   "malId": 58563,
+   "title": "Innocent",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    3868,
+    660
+   ],
+   "titles": [
+    "Innocent",
+    "イノサン"
+   ]
+  },
+  {
+   "malId": 125301,
+   "title": "Sekiro Gaiden: Shinazu Hanbei",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    3868
+   ],
+   "titles": [
+    "Sekiro Gaiden: Shinazu Hanbei",
+    "Sekiro Side Story: Hanbei the Undying",
+    "SEKIRO 外伝 死なず半兵衛"
+   ]
+  },
+  {
+   "malId": 51,
+   "title": "Slam Dunk",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    657
+   ],
+   "titles": [
+    "Slam Dunk",
+    "SLAM DUNK"
+   ]
+  },
+  {
+   "malId": 56805,
+   "title": "Koe no Katachi",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    657,
+    8967,
+    35573
+   ],
+   "titles": [
+    "Koe no Katachi",
+    "A Silent Voice",
+    "聲の形",
+    "The Shape of Voice"
+   ]
+  },
+  {
+   "malId": 85719,
+   "title": "Blue Giant",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    657
+   ],
+   "titles": [
+    "Blue Giant",
+    "BLUE GIANT"
+   ]
+  },
+  {
+   "malId": 1456,
+   "title": "Shi ga Futari wo Wakatsu made",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    657,
+    28743
+   ],
+   "titles": [
+    "Shi ga Futari wo Wakatsu made",
+    "Until Death Do Us Part",
+    "死がふたりを分かつまで",
+    "UDDUP"
+   ]
+  },
+  {
+   "malId": 83655,
+   "title": "Perfect World",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    657
+   ],
+   "titles": [
+    "Perfect World",
+    "パーフェクトワールド"
+   ]
+  },
+  {
+   "malId": 78477,
+   "title": "Rikudou",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    657
+   ],
+   "titles": [
+    "Rikudou",
+    "リクドウ"
+   ]
+  },
+  {
+   "malId": 35243,
+   "title": "Haikyuu!!",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    657
+   ],
+   "titles": [
+    "Haikyuu!!",
+    "Haikyu!!",
+    "ハイキュー!!",
+    "High Kyuu!!",
+    "HQ!!",
+    "Nisekyuu!!"
+   ]
+  },
+  {
+   "malId": 988,
+   "title": "Shijou Saikyou no Deshi Kenichi",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14582
+   ],
+   "titles": [
+    "Shijou Saikyou no Deshi Kenichi",
+    "史上最強の弟子ケンイチ",
+    "History's Strongest Disciple Kenichi",
+    "Kenichi: The Mightiest Disciple"
+   ]
+  },
+  {
+   "malId": 27765,
+   "title": "Blood and Steel",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14582
+   ],
+   "titles": [
+    "Blood and Steel",
+    "武道狂之詩",
+    "Sangre Y Acero",
+    "Wu Dao Kuang Zhi Shi"
+   ]
+  },
+  {
+   "malId": 25317,
+   "title": "Haru Polish",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14582
+   ],
+   "titles": [
+    "Haru Polish",
+    "ハルポリッシュ"
+   ]
+  },
+  {
+   "malId": 29447,
+   "title": "Kurogane",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14582
+   ],
+   "titles": [
+    "Kurogane",
+    "クロガネ"
+   ]
+  },
+  {
+   "malId": 1673,
+   "title": "Jackals",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14582
+   ],
+   "titles": [
+    "Jackals",
+    "ジャッカル"
+   ]
+  },
+  {
+   "malId": 44,
+   "title": "Gintama",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    14582,
+    37601,
+    91432
+   ],
+   "titles": [
+    "Gintama",
+    "Gin Tama",
+    "銀魂",
+    "Dandelion",
+    "Shiro Kuro",
+    "Black and White",
+    "Shirokuro",
+    "13",
+    "Thirteen",
+    "Bankara-san ga Tooru",
+    "Here Comes Mr. Uncivilised",
+    "Silver Soul"
+   ]
+  },
+  {
+   "malId": 11,
+   "title": "Naruto",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    14582
+   ],
+   "titles": [
+    "Naruto",
+    "NARUTO―ナルト―"
+   ]
+  },
+  {
+   "malId": 2459,
+   "title": "Komatta Toki ni wa Hoshi ni Kike",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    332
+   ],
+   "titles": [
+    "Komatta Toki ni wa Hoshi ni Kike",
+    "困った時には星に聞け!",
+    "Ask the Stars for Help!",
+    "Komahoshi",
+    "Komatta Toki ni wa Hoshi ni Kike!",
+    "Komatta toki ni wa Hoshi wo Kike",
+    "Komatta Toki Niwa Hoshi ni Kike"
+   ]
+  },
+  {
+   "malId": 28,
+   "title": "Nana",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    332,
+    29,
+    35573
+   ],
+   "titles": [
+    "Nana",
+    "NANA"
+   ]
+  },
+  {
+   "malId": 3359,
+   "title": "Kusatta Kyoushi no Houteishiki",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    332
+   ],
+   "titles": [
+    "Kusatta Kyoushi no Houteishiki",
+    "Bad Teacher's Equation",
+    "腐った教師の方程式",
+    "Bad Teacher Equation",
+    "Rotten Teacher's Equation",
+    "Kiss me, Teacher"
+   ]
+  },
+  {
+   "malId": 1034,
+   "title": "Not So Bad",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3054
+   ],
+   "titles": [
+    "Not So Bad",
+    "Not so bad",
+    "낫 소 배드"
+   ]
+  },
+  {
+   "malId": 8878,
+   "title": "Hetalia Axis Powers",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15038
+   ],
+   "titles": [
+    "Hetalia Axis Powers",
+    "ヘタリア Axis Powers",
+    "Hetalia: Comic Diary"
+   ]
+  },
+  {
+   "malId": 782,
+   "title": "Blood+ Adagio",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15038
+   ],
+   "titles": [
+    "Blood+ Adagio",
+    "Blood+: Adagio",
+    "ブラッド・プラス　アダージョ",
+    "Blood+ A",
+    "BLOOD+A"
+   ]
+  },
+  {
+   "malId": 11544,
+   "title": "Aphorism",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15038
+   ],
+   "titles": [
+    "Aphorism",
+    "アホリズム",
+    "Aphorism Dainibu",
+    "Aphorism Part 2"
+   ]
+  },
+  {
+   "malId": 344,
+   "title": "ES: Eternal Sabbath",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15038,
+    443
+   ],
+   "titles": [
+    "ES: Eternal Sabbath",
+    "エス -Eternal Sabbath-"
+   ]
+  },
+  {
+   "malId": 15916,
+   "title": "Waga Tousou",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15038
+   ],
+   "titles": [
+    "Waga Tousou",
+    "わが闘争",
+    "Mein Kampf"
+   ]
+  },
+  {
+   "malId": 745,
+   "title": "Pluto",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15038
+   ],
+   "titles": [
+    "Pluto",
+    "Pluto: Urasawa x Tezuka",
+    "PLUTO"
+   ]
+  },
+  {
+   "malId": 16036,
+   "title": "Jiujiu: Jujuu",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    747
+   ],
+   "titles": [
+    "Jiujiu: Jujuu",
+    "Jiu Jiu",
+    "JIUJIU -獣従-"
+   ]
+  },
+  {
+   "malId": 3866,
+   "title": "Kuroshitsuji",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    747,
+    153969
+   ],
+   "titles": [
+    "Kuroshitsuji",
+    "Black Butler",
+    "黒執事",
+    "Dark Butler",
+    "Kuro Shitsuji"
+   ]
+  },
+  {
+   "malId": 556,
+   "title": "Trinity Blood",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    747
+   ],
+   "titles": [
+    "Trinity Blood",
+    "トリニティ・ブラッド"
+   ]
+  },
+  {
+   "malId": 3053,
+   "title": "Hajimari no Glashma",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    747
+   ],
+   "titles": [
+    "Hajimari no Glashma",
+    "Once upon a Glashma",
+    "はじまりのグラシュマ"
+   ]
+  },
+  {
+   "malId": 9256,
+   "title": "Toki wo Kakeru Shoujo: Tokikake",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    747,
+    65923
+   ],
+   "titles": [
+    "Toki wo Kakeru Shoujo: Tokikake",
+    "The Girl Who Leapt Through Time",
+    "時をかける少女 －TOKIKAKE－",
+    "The Girl Who Leapt Through Time: Tokikake"
+   ]
+  },
+  {
+   "malId": 635,
+   "title": "God Child",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    747,
+    448
+   ],
+   "titles": [
+    "God Child",
+    "Godchild",
+    "ゴッド チャイルド",
+    "Nichiyoubi no Solomon Grundy",
+    "Hakushaku Cain Series"
+   ]
+  },
+  {
+   "malId": 1962,
+   "title": "Variante",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    747
+   ],
+   "titles": [
+    "Variante",
+    "ヴァリアンテ",
+    "Requiem for the World"
+   ]
+  },
+  {
+   "malId": 618,
+   "title": "Vampire Knight",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    747
+   ],
+   "titles": [
+    "Vampire Knight",
+    "ヴァンパイア騎士〈ナイト〉",
+    "Watashi to Fukigen na Panya-san",
+    "The Sour-Faced Baker and Me",
+    "The Sullen Baker and Me"
+   ]
+  },
+  {
+   "malId": 8341,
+   "title": "Code:Breaker",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    747
+   ],
+   "titles": [
+    "Code:Breaker",
+    "CØDE:BREAKER",
+    "CØDE:BREAKER コード:ブレイカー",
+    "C0de:Breaker"
+   ]
+  },
+  {
+   "malId": 1648,
+   "title": "Tengen Toppa Gurren Lagann",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    8571,
+    37601,
+    14377,
+    18074
+   ],
+   "titles": [
+    "Tengen Toppa Gurren Lagann",
+    "天元突破グレンラガン",
+    "Break Through the Heavens Gurren Lagann"
+   ]
+  },
+  {
+   "malId": 75989,
+   "title": "Boku no Hero Academia",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    37601
+   ],
+   "titles": [
+    "Boku no Hero Academia",
+    "My Hero Academia",
+    "僕のヒーローアカデミア"
+   ]
+  },
+  {
+   "malId": 10552,
+   "title": "Hoshi no Samidare",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    37601
+   ],
+   "titles": [
+    "Hoshi no Samidare",
+    "Lucifer and the Biscuit Hammer",
+    "惑星のさみだれ",
+    "Wakusei no Samidare",
+    "Lucifer and Biscuit Hammer",
+    "Lucifer BH"
+   ]
+  },
+  {
+   "malId": 24705,
+   "title": "Aku no Hana",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    8967
+   ],
+   "titles": [
+    "Aku no Hana",
+    "The Flowers of Evil",
+    "惡の華",
+    "Blossom of Evil"
+   ]
+  },
+  {
+   "malId": 46282,
+   "title": "Chikan Otoko",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    8967,
+    28226
+   ],
+   "titles": [
+    "Chikan Otoko",
+    "痴漢男",
+    "Molester Man"
+   ]
+  },
+  {
+   "malId": 463,
+   "title": "NHK ni Youkoso!",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    8967
+   ],
+   "titles": [
+    "NHK ni Youkoso!",
+    "Welcome to the N.H.K.",
+    "NHKにようこそ!",
+    "Welcome to the NHK!"
+   ]
+  },
+  {
+   "malId": 28533,
+   "title": "Watashi ga Motenai no wa Dou Kangaetemo Omaera ga Warui!",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    8967,
+    29,
+    422
+   ],
+   "titles": [
+    "Watashi ga Motenai no wa Dou Kangaetemo Omaera ga Warui!",
+    "No Matter How I Look at It, It's You Guys' Fault I'm Not Popular!",
+    "私がモテないのはどう考えてもお前らが悪い!",
+    "WataMote",
+    "Watashi ga Motenai no wa Dou Kangaete mo Omaera ga Warui!",
+    "It's Not My Fault That I'm Not Popular!"
+   ]
+  },
+  {
+   "malId": 13290,
+   "title": "Ningen Shikkaku",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    8967
+   ],
+   "titles": [
+    "Ningen Shikkaku",
+    "No Longer Human",
+    "人間失格"
+   ]
+  },
+  {
+   "malId": 25297,
+   "title": "Prison School",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    8967
+   ],
+   "titles": [
+    "Prison School",
+    "監獄学園〈プリズンスクール〉",
+    "Kangoku Gakuen"
+   ]
+  },
+  {
+   "malId": 17686,
+   "title": "Self",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    8967,
+    18896
+   ],
+   "titles": [
+    "Self",
+    "セルフ"
+   ]
+  },
+  {
+   "malId": 24659,
+   "title": "Tengen Toppa Gurren Lagann: Rasen Shounentan",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14377
+   ],
+   "titles": [
+    "Tengen Toppa Gurren Lagann: Rasen Shounentan",
+    "天元突破グレンラガン 螺旋少年譚",
+    "Tengen Toppa Gurren Lagann: Spiral Boy"
+   ]
+  },
+  {
+   "malId": 42859,
+   "title": "Gisho Getter Robo Darkness",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14377
+   ],
+   "titles": [
+    "Gisho Getter Robo Darkness",
+    "偽書ゲッターロボ ダークネス",
+    "Apocrypha Getter Robo Darkness"
+   ]
+  },
+  {
+   "malId": 93088,
+   "title": "Getter Robo Devolution: Uchuu Saigo no 3-punkan",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14377
+   ],
+   "titles": [
+    "Getter Robo Devolution: Uchuu Saigo no 3-punkan",
+    "Getter Robo Devolution",
+    "ゲッターロボ DEVOLUTION ～宇宙最後の3分間～",
+    "Getter Robot Devolution: The Last 3 Minutes for Universe"
+   ]
+  },
+  {
+   "malId": 1551,
+   "title": "Getter Robo",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14377
+   ],
+   "titles": [
+    "Getter Robo",
+    "ゲッターロボ"
+   ]
+  },
+  {
+   "malId": 15359,
+   "title": "Getter Robo Āḥ",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14377
+   ],
+   "titles": [
+    "Getter Robo Āḥ",
+    "ゲッターロボ アーク",
+    "Getter Robo Ah",
+    "Getter Robo Ark",
+    "Getter Robo Arc"
+   ]
+  },
+  {
+   "malId": 34793,
+   "title": "Joshikouhei",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18074
+   ],
+   "titles": [
+    "Joshikouhei",
+    "女子攻兵",
+    "Jyoshikohei"
+   ]
+  },
+  {
+   "malId": 768,
+   "title": "Gunnm",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18074
+   ],
+   "titles": [
+    "Gunnm",
+    "Battle Angel Alita",
+    "銃夢 GUNNM",
+    "Ganmu"
+   ]
+  },
+  {
+   "malId": 1649,
+   "title": "Liar Game",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21,
+    534
+   ],
+   "titles": [
+    "Liar Game",
+    "LIAR GAME"
+   ]
+  },
+  {
+   "malId": 5802,
+   "title": "Lost+Brain",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21
+   ],
+   "titles": [
+    "Lost+Brain",
+    "LOST+BRAIN",
+    "Lost Plus Brain"
+   ]
+  },
+  {
+   "malId": 1,
+   "title": "Monster",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21
+   ],
+   "titles": [
+    "Monster",
+    "MONSTER"
+   ]
+  },
+  {
+   "malId": 5627,
+   "title": "Bloody Monday",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21,
+    534
+   ],
+   "titles": [
+    "Bloody Monday",
+    "BLOODY MONDAY"
+   ]
+  },
+  {
+   "malId": 1101,
+   "title": "Akumetsu",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21,
+    28743
+   ],
+   "titles": [
+    "Akumetsu",
+    "アクメツ"
+   ]
+  },
+  {
+   "malId": 9711,
+   "title": "Bakuman.",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21
+   ],
+   "titles": [
+    "Bakuman.",
+    "Bakuman。",
+    "BAKUMAN。 バクマン。"
+   ]
+  },
+  {
+   "malId": 740,
+   "title": "Tajuu Jinkaku Tantei Psycho",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    21
+   ],
+   "titles": [
+    "Tajuu Jinkaku Tantei Psycho",
+    "MPD Psycho",
+    "多重人格探偵サイコ",
+    "Multiple Personality Detective Psycho"
+   ]
+  },
+  {
+   "malId": 55215,
+   "title": "Utsuro no Hako to Zero no Maria",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    21
+   ],
+   "titles": [
+    "Utsuro no Hako to Zero no Maria",
+    "The Empty Box and Zeroth Maria",
+    "空ろの箱と零のマリア",
+    "HakoMari"
+   ]
+  },
+  {
+   "malId": 976,
+   "title": "Vampire Juujikai",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    534,
+    448,
+    29983
+   ],
+   "titles": [
+    "Vampire Juujikai",
+    "The Record of a Fallen Vampire",
+    "ヴァンパイア十字界"
+   ]
+  },
+  {
+   "malId": 674,
+   "title": "Majin Tantei Nougami Neuro",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    534,
+    1061
+   ],
+   "titles": [
+    "Majin Tantei Nougami Neuro",
+    "魔人探偵脳噛ネウロ",
+    "Demon Detective Nougami Neuro",
+    "Rikon Choutei",
+    "Divorce Conciliation"
+   ]
+  },
+  {
+   "malId": 102,
+   "title": "Fruits Basket",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    534,
+    4192,
+    4207
+   ],
+   "titles": [
+    "Fruits Basket",
+    "フルーツバスケット",
+    "FuruBa"
+   ]
+  },
+  {
+   "malId": 356,
+   "title": "Hatenkou Yuugi",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    534
+   ],
+   "titles": [
+    "Hatenkou Yuugi",
+    "Dazzle",
+    "破天荒遊戯",
+    "Hatenko Yugi",
+    "Unprecedented Game"
+   ]
+  },
+  {
+   "malId": 11089,
+   "title": "Shinrei Tantei Yakumo: Akai Hitomi wa Shitteiru",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    534
+   ],
+   "titles": [
+    "Shinrei Tantei Yakumo: Akai Hitomi wa Shitteiru",
+    "心霊探偵 八雲 ～赤い瞳は知っている～",
+    "Psychic Detective Yakumo: The Red Eyes Know",
+    "Mail x Tomodachi",
+    "Friend's Mail",
+    "Pen x Pal"
+   ]
+  },
+  {
+   "malId": 3486,
+   "title": "Shiki",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    534
+   ],
+   "titles": [
+    "Shiki",
+    "屍鬼",
+    "Corpse Demon"
+   ]
+  },
+  {
+   "malId": 2686,
+   "title": "Ai wo Utau yori Ore ni Oborero!",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    5901,
+    678,
+    103,
+    7939,
+    2699
+   ],
+   "titles": [
+    "Ai wo Utau yori Ore ni Oborero!",
+    "Ai Ore! Love Me!",
+    "愛を歌うより俺に溺れろ!",
+    "Ai-Ore",
+    "I'd Rather You Drown in Me, than Sing of Love"
+   ]
+  },
+  {
+   "malId": 8771,
+   "title": "Ai Ore!: Danshikou no Hime to Joshikou no Ouji",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    5901
+   ],
+   "titles": [
+    "Ai Ore!: Danshikou no Hime to Joshikou no Ouji",
+    "Ai Ore! Love Me!",
+    "愛俺! ~男子校の姫と女子校の王子~",
+    "Ai-Ore!",
+    "Love Me!: The Princess of the Boy High School and the Prince of the Girl High School"
+   ]
+  },
+  {
+   "malId": 1291,
+   "title": "Love Celeb",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    678
+   ],
+   "titles": [
+    "Love Celeb",
+    "ラブセレブ",
+    "Love Celeb: King Egoist",
+    "Rabu Serebu",
+    "Rabu Serebu - King Egoist",
+    "Dare nimo Ie nai",
+    "Dare ni mo Ie nai",
+    "I Can't Tell Anyone",
+    "I Cant Tell Anyone",
+    "Darenimo Ienai!"
+   ]
+  },
+  {
+   "malId": 1225,
+   "title": "Kaine",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    678
+   ],
+   "titles": [
+    "Kaine",
+    "戒音",
+    "Magical Mystery Tour",
+    "Tokei Jikake no Orange Bakudan",
+    "The Orange Time Bomb",
+    "Tokyo Top"
+   ]
+  },
+  {
+   "malId": 12418,
+   "title": "Kanojo wa Uso wo Aishisugiteru",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    678
+   ],
+   "titles": [
+    "Kanojo wa Uso wo Aishisugiteru",
+    "カノジョは嘘を愛しすぎてる",
+    "KanoUso"
+   ]
+  },
+  {
+   "malId": 2973,
+   "title": "Youth Gone Wild",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    678
+   ],
+   "titles": [
+    "Youth Gone Wild",
+    "搖滾狂潮"
+   ]
+  },
+  {
+   "malId": 1237,
+   "title": "Love♥Monster",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    678
+   ],
+   "titles": [
+    "Love♥Monster",
+    "ラブ♥モンスター"
+   ]
+  },
+  {
+   "malId": 1339,
+   "title": "Yokujou Climax",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    678,
+    5734
+   ],
+   "titles": [
+    "Yokujou Climax",
+    "欲情©MAX",
+    "Desire ©MAX",
+    "Yokujou©MAX",
+    "Passionate Climax",
+    "Desire Climax"
+   ]
+  },
+  {
+   "malId": 1666,
+   "title": "Aoi Spice",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    678
+   ],
+   "titles": [
+    "Aoi Spice",
+    "Blue Spice",
+    "青いスパイス"
+   ]
+  },
+  {
+   "malId": 625,
+   "title": "Gakuyaura Ouji",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    678
+   ],
+   "titles": [
+    "Gakuyaura Ouji",
+    "Backstage Prince",
+    "楽屋裏王子",
+    "Kiwametsuke Gakuya Ura Ouji"
+   ]
+  },
+  {
+   "malId": 684,
+   "title": "Haou♥Airen",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    678
+   ],
+   "titles": [
+    "Haou♥Airen",
+    "覇王♥愛人",
+    "Honey Honey Boy: He Is a Sweet Temptation",
+    "Kare wa Amai Yuuwaku"
+   ]
+  },
+  {
+   "malId": 3715,
+   "title": "The One",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    103,
+    443,
+    29,
+    392
+   ],
+   "titles": [
+    "The One",
+    "獨領風騷"
+   ]
+  },
+  {
+   "malId": 610,
+   "title": "Skip Beat!",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    103,
+    422,
+    392,
+    21525
+   ],
+   "titles": [
+    "Skip Beat!",
+    "スキップ・ビート!"
+   ]
+  },
+  {
+   "malId": 10776,
+   "title": "Teppen!",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    103
+   ],
+   "titles": [
+    "Teppen!",
+    "てっぺん!",
+    "The Top"
+   ]
+  },
+  {
+   "malId": 164,
+   "title": "Nousatsu Junkie",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    103,
+    29
+   ],
+   "titles": [
+    "Nousatsu Junkie",
+    "Nosatsu Junkie",
+    "悩殺ジャンキー",
+    "Nozoite Mitakute Shikatanai",
+    "Kaeru ga Iku Taiwan na Hibi",
+    "Peeping",
+    "Charming Junkie"
+   ]
+  },
+  {
+   "malId": 30,
+   "title": "Ouran Koukou Host Club",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    103,
+    29,
+    422,
+    2921,
+    89265,
+    79891
+   ],
+   "titles": [
+    "Ouran Koukou Host Club",
+    "Ouran High School Host Club",
+    "桜蘭高校ホスト部",
+    "OHSHC",
+    "Romantic Egoist"
+   ]
+  },
+  {
+   "malId": 58,
+   "title": "W-Juliet",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    103,
+    7939
+   ],
+   "titles": [
+    "W-Juliet",
+    "Wジュリエット"
+   ]
+  },
+  {
+   "malId": 3329,
+   "title": "Venus Capriccio",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    103
+   ],
+   "titles": [
+    "Venus Capriccio",
+    "ヴィーナス綺想曲",
+    "Venus Kisoukyoku"
+   ]
+  },
+  {
+   "malId": 57,
+   "title": "Hanazakari no Kimitachi e",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    7939,
+    89265
+   ],
+   "titles": [
+    "Hanazakari no Kimitachi e",
+    "Hana-Kimi: For You in Full Blossom",
+    "花ざかりの君たちへ",
+    "HanaKimi",
+    "The Thirsty Moon",
+    "The Cage of Summer",
+    "Natsu no Ori",
+    "Kawaki no Tsuki"
+   ]
+  },
+  {
+   "malId": 606,
+   "title": "Boku ni Natta Watashi",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    7939
+   ],
+   "titles": [
+    "Boku ni Natta Watashi",
+    "Secret☆Girl",
+    "僕になった私",
+    "A Girl or a Boy?",
+    "I Became a Boy",
+    "Nopan Musume.",
+    "A Girl Without Panties",
+    "Aah! Ijuin-sama",
+    "Kimochi Henkousen",
+    "Massugu na Kanojo"
+   ]
+  },
+  {
+   "malId": 820,
+   "title": "Tenshi ja Nai!!",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    7939
+   ],
+   "titles": [
+    "Tenshi ja Nai!!",
+    "I'm no Angel!",
+    "天使じゃない！！",
+    "I'm No Angel!!"
+   ]
+  },
+  {
+   "malId": 2698,
+   "title": "Hush",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    7939
+   ],
+   "titles": [
+    "Hush"
+   ]
+  },
+  {
+   "malId": 926,
+   "title": "Penguin Kakumei",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    7939
+   ],
+   "titles": [
+    "Penguin Kakumei",
+    "Penguin Revolution",
+    "ペンギン革命"
+   ]
+  },
+  {
+   "malId": 3547,
+   "title": "Grand Sun",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2699
+   ],
+   "titles": [
+    "Grand Sun",
+    "グランドサン"
+   ]
+  },
+  {
+   "malId": 10887,
+   "title": "Ice Ice Baby",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2699
+   ],
+   "titles": [
+    "Ice Ice Baby",
+    "Dalgwa 60-won",
+    "Kkochiyo Yongwoni",
+    "Sokkkochiyo Yongwoni",
+    "Iltaryongwi",
+    "Oh My Dolrong",
+    "The Moon and 60 Won"
+   ]
+  },
+  {
+   "malId": 762,
+   "title": "Tokyo Crazy Paradise",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2699,
+    422
+   ],
+   "titles": [
+    "Tokyo Crazy Paradise",
+    "東京クレイジーパラダイス"
+   ]
+  },
+  {
+   "malId": 1085,
+   "title": "Hot Blooded Woman",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2699,
+    12837
+   ],
+   "titles": [
+    "Hot Blooded Woman",
+    "열혈여아"
+   ]
+  },
+  {
+   "malId": 3336,
+   "title": "Matsuri Special",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2699
+   ],
+   "titles": [
+    "Matsuri Special",
+    "まつりスペシャル"
+   ]
+  },
+  {
+   "malId": 17007,
+   "title": "Love in the Mask",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    2699
+   ],
+   "titles": [
+    "Love in the Mask",
+    "가면속의 사랑"
+   ]
+  },
+  {
+   "malId": 1814,
+   "title": "Switch Girl!!",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4270
+   ],
+   "titles": [
+    "Switch Girl!!",
+    "スイッチガール!!"
+   ]
+  },
+  {
+   "malId": 55403,
+   "title": "Dame na Watashi ni Koishite Kudasai",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4270,
+    18896,
+    24744
+   ],
+   "titles": [
+    "Dame na Watashi ni Koishite Kudasai",
+    "ダメな私に恋してください",
+    "Please Love the Useless Me"
+   ]
+  },
+  {
+   "malId": 5469,
+   "title": "Nicoichi",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4270,
+    24744
+   ],
+   "titles": [
+    "Nicoichi",
+    "ニコイチ",
+    "Nico Ichi",
+    "Nikoichi"
+   ]
+  },
+  {
+   "malId": 2558,
+   "title": "Itadakimasu",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4270
+   ],
+   "titles": [
+    "Itadakimasu",
+    "いただきます"
+   ]
+  },
+  {
+   "malId": 12888,
+   "title": "Hapi Mari: Happy Marriage!?",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4270,
+    3523
+   ],
+   "titles": [
+    "Hapi Mari: Happy Marriage!?",
+    "Happy Marriage?!",
+    "はぴまり〜Happy Marriage!?〜"
+   ]
+  },
+  {
+   "malId": 21659,
+   "title": "Otoko no Isshou",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4270
+   ],
+   "titles": [
+    "Otoko no Isshou",
+    "娚の一生",
+    "Otoko no Isshou - Kekkon",
+    "Otoko no Isshou - Spin-off"
+   ]
+  },
+  {
+   "malId": 3686,
+   "title": "Taiyou Ouji",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4270
+   ],
+   "titles": [
+    "Taiyou Ouji",
+    "太陽王子",
+    "Prince of Sun",
+    "Naniwa no Hatsu wa Koimonogatari",
+    "Sore wo Bokura wa Koi to Yobu",
+    "We Call It Love",
+    "Attaka Frozen"
+   ]
+  },
+  {
+   "malId": 11460,
+   "title": "Love Blog",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    4270
+   ],
+   "titles": [
+    "Love Blog",
+    "Love Blog!!"
+   ]
+  },
+  {
+   "malId": 8039,
+   "title": "Hana no Namae",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    4270,
+    1162
+   ],
+   "titles": [
+    "Hana no Namae",
+    "The Name of the Flower",
+    "花の名前"
+   ]
+  },
+  {
+   "malId": 17,
+   "title": "Kareshi Kanojo no Jijou",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    443,
+    13059
+   ],
+   "titles": [
+    "Kareshi Kanojo no Jijou",
+    "Kare Kano: His and Her Circumstances",
+    "彼氏彼女の事情",
+    "His and Hers",
+    "The Tiger and the Chameleon: A Promise for One Week",
+    "Ashita Mata Mori de Aou ne",
+    "Meet Me Again Tomorrow in the Forest",
+    "KKNJ",
+    "Abareru Ousama",
+    "The Raging King"
+   ]
+  },
+  {
+   "malId": 1033,
+   "title": "Let Dai",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    443
+   ],
+   "titles": [
+    "Let Dai",
+    "Let 다이"
+   ]
+  },
+  {
+   "malId": 682,
+   "title": "\"Kare\" First Love",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    443
+   ],
+   "titles": [
+    "\"Kare\" First Love",
+    "Kare First Love",
+    "「彼」first love",
+    "Kiriya at 13 (Spring)"
+   ]
+  },
+  {
+   "malId": 1802,
+   "title": "Cat Street",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    443,
+    29
+   ],
+   "titles": [
+    "Cat Street",
+    "キャットストリート",
+    "Ribbon Road"
+   ]
+  },
+  {
+   "malId": 1031,
+   "title": "Bokura ga Ita",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    443,
+    13099
+   ],
+   "titles": [
+    "Bokura ga Ita",
+    "We Were There",
+    "僕等がいた",
+    "Run Baby, Run."
+   ]
+  },
+  {
+   "malId": 3849,
+   "title": "The Other Side of the Mirror",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    443
+   ],
+   "titles": [
+    "The Other Side of the Mirror",
+    "鏡子的另一邊",
+    "99 Roses",
+    "Peggy",
+    "The Funeral Procession of Stars"
+   ]
+  },
+  {
+   "malId": 877,
+   "title": "Hana yori Dango",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    443,
+    422
+   ],
+   "titles": [
+    "Hana yori Dango",
+    "Boys Over Flowers",
+    "花より男子",
+    "HYD",
+    "Boys Over Flowers: Jewelry Box",
+    "End of the Century"
+   ]
+  },
+  {
+   "malId": 9222,
+   "title": "Heart",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    443
+   ],
+   "titles": [
+    "Heart",
+    "ハート"
+   ]
+  },
+  {
+   "malId": 17904,
+   "title": "Kuragehime",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    29,
+    422
+   ],
+   "titles": [
+    "Kuragehime",
+    "Princess Jellyfish",
+    "海月姫",
+    "Kuragehime Heroes",
+    "Eiyuu Restuden"
+   ]
+  },
+  {
+   "malId": 30079,
+   "title": "Annarasumanara",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    29
+   ],
+   "titles": [
+    "Annarasumanara",
+    "안나라수마나라",
+    "The Sound of Magic"
+   ]
+  },
+  {
+   "malId": 475,
+   "title": "Peach Girl",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    29
+   ],
+   "titles": [
+    "Peach Girl",
+    "ピーチガール",
+    "Peach Girl: Change of Heart",
+    "Peach Girl: Authentic"
+   ]
+  },
+  {
+   "malId": 1267,
+   "title": "Kagen no Tsuki",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    29
+   ],
+   "titles": [
+    "Kagen no Tsuki",
+    "Last Quarter",
+    "下弦の月",
+    "Last Quarter of the Moon"
+   ]
+  },
+  {
+   "malId": 677,
+   "title": "Akuma na Eros",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    448
+   ],
+   "titles": [
+    "Akuma na Eros",
+    "悪魔なエロス",
+    "Virgin Crisis",
+    "Satanic Honey",
+    "Satanic Cohabitation"
+   ]
+  },
+  {
+   "malId": 1413,
+   "title": "Seimaden",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    448
+   ],
+   "titles": [
+    "Seimaden",
+    "聖魔伝",
+    "The Tall Tale of the Demon Prince"
+   ]
+  },
+  {
+   "malId": 83,
+   "title": "Ayashi no Ceres",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    448
+   ],
+   "titles": [
+    "Ayashi no Ceres",
+    "Ceres: Celestial Legend",
+    "妖しのセレス"
+   ]
+  },
+  {
+   "malId": 99944,
+   "title": "Persona 5",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    448
+   ],
+   "titles": [
+    "Persona 5",
+    "ペルソナ5"
+   ]
+  },
+  {
+   "malId": 27,
+   "title": "X",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    448
+   ],
+   "titles": [
+    "X",
+    "X/1999"
+   ]
+  },
+  {
+   "malId": 753,
+   "title": "Earthian",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    448
+   ],
+   "titles": [
+    "Earthian",
+    "アーシアン"
+   ]
+  },
+  {
+   "malId": 5767,
+   "title": "The Flowers of Evil",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    448
+   ],
+   "titles": [
+    "The Flowers of Evil",
+    "악의 꽃",
+    "The Evil Flower",
+    "Flower of Evil"
+   ]
+  },
+  {
+   "malId": 4127,
+   "title": "Biohazard Umbrella Chronicles: Houkai e no Jokyoku",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    32315
+   ],
+   "titles": [
+    "Biohazard Umbrella Chronicles: Houkai e no Jokyoku",
+    "バイオハザード アンブレラ・クロニクルズ -崩壊への序曲",
+    "Resident Evil Umbrella Chronicles: Prelude to the Fall",
+    "Biohazard Umbrella Chronicles: Prelude to the Collapse"
+   ]
+  },
+  {
+   "malId": 14440,
+   "title": "I Am a Hero",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    32315
+   ],
+   "titles": [
+    "I Am a Hero",
+    "アイアムアヒーロー"
+   ]
+  },
+  {
+   "malId": 95954,
+   "title": "Tokyo Undead",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    32315
+   ],
+   "titles": [
+    "Tokyo Undead",
+    "東京アンデッド"
+   ]
+  },
+  {
+   "malId": 39139,
+   "title": "Apocalypse no Toride",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    32315
+   ],
+   "titles": [
+    "Apocalypse no Toride",
+    "Fort of Apocalypse",
+    "アポカリプスの砦",
+    "Fortress of the Apocalypse"
+   ]
+  },
+  {
+   "malId": 88131,
+   "title": "Igai: The Play Dead/Alive",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    32315
+   ],
+   "titles": [
+    "Igai: The Play Dead/Alive",
+    "Hour of the Zombie",
+    "異骸‐THE PLAY DEAD/ALIVE-",
+    "Crueler Than Dead"
+   ]
+  },
+  {
+   "malId": 74413,
+   "title": "Siren: Eternal Siren",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    32315
+   ],
+   "titles": [
+    "Siren: Eternal Siren",
+    "サイレン～ETERNAL SIREN～"
+   ]
+  },
+  {
+   "malId": 3299,
+   "title": "Ookami to Koushinryou",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14073
+   ],
+   "titles": [
+    "Ookami to Koushinryou",
+    "Spice & Wolf",
+    "狼と香辛料",
+    "Spice and Wolf"
+   ]
+  },
+  {
+   "malId": 8850,
+   "title": "Brave 10",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14073
+   ],
+   "titles": [
+    "Brave 10",
+    "BRAVE10"
+   ]
+  },
+  {
+   "malId": 15848,
+   "title": "Mushibugyou",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14073
+   ],
+   "titles": [
+    "Mushibugyou",
+    "ムシブギョー（蟲奉行）",
+    "Mushibu-gyo"
+   ]
+  },
+  {
+   "malId": 536,
+   "title": "Gensou Suikoden III: Unmei no Keishousha",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14073
+   ],
+   "titles": [
+    "Gensou Suikoden III: Unmei no Keishousha",
+    "Suikoden III: The Successor of Fate",
+    "幻想水滸伝 III 運命の継承者",
+    "Suikoden 3"
+   ]
+  },
+  {
+   "malId": 112,
+   "title": "Shin Shunkaden",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14073
+   ],
+   "titles": [
+    "Shin Shunkaden",
+    "The Legend of Chun Hyang",
+    "新・春香伝",
+    "Shin Shunkaden: A Lunchtime Story",
+    "The New Legend of Shunka",
+    "Chunyan"
+   ]
+  },
+  {
+   "malId": 10865,
+   "title": "Touhou Shinigami: Meteor Methuselah Gaiden",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14073
+   ],
+   "titles": [
+    "Touhou Shinigami: Meteor Methuselah Gaiden",
+    "東方死神 メテオ・メトセラ外伝",
+    "Meteor Methuselah: Shinigami of the East",
+    "Immortal Rain: Shinigami of the East"
+   ]
+  },
+  {
+   "malId": 14999,
+   "title": "Dohran",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    14073
+   ],
+   "titles": [
+    "Dohran",
+    "動乱－DOHRAN－",
+    "Douran"
+   ]
+  },
+  {
+   "malId": 1869,
+   "title": "Ryuurouden",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    14073
+   ],
+   "titles": [
+    "Ryuurouden",
+    "龍狼伝"
+   ]
+  },
+  {
+   "malId": 1012,
+   "title": "Yamato Gensouki",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    14073
+   ],
+   "titles": [
+    "Yamato Gensouki",
+    "邪馬台幻想記"
+   ]
+  },
+  {
+   "malId": 3565,
+   "title": "Shinobi Life",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4192,
+    26149
+   ],
+   "titles": [
+    "Shinobi Life",
+    "シノビライフ",
+    "Ninja Life"
+   ]
+  },
+  {
+   "malId": 3820,
+   "title": "Shinigami Lovers",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4192
+   ],
+   "titles": [
+    "Shinigami Lovers",
+    "Death God's Lover - The chain of destiny which tied together-",
+    "死神ラヴァーズ"
+   ]
+  },
+  {
+   "malId": 47074,
+   "title": "Miseinen dakedo Kodomo ja Nai",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4192
+   ],
+   "titles": [
+    "Miseinen dakedo Kodomo ja Nai",
+    "That is not a child but a minor",
+    "未成年だけどコドモじゃない",
+    "Yowamushi Meikyuu"
+   ]
+  },
+  {
+   "malId": 12614,
+   "title": "Oretachi ni Ai wa Nai",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4192
+   ],
+   "titles": [
+    "Oretachi ni Ai wa Nai",
+    "オレたちに愛はない",
+    "There's No Love Between Us"
+   ]
+  },
+  {
+   "malId": 3872,
+   "title": "Kiss yori mo Hayaku",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4192,
+    2921
+   ],
+   "titles": [
+    "Kiss yori mo Hayaku",
+    "キスよりも早く",
+    "Faster Than a Kiss",
+    "Tsuki to Himawari",
+    "Moon and Sunflower"
+   ]
+  },
+  {
+   "malId": 482,
+   "title": "Platinum Garden",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4192
+   ],
+   "titles": [
+    "Platinum Garden",
+    "プラチナガーデン"
+   ]
+  },
+  {
+   "malId": 13853,
+   "title": "Alexandros: Sekai Teikoku e no Yume",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    10619
+   ],
+   "titles": [
+    "Alexandros: Sekai Teikoku e no Yume",
+    "アレクサンドロス～世界帝国への夢～"
+   ]
+  },
+  {
+   "malId": 3577,
+   "title": "Henjin Henkutsu Retsuden",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    10619
+   ],
+   "titles": [
+    "Henjin Henkutsu Retsuden",
+    "変人偏屈列伝",
+    "Eccentrics",
+    "Chronicles of the Bizarre and Eccentric",
+    "Bizarre Lives of Eccentric People",
+    "The Lives of Eccentrics"
+   ]
+  },
+  {
+   "malId": 15609,
+   "title": "Ibara no Okite",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    23532,
+    39813,
+    26149
+   ],
+   "titles": [
+    "Ibara no Okite",
+    "いばらの掟",
+    "Wakka to Tsubasa"
+   ]
+  },
+  {
+   "malId": 665,
+   "title": "MeruPuri: Märchen☆Prince",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    39813,
+    13099
+   ],
+   "titles": [
+    "MeruPuri: Märchen☆Prince",
+    "MeruPuri",
+    "めるぷり メルヘン☆プリンス"
+   ]
+  },
+  {
+   "malId": 1567,
+   "title": "Haikara-san ga Tooru",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26149
+   ],
+   "titles": [
+    "Haikara-san ga Tooru",
+    "はいからさんが通る",
+    "Smart-san",
+    "Mademoiselle Anne",
+    "There Goes the Modern Girl",
+    "Here Comes Miss Modern",
+    "Here Comes a Dandy"
+   ]
+  },
+  {
+   "malId": 9123,
+   "title": "Koi Tsukiyo no Himegoto",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26149
+   ],
+   "titles": [
+    "Koi Tsukiyo no Himegoto",
+    "恋月夜のひめごと",
+    "Rakuyouju to Koi no Hana"
+   ]
+  },
+  {
+   "malId": 21056,
+   "title": "Chikutaku Bonbon",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26149
+   ],
+   "titles": [
+    "Chikutaku Bonbon",
+    "ちくたくぼんぼん"
+   ]
+  },
+  {
+   "malId": 26736,
+   "title": "Taiyou no Ie",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26149
+   ],
+   "titles": [
+    "Taiyou no Ie",
+    "House of the Sun",
+    "たいようのいえ"
+   ]
+  },
+  {
+   "malId": 5454,
+   "title": "Golden Days",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26149
+   ],
+   "titles": [
+    "Golden Days",
+    "ゴールデン・デイズ"
+   ]
+  },
+  {
+   "malId": 26698,
+   "title": "Soleil",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26149
+   ],
+   "titles": [
+    "Soleil",
+    "ソレイユ"
+   ]
+  },
+  {
+   "malId": 16909,
+   "title": "Young Gun Carnaval",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28075
+   ],
+   "titles": [
+    "Young Gun Carnaval",
+    "ヤングガン・カルナバル",
+    "Young Gun Carnival"
+   ]
+  },
+  {
+   "malId": 379,
+   "title": "Jiraishin",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28743
+   ],
+   "titles": [
+    "Jiraishin",
+    "Ice Blade",
+    "地雷震"
+   ]
+  },
+  {
+   "malId": 28719,
+   "title": "Kyou kara Hitman",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28743
+   ],
+   "titles": [
+    "Kyou kara Hitman",
+    "今日からヒットマン",
+    "Hitman: Part Time Killer",
+    "Hitman from Today"
+   ]
+  },
+  {
+   "malId": 8848,
+   "title": "Sun-Ken Rock",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28743
+   ],
+   "titles": [
+    "Sun-Ken Rock",
+    "サンケンロック",
+    "Trigun: The Lost Plant",
+    "Yumin",
+    "Dango Knight: Awaking"
+   ]
+  },
+  {
+   "malId": 3159,
+   "title": "Tista",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28743
+   ],
+   "titles": [
+    "Tista",
+    "ティスタ"
+   ]
+  },
+  {
+   "malId": 1450,
+   "title": "Skyhigh",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28743
+   ],
+   "titles": [
+    "Skyhigh",
+    "スカイハイ"
+   ]
+  },
+  {
+   "malId": 122936,
+   "title": "Brutal: Satsujin Keisatsukan no Kokuhaku",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    28743
+   ],
+   "titles": [
+    "Brutal: Satsujin Keisatsukan no Kokuhaku",
+    "Brutal: Criminals the Law Can't Judge Deserve the Finest Death.",
+    "ブルータル 殺人警察官の告白",
+    "Brutal: Satsujin Kansatsukan no Kokuhaku",
+    "Brutal: Confessions of a Homicide Investigator"
+   ]
+  },
+  {
+   "malId": 12269,
+   "title": "Hammer Session!",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    28743
+   ],
+   "titles": [
+    "Hammer Session!",
+    "ハンマーセッション！"
+   ]
+  },
+  {
+   "malId": 19205,
+   "title": "Kaichou-san Chi no Koneko",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    5734
+   ],
+   "titles": [
+    "Kaichou-san Chi no Koneko",
+    "会長さんちの子ねこ",
+    "Kaichou-san Chi no Ko Neko",
+    "Gakuran Ouji",
+    "The Student Council President's Kitten"
+   ]
+  },
+  {
+   "malId": 17477,
+   "title": "Cosplay Deka",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    5734
+   ],
+   "titles": [
+    "Cosplay Deka",
+    "コスプレ刑事",
+    "Cos-Play Cops"
+   ]
+  },
+  {
+   "malId": 3378,
+   "title": "Kimi ni Todoke",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    422,
+    2921
+   ],
+   "titles": [
+    "Kimi ni Todoke",
+    "Kimi ni Todoke: From Me to You",
+    "君に届け",
+    "Reaching You",
+    "Mayuge no Kakudo wa 45° de",
+    "45 Degree Eyebrows",
+    "45° Eyebrows"
+   ]
+  },
+  {
+   "malId": 350,
+   "title": "Gokuraku Seishun Hockey Club",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    422
+   ],
+   "titles": [
+    "Gokuraku Seishun Hockey Club",
+    "My Heavenly Hockey Club",
+    "極楽　青春ホッケー部",
+    "Gokuraku Seishun Hockey Bu"
+   ]
+  },
+  {
+   "malId": 1444,
+   "title": "Kimi wa Girlfriend",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    422
+   ],
+   "titles": [
+    "Kimi wa Girlfriend",
+    "キミはガールフレンド",
+    "You're My Girlfriend"
+   ]
+  },
+  {
+   "malId": 5252,
+   "title": "Nadeshiko Club",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    422
+   ],
+   "titles": [
+    "Nadeshiko Club",
+    "ナデシコクラブ",
+    "Nadesico Club"
+   ]
+  },
+  {
+   "malId": 31053,
+   "title": "Udon no Hito",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    57491,
+    13099,
+    18896
+   ],
+   "titles": [
+    "Udon no Hito",
+    "The Lady of Udon",
+    "うどんの女",
+    "Udon no Onna"
+   ]
+  },
+  {
+   "malId": 419,
+   "title": "Nodame Cantabile",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    392
+   ],
+   "titles": [
+    "Nodame Cantabile",
+    "のだめカンタービレ",
+    "Nodame Cantabile: Encore Opera-hen",
+    "Nodame Cantabile Backstage"
+   ]
+  },
+  {
+   "malId": 16732,
+   "title": "Futago",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    392
+   ],
+   "titles": [
+    "Futago",
+    "FUTAGO―ふたご―",
+    "Papa Mama Futago",
+    "Eri-chan no Kare"
+   ]
+  },
+  {
+   "malId": 3633,
+   "title": "Beast Master",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    392
+   ],
+   "titles": [
+    "Beast Master",
+    "ビーストマスター",
+    "Fly",
+    "Cactus Summer Surprise",
+    "Saboten Summer Surprise"
+   ]
+  },
+  {
+   "malId": 539,
+   "title": "Suppli",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    392
+   ],
+   "titles": [
+    "Suppli",
+    "サプリ",
+    "Sapuri"
+   ]
+  },
+  {
+   "malId": 98615,
+   "title": "Kurohyou to 16-sai",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    392
+   ],
+   "titles": [
+    "Kurohyou to 16-sai",
+    "Black Panther and Sweet 16",
+    "黒豹と16歳",
+    "Black Panther and Sixteen"
+   ]
+  },
+  {
+   "malId": 330,
+   "title": "Good Luck",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    392
+   ],
+   "titles": [
+    "Good Luck"
+   ]
+  },
+  {
+   "malId": 1402,
+   "title": "100% Perfect Girl",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    392
+   ],
+   "titles": [
+    "100% Perfect Girl",
+    "100%의 그녀"
+   ]
+  },
+  {
+   "malId": 1506,
+   "title": "Sunadokei",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13099
+   ],
+   "titles": [
+    "Sunadokei",
+    "Sand Chronicles",
+    "砂時計",
+    "Suna-dokei",
+    "Sunadokei Dei Sanduhr"
+   ]
+  },
+  {
+   "malId": 1424,
+   "title": "Dear Mine",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13099
+   ],
+   "titles": [
+    "Dear Mine",
+    "ディア マイン",
+    "Karenai Hana",
+    "Undying Flower"
+   ]
+  },
+  {
+   "malId": 27425,
+   "title": "Yajirobee",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13099
+   ],
+   "titles": [
+    "Yajirobee",
+    "やじろべえ",
+    "Balancing Toy"
+   ]
+  },
+  {
+   "malId": 22870,
+   "title": "Six Half",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13099
+   ],
+   "titles": [
+    "Six Half",
+    "シックス ハーフ",
+    "Kare wa Isshoukenmei"
+   ]
+  },
+  {
+   "malId": 16809,
+   "title": "Oyome ni Ikenai!",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13099
+   ],
+   "titles": [
+    "Oyome ni Ikenai!",
+    "お嫁にいけない!"
+   ]
+  },
+  {
+   "malId": 58141,
+   "title": "Machida-kun no Sekai",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18896
+   ],
+   "titles": [
+    "Machida-kun no Sekai",
+    "The world of Machida-kun",
+    "町田くんの世界",
+    "Kyou no Machida-kun",
+    "Ai, Aru Seikatsu"
+   ]
+  },
+  {
+   "malId": 23519,
+   "title": "&",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18896
+   ],
+   "titles": [
+    "&",
+    "＆ －アンド－",
+    "And"
+   ]
+  },
+  {
+   "malId": 10389,
+   "title": "Handmade no Ouji-sama",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18896
+   ],
+   "titles": [
+    "Handmade no Ouji-sama",
+    "ハンドメイドの王子さま",
+    "Prince of Handmade",
+    "Prince of Sewing"
+   ]
+  },
+  {
+   "malId": 88600,
+   "title": "Koi wa Ameagari no You ni",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18896
+   ],
+   "titles": [
+    "Koi wa Ameagari no You ni",
+    "After the Rain",
+    "恋は雨上がりのように",
+    "Koi wa Amaagari no Youni",
+    "Love is Like after the Rain",
+    "KoiAme"
+   ]
+  },
+  {
+   "malId": 35147,
+   "title": "Tsubakikan no Utsukushi Sugiru Garçon",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18896
+   ],
+   "titles": [
+    "Tsubakikan no Utsukushi Sugiru Garçon",
+    "椿館の美しすぎるギャルソン",
+    "Tsubakikan no Utsukushisugiru Garcon",
+    "Stunning Garcon of the Tsubakikan"
+   ]
+  },
+  {
+   "malId": 18321,
+   "title": "Hagoromo Mishin",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18896
+   ],
+   "titles": [
+    "Hagoromo Mishin",
+    "羽衣ミシン",
+    "The Swan Robe"
+   ]
+  },
+  {
+   "malId": 102060,
+   "title": "Haru no Noroi",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    18896
+   ],
+   "titles": [
+    "Haru no Noroi",
+    "Haru's Curse",
+    "春の呪い",
+    "Curse of Spring"
+   ]
+  },
+  {
+   "malId": 42451,
+   "title": "Horimiya",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28226
+   ],
+   "titles": [
+    "Horimiya",
+    "ホリミヤ"
+   ]
+  },
+  {
+   "malId": 153158,
+   "title": "Telework Yotabanashi",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28226
+   ],
+   "titles": [
+    "Telework Yotabanashi",
+    "Home Office Romance",
+    "テレワァク与太話"
+   ]
+  },
+  {
+   "malId": 73575,
+   "title": "Danna ga Nani wo Itteiru ka Wakaranai Ken",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28226
+   ],
+   "titles": [
+    "Danna ga Nani wo Itteiru ka Wakaranai Ken",
+    "I Can't Understand What My Husband Is Saying",
+    "旦那が何を言っているかわからない件"
+   ]
+  },
+  {
+   "malId": 69549,
+   "title": "Senakagurashi",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28226
+   ],
+   "titles": [
+    "Senakagurashi",
+    "せなかぐらし",
+    "Senaka Life",
+    "Senaka Gurashi"
+   ]
+  },
+  {
+   "malId": 57359,
+   "title": "Futari no Renai Shoka",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28226
+   ],
+   "titles": [
+    "Futari no Renai Shoka",
+    "ふたりの恋愛書架",
+    "Our Bookshelf Romance"
+   ]
+  },
+  {
+   "malId": 91767,
+   "title": "Boku to Kimi no Taisetsu na Hanashi",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28226
+   ],
+   "titles": [
+    "Boku to Kimi no Taisetsu na Hanashi",
+    "Our Precious Conversations",
+    "僕と君の大切な話",
+    "An Important Talk Between You and Me",
+    "The precious talk of me and you",
+    "Miracle☆Gift"
+   ]
+  },
+  {
+   "malId": 12885,
+   "title": "Miman Renai",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    28226
+   ],
+   "titles": [
+    "Miman Renai",
+    "未満れんあい",
+    "Insufficient Affections"
+   ]
+  },
+  {
+   "malId": 50003,
+   "title": "The Stories of Those Around Me",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    28226
+   ],
+   "titles": [
+    "The Stories of Those Around Me",
+    "아는사람 이야기",
+    "Story of Someone We Know"
+   ]
+  },
+  {
+   "malId": 73729,
+   "title": "Apartmate",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    28226
+   ],
+   "titles": [
+    "Apartmate",
+    "アパルトめいと",
+    "Apartmeito",
+    "Apart Mate",
+    "100 x 200",
+    "Nagame no Ii Heya"
+   ]
+  },
+  {
+   "malId": 31531,
+   "title": "Naisho no Jikan",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16908,
+    24744,
+    13059
+   ],
+   "titles": [
+    "Naisho no Jikan",
+    "ナイショノジカン",
+    "Ikinari Ouji-sama!!"
+   ]
+  },
+  {
+   "malId": 1271,
+   "title": "Special A",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16908,
+    2921
+   ],
+   "titles": [
+    "Special A",
+    "S.A: Special A",
+    "S・A　スペシャル・エー",
+    "Mikansei Chorus",
+    "Incomplete Chorus",
+    "Shoku no Miyako",
+    "Food Paradise"
+   ]
+  },
+  {
+   "malId": 67645,
+   "title": "Namaikizakari.",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16908,
+    2921
+   ],
+   "titles": [
+    "Namaikizakari.",
+    "Cheeky Brat",
+    "なまいきざかり。"
+   ]
+  },
+  {
+   "malId": 828,
+   "title": "Renai Shijou Shugi",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16908,
+    1162
+   ],
+   "titles": [
+    "Renai Shijou Shugi",
+    "レンアイ至上主義",
+    "Ren-ai Shijou Shugi",
+    "Love's Supreme Principle!",
+    "Virgin Beast",
+    "Scarred Innocence",
+    "Kakuran Innocence",
+    "Rescued Letter, Complicated Love",
+    "Dakkai Letter Sakusou Love",
+    "Ribbon"
+   ]
+  },
+  {
+   "malId": 619,
+   "title": "Uwasa no Midori-kun!!",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16908
+   ],
+   "titles": [
+    "Uwasa no Midori-kun!!",
+    "うわさの翠くん!!",
+    "The Rumoured Midori-kun!!",
+    "Shounen x Cinderella II"
+   ]
+  },
+  {
+   "malId": 483,
+   "title": "Power!!",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16908
+   ],
+   "titles": [
+    "Power!!",
+    "Girl Got Game",
+    "POWER!!",
+    "Namida ga Hareru made",
+    "Change!",
+    "Makeover"
+   ]
+  },
+  {
+   "malId": 591,
+   "title": "Koukou Debut",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    16908,
+    3523
+   ],
+   "titles": [
+    "Koukou Debut",
+    "High School Debut",
+    "高校デビュー",
+    "Osananajimi wa Gakunenchou",
+    "Enren Debut",
+    "Koukou Debut Enrenhen"
+   ]
+  },
+  {
+   "malId": 629,
+   "title": "Mitsu x Mitsu Drops",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    16908
+   ],
+   "titles": [
+    "Mitsu x Mitsu Drops",
+    "Honey x Honey Drops",
+    "蜜×蜜ドロップス",
+    "Honey & Honey Drops"
+   ]
+  },
+  {
+   "malId": 5255,
+   "title": "Dengeki Daisy",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2921
+   ],
+   "titles": [
+    "Dengeki Daisy",
+    "電撃デイジー",
+    "Hetakuso Cupid",
+    "The Hopeless Cupid"
+   ]
+  },
+  {
+   "malId": 30315,
+   "title": "Last Game",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2921
+   ],
+   "titles": [
+    "Last Game",
+    "ラストゲーム",
+    "Kimi to, Shiawase.",
+    "Happiness with You",
+    "Hidamari no Niwa",
+    "Garden of Sunlight",
+    "Wasureyuki",
+    "Forgotten Snow",
+    "Ninkoi"
+   ]
+  },
+  {
+   "malId": 13702,
+   "title": "Tonari no Kaibutsu-kun",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2921
+   ],
+   "titles": [
+    "Tonari no Kaibutsu-kun",
+    "My Little Monster",
+    "となりの怪物くん",
+    "Tonari no Kaibutsukun",
+    "The Monster Next Door",
+    "My Neighbor Monster-kun"
+   ]
+  },
+  {
+   "malId": 4514,
+   "title": "Kyou, Koi wo Hajimemasu",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    2921
+   ],
+   "titles": [
+    "Kyou, Koi wo Hajimemasu",
+    "今日、恋をはじめます",
+    "Today, We'll Start Our Love"
+   ]
+  },
+  {
+   "malId": 122649,
+   "title": "Mamahaha no Tsurego ga Motokano datta",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    24744
+   ],
+   "titles": [
+    "Mamahaha no Tsurego ga Motokano datta",
+    "My Stepmom's Daughter Is My Ex",
+    "継母の連れ子が元カノだった"
+   ]
+  },
+  {
+   "malId": 46738,
+   "title": "Kedamono Kareshi",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    24744
+   ],
+   "titles": [
+    "Kedamono Kareshi",
+    "ケダモノ彼氏",
+    "Beast Boyfriend",
+    "He Is a Beast"
+   ]
+  },
+  {
+   "malId": 28825,
+   "title": "Ookami Shoujo to Kuro Ouji",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    24744,
+    3523
+   ],
+   "titles": [
+    "Ookami Shoujo to Kuro Ouji",
+    "Wolf Girl and Black Prince",
+    "オオカミ少女と黒王子",
+    "Junketsu Lullaby",
+    "Pierrot ja Nee yo",
+    "Kamatte-chan de Gomenasai!!",
+    "Kimi wo Suki ni Natta Riyuu",
+    "The Reason I Love You",
+    "Wolf Girl & Black Prince"
+   ]
+  },
+  {
+   "malId": 103795,
+   "title": "Shitsuji-tachi no Chinmoku",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    24744
+   ],
+   "titles": [
+    "Shitsuji-tachi no Chinmoku",
+    "執事たちの沈黙",
+    "Kuroneko Lily",
+    "Tarou-kun wa Yuganderu",
+    "Amai Wana to Nigai Mitsu",
+    "Hakoniwa Fuufu",
+    "Hakoniwa Oyako"
+   ]
+  },
+  {
+   "malId": 61369,
+   "title": "Imasugu Oniichan ni Imouto da tte Iitai!",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    24744
+   ],
+   "titles": [
+    "Imasugu Oniichan ni Imouto da tte Iitai!",
+    "I wanna say that I'm not your brother right now!!",
+    "いますぐお兄ちゃんに妹だっていいたい!",
+    "ImaImo",
+    "I Want to Say to my Older Brother That I'm His Younger Sister Now!",
+    "Ima Sugu Onii-chan ni Imouto da tte Iitai!"
+   ]
+  },
+  {
+   "malId": 19663,
+   "title": "My Lovable Fatty",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13059
+   ],
+   "titles": [
+    "My Lovable Fatty",
+    "내게 너무 사랑스러운 뚱땡이",
+    "Fatty that I Love"
+   ]
+  },
+  {
+   "malId": 25028,
+   "title": "Bijin Kakumei",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13059
+   ],
+   "titles": [
+    "Bijin Kakumei",
+    "美人革命"
+   ]
+  },
+  {
+   "malId": 2108,
+   "title": "Romantic Beauty",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13059
+   ],
+   "titles": [
+    "Romantic Beauty",
+    "ロマンティック・ビューティー"
+   ]
+  },
+  {
+   "malId": 714,
+   "title": "Ahiru no Ouji-sama",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13059
+   ],
+   "titles": [
+    "Ahiru no Ouji-sama",
+    "Duck Prince",
+    "あひるの王子さま"
+   ]
+  },
+  {
+   "malId": 1242,
+   "title": "Good Morning Call",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3523
+   ],
+   "titles": [
+    "Good Morning Call",
+    "グッドモーニング・コール",
+    "Kare to Kanojo ni Hanataba wo",
+    "His and Her Fortune Bouquet"
+   ]
+  },
+  {
+   "malId": 5256,
+   "title": "Koi Nanka Hajimaranai",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3523
+   ],
+   "titles": [
+    "Koi Nanka Hajimaranai",
+    "恋なんかはじまらない",
+    "Koinanka Hajimaranai",
+    "Love Won't Begin"
+   ]
+  },
+  {
+   "malId": 16794,
+   "title": "L♥DK",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3523
+   ],
+   "titles": [
+    "L♥DK"
+   ]
+  },
+  {
+   "malId": 5536,
+   "title": "Ojousama no Gohoubi",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3523
+   ],
+   "titles": [
+    "Ojousama no Gohoubi",
+    "お嬢様のごほうび",
+    "Ojou-sama no Gohoubi",
+    "Prize is Love",
+    "The Lady's Prize",
+    "Kimi no Te de, Atashi wo",
+    "Issho ni Itai no",
+    "Micha Dame nano!"
+   ]
+  },
+  {
+   "malId": 983,
+   "title": "Crossroad",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3523
+   ],
+   "titles": [
+    "Crossroad",
+    "crossroad",
+    "Sotsugyou Ryokou Gentei☆Kanojo",
+    "Girlfriend Only for Graduation Trip"
+   ]
+  },
+  {
+   "malId": 1740,
+   "title": "You're So Cool",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    3523
+   ],
+   "titles": [
+    "You're So Cool",
+    "넌 너무 멋져",
+    "You are So Cool"
+   ]
+  },
+  {
+   "malId": 5824,
+   "title": "Pink de Ikou!",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    3523
+   ],
+   "titles": [
+    "Pink de Ikou!",
+    "ピンクでいこう！",
+    "Get Pink!"
+   ]
+  },
+  {
+   "malId": 100448,
+   "title": "Jumyou wo Kaitotte Moratta. Ichinen ni Tsuki, Ichimanen de.",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11734
+   ],
+   "titles": [
+    "Jumyou wo Kaitotte Moratta. Ichinen ni Tsuki, Ichimanen de.",
+    "Three Days of Happiness",
+    "寿命を買い取ってもらった。一年につき、一万円で。",
+    "Mikkakan no Koufuku",
+    "I Sold My Life for Ten Thousand Yen per Year."
+   ]
+  },
+  {
+   "malId": 3731,
+   "title": "Solanin",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11734
+   ],
+   "titles": [
+    "Solanin",
+    "ソラニン"
+   ]
+  },
+  {
+   "malId": 366,
+   "title": "Hoshi no Koe",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11734
+   ],
+   "titles": [
+    "Hoshi no Koe",
+    "Voices of a Distant Star",
+    "ほしのこえ",
+    "The Voices of a Distant Star"
+   ]
+  },
+  {
+   "malId": 34091,
+   "title": "Rec: Kimi ga Naita Hi",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11734,
+    26965,
+    35035,
+    65923
+   ],
+   "titles": [
+    "Rec: Kimi ga Naita Hi",
+    "REC－君が泣いた日－",
+    "REC - The Day You Cried",
+    "Kira-fuwa Kiss",
+    "Kira-fuwa Xmas",
+    "Kirafuwa Christmas"
+   ]
+  },
+  {
+   "malId": 7107,
+   "title": "Kon no Ki Konoha",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11734
+   ],
+   "titles": [
+    "Kon no Ki Konoha",
+    "コンノキコノハ",
+    "Leaves of the Deep Blue Tree"
+   ]
+  },
+  {
+   "malId": 54925,
+   "title": "Diamond Dust",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    11734
+   ],
+   "titles": [
+    "Diamond Dust",
+    "Diamond Dust 다이아몬드 더스트"
+   ]
+  },
+  {
+   "malId": 9777,
+   "title": "Coelacanth",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    11734
+   ],
+   "titles": [
+    "Coelacanth",
+    "シーラカンス",
+    "Shiirakansu"
+   ]
+  },
+  {
+   "malId": 11438,
+   "title": "Kimi ni shika Kikoenai",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    11734
+   ],
+   "titles": [
+    "Kimi ni shika Kikoenai",
+    "きみにしか聞こえない",
+    "Calling You",
+    "Can You Hear Me?",
+    "Nobody Can Hear Me But You"
+   ]
+  },
+  {
+   "malId": 24294,
+   "title": "Ao Haru Ride",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35573
+   ],
+   "titles": [
+    "Ao Haru Ride",
+    "アオハライド AO―HARU―RIDE",
+    "Blue Spring Ride",
+    "Aoharaido",
+    "Strobe Edge",
+    "Sono Omokage wo Shitteru"
+   ]
+  },
+  {
+   "malId": 35733,
+   "title": "Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35573
+   ],
+   "titles": [
+    "Ano Hi Mita Hana no Namae wo Bokutachi wa Mada Shiranai.",
+    "あの日見た花の名前を僕達はまだ知らない。",
+    "AnoHana",
+    "We Still Don't Know the Name of the Flower We Saw That Day"
+   ]
+  },
+  {
+   "malId": 7378,
+   "title": "Strobe Edge",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35573
+   ],
+   "titles": [
+    "Strobe Edge",
+    "ストロボ・エッジ",
+    "Colorless Dreamer"
+   ]
+  },
+  {
+   "malId": 39325,
+   "title": "Boku dake ga Inai Machi",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35573,
+    104565
+   ],
+   "titles": [
+    "Boku dake ga Inai Machi",
+    "Erased",
+    "僕だけがいない街",
+    "The Town Where Only I am Missing",
+    "BokuMachi"
+   ]
+  },
+  {
+   "malId": 26021,
+   "title": "Hajimari no Niina",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35573,
+    35035
+   ],
+   "titles": [
+    "Hajimari no Niina",
+    "はじまりのにいな",
+    "Beginning Niina",
+    "Koi Baka.",
+    "Yasashii Tenohira",
+    "Machibito",
+    "Niina's First Love Story"
+   ]
+  },
+  {
+   "malId": 37707,
+   "title": "Shigatsu wa Kimi no Uso",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35573,
+    35035
+   ],
+   "titles": [
+    "Shigatsu wa Kimi no Uso",
+    "Your Lie in April",
+    "四月は君の嘘"
+   ]
+  },
+  {
+   "malId": 12309,
+   "title": "Arisa",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26965
+   ],
+   "titles": [
+    "Arisa",
+    "ARISA 〈アリサ〉"
+   ]
+  },
+  {
+   "malId": 28613,
+   "title": "Korosareru nara, Isso Sakura no Ki no Shita de",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26965
+   ],
+   "titles": [
+    "Korosareru nara, Isso Sakura no Ki no Shita de",
+    "殺されるなら、いっそ桜の木の下で",
+    "Dead Friend's Love Letter"
+   ]
+  },
+  {
+   "malId": 31045,
+   "title": "Ao no Binetsu",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26965
+   ],
+   "titles": [
+    "Ao no Binetsu",
+    "青の微熱",
+    "Slight Blue Fever"
+   ]
+  },
+  {
+   "malId": 32129,
+   "title": "Shindere Shoujo to Kodoku na Shinigami",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26965
+   ],
+   "titles": [
+    "Shindere Shoujo to Kodoku na Shinigami",
+    "シンデレ少女と孤独な死神",
+    "Lovestruck Dead Girl and Forlorn Death God"
+   ]
+  },
+  {
+   "malId": 11072,
+   "title": "Koizora: Setsunai Koimonogatari",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4207,
+    35035,
+    1162
+   ],
+   "titles": [
+    "Koizora: Setsunai Koimonogatari",
+    "恋空～切ナイ恋物語～",
+    "Koizora: Kinai Koimonogatari",
+    "Sky of Love",
+    "Love Sky: Sad Love Story"
+   ]
+  },
+  {
+   "malId": 1637,
+   "title": "Muchakucha Daisuki.",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4207
+   ],
+   "titles": [
+    "Muchakucha Daisuki.",
+    "むちゃくちゃ大好き。",
+    "Mucha Kucha Daisuki",
+    "Dingue de toi!",
+    "Kawa no Hito",
+    "Yuki Furu Yoru wo Matte",
+    "Wait For a Night When Snow Falls",
+    "Watashi to Anata no Randebu",
+    "Your And My Randebu",
+    "Namida no Koimonogatari",
+    "A Tearful Tale of Love"
+   ]
+  },
+  {
+   "malId": 3127,
+   "title": "Boku wa Imouto ni Koi wo Suru",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4207
+   ],
+   "titles": [
+    "Boku wa Imouto ni Koi wo Suru",
+    "Secret Sweethearts",
+    "僕は妹に恋をする",
+    "I Love My Little Sister"
+   ]
+  },
+  {
+   "malId": 1978,
+   "title": "Moe Kare!!",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4207
+   ],
+   "titles": [
+    "Moe Kare!!",
+    "萌えカレ!!",
+    "Double Prince",
+    "Moe Boyfriend",
+    "Moe Boys"
+   ]
+  },
+  {
+   "malId": 13597,
+   "title": "Teddy Bear",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4207
+   ],
+   "titles": [
+    "Teddy Bear",
+    "Teddybear"
+   ]
+  },
+  {
+   "malId": 1252,
+   "title": "Hissing",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    4207
+   ],
+   "titles": [
+    "Hissing",
+    "히싱"
+   ]
+  },
+  {
+   "malId": 12760,
+   "title": "Taiyou no Uta",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    4207
+   ],
+   "titles": [
+    "Taiyou no Uta",
+    "A Song to the Sun",
+    "タイヨウのうた"
+   ]
+  },
+  {
+   "malId": 10741,
+   "title": "Heaven's Door",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35035
+   ],
+   "titles": [
+    "Heaven's Door",
+    "ヘブンズ　ドア"
+   ]
+  },
+  {
+   "malId": 11767,
+   "title": "Suki tte Ii na yo.",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35035
+   ],
+   "titles": [
+    "Suki tte Ii na yo.",
+    "Say I Love You.",
+    "好きっていいなよ。",
+    "Sukitte Ii na yo."
+   ]
+  },
+  {
+   "malId": 41239,
+   "title": "Haru Meguru",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35035
+   ],
+   "titles": [
+    "Haru Meguru",
+    "春巡る",
+    "Forget-me-not"
+   ]
+  },
+  {
+   "malId": 42879,
+   "title": "Hana to Rakurai",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    35035
+   ],
+   "titles": [
+    "Hana to Rakurai",
+    "花と落雷",
+    "Flower and Thunderbolt"
+   ]
+  },
+  {
+   "malId": 3685,
+   "title": "Asa mo, Hiru mo, Yoru mo.",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1162
+   ],
+   "titles": [
+    "Asa mo, Hiru mo, Yoru mo.",
+    "朝も、昼も、夜も。",
+    "Morning, Noon, and Night"
+   ]
+  },
+  {
+   "malId": 170,
+   "title": "Mondaiteiki Sakuhinshu",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1162
+   ],
+   "titles": [
+    "Mondaiteiki Sakuhinshu",
+    "Confidential Confessions",
+    "問題提起 作品集",
+    "Tobira",
+    "Namida",
+    "Memai",
+    "Itami",
+    "Himitsu",
+    "Uwasa",
+    "The Door"
+   ]
+  },
+  {
+   "malId": 54663,
+   "title": "Bambi to Dhole",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1162
+   ],
+   "titles": [
+    "Bambi to Dhole",
+    "バンビとドール",
+    "Bambi and Dhole"
+   ]
+  },
+  {
+   "malId": 8652,
+   "title": "Zankoku na Kami ga Shihai suru",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1162
+   ],
+   "titles": [
+    "Zankoku na Kami ga Shihai suru",
+    "残酷な神が支配する",
+    "A Cruel God Reigns",
+    "A Cruel God Rules in Heaven",
+    "A Savage God Reigns",
+    "After Us, the Savage God",
+    "Zankoku na Kami ga Shihaisuru"
+   ]
+  },
+  {
+   "malId": 407,
+   "title": "Life",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1162
+   ],
+   "titles": [
+    "Life",
+    "ライフ"
+   ]
+  },
+  {
+   "malId": 387,
+   "title": "Karin",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1162
+   ],
+   "titles": [
+    "Karin",
+    "Chibi Vampire",
+    "かりん",
+    "Cheeky Vampire",
+    "Little Vampire",
+    "Vampire Karin"
+   ]
+  },
+  {
+   "malId": 89553,
+   "title": "Usemono Yado",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    65923
+   ],
+   "titles": [
+    "Usemono Yado",
+    "うせもの宿"
+   ]
+  },
+  {
+   "malId": 9288,
+   "title": "Tada, Kimi wo Aishiteru",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    65923
+   ],
+   "titles": [
+    "Tada, Kimi wo Aishiteru",
+    "ただ、君を愛してる",
+    "Tada, Kimi wa Aishiteru",
+    "Heavenly Forest"
+   ]
+  },
+  {
+   "malId": 21651,
+   "title": "Hitori-tachi",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    65923
+   ],
+   "titles": [
+    "Hitori-tachi",
+    "ひとりたち",
+    "Forever Honey",
+    "Hitoritachi",
+    "Kizuguchi Kara Nagareru Ai no Uta",
+    "Akusaga -ZERO-"
+   ]
+  },
+  {
+   "malId": 24808,
+   "title": "Kami no Kodomo",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    9004
+   ],
+   "titles": [
+    "Kami no Kodomo",
+    "神の子供",
+    "God's Child"
+   ]
+  },
+  {
+   "malId": 1766,
+   "title": "Marie no Kanaderu Ongaku",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    9004
+   ],
+   "titles": [
+    "Marie no Kanaderu Ongaku",
+    "The Music of Marie",
+    "Marieの奏でる音楽"
+   ]
+  },
+  {
+   "malId": 35475,
+   "title": "G",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    9004,
+    91432
+   ],
+   "titles": [
+    "G"
+   ]
+  },
+  {
+   "malId": 18753,
+   "title": "Nekojiru Udon",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    9004
+   ],
+   "titles": [
+    "Nekojiru Udon",
+    "Cat Soup",
+    "ねこぢるうどん",
+    "Cat Noodle Soup: The Story of a Soul"
+   ]
+  },
+  {
+   "malId": 94022,
+   "title": "Kyuusai no Hi",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    9004
+   ],
+   "titles": [
+    "Kyuusai no Hi",
+    "救済の日",
+    "The Day of Salvation"
+   ]
+  },
+  {
+   "malId": 117122,
+   "title": "Chocolate Panic",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    91432
+   ],
+   "titles": [
+    "Chocolate Panic",
+    "チョコレート・パニック",
+    "Chocopa Special",
+    "Great Chocolate Panic"
+   ]
+  },
+  {
+   "malId": 16929,
+   "title": "Heaven's Door",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    91432,
+    18570
+   ],
+   "titles": [
+    "Heaven's Door",
+    "ヘヴンズ ドア",
+    "Knockin' on Heaven's Door",
+    "3000 Leagues Searching For Mother",
+    "Lazaro Franco's Fourth Hour",
+    "The Fallen Samurai And The Sea",
+    "Loopa",
+    "Kenbo's Diary",
+    "Sponge Generation",
+    "By Plane",
+    "Horizon",
+    "Landed"
+   ]
+  },
+  {
+   "malId": 1373,
+   "title": "Nijigahara Holograph",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18570
+   ],
+   "titles": [
+    "Nijigahara Holograph",
+    "虹ヶ原ホログラフ",
+    "Rainbow Field Holograph"
+   ]
+  },
+  {
+   "malId": 1934,
+   "title": "Netsutai no Citron",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18570
+   ],
+   "titles": [
+    "Netsutai no Citron",
+    "熱帯のシトロン",
+    "Tropical Citron"
+   ]
+  },
+  {
+   "malId": 16594,
+   "title": "Wendy",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18570
+   ],
+   "titles": [
+    "Wendy",
+    "ウエンディ"
+   ]
+  },
+  {
+   "malId": 23736,
+   "title": "Opus",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18570
+   ],
+   "titles": [
+    "Opus",
+    "OPUS",
+    "Satoshi Kon's Opus"
+   ]
+  },
+  {
+   "malId": 51527,
+   "title": "Yume Nikki",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    18570
+   ],
+   "titles": [
+    "Yume Nikki",
+    "ゆめにっき",
+    "Dream Diary"
+   ]
+  },
+  {
+   "malId": 1408,
+   "title": "The World Is Mine",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    18570
+   ],
+   "titles": [
+    "The World Is Mine",
+    "ザ・ワールド・イズ・マイン",
+    "TWIM"
+   ]
+  },
+  {
+   "malId": 94857,
+   "title": "Kenka Banchou Otome: Koi no Battle Royal",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    89265
+   ],
+   "titles": [
+    "Kenka Banchou Otome: Koi no Battle Royal",
+    "Kenka Bancho Otome: Love's Battle Royale",
+    "喧嘩番長 乙女～恋のバトルロワイヤル～",
+    "Kenka Bancho Otome: Girl Beats Boys"
+   ]
+  },
+  {
+   "malId": 37463,
+   "title": "Linden Hall no Aria",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    89265
+   ],
+   "titles": [
+    "Linden Hall no Aria",
+    "菩提樹寮〈リンデンホール〉のアリア～金色のコルダシリーズ～",
+    "Bodai Kiryou no Aria",
+    "Bodaiju Ryou no Aria",
+    "La Corda d'Oro Series",
+    "Kiniro no Corda Series"
+   ]
+  },
+  {
+   "malId": 39819,
+   "title": "Sakura Taisen: Kanadegumi",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    89265
+   ],
+   "titles": [
+    "Sakura Taisen: Kanadegumi",
+    "サクラ大戦 奏組",
+    "Sakura Wars Kanadegumi"
+   ]
+  },
+  {
+   "malId": 54191,
+   "title": "SSG: Meimon Danshikou Keppuroku",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    89265
+   ],
+   "titles": [
+    "SSG: Meimon Danshikou Keppuroku",
+    "SSG ～名門男子校血風録～",
+    "SSG: Bunkyou Gakuen Danshiryou Keppuuroku"
+   ]
+  },
+  {
+   "malId": 79085,
+   "title": "Given",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    89265
+   ],
+   "titles": [
+    "Given",
+    "ギヴン"
+   ]
+  },
+  {
+   "malId": 35197,
+   "title": "Boku no Chopin",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    89265
+   ],
+   "titles": [
+    "Boku no Chopin",
+    "僕のショパン",
+    "My Chopin"
+   ]
+  },
+  {
+   "malId": 11516,
+   "title": "Heart no Kuni no Alice: Wonderful Wonder World",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    89265
+   ],
+   "titles": [
+    "Heart no Kuni no Alice: Wonderful Wonder World",
+    "Alice in the Country of Hearts",
+    "ハートの国のアリス～Wonderful Wonder World～"
+   ]
+  },
+  {
+   "malId": 3192,
+   "title": "Paros no Ken",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    660
+   ],
+   "titles": [
+    "Paros no Ken",
+    "The Sword of Paros",
+    "パロスの剣",
+    "Parosu no Ken"
+   ]
+  },
+  {
+   "malId": 772,
+   "title": "Shoujo Kakumei Utena",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    660
+   ],
+   "titles": [
+    "Shoujo Kakumei Utena",
+    "Revolutionary Girl Utena",
+    "少女革命ウテナ"
+   ]
+  },
+  {
+   "malId": 100749,
+   "title": "Marie Antoinette",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    660
+   ],
+   "titles": [
+    "Marie Antoinette",
+    "マリー・アントワネット"
+   ]
+  },
+  {
+   "malId": 1249,
+   "title": "Claudine...!",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    660
+   ],
+   "titles": [
+    "Claudine...!",
+    "Claudine",
+    "クローディーヌ…！"
+   ]
+  },
+  {
+   "malId": 18222,
+   "title": "Hana no Kishi",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    660
+   ],
+   "titles": [
+    "Hana no Kishi",
+    "Knight of Flower",
+    "花の騎士"
+   ]
+  },
+  {
+   "malId": 40311,
+   "title": "Bara no Josephine",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    660
+   ],
+   "titles": [
+    "Bara no Josephine",
+    "Josephine the French Rose",
+    "薔薇のジョゼフィーヌ"
+   ]
+  },
+  {
+   "malId": 93699,
+   "title": "Innocent Rouge",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    660
+   ],
+   "titles": [
+    "Innocent Rouge",
+    "イノサン Rouge"
+   ]
+  },
+  {
+   "malId": 82943,
+   "title": "Gaksital",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    660
+   ],
+   "titles": [
+    "Gaksital",
+    "각시탈",
+    "Bridal Mask"
+   ]
+  },
+  {
+   "malId": 974,
+   "title": "Basara",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21525
+   ],
+   "titles": [
+    "Basara",
+    "BASARA",
+    "Legend of Basara"
+   ]
+  },
+  {
+   "malId": 4571,
+   "title": "Akagami no Shirayuki-hime",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21525
+   ],
+   "titles": [
+    "Akagami no Shirayuki-hime",
+    "Snow White with the Red Hair",
+    "赤髪の白雪姫",
+    "Akagami no Shirayukihime",
+    "Red-haired Snow White",
+    "Hachigatsu no Shikisai",
+    "Four-Season Color of August",
+    "Bind Us",
+    "Bokura wo Tsunaide",
+    "Shizuku no Saki ni",
+    "Natsuyasumi 00-nichime"
+   ]
+  },
+  {
+   "malId": 11896,
+   "title": "Reimei no Arcana",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21525
+   ],
+   "titles": [
+    "Reimei no Arcana",
+    "Dawn of the Arcana",
+    "黎明のアルカナ",
+    "Reicana"
+   ]
+  },
+  {
+   "malId": 107562,
+   "title": "Kusuriya no Hitorigoto",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21525,
+    1061
+   ],
+   "titles": [
+    "Kusuriya no Hitorigoto",
+    "The Apothecary Diaries",
+    "薬屋のひとりごと",
+    "Drugstore Soliloquy"
+   ]
+  },
+  {
+   "malId": 79,
+   "title": "Sora wa Akai Kawa no Hotori",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21525,
+    12837
+   ],
+   "titles": [
+    "Sora wa Akai Kawa no Hotori",
+    "Red River",
+    "天は赤い河のほとり",
+    "Anatolia Story",
+    "Heaven by the Red River",
+    "Orontes Renka",
+    "Orontes Love Song",
+    "Where the Sky and the Red River meet"
+   ]
+  },
+  {
+   "malId": 10403,
+   "title": "Joou no Hana",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    21525
+   ],
+   "titles": [
+    "Joou no Hana",
+    "女王の花",
+    "The Queen's Flower",
+    "The Flower of the Queen"
+   ]
+  },
+  {
+   "malId": 44671,
+   "title": "Madame Petit",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    21525
+   ],
+   "titles": [
+    "Madame Petit",
+    "マダム・プティ"
+   ]
+  },
+  {
+   "malId": 393,
+   "title": "Kindaichi Shounen no Jikenbo: File Series",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1061
+   ],
+   "titles": [
+    "Kindaichi Shounen no Jikenbo: File Series",
+    "The Kindaichi Case Files",
+    "金田一少年の事件簿",
+    "Kindaichi Shonen no Jikenbo"
+   ]
+  },
+  {
+   "malId": 3153,
+   "title": "Q.E.D.: Shoumei Shuuryou",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1061
+   ],
+   "titles": [
+    "Q.E.D.: Shoumei Shuuryou",
+    "Q.E.D. ―証明終了―",
+    "Quod Erat Demonstrandum",
+    "Wonder Little Detective",
+    "QED: Shomei Shuryo"
+   ]
+  },
+  {
+   "malId": 48,
+   "title": "Pretty Face",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1061
+   ],
+   "titles": [
+    "Pretty Face",
+    "プリティフェイス"
+   ]
+  },
+  {
+   "malId": 4480,
+   "title": "Ichinensei ni Nacchattara",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1061
+   ],
+   "titles": [
+    "Ichinensei ni Nacchattara",
+    "一年生になっちゃったら",
+    "In The First Grade, Elementary School",
+    "After Somehow Becaming A First-Grader",
+    "When I Unwittingly Became a Grade Schooler"
+   ]
+  },
+  {
+   "malId": 86769,
+   "title": "Kusuriya no Hitorigoto",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1061
+   ],
+   "titles": [
+    "Kusuriya no Hitorigoto",
+    "The Apothecary Diaries",
+    "薬屋のひとりごと",
+    "The Pharmacist's Monologue"
+   ]
+  },
+  {
+   "malId": 132214,
+   "title": "Omniscient Reader's Viewpoint",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    1061,
+    121496,
+    148985,
+    147217,
+    130216,
+    132247,
+    146909,
+    147317,
+    147538,
+    147272,
+    147318
+   ],
+   "titles": [
+    "Omniscient Reader's Viewpoint",
+    "전지적 독자 시점",
+    "Jeonji-jeok Dokja Sijeom"
+   ]
+  },
+  {
+   "malId": 157875,
+   "title": "Kill Ao",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    1061
+   ],
+   "titles": [
+    "Kill Ao",
+    "Kill Blue",
+    "キルアオ"
+   ]
+  },
+  {
+   "malId": 9615,
+   "title": "Sarasah",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    12837
+   ],
+   "titles": [
+    "Sarasah",
+    "사라사",
+    "Sarasa"
+   ]
+  },
+  {
+   "malId": 923,
+   "title": "Kanata kara",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    12837
+   ],
+   "titles": [
+    "Kanata kara",
+    "From Far Away",
+    "彼方から",
+    "From the Other Side"
+   ]
+  },
+  {
+   "malId": 8837,
+   "title": "The Change!",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    12837
+   ],
+   "titles": [
+    "The Change!",
+    "ざ・ちぇんじ!",
+    "The Change",
+    "The Changelings"
+   ]
+  },
+  {
+   "malId": 514,
+   "title": "Saver",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    12837
+   ],
+   "titles": [
+    "Saver",
+    "세이버"
+   ]
+  },
+  {
+   "malId": 1079,
+   "title": "Goong",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    12837
+   ],
+   "titles": [
+    "Goong",
+    "궁(宮)",
+    "Goong - The Royal Palace Story",
+    "Princess Hours"
+   ]
+  },
+  {
+   "malId": 4543,
+   "title": "Ryou",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    12837
+   ],
+   "titles": [
+    "Ryou",
+    "リョウ",
+    "Ryo"
+   ]
+  },
+  {
+   "malId": 5272,
+   "title": "Hadashi de Bara wo Fume",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    12837
+   ],
+   "titles": [
+    "Hadashi de Bara wo Fume",
+    "Stepping on Roses",
+    "裸足でバラを踏め"
+   ]
+  },
+  {
+   "malId": 11874,
+   "title": "Wedding",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    12837
+   ],
+   "titles": [
+    "Wedding",
+    "花嫁",
+    "Hua Jia",
+    "Huajia Dierbu",
+    "Wedding Season 2"
+   ]
+  },
+  {
+   "malId": 88125,
+   "title": "Kominami Shoutarou, Ie kara Deru wo Hajimemashita.",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    79891
+   ],
+   "titles": [
+    "Kominami Shoutarou, Ie kara Deru wo Hajimemashita.",
+    "Shut-In Shoutarou Kominami Takes on the World",
+    "小南正太郎、家から出るをはじめました。"
+   ]
+  },
+  {
+   "malId": 61189,
+   "title": "Mahoutsukai no Yome",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    95920
+   ],
+   "titles": [
+    "Mahoutsukai no Yome",
+    "The Ancient Magus' Bride",
+    "魔法使いの嫁",
+    "The Magician's Bride"
+   ]
+  },
+  {
+   "malId": 93972,
+   "title": "Totsukuni no Shoujo",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    95920
+   ],
+   "titles": [
+    "Totsukuni no Shoujo",
+    "The Girl From the Other Side: Siúil, a Rún",
+    "とつくにの少女",
+    "Foreign Girl"
+   ]
+  },
+  {
+   "malId": 90030,
+   "title": "Kainushi Juujin to Pet Joshikousei",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    95920
+   ],
+   "titles": [
+    "Kainushi Juujin to Pet Joshikousei",
+    "飼い主獣人とペット女子高生"
+   ]
+  },
+  {
+   "malId": 122244,
+   "title": "Rakuen no Bijo to Yajuu",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    95920
+   ],
+   "titles": [
+    "Rakuen no Bijo to Yajuu",
+    "Beauty and the Beast of Paradise Lost",
+    "落園の美女と野獣",
+    "Beauty and the Beast in the Fallen Garden"
+   ]
+  },
+  {
+   "malId": 97579,
+   "title": "Koushaku Reijou no Tashinami",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    95920
+   ],
+   "titles": [
+    "Koushaku Reijou no Tashinami",
+    "Accomplishments of the Duke's Daughter",
+    "公爵令嬢の嗜み",
+    "Simply Good Sense for a Duke's Daughter"
+   ]
+  },
+  {
+   "malId": 108598,
+   "title": "Yasei no Last Boss ga Arawareta!: Kokuyoku no Haou",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    95920
+   ],
+   "titles": [
+    "Yasei no Last Boss ga Arawareta!: Kokuyoku no Haou",
+    "A Wild Last Boss Appeared!",
+    "野生のラスボスが現れた！黒翼の覇王"
+   ]
+  },
+  {
+   "malId": 35313,
+   "title": "Majo no Shinzou",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    95920
+   ],
+   "titles": [
+    "Majo no Shinzou",
+    "Witch's Heart",
+    "魔女の心臓"
+   ]
+  },
+  {
+   "malId": 68883,
+   "title": "Colette wa Shinu Koto ni Shita",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    95920
+   ],
+   "titles": [
+    "Colette wa Shinu Koto ni Shita",
+    "Colette Decides to Die",
+    "コレットは死ぬことにした"
+   ]
+  },
+  {
+   "malId": 4423,
+   "title": "Oooku",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    95920
+   ],
+   "titles": [
+    "Oooku",
+    "Oooku: The Inner Chambers",
+    "大奥",
+    "Ōoku: The Inner Chambers"
+   ]
+  },
+  {
+   "malId": 920,
+   "title": "Shion no Ou: The Flowers of Hard Blood.",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    6310
+   ],
+   "titles": [
+    "Shion no Ou: The Flowers of Hard Blood.",
+    "しおんの王 The Flowers of Hard Blood.",
+    "Shion's King",
+    "Kings of Shogi"
+   ]
+  },
+  {
+   "malId": 49,
+   "title": "Tennis no Oujisama",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    6310
+   ],
+   "titles": [
+    "Tennis no Oujisama",
+    "The Prince of Tennis",
+    "テニスの王子様",
+    "Tennis no Ouji-sama"
+   ]
+  },
+  {
+   "malId": 1224,
+   "title": "3-gatsu no Lion",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    6310
+   ],
+   "titles": [
+    "3-gatsu no Lion",
+    "March Comes in Like a Lion",
+    "3月のライオン",
+    "Sangatsu no Lion",
+    "Lion of March"
+   ]
+  },
+  {
+   "malId": 13245,
+   "title": "Chihayafuru",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    6310
+   ],
+   "titles": [
+    "Chihayafuru",
+    "ちはやふる"
+   ]
+  },
+  {
+   "malId": 97644,
+   "title": "Shakunetsu no Takkyuu Musume",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    6310
+   ],
+   "titles": [
+    "Shakunetsu no Takkyuu Musume",
+    "灼熱の卓球娘",
+    "Scorching Ping Pong Girls",
+    "Takkyuu☆Diary"
+   ]
+  },
+  {
+   "malId": 44347,
+   "title": "One Punch-Man",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    121496,
+    29983
+   ],
+   "titles": [
+    "One Punch-Man",
+    "One-Punch Man",
+    "ワンパンマン",
+    "Onepunchman",
+    "Onepanman",
+    "OPM"
+   ]
+  },
+  {
+   "malId": 122663,
+   "title": "Tower of God",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    121496,
+    146909
+   ],
+   "titles": [
+    "Tower of God",
+    "신의 탑",
+    "Sin-ui Tap"
+   ]
+  },
+  {
+   "malId": 147450,
+   "title": "The Lone Necromancer",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    121496,
+    147538
+   ],
+   "titles": [
+    "The Lone Necromancer",
+    "나 혼자 네크로맨서",
+    "Na Honja Necromancer",
+    "The Only Necromancer",
+    "Solo Necromancy"
+   ]
+  },
+  {
+   "malId": 147995,
+   "title": "The Player Who Can't Level Up",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    121496,
+    147538,
+    147318
+   ],
+   "titles": [
+    "The Player Who Can't Level Up",
+    "레벨업 못하는 플레이어",
+    "The Player That Can't Level Up",
+    "Level Up Mothaneun Player"
+   ]
+  },
+  {
+   "malId": 81669,
+   "title": "Overlord",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    121496
+   ],
+   "titles": [
+    "Overlord",
+    "オーバーロード",
+    "Over Lord"
+   ]
+  },
+  {
+   "malId": 134744,
+   "title": "The Legend of the Northern Blade",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    121496,
+    132247
+   ],
+   "titles": [
+    "The Legend of the Northern Blade",
+    "북검전기",
+    "Bukgeom Jeongi"
+   ]
+  },
+  {
+   "malId": 147392,
+   "title": "I'm the Max-Level Newbie",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    121496,
+    130216,
+    146909
+   ],
+   "titles": [
+    "I'm the Max-Level Newbie",
+    "나 혼자 만렙 뉴비",
+    "Solo Max-Level Newbie",
+    "Na Honja Man-Level Newbie"
+   ]
+  },
+  {
+   "malId": 155430,
+   "title": "Demon King of the Royal Class",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    148985
+   ],
+   "titles": [
+    "Demon King of the Royal Class",
+    "마왕은 학원에 간다",
+    "Mawang-eun Hagwon-e Ganda",
+    "The Demon Prince Goes to the Academy"
+   ]
+  },
+  {
+   "malId": 166865,
+   "title": "The Extra's Academy Survival Guide",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    148985,
+    147317,
+    147272
+   ],
+   "titles": [
+    "The Extra's Academy Survival Guide",
+    "아카데미에서 살아남기",
+    "How to Survive at the Academy"
+   ]
+  },
+  {
+   "malId": 153484,
+   "title": "I Have Max Level Luck",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    148985
+   ],
+   "titles": [
+    "I Have Max Level Luck",
+    "내 행운은 만렙이다",
+    "Nae Haengun-eun Man-Level-ida"
+   ]
+  },
+  {
+   "malId": 148009,
+   "title": "Level Up with the Gods",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    130216,
+    132247
+   ],
+   "titles": [
+    "Level Up with the Gods",
+    "신과 함께 레벨업",
+    "Leveling with the Gods",
+    "Sin-gwa Hamkke Level Up"
+   ]
+  },
+  {
+   "malId": 98712,
+   "title": "Hiraheishi wa Kako wo Yumemiru",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    130216
+   ],
+   "titles": [
+    "Hiraheishi wa Kako wo Yumemiru",
+    "Ordinary Soldier Dreams of the Past",
+    "平兵士は過去を夢見る",
+    "The Ordinary Soldier's Dream to Return to the Past",
+    "The Soldier Sees a Dream About the Past"
+   ]
+  },
+  {
+   "malId": 35013,
+   "title": "Again!!",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    130216,
+    104565
+   ],
+   "titles": [
+    "Again!!",
+    "アゲイン!!"
+   ]
+  },
+  {
+   "malId": 149013,
+   "title": "The Return of the Disaster-Class Hero",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    130216
+   ],
+   "titles": [
+    "The Return of the Disaster-Class Hero",
+    "재앙급 영웅님이 귀환하셨다",
+    "Resurrection of the Catastrophic Hero",
+    "Jaeang-geup Yeongung-nim-i Gwihwan Hasyeotda"
+   ]
+  },
+  {
+   "malId": 146385,
+   "title": "The Divine Twilight's Return",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    130216
+   ],
+   "titles": [
+    "The Divine Twilight's Return",
+    "부서진 성좌의 회귀",
+    "Return of the Broken Constellation",
+    "Return of the Shattered Constellation",
+    "Buseojin Seongjwa-ui Hoegwi"
+   ]
+  },
+  {
+   "malId": 147443,
+   "title": "Dice",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132247
+   ],
+   "titles": [
+    "Dice",
+    "다이스",
+    "Dice: The Cube that Changes Everything"
+   ]
+  },
+  {
+   "malId": 122150,
+   "title": "Isekai Shikkaku",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146909
+   ],
+   "titles": [
+    "Isekai Shikkaku",
+    "No Longer Allowed in Another World",
+    "異世界失格",
+    "Disqualified from Otherworldliness",
+    "No Longer Human...In Another World"
+   ]
+  },
+  {
+   "malId": 147202,
+   "title": "My S-Class Hunters",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146909,
+    147318
+   ],
+   "titles": [
+    "My S-Class Hunters",
+    "내가 키운 S급들",
+    "The S-Classes That I Raised",
+    "Naega Kiun S-geup-deul"
+   ]
+  },
+  {
+   "malId": 122883,
+   "title": "Joou Heika no Isekai Strategy",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146909
+   ],
+   "titles": [
+    "Joou Heika no Isekai Strategy",
+    "Her Majesty's Swarm",
+    "女王陛下の異世界戦略〈ストラテジー〉",
+    "Joou Heika no Isekai Senryaku"
+   ]
+  },
+  {
+   "malId": 129759,
+   "title": "Isekai Mokushiroku Mynoghra: Hametsu no Bunmei de Hajimeru Sekai Seifuku",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    146909
+   ],
+   "titles": [
+    "Isekai Mokushiroku Mynoghra: Hametsu no Bunmei de Hajimeru Sekai Seifuku",
+    "Apocalypse Bringer Mynoghra: World Conquest Begins with the Civilization of Ruin",
+    "異世界黙示録マイノグーラ ～破滅の文明で始める世界征服～",
+    "Mynoghra the Apocalypsis: World Conquest by Civilization of Ruin"
+   ]
+  },
+  {
+   "malId": 130798,
+   "title": "Joou Heika no Isekai Strategy",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    146909
+   ],
+   "titles": [
+    "Joou Heika no Isekai Strategy",
+    "Her Majesty's Swarm",
+    "女王陛下の異世界戦略〈ストラテジー〉",
+    "Joou Heika no Isekai Senryaku"
+   ]
+  },
+  {
+   "malId": 148175,
+   "title": "I Woke Up as the Villain",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147317
+   ],
+   "titles": [
+    "I Woke Up as the Villain",
+    "나 혼자 소설 속 망나니",
+    "Trapped in a Webnovel as a Good for Nothing",
+    "Na Honja Soseol Sok Mangnani"
+   ]
+  },
+  {
+   "malId": 154313,
+   "title": "Chitra",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147317
+   ],
+   "titles": [
+    "Chitra",
+    "치트라"
+   ]
+  },
+  {
+   "malId": 150455,
+   "title": "The Hero Returns",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147538
+   ],
+   "titles": [
+    "The Hero Returns",
+    "영웅, 회귀하다",
+    "Yeongung, Hoegwihada"
+   ]
+  },
+  {
+   "malId": 150210,
+   "title": "After Ten Millennia in Hell",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147538,
+    147318
+   ],
+   "titles": [
+    "After Ten Millennia in Hell",
+    "만 년 만에 귀환한 플레이어",
+    "Player Who Returned 10,000 Years Later",
+    "Man Nyeon Man-e Gwihwanhan Player",
+    "To Hell and Back"
+   ]
+  },
+  {
+   "malId": 180376,
+   "title": "What a Bountiful Harvest, Demon Lord!",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147272
+   ],
+   "titles": [
+    "What a Bountiful Harvest, Demon Lord!",
+    "풍작이에요, 마왕님!",
+    "Pungjag-i-eyo, Mawang-nim!"
+   ]
+  },
+  {
+   "malId": 116828,
+   "title": "Inaka no Home Center Otoko no Jiyuu na Isekai Seikatsu",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147272
+   ],
+   "titles": [
+    "Inaka no Home Center Otoko no Jiyuu na Isekai Seikatsu",
+    "田舎のホームセンター男の自由な異世界生活"
+   ]
+  },
+  {
+   "malId": 134250,
+   "title": "Moto Home Center Tenin no Isekai Seikatsu: Shougou \"DIY Master\" \"Green Master\" \"Pet Master\" wo Kushi shite Isekai wo Kimama ni Ikimasu",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147272
+   ],
+   "titles": [
+    "Moto Home Center Tenin no Isekai Seikatsu: Shougou \"DIY Master\" \"Green Master\" \"Pet Master\" wo Kushi shite Isekai wo Kimama ni Ikimasu",
+    "元ホームセンター店員の異世界生活～称号≪DIYマスター≫≪グリーンマスター≫≪ペットマスター≫を駆使して異世界を気儘に生きます～",
+    "Home Centre Sales Clerk's Life in Another World"
+   ]
+  },
+  {
+   "malId": 148679,
+   "title": "The Lord of Coins",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147272
+   ],
+   "titles": [
+    "The Lord of Coins",
+    "영주님의 코인이 줄지 않음?!",
+    "The Lord's Coins Aren't Decreasing?!",
+    "Yeongju-nim-ui Coin-i Julji Aneum?!"
+   ]
+  },
+  {
+   "malId": 169830,
+   "title": "A Flame Reborn",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147272
+   ],
+   "titles": [
+    "A Flame Reborn",
+    "멸망한 가문의 회귀자",
+    "Regressor of the Fallen Family",
+    "Returner of a Ruined Family"
+   ]
+  },
+  {
+   "malId": 136488,
+   "title": "Fangkai Nage Nuwu",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147272
+   ],
+   "titles": [
+    "Fangkai Nage Nuwu",
+    "Release That Witch",
+    "放开那个女巫"
+   ]
+  },
+  {
+   "malId": 103001,
+   "title": "Meikyuu Black Company",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    147272
+   ],
+   "titles": [
+    "Meikyuu Black Company",
+    "The Dungeon of Black Company",
+    "迷宮ブラックカンパニー"
+   ]
+  },
+  {
+   "malId": 103897,
+   "title": "Dr. Stone",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    147272
+   ],
+   "titles": [
+    "Dr. Stone",
+    "Dr.STONE",
+    "Dr. Stone: Terraforming",
+    "Dr. Stone: 4D Science",
+    "Dr. Stone Special One-shot, Dr. Stone Epilogue"
+   ]
+  },
+  {
+   "malId": 151440,
+   "title": "How to Live as a Villain",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147318
+   ],
+   "titles": [
+    "How to Live as a Villain",
+    "악당이 살아가는 법",
+    "Living like a Villain",
+    "Akdang-i Saraganeun Beop"
+   ]
+  },
+  {
+   "malId": 88930,
+   "title": "Youjo Senki",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147318
+   ],
+   "titles": [
+    "Youjo Senki",
+    "The Saga of Tanya the Evil",
+    "幼女戦記",
+    "The Military Chronicles of a Little Girl"
+   ]
+  },
+  {
+   "malId": 147463,
+   "title": "FFF-Class Trashero",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147318
+   ],
+   "titles": [
+    "FFF-Class Trashero",
+    "FFF급 관심용사",
+    "FFF-geup Gwansim Yongsa"
+   ]
+  },
+  {
+   "malId": 147727,
+   "title": "Overgeared",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    147318
+   ],
+   "titles": [
+    "Overgeared",
+    "템빨",
+    "Temppal"
+   ]
+  },
+  {
+   "malId": 158296,
+   "title": "Surviving the Game as a Barbarian",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    147318,
+    147389
+   ],
+   "titles": [
+    "Surviving the Game as a Barbarian",
+    "게임 속 바바리안으로 살아남기",
+    "Game Sok Barbarian-euro Saranamgi"
+   ]
+  },
+  {
+   "malId": 14568,
+   "title": "Clover",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    104565
+   ],
+   "titles": [
+    "Clover",
+    "クローバー"
+   ]
+  },
+  {
+   "malId": 147559,
+   "title": "Kimi ni Nidome no Sayonara wo.",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    104565
+   ],
+   "titles": [
+    "Kimi ni Nidome no Sayonara wo.",
+    "A Second Goodbye to You.",
+    "君に二度目のさよならを。"
+   ]
+  },
+  {
+   "malId": 10443,
+   "title": "Bakuon Rettou",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    104565
+   ],
+   "titles": [
+    "Bakuon Rettou",
+    "爆音列島",
+    "Detonation Islands",
+    "Sonic Boom Islands"
+   ]
+  },
+  {
+   "malId": 103237,
+   "title": "Wind Breaker",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    104565
+   ],
+   "titles": [
+    "Wind Breaker",
+    "윈드 브레이커"
+   ]
+  },
+  {
+   "malId": 70557,
+   "title": "Out",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    104565
+   ],
+   "titles": [
+    "Out",
+    "OUT -アウト-"
+   ]
+  },
+  {
+   "malId": 129815,
+   "title": "Shinu hodo Kimi no Shojo ga Hoshii",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    104565
+   ],
+   "titles": [
+    "Shinu hodo Kimi no Shojo ga Hoshii",
+    "I'm dying for your virginity.",
+    "死ぬほど君の処女が欲しい",
+    "I Would Die to Have Your First Time",
+    "Jibun no Okusan no Shojo ga Hoshii Otoko no Hanashi"
+   ]
+  },
+  {
+   "malId": 5651,
+   "title": "Crows",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    104565
+   ],
+   "titles": [
+    "Crows",
+    "クローズ"
+   ]
+  },
+  {
+   "malId": 133081,
+   "title": "Wind Breaker",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    104565,
+    158723,
+    170678
+   ],
+   "titles": [
+    "Wind Breaker",
+    "WIND BREAKER"
+   ]
+  },
+  {
+   "malId": 45771,
+   "title": "Crepuscule",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    29983
+   ],
+   "titles": [
+    "Crepuscule",
+    "크리퍼스큘"
+   ]
+  },
+  {
+   "malId": 147171,
+   "title": "Eleceed",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    29983
+   ],
+   "titles": [
+    "Eleceed",
+    "일렉시드"
+   ]
+  },
+  {
+   "malId": 36723,
+   "title": "Hataraku Maou-sama!",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    29983
+   ],
+   "titles": [
+    "Hataraku Maou-sama!",
+    "The Devil Is a Part-Timer!",
+    "はたらく魔王さま!",
+    "Demon Lord at Work!"
+   ]
+  },
+  {
+   "malId": 16791,
+   "title": "Trace",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    29983
+   ],
+   "titles": [
+    "Trace",
+    "트레이스"
+   ]
+  },
+  {
+   "malId": 10249,
+   "title": "Veritas",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    29983
+   ],
+   "titles": [
+    "Veritas",
+    "베리타스",
+    "Veristas",
+    "Truth"
+   ]
+  },
+  {
+   "malId": 125076,
+   "title": "Juujika no Rokunin",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    158723
+   ],
+   "titles": [
+    "Juujika no Rokunin",
+    "十字架のろくにん",
+    "Cross of the Six"
+   ]
+  },
+  {
+   "malId": 952,
+   "title": "Blaster Knuckle",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1706
+   ],
+   "titles": [
+    "Blaster Knuckle",
+    "ブラス・ナックル"
+   ]
+  },
+  {
+   "malId": 18161,
+   "title": "Katanagatari",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1706
+   ],
+   "titles": [
+    "Katanagatari",
+    "Katanagatari: Sword Tale",
+    "刀語"
+   ]
+  },
+  {
+   "malId": 25,
+   "title": "Fullmetal Alchemist",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1706
+   ],
+   "titles": [
+    "Fullmetal Alchemist",
+    "鋼の錬金術師",
+    "Full Metal Alchemist",
+    "Hagane no Renkinjutsushi",
+    "FMA",
+    "HagaRen",
+    "Fullmetal Alchemist Gaiden"
+   ]
+  },
+  {
+   "malId": 26,
+   "title": "Hunter x Hunter",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1706
+   ],
+   "titles": [
+    "Hunter x Hunter",
+    "HUNTER×HUNTER",
+    "HxH"
+   ]
+  },
+  {
+   "malId": 103701,
+   "title": "Beastars",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1706
+   ],
+   "titles": [
+    "Beastars",
+    "BEASTARS"
+   ]
+  },
+  {
+   "malId": 116195,
+   "title": "Dr. Mordrid",
+   "hop": 2,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1706
+   ],
+   "titles": [
+    "Dr. Mordrid",
+    "Doctor Mordrid",
+    "Dr.モードリッド"
+   ]
+  },
+  {
+   "malId": 119566,
+   "title": "Kouya ni Kemuru wa Shi no Kaori",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    1706
+   ],
+   "titles": [
+    "Kouya ni Kemuru wa Shi no Kaori",
+    "The Smell of Death Smokes in the Wilderness",
+    "荒野に煙るは死の香り"
+   ]
+  },
+  {
+   "malId": 1111,
+   "title": "Buddha",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    1706
+   ],
+   "titles": [
+    "Buddha",
+    "ブッダ"
+   ]
+  },
+  {
+   "malId": 47,
+   "title": "Katekyou Hitman Reborn!",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    153969
+   ],
+   "titles": [
+    "Katekyou Hitman Reborn!",
+    "Reborn!",
+    "家庭教師〈かてきょー〉ヒットマンREBORN!",
+    "Kateikyoushi Hitman Reborn!",
+    "Home Tutor Hitman Reborn!",
+    "Minna no Sasai na Nichijou",
+    "Kaibutsu-Zukai Tsuna!"
+   ]
+  },
+  {
+   "malId": 456,
+   "title": "Monochrome Factor",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    153969
+   ],
+   "titles": [
+    "Monochrome Factor",
+    "モノクローム・ファクター"
+   ]
+  },
+  {
+   "malId": 1023,
+   "title": "Koukaku Kidoutai: The Ghost in the Shell",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    153969
+   ],
+   "titles": [
+    "Koukaku Kidoutai: The Ghost in the Shell",
+    "The Ghost in the Shell",
+    "攻殻機動隊 THE GHOST IN THE SHELL"
+   ]
+  },
+  {
+   "malId": 8456,
+   "title": "½ Prince",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    153969
+   ],
+   "titles": [
+    "½ Prince",
+    "½ 王子",
+    "Half Prince",
+    "1/2 Wang zi",
+    "1/2 Ouji",
+    "1/2 Prince"
+   ]
+  },
+  {
+   "malId": 16283,
+   "title": "Sougiya Riddle",
+   "hop": 2,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    153969
+   ],
+   "titles": [
+    "Sougiya Riddle",
+    "葬儀屋リドル",
+    "Undertaker Riddle"
+   ]
+  },
+  {
+   "malId": 45275,
+   "title": "Girls of the Wild's",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    153969
+   ],
+   "titles": [
+    "Girls of the Wild's",
+    "소녀 더 와일즈",
+    "Shoujo the Wild's"
+   ]
+  },
+  {
+   "malId": 81667,
+   "title": "Overlord",
+   "hop": 2,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    153969
+   ],
+   "titles": [
+    "Overlord",
+    "オーバーロード"
+   ]
+  },
+  {
+   "malId": 146878,
+   "title": "Return of the Blossoming Blade",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147577,
+    148454,
+    147389,
+    147662,
+    177365
+   ],
+   "titles": [
+    "Return of the Blossoming Blade",
+    "화산귀환",
+    "Return of the Mount Hua Sect",
+    "Return of the Flowery Mountain Sect",
+    "Hwasan Gwihwan"
+   ]
+  },
+  {
+   "malId": 160692,
+   "title": "A Martial Master Wakes Up as a Concubine",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147577
+   ],
+   "titles": [
+    "A Martial Master Wakes Up as a Concubine",
+    "고수, 후궁으로 깨어나다",
+    "A Master, Who Woke Up as a Concubine",
+    "Gosu, Wakes Up as a Concubine",
+    "Gosu Hugung-eulo Kkaeeonada"
+   ]
+  },
+  {
+   "malId": 147863,
+   "title": "Nano Machine",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147577,
+    147389
+   ],
+   "titles": [
+    "Nano Machine",
+    "나노마신"
+   ]
+  },
+  {
+   "malId": 153120,
+   "title": "Enrolling in the Transcendent Academy",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147389
+   ],
+   "titles": [
+    "Enrolling in the Transcendent Academy",
+    "초월자 학원의 수강생이 되었다",
+    "Transcension Academy",
+    "Chowolja Hagwon-ui Sugangsaeng-i Doeeotda"
+   ]
+  },
+  {
+   "malId": 162325,
+   "title": "Cheonhwa Archive's Young Master",
+   "hop": 2,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147389
+   ],
+   "titles": [
+    "Cheonhwa Archive's Young Master",
+    "천화서고 대공자",
+    "Heavenly Grand Archive's Young Master",
+    "Cheonhwa Seogo Daegongja"
+   ]
+  },
+  {
+   "malId": 148108,
+   "title": "Mystic Musketeer",
+   "hop": 2,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    147389
+   ],
+   "titles": [
+    "Mystic Musketeer",
+    "마탄의 사수",
+    "Arcane Sniper",
+    "Matan-ui Sasu"
+   ]
+  },
+  {
+   "malId": 149801,
+   "title": "The Academy's Undercover Professor",
+   "hop": 2,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    147662
+   ],
+   "titles": [
+    "The Academy's Undercover Professor",
+    "아카데미에 위장취업당했다",
+    "I Got a Fake Job at the Academy",
+    "Academy-e Wijang Chwieop Danghaetda"
+   ]
+  },
+  {
+   "malId": 60511,
+   "title": "Sousei no Onmyouji",
+   "hop": 2,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    142629
+   ],
+   "titles": [
+    "Sousei no Onmyouji",
+    "Twin Star Exorcists",
+    "双星の陰陽師",
+    "Sousei no Onmyouji: Adashino Benio-hen"
+   ]
+  },
+  {
+   "malId": 13492,
+   "title": "Ao no Exorcist",
+   "hop": 2,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    142629
+   ],
+   "titles": [
+    "Ao no Exorcist",
+    "Blue Exorcist",
+    "青の祓魔師〈エクソシスト〉",
+    "Ao no Futsumashi",
+    "The Blue Magic Exorcist"
+   ]
+  },
+  {
+   "malId": 91941,
+   "title": "Made in Abyss",
+   "hop": 2,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    142629
+   ],
+   "titles": [
+    "Made in Abyss",
+    "メイドインアビス"
+   ]
+  },
+  {
+   "malId": 156588,
+   "title": "ONI: Sora to Kaze no Elegy Episode Zero",
+   "hop": 2,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    142629
+   ],
+   "titles": [
+    "ONI: Sora to Kaze no Elegy Episode Zero",
+    "ONI: Road to be the Mightiest Oni Episode Zero",
+    "ONI 空と風の哀歌〈エレジー〉 Episode Zero",
+    "ONI: Sora to Kaze no Aika Episode Zero"
+   ]
+  }
+ ],
+ "skipped": [],
+ "hops": 2
+}

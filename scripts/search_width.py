@@ -26,7 +26,7 @@ Scars carried over from the previous three runs, enforced rather than remembered
 1. A MAL body missing its payload key is a CONFIGURATION FAILURE, not a clean miss.
 2. Percent-encode UTF-8 BYTES — str.isalnum() is true for CJK, and raw multibyte on the
    wire makes MangaDex answer 400 on exactly the rows this needs.
-3. MAL answers 307 on some merged ids and following the redirect hangs. Abort loudly.
+3. MAL 30x is AMBIGUOUS — merged id or throttling. Only called merged after backoff.
 4. pick / refusal / search-failure are three outcomes, never collapsed.
 
 api.mangadex.org rejects Python's urllib TLS -> shell out to curl for everything.
@@ -150,12 +150,32 @@ def pick_match(target_mal_id, mal_title, candidates):
 
 # --- Sources ----------------------------------------------------------------
 
-def mal_get(path, client_id, what):
-    raw, code = curl(f"https://api.myanimelist.net/v2/{path}",
-                     headers=[f"X-MAL-CLIENT-ID: {client_id}"])
-    if code in ("301", "302", "307", "308"):
-        # Scar 3: merged ids redirect and following it hangs.
-        raise Abort(f"MAL answered {code} for {what} — merged id. Skip it, do not follow.")
+def mal_get(path, client_id, what, tries=4):
+    """MAL GET with backoff on 30x.
+
+    **A 30x is ambiguous and the ambiguity is expensive.** Scar 3 recorded it as "merged
+    id, do not follow", which is true for some ids — and under sustained load MAL *also*
+    answers 30x as throttling. The 2026-08-15 run took the first reading, classified 108
+    unique ids as merged, and silently produced no hop-2 rows at all: the entire frame
+    expansion vanished into a skip list. Every one of those ids answered 200 on a quiet
+    retry seconds later.
+
+    So a redirect is only called merged after it survives backoff. A misread here does not
+    fail loudly; it fabricates a smaller frame.
+    """
+    delay = 2.0
+    for attempt in range(1, tries + 1):
+        raw, code = curl(f"https://api.myanimelist.net/v2/{path}",
+                         headers=[f"X-MAL-CLIENT-ID: {client_id}"])
+        if code not in ("301", "302", "307", "308", "429", "503"):
+            break
+        if attempt == tries:
+            raise Abort(f"MAL answered {code} for {what} on {tries} attempts with backoff "
+                        "— treating as merged/unavailable. Do not follow the redirect.")
+        print(f"  MAL {code} for {what}, retry {attempt}/{tries - 1} in {delay}s",
+              file=sys.stderr)
+        time.sleep(delay)
+        delay *= 2
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
@@ -227,14 +247,28 @@ query ($tags: [String], $rank: Int, $perPage: Int) {
 """
 
 
-def anilist_pool(tags, rank, per_page):
-    """One pair's page, mirroring AniListAPI.mediaByTagsQuery. `tag_in` is a CONJUNCTION."""
+def anilist_pool(tags, rank, per_page, tries=5):
+    """One pair's page, mirroring AniListAPI.mediaByTagsQuery. `tag_in` is a CONJUNCTION.
+
+    AniList's limit is per-minute and it answers 429 with a JSON error body rather than a
+    transport failure, so an unretried run aborts mid-frame — the 40-pair draw died at pair
+    30 this way. Backoff is generous because the window is a minute, not a second.
+    """
     payload = json.dumps({"query": ANILIST_POOL_QUERY,
                           "variables": {"tags": tags, "rank": rank, "perPage": per_page}})
-    raw, code = curl("https://graphql.anilist.co",
-                     headers=["Content-Type: application/json",
-                              "Accept: application/json"],
-                     post=payload)
+    delay = 20.0
+    for attempt in range(1, tries + 1):
+        raw, code = curl("https://graphql.anilist.co",
+                         headers=["Content-Type: application/json",
+                                  "Accept: application/json"],
+                         post=payload)
+        if code != "429":
+            break
+        if attempt == tries:
+            raise Abort(f"AniList 429 on {tries} attempts with backoff for {tags}")
+        print(f"  AniList 429, retry {attempt}/{tries - 1} in {delay}s", file=sys.stderr)
+        time.sleep(delay)
+        delay *= 1.5
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:
@@ -329,7 +363,7 @@ def stage_mal_rows(args):
             try:
                 detail = mal_detail(mal_id, client_id, "alternative_titles,recommendations")
             except Abort as e:
-                if "merged id" in str(e):
+                if "merged/unavailable" in str(e):
                     skipped.append({"malId": mal_id, "why": "redirect"})
                     continue
                 raise
@@ -360,7 +394,7 @@ def stage_mal_rows(args):
         try:
             detail = mal_detail(row["malId"], client_id, "alternative_titles")
         except Abort as e:
-            if "merged id" in str(e):
+            if "merged/unavailable" in str(e):
                 skipped.append({"malId": row["malId"], "why": "redirect"})
                 row["titles"] = [row["title"]]
                 continue
@@ -496,9 +530,23 @@ def stage_score(args):
         # from, so the write-up can say what was and was not observable.
         fuzzy_baseline = [r for r in rows
                           if r.get("baseline", {}).get("arm") == "fuzzy"]
-        wrong = [r for r in recovered
-                 if r.get("recoveredArm") == "exact-malid"
+        # Recovery correctness is NOT uniform across arms, which the protocol missed.
+        #
+        # A strong-arm recovery is correct by construction — pick_match only takes that
+        # branch when the entry's own links.mal equals the target. A FUZZY recovery carries
+        # no such guarantee, and when the matched entry publishes a *different* links.mal,
+        # MangaDex is authoritatively contradicting the match (ADR-0018). That is a wrong
+        # pick, and scoring it only on the strong arm would have reported zero.
+        strong = [r for r in recovered if r.get("recoveredArm") == "exact-malid"]
+        fuzzy = [r for r in recovered if r.get("recoveredArm") == "fuzzy"]
+        wrong = [r for r in fuzzy
+                 if r.get("recoveredMalOnEntry") is not None
                  and r.get("recoveredMalOnEntry") != r["malId"]]
+        wrong += [r for r in strong if r.get("recoveredMalOnEntry") != r["malId"]]
+        # A fuzzy pick onto an entry with no links.mal at all is neither confirmed nor
+        # refuted by an id. It is the only cell in this run that adjudication could speak
+        # to, and it is reported rather than assumed either way.
+        unlabeled = [r for r in fuzzy if r.get("recoveredMalOnEntry") is None]
         extra = sum(len(r.get("treatment", [])) for r in unresolved)
         by_query = {}
         for r in recovered:
@@ -514,8 +562,13 @@ def stage_score(args):
             "recoveredByQueryIndex": dict(sorted(by_query.items())),
             "extraQueries": extra,
             "extraQueriesPerRecovered": round(extra / len(recovered), 2) if recovered else None,
-            "wrongStrongArmPicks": len(wrong),
+            "wrongPicks": len(wrong),
+            "wrongStrongArmPicks": sum(1 for r in wrong
+                                       if r.get("recoveredArm") == "exact-malid"),
+            "netCorrectRecoveries": len(recovered) - len(wrong),
+            "unlabeledFuzzyRecoveries": len(unlabeled),
             "wrongDetail": [{"malId": r["malId"], "title": r["title"],
+                             "arm": r.get("recoveredArm"),
                              "gotMal": r.get("recoveredMalOnEntry"),
                              "mangaDexId": r.get("recoveredId")} for r in wrong],
             "baselineFuzzyPicks": len(fuzzy_baseline),

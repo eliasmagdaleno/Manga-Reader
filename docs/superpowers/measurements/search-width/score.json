@@ -1,0 +1,63 @@
+{
+ "mal": {
+  "rows": 590,
+  "searchFailures": 0,
+  "baselineResolved": 530,
+  "baselineUnresolved": 60,
+  "recovered": 45,
+  "recoveryRate": 0.75,
+  "recoveredByQueryIndex": {
+   "2": 41,
+   "3": 2,
+   "5": 2
+  },
+  "extraQueries": 79,
+  "extraQueriesPerRecovered": 1.76,
+  "wrongPicks": 0,
+  "wrongStrongArmPicks": 0,
+  "netCorrectRecoveries": 45,
+  "unlabeledFuzzyRecoveries": 0,
+  "wrongDetail": [],
+  "baselineFuzzyPicks": 6,
+  "stoppedBy": "target-unresolved",
+  "recoveredArms": {
+   "exact-malid": 45
+  }
+ },
+ "al": {
+  "rows": 420,
+  "searchFailures": 0,
+  "baselineResolved": 360,
+  "baselineUnresolved": 60,
+  "recovered": 39,
+  "recoveryRate": 0.65,
+  "recoveredByQueryIndex": {
+   "2": 31,
+   "3": 5,
+   "4": 1,
+   "5": 2
+  },
+  "extraQueries": 117,
+  "extraQueriesPerRecovered": 3.0,
+  "wrongPicks": 1,
+  "wrongStrongArmPicks": 0,
+  "netCorrectRecoveries": 38,
+  "unlabeledFuzzyRecoveries": 0,
+  "wrongDetail": [
+   {
+    "malId": 24464,
+    "title": "Kyoukaisenjou no Horizon",
+    "arm": "fuzzy",
+    "gotMal": 37783,
+    "mangaDexId": "51a29af2-0fc8-4c78-9d4f-75ceedbca1d6"
+   }
+  ],
+  "baselineFuzzyPicks": 25,
+  "stoppedBy": "target-unresolved",
+  "recoveredArms": {
+   "exact-malid": 38,
+   "fuzzy": 1
+  }
+ },
+ "note": "Numbers only. Gates are in docs/superpowers/specs/2026-08-15-search-input-width-measurement-protocol.md"
+}

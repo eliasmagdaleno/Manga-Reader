@@ -1,0 +1,14871 @@
+{
+ "works": 107,
+ "seeds": [
+  {
+   "malId": 2,
+   "title": "Berserk"
+  },
+  {
+   "malId": 642,
+   "title": "Vinland Saga"
+  },
+  {
+   "malId": 656,
+   "title": "Vagabond"
+  },
+  {
+   "malId": 765,
+   "title": "Junjou Romantica"
+  },
+  {
+   "malId": 782,
+   "title": "Blood+ A"
+  },
+  {
+   "malId": 1648,
+   "title": "Tengen Toppa Gurren Lagann"
+  },
+  {
+   "malId": 1733,
+   "title": "Spiral Alive"
+  },
+  {
+   "malId": 2686,
+   "title": "Ai wo Utau Yori Ore ni Oborero"
+  },
+  {
+   "malId": 3686,
+   "title": "Taiyou Ouji"
+  },
+  {
+   "malId": 3849,
+   "title": "The Other Side of the Mirror"
+  },
+  {
+   "malId": 4127,
+   "title": "Biohazard Umbrella Chronicles - Houkai e no Jokyoku"
+  },
+  {
+   "malId": 4456,
+   "title": "Suzunari"
+  },
+  {
+   "malId": 7946,
+   "title": "The Gorgeous Life of Strawberry-chan"
+  },
+  {
+   "malId": 10171,
+   "title": "Yasashii Te"
+  },
+  {
+   "malId": 10553,
+   "title": "Cream Caramel"
+  },
+  {
+   "malId": 10865,
+   "title": "Touhou Shinigami - Meteor Methuselah Gaiden"
+  },
+  {
+   "malId": 12614,
+   "title": "Oretachi ni Ai wa Nai"
+  },
+  {
+   "malId": 13649,
+   "title": "Orichalcum Reycal"
+  },
+  {
+   "malId": 13853,
+   "title": "Alexandros - Dream for World Conquest"
+  },
+  {
+   "malId": 15609,
+   "title": "Ibara no Okite"
+  },
+  {
+   "malId": 16499,
+   "title": "Yuzuko Peppermint"
+  },
+  {
+   "malId": 16909,
+   "title": "Young Gun Carnaval"
+  },
+  {
+   "malId": 17255,
+   "title": "Kaijidou Mokuroku"
+  },
+  {
+   "malId": 19205,
+   "title": "Kaichou-san no Koneko"
+  },
+  {
+   "malId": 20365,
+   "title": "LovePlus: Kanojo no Kako"
+  },
+  {
+   "malId": 21362,
+   "title": "Baby Blue"
+  },
+  {
+   "malId": 22093,
+   "title": "Hayabusa - Sanada Dengekichou"
+  },
+  {
+   "malId": 22198,
+   "title": "Bomba!"
+  },
+  {
+   "malId": 22311,
+   "title": "Akumu no Elevator"
+  },
+  {
+   "malId": 22427,
+   "title": "Asa ga Kuru Tabi"
+  },
+  {
+   "malId": 23098,
+   "title": "Otoko o Misete yo Kurata-kun!"
+  },
+  {
+   "malId": 24943,
+   "title": "Kimi to Boku no Ashiato - Time Travel Kasuga Kenkyuusho"
+  },
+  {
+   "malId": 25848,
+   "title": "Hana (MATSUMOTO Taiyou)"
+  },
+  {
+   "malId": 26034,
+   "title": "Juushin Liger"
+  },
+  {
+   "malId": 26967,
+   "title": "Perfect Rose"
+  },
+  {
+   "malId": 28513,
+   "title": "Momi-Baraishi"
+  },
+  {
+   "malId": 30579,
+   "title": "City of Darkness Side Story"
+  },
+  {
+   "malId": 31053,
+   "title": "Udon no Hito"
+  },
+  {
+   "malId": 31531,
+   "title": "Naisho no Jikan"
+  },
+  {
+   "malId": 33309,
+   "title": "Papa no Iu Koto o Kikinasai! - Usagi no Mark"
+  },
+  {
+   "malId": 33463,
+   "title": "Ousama to Fushigi no Shiro"
+  },
+  {
+   "malId": 34091,
+   "title": "Rec - Kimi ga Naita Hi"
+  },
+  {
+   "malId": 34773,
+   "title": "Detarame Mousouryoku Opera"
+  },
+  {
+   "malId": 34909,
+   "title": "Koi no Surisasu"
+  },
+  {
+   "malId": 35475,
+   "title": "G (KOIKE Keiichi)"
+  },
+  {
+   "malId": 37463,
+   "title": "Bodaiju Ryou no Aria"
+  },
+  {
+   "malId": 40311,
+   "title": "Josephine the French Rose"
+  },
+  {
+   "malId": 40929,
+   "title": "Mistrea"
+  },
+  {
+   "malId": 41127,
+   "title": "Kage ni Saku Hana"
+  },
+  {
+   "malId": 49127,
+   "title": "Magical Star Kanon 100%"
+  },
+  {
+   "malId": 51237,
+   "title": "Kouboku no Keibu"
+  },
+  {
+   "malId": 51293,
+   "title": "Toscana no Yuuutsu"
+  },
+  {
+   "malId": 52219,
+   "title": "Kyou mo Uchi de Machi Awase"
+  },
+  {
+   "malId": 54477,
+   "title": "Bamboo Blade C"
+  },
+  {
+   "malId": 58497,
+   "title": "Shinigami Tantei to Yuuutsu Onsen"
+  },
+  {
+   "malId": 60483,
+   "title": "Cafe - Cafe"
+  },
+  {
+   "malId": 68815,
+   "title": "Demon Possession"
+  },
+  {
+   "malId": 68825,
+   "title": "Hatsukoi Dandelion"
+  },
+  {
+   "malId": 79467,
+   "title": "Mysteria Romantica"
+  },
+  {
+   "malId": 80381,
+   "title": "Basuke no Megami-sama"
+  },
+  {
+   "malId": 80903,
+   "title": "Sleipnir"
+  },
+  {
+   "malId": 81687,
+   "title": "Hana no Niwa Ame no Mai"
+  },
+  {
+   "malId": 86598,
+   "title": "Mahou Shoujo Yongou-chan"
+  },
+  {
+   "malId": 88125,
+   "title": "Shut-In Shoutarou Kominami Takes on the World"
+  },
+  {
+   "malId": 90313,
+   "title": "Shinobi no Ban"
+  },
+  {
+   "malId": 90759,
+   "title": "The Vigilante of the Kingcraft Paradise"
+  },
+  {
+   "malId": 92126,
+   "title": "Geidaisei Yasaka Kyouya no Suuki na Bouken"
+  },
+  {
+   "malId": 93224,
+   "title": "Atrail - Nisekawiteki Nichijou to Senmitsu Element"
+  },
+  {
+   "malId": 96205,
+   "title": "Azufareo no Sobayounin"
+  },
+  {
+   "malId": 97644,
+   "title": "Shakunetsu no Takkyu Musume"
+  },
+  {
+   "malId": 104959,
+   "title": "Napping Princess - The Story of the Unknown Me"
+  },
+  {
+   "malId": 121435,
+   "title": "Guyabano Holiday"
+  },
+  {
+   "malId": 121702,
+   "title": "New Nurse Station"
+  },
+  {
+   "malId": 128239,
+   "title": "Seidon no Ryuu"
+  },
+  {
+   "malId": 132112,
+   "title": "Who Wants to Play"
+  },
+  {
+   "malId": 132214,
+   "title": "Jeonjijeok Dokja Sijeom"
+  },
+  {
+   "malId": 133081,
+   "title": "Wind Breaker"
+  },
+  {
+   "malId": 135697,
+   "title": "Cells at Work! Neo Bacteria!"
+  },
+  {
+   "malId": 135722,
+   "title": "Miquiztli II - Taiyou no Shinigami"
+  },
+  {
+   "malId": 137200,
+   "title": "The Grandmaster of Demonic Cultivation"
+  },
+  {
+   "malId": 146287,
+   "title": "Level 1 kara Hajimaru Shoukan Musou: Ore dake Tsukaeru Ura Dungeon de, Subete no Tenseisha wo Bucchigiru"
+  },
+  {
+   "malId": 146878,
+   "title": "Return of the Blossoming Blade"
+  },
+  {
+   "malId": 156588,
+   "title": "ONI: Road to Be the Mightiest Oni - Episode Zero"
+  },
+  {
+   "malId": 171043,
+   "title": "Second Hand Love"
+  },
+  {
+   "malId": 172429,
+   "title": "Na Honjaman Level Up: Ragnarok"
+  },
+  {
+   "malId": 180219,
+   "title": "Mocha the Cat and His Forever Family"
+  }
+ ],
+ "pairs": [
+  {
+   "pair": [
+    "Historical",
+    "War"
+   ],
+   "weight": 3.89,
+   "works": 5
+  },
+  {
+   "pair": [
+    "Tragedy",
+    "War"
+   ],
+   "weight": 3.68,
+   "works": 5
+  },
+  {
+   "pair": [
+    "Historical",
+    "Tragedy"
+   ],
+   "weight": 3.64,
+   "works": 5
+  },
+  {
+   "pair": [
+    "Politics",
+    "War"
+   ],
+   "weight": 3.6,
+   "works": 5
+  },
+  {
+   "pair": [
+    "Historical",
+    "Politics"
+   ],
+   "weight": 3.52,
+   "works": 5
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Tragedy"
+   ],
+   "weight": 3.29,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Tragedy"
+   ],
+   "weight": 3.23,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Tragedy",
+    "Travel"
+   ],
+   "weight": 3.22,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "Travel"
+   ],
+   "weight": 3.14,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Historical",
+    "Swordplay"
+   ],
+   "weight": 3.08,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Travel",
+    "War"
+   ],
+   "weight": 3.07,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Tragedy"
+   ],
+   "weight": 3.01,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "Tragedy"
+   ],
+   "weight": 3.01,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Gore",
+    "Tragedy"
+   ],
+   "weight": 2.91,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "War"
+   ],
+   "weight": 2.87,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Gore",
+    "Travel"
+   ],
+   "weight": 2.86,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Gore",
+    "Swordplay"
+   ],
+   "weight": 2.84,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Swordplay"
+   ],
+   "weight": 2.83,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Gore",
+    "War"
+   ],
+   "weight": 2.8,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Politics",
+    "Swordplay"
+   ],
+   "weight": 2.78,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Politics",
+    "Tragedy"
+   ],
+   "weight": 2.76,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Politics"
+   ],
+   "weight": 2.74,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Tragedy"
+   ],
+   "weight": 2.64,
+   "works": 4
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Travel"
+   ],
+   "weight": 2.56,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Rehabilitation"
+   ],
+   "weight": 2.54,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Historical",
+    "Travel"
+   ],
+   "weight": 2.52,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Swordplay"
+   ],
+   "weight": 2.49,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Philosophy"
+   ],
+   "weight": 2.48,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Philosophy"
+   ],
+   "weight": 2.48,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Tragedy"
+   ],
+   "weight": 2.48,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Historical",
+    "Philosophy"
+   ],
+   "weight": 2.48,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Foreign",
+    "War"
+   ],
+   "weight": 2.45,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Travel"
+   ],
+   "weight": 2.45,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Tragedy"
+   ],
+   "weight": 2.44,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Rehabilitation"
+   ],
+   "weight": 2.42,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Survival"
+   ],
+   "weight": 2.42,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Swordplay"
+   ],
+   "weight": 2.4,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Survival",
+    "Tragedy"
+   ],
+   "weight": 2.4,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Travel"
+   ],
+   "weight": 2.39,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Swordplay"
+   ],
+   "weight": 2.35,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "War"
+   ],
+   "weight": 2.33,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "War"
+   ],
+   "weight": 2.33,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Historical"
+   ],
+   "weight": 2.32,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Revenge",
+    "War"
+   ],
+   "weight": 2.32,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Travel"
+   ],
+   "weight": 2.32,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Swordplay"
+   ],
+   "weight": 2.3,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Tragedy"
+   ],
+   "weight": 2.29,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Gore",
+    "Philosophy"
+   ],
+   "weight": 2.29,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Historical"
+   ],
+   "weight": 2.26,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Martial Arts"
+   ],
+   "weight": 2.26,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Gore",
+    "Rehabilitation"
+   ],
+   "weight": 2.26,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Politics"
+   ],
+   "weight": 2.25,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Swordplay"
+   ],
+   "weight": 2.24,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Historical",
+    "Martial Arts"
+   ],
+   "weight": 2.24,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Gore",
+    "Revenge"
+   ],
+   "weight": 2.23,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Swordplay"
+   ],
+   "weight": 2.22,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Tragedy"
+   ],
+   "weight": 2.21,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Travel"
+   ],
+   "weight": 2.21,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "War"
+   ],
+   "weight": 2.2,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "War"
+   ],
+   "weight": 2.19,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Gods",
+    "Tragedy"
+   ],
+   "weight": 2.19,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Revenge"
+   ],
+   "weight": 2.18,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Politics",
+    "Travel"
+   ],
+   "weight": 2.16,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Magic",
+    "War"
+   ],
+   "weight": 2.13,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Gore"
+   ],
+   "weight": 2.12,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Found Family"
+   ],
+   "weight": 2.12,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Politics",
+    "Revenge"
+   ],
+   "weight": 2.12,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Gore"
+   ],
+   "weight": 2.11,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Historical"
+   ],
+   "weight": 2.1,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Heterosexual"
+   ],
+   "weight": 2.1,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Time Skip"
+   ],
+   "weight": 2.07,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Time Skip",
+    "Tragedy"
+   ],
+   "weight": 2.07,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Time Skip",
+    "War"
+   ],
+   "weight": 2.07,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Gore",
+    "Politics"
+   ],
+   "weight": 2.06,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Politics",
+    "Time Skip"
+   ],
+   "weight": 2.05,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Biographical",
+    "War"
+   ],
+   "weight": 2.03,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Gore",
+    "Historical"
+   ],
+   "weight": 2.03,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Historical"
+   ],
+   "weight": 2.02,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Religion"
+   ],
+   "weight": 2.02,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Religion"
+   ],
+   "weight": 2.02,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Religion",
+    "Tragedy"
+   ],
+   "weight": 2.02,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Heterosexual"
+   ],
+   "weight": 2.0,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "War"
+   ],
+   "weight": 1.91,
+   "works": 3
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Historical"
+   ],
+   "weight": 1.83,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Rehabilitation"
+   ],
+   "weight": 1.74,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Rehabilitation"
+   ],
+   "weight": 1.71,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Revenge"
+   ],
+   "weight": 1.71,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Philosophy"
+   ],
+   "weight": 1.7,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Wuxia"
+   ],
+   "weight": 1.69,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Revenge"
+   ],
+   "weight": 1.69,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Reincarnation",
+    "Wuxia"
+   ],
+   "weight": 1.69,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Revenge"
+   ],
+   "weight": 1.68,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Rehabilitation"
+   ],
+   "weight": 1.67,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Travel"
+   ],
+   "weight": 1.66,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Tragedy"
+   ],
+   "weight": 1.65,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "War"
+   ],
+   "weight": 1.65,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Revenge"
+   ],
+   "weight": 1.63,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Found Family"
+   ],
+   "weight": 1.62,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gods",
+    "Survival"
+   ],
+   "weight": 1.62,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "Wuxia"
+   ],
+   "weight": 1.62,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Foreign"
+   ],
+   "weight": 1.61,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Philosophy"
+   ],
+   "weight": 1.61,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Travel"
+   ],
+   "weight": 1.61,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Survival"
+   ],
+   "weight": 1.61,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gods",
+    "Philosophy"
+   ],
+   "weight": 1.61,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Found Family"
+   ],
+   "weight": 1.6,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Demons",
+    "War"
+   ],
+   "weight": 1.6,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Gore"
+   ],
+   "weight": 1.6,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Reincarnation"
+   ],
+   "weight": 1.6,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Wuxia"
+   ],
+   "weight": 1.6,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Reincarnation",
+    "Swordplay"
+   ],
+   "weight": 1.6,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Reincarnation"
+   ],
+   "weight": 1.59,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Tragedy"
+   ],
+   "weight": 1.59,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Survival"
+   ],
+   "weight": 1.58,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Survival",
+    "Swordplay"
+   ],
+   "weight": 1.58,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Survival",
+    "Travel"
+   ],
+   "weight": 1.58,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Survival"
+   ],
+   "weight": 1.57,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Gods"
+   ],
+   "weight": 1.56,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Swordplay"
+   ],
+   "weight": 1.56,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Revenge"
+   ],
+   "weight": 1.53,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Travel"
+   ],
+   "weight": 1.53,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Gore"
+   ],
+   "weight": 1.53,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Magic",
+    "Tragedy"
+   ],
+   "weight": 1.53,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Magic",
+    "Travel"
+   ],
+   "weight": 1.53,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Found Family"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Philosophy"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Rehabilitation"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Foreign"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Historical"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Politics"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "War"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Gods"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Swordplay"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Wuxia"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Travel"
+   ],
+   "weight": 1.52,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Revenge"
+   ],
+   "weight": 1.51,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Magic"
+   ],
+   "weight": 1.5,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gore",
+    "Survival"
+   ],
+   "weight": 1.5,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Magic",
+    "Swordplay"
+   ],
+   "weight": 1.49,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Reincarnation"
+   ],
+   "weight": 1.49,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Magic",
+    "Revenge"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Foreign"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Disability",
+    "Philosophy"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Disability",
+    "Rehabilitation"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Disability",
+    "Survival"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Disability",
+    "Swordplay"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Disability",
+    "Tragedy"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Disability",
+    "Travel"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Historical"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Time Skip"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Tragedy"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Time Skip"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Time Skip"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Time Skip"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Time Skip",
+    "Travel"
+   ],
+   "weight": 1.47,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Politics"
+   ],
+   "weight": 1.46,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gore",
+    "Time Skip"
+   ],
+   "weight": 1.46,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Politics"
+   ],
+   "weight": 1.46,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Politics",
+    "Rehabilitation"
+   ],
+   "weight": 1.46,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Found Family"
+   ],
+   "weight": 1.45,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Survival",
+    "War"
+   ],
+   "weight": 1.45,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "Time Skip"
+   ],
+   "weight": 1.45,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Survival"
+   ],
+   "weight": 1.44,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Time Skip"
+   ],
+   "weight": 1.44,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Disability"
+   ],
+   "weight": 1.43,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "War"
+   ],
+   "weight": 1.43,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Religion"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Martial Arts"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Politics"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Demons",
+    "Swordplay"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Religion"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gore",
+    "Religion"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Magic",
+    "Politics"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "POV",
+    "Tragedy"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Religion"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Religion",
+    "Revenge"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Religion",
+    "Swordplay"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Religion",
+    "Travel"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Religion",
+    "War"
+   ],
+   "weight": 1.42,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Demons",
+    "Magic"
+   ],
+   "weight": 1.41,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gore",
+    "Magic"
+   ],
+   "weight": 1.41,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Time Skip"
+   ],
+   "weight": 1.4,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Disability",
+    "Gore"
+   ],
+   "weight": 1.4,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Politics"
+   ],
+   "weight": 1.39,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Royal Affairs"
+   ],
+   "weight": 1.39,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Royal Affairs"
+   ],
+   "weight": 1.39,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Survival"
+   ],
+   "weight": 1.39,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Coming of Age"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Rural"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Religion"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gods",
+    "Religion"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gore",
+    "Rural"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Rural"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Rural"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Politics",
+    "Religion"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Rural"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Religion",
+    "Survival"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Rural",
+    "Swordplay"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Rural",
+    "Tragedy"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Rural",
+    "Travel"
+   ],
+   "weight": 1.37,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Disability",
+    "War"
+   ],
+   "weight": 1.36,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Time Skip"
+   ],
+   "weight": 1.36,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Religion",
+    "Time Skip"
+   ],
+   "weight": 1.36,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Anti-Hero"
+   ],
+   "weight": 1.35,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Magic"
+   ],
+   "weight": 1.35,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Politics"
+   ],
+   "weight": 1.35,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Revenge"
+   ],
+   "weight": 1.35,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Swordplay"
+   ],
+   "weight": 1.35,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Tragedy"
+   ],
+   "weight": 1.35,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Travel"
+   ],
+   "weight": 1.35,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "War"
+   ],
+   "weight": 1.35,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Magic"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Tragedy"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Travel"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "War"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Politics"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Politics"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "War"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Politics",
+    "Reincarnation"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Politics",
+    "Wuxia"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Rural",
+    "War"
+   ],
+   "weight": 1.34,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Politics"
+   ],
+   "weight": 1.33,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Cultivation"
+   ],
+   "weight": 1.33,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Martial Arts"
+   ],
+   "weight": 1.33,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Reincarnation"
+   ],
+   "weight": 1.33,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Wuxia"
+   ],
+   "weight": 1.33,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Time Skip"
+   ],
+   "weight": 1.33,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Tragedy"
+   ],
+   "weight": 1.33,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Religion"
+   ],
+   "weight": 1.33,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Anti-Hero"
+   ],
+   "weight": 1.32,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Military"
+   ],
+   "weight": 1.32,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Military",
+    "Politics"
+   ],
+   "weight": 1.32,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Military",
+    "Tragedy"
+   ],
+   "weight": 1.32,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Military",
+    "War"
+   ],
+   "weight": 1.32,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Swordplay"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Tragedy"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Medieval"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Disability",
+    "Heterosexual"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Medieval"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Medieval"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gore",
+    "Heterosexual"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gore",
+    "Medieval"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Philosophy"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Rehabilitation"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Survival"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Swordplay"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Travel"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Philosophy"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Politics"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Rehabilitation"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Revenge"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Swordplay"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Time Skip"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Tragedy"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Travel"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "War"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Military",
+    "Time Skip"
+   ],
+   "weight": 1.31,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Gore"
+   ],
+   "weight": 1.3,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Revenge"
+   ],
+   "weight": 1.29,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Medieval"
+   ],
+   "weight": 1.29,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Amnesia"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Coming of Age"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Gore"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Historical"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Philosophy"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Rehabilitation"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Rural"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Swordplay"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Tragedy"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Travel"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "War"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Gore"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Gore",
+    "Martial Arts"
+   ],
+   "weight": 1.28,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Military"
+   ],
+   "weight": 1.27,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Politics"
+   ],
+   "weight": 1.27,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Time Skip"
+   ],
+   "weight": 1.27,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Ensemble Cast"
+   ],
+   "weight": 1.26,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Religion"
+   ],
+   "weight": 1.25,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Religion"
+   ],
+   "weight": 1.25,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Heterosexual"
+   ],
+   "weight": 1.24,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Historical"
+   ],
+   "weight": 1.24,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Gore"
+   ],
+   "weight": 1.23,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "POV"
+   ],
+   "weight": 1.23,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Tragedy"
+   ],
+   "weight": 1.21,
+   "works": 2
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Martial Arts"
+   ],
+   "weight": 1.21,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Tsundere"
+   ],
+   "weight": 1.2,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Historical",
+    "Long Strip"
+   ],
+   "weight": 1.2,
+   "works": 2
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Vikings"
+   ],
+   "weight": 0.95,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Vikings"
+   ],
+   "weight": 0.95,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Vikings"
+   ],
+   "weight": 0.95,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Samurai",
+    "Swordplay"
+   ],
+   "weight": 0.95,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Samurai"
+   ],
+   "weight": 0.94,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Post-Apocalyptic",
+    "Survival"
+   ],
+   "weight": 0.94,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Vikings"
+   ],
+   "weight": 0.93,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Samurai"
+   ],
+   "weight": 0.93,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Revenge"
+   ],
+   "weight": 0.92,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Tragedy"
+   ],
+   "weight": 0.92,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Vikings"
+   ],
+   "weight": 0.92,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Demons"
+   ],
+   "weight": 0.9,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Revenge"
+   ],
+   "weight": 0.9,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Samurai",
+    "Travel"
+   ],
+   "weight": 0.9,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Samurai"
+   ],
+   "weight": 0.88,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Gore"
+   ],
+   "weight": 0.88,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.88,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Survival"
+   ],
+   "weight": 0.88,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Gore"
+   ],
+   "weight": 0.88,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Vikings",
+    "War"
+   ],
+   "weight": 0.88,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Meta"
+   ],
+   "weight": 0.87,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Meta",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.87,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Meta",
+    "Survival"
+   ],
+   "weight": 0.87,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Philosophy"
+   ],
+   "weight": 0.86,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Cultivation"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Tragedy"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Wuxia"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Denpa"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Gods"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "POV"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Time Loop"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Found Family"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Gods"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Meta"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "POV"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Survival"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Time Loop"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Meta"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "POV"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Time Loop"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Meta",
+    "POV"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Meta",
+    "Time Loop"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "Survival"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "Time Loop"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Post-Apocalyptic",
+    "Time Loop"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Vikings"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Survival",
+    "Time Loop"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tragedy",
+    "Wuxia"
+   ],
+   "weight": 0.85,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Philosophy"
+   ],
+   "weight": 0.84,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Philosophy"
+   ],
+   "weight": 0.84,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Vikings"
+   ],
+   "weight": 0.84,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Meta",
+    "Philosophy"
+   ],
+   "weight": 0.84,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "Philosophy"
+   ],
+   "weight": 0.84,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.84,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Time Loop"
+   ],
+   "weight": 0.84,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tragedy",
+    "Vikings"
+   ],
+   "weight": 0.84,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Cosmic Horror"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Demons"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Mythology"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Rape"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Mythology"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Rape"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Rehabilitation"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Travel"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Delinquents",
+    "Found Family"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Mythology"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Rape"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Rehabilitation"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Travel"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Mythology"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Rape"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Mythology"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Rape"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Philosophy"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Rape"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Rehabilitation"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Revenge"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Tragedy"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Travel"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Rape"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Rehabilitation"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Revenge"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Tragedy"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Travel"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Travel",
+    "Vikings"
+   ],
+   "weight": 0.83,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Survival"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Swordplay"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Tragedy"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Survival"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Tragedy"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Philosophy"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Samurai"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Meta",
+    "Tragedy"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Survival"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Swordplay"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Post-Apocalyptic",
+    "Tragedy"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Survival"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Swordplay"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Survival"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Time Loop",
+    "Tragedy"
+   ],
+   "weight": 0.82,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Magic"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "War"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Magic"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Mythology"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Philosophy"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Rape"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Rehabilitation"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Survival"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "War"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "War"
+   ],
+   "weight": 0.81,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Body Horror"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Death Game"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Denpa"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Gods"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Meta"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "POV"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Philosophy"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Survival"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Time Loop"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Tragedy"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Cosmic Horror"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Demons"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Found Family"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Gore"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Magic"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Mythology"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Philosophy"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Rape"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Rehabilitation"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Revenge"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Survival"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Swordplay"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Tragedy"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Travel"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "War"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Historical"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Delinquents",
+    "Gangs"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Gangs"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Super Power",
+    "Urban Fantasy"
+   ],
+   "weight": 0.8,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Astronomy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Death Game"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Denpa"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Found Family"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Gods"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Meta"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "POV"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Philosophy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Survival"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Time Loop"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Tragedy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Animals",
+    "Bullying"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Animals",
+    "Revenge"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Animals",
+    "Tragedy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anthology",
+    "Autobiographical"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anthology",
+    "Coming of Age"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anthology",
+    "Food"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anthology",
+    "Heterosexual"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anthology",
+    "Travel"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anthropomorphism",
+    "Educational"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anthropomorphism",
+    "Work"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Found Family"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Autobiographical",
+    "Food"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Autobiographical",
+    "Travel"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Class Struggle"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Foreign"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Royal Affairs"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Travel"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Tsundere"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "War"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Revenge"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Tragedy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Royal Affairs"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cute Girls Doing Cute Things",
+    "Table Tennis"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Found Family"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Delinquents",
+    "Ensemble Cast"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Delinquents",
+    "Martial Arts"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Delinquents",
+    "Urban"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Dungeon"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Necromancy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Super Power"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Urban Fantasy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Found Family"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dungeon",
+    "Necromancy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dungeon",
+    "Super Power"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dungeon",
+    "Urban Fantasy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dungeon",
+    "War"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Educational",
+    "Work"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Gangs"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Martial Arts"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Urban"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Food",
+    "Heterosexual"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Food",
+    "Travel"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Urban"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Vampire"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Martial Arts"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Meta"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "POV"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Time Loop"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Urban"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gangs",
+    "Martial Arts"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gangs",
+    "Urban"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Idol",
+    "Magic"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Rehabilitation"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Urban"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medicine",
+    "Tragedy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Necromancy",
+    "Super Power"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Necromancy",
+    "Urban Fantasy"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Necromancy",
+    "War"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Royal Affairs"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Samurai"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Royal Affairs",
+    "War"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Super Power",
+    "War"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tragedy",
+    "Urban"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Travel",
+    "Wuxia"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Urban Fantasy",
+    "War"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "War",
+    "Wuxia"
+   ],
+   "weight": 0.79,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Foreign"
+   ],
+   "weight": 0.78,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Foreign"
+   ],
+   "weight": 0.78,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Foreign"
+   ],
+   "weight": 0.78,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Magic"
+   ],
+   "weight": 0.78,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Mythology"
+   ],
+   "weight": 0.78,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Rape"
+   ],
+   "weight": 0.78,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Survival"
+   ],
+   "weight": 0.78,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Gods"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Gods"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Religion"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Reincarnation"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Slavery"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Gods"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Religion"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Gods"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Slavery"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Slavery"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Gore"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Magic"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Mythology"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Rape"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Rehabilitation"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Revenge"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Swordplay"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Travel"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "War"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Slavery"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Religion"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Religion"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Slavery"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Religion"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Slavery"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Reincarnation",
+    "Tragedy"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Reincarnation",
+    "Travel"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Reincarnation",
+    "War"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Slavery"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Samurai",
+    "Tragedy"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Slavery",
+    "Tragedy"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Slavery",
+    "Travel"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Slavery",
+    "Vikings"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Slavery",
+    "War"
+   ],
+   "weight": 0.77,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Survival"
+   ],
+   "weight": 0.76,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Samurai",
+    "Survival"
+   ],
+   "weight": 0.76,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Slavery",
+    "Time Skip"
+   ],
+   "weight": 0.76,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Time Skip",
+    "Vikings"
+   ],
+   "weight": 0.76,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Cosmic Horror"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Curses"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Cosmic Horror"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Curses"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Curses"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Death Game"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Denpa"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Meta"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "POV"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Time Loop"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Demons"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Foreign"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Found Family"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Gods"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Gore"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Magic"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Mythology"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Philosophy"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Rape"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Rehabilitation"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Religion"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Revenge"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Survival"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Swordplay"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Tragedy"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Travel"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "War"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Historical"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Martial Arts"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Samurai"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Slavery"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Vikings"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Meta",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Post-Apocalyptic",
+    "Suicide"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Suicide",
+    "Survival"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Suicide",
+    "Time Loop"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Suicide",
+    "Tragedy"
+   ],
+   "weight": 0.75,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Zombie"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Cultivation"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Ships"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Disability"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Philosophy"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Rehabilitation"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Samurai"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Survival"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Zombie"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Ships"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Ships"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Ships"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Ships"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Zombie"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Ships"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Ships"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Slavery"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Vikings"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Ships"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Reincarnation",
+    "Zombie"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Ships"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ships",
+    "Slavery"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ships",
+    "Swordplay"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ships",
+    "Time Skip"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ships",
+    "Tragedy"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ships",
+    "Travel"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ships",
+    "Vikings"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ships",
+    "War"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Slavery",
+    "Swordplay"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "Vikings"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tragedy",
+    "Zombie"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Travel",
+    "Zombie"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "War",
+    "Zombie"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Wuxia",
+    "Zombie"
+   ],
+   "weight": 0.74,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Gap",
+    "Food"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Gap",
+    "Heterosexual"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Fairy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Fairy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Coming of Age"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Found Family"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Gore"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Philosophy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Rehabilitation"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Revenge"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Ships"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Slavery"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Swordplay"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Travel"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Vikings"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Fairy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Fairy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Delinquents",
+    "Tsundere"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Fairy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Tsundere"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Foreign"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Found Family"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Gods"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Gore"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Magic"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Mythology"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Philosophy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Rape"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Rehabilitation"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Religion"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Revenge"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Survival"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Swordplay"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Tragedy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Travel"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "War"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Tsundere"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gangs",
+    "Tsundere"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Urban"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Tsundere"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Nudity"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Philosophy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Rape"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Rehabilitation"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Religion"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Revenge"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Survival"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Swordplay"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Tragedy"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Travel"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "War"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tsundere",
+    "Urban"
+   ],
+   "weight": 0.73,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Disability"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Disability"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Politics"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Magic"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Disability"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Politics"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Magic"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Disability"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Politics"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Disability"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Politics"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Fairy"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Foreign"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Found Family"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Gods"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Magic"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Mythology"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Nudity"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Politics"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Rape"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Religion"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Revenge"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Politics"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Politics"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Magic"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Military"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Reincarnation"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Wuxia"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Zombie"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Mythology"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Nudity"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Philosophy"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Rape"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Rehabilitation"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Religion"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Revenge"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Survival"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Swordplay"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Travel"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Politics"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Politics"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Rape"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Survival"
+   ],
+   "weight": 0.72,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Boys' Love"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Cultivation"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Historical"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Reincarnation"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Wuxia"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Zombie"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Coming of Age"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Cultivation"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Disability"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Martial Arts"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Philosophy"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Rehabilitation"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Samurai"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Survival"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Swordplay"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Travel"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Medieval"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Medieval"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Ships"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Slavery"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Vikings"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Survival",
+    "Time Skip"
+   ],
+   "weight": 0.71,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Martial Arts"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Body Horror"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Cosmic Horror"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Curses"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Demons"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Disability"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Fairy"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Foreign"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Found Family"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Gods"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Military"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Mythology"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Nudity"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Philosophy"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Rape"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Rehabilitation"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Religion"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Survival"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Time Skip"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Martial Arts"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Politics"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Parenthood"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Rural"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Parenthood"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Parenthood"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Rural"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Parenthood"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Rural"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gender Bending",
+    "School"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Parenthood"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Parenthood"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Martial Arts"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Zombie"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Parenthood"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Rural"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Philosophy"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Politics"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Rehabilitation"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Revenge"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Rural"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Ships"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Slavery"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Swordplay"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Time Skip"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Tragedy"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Travel"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Vikings"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "War"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Rural"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Zombie"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Rural"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rural",
+    "Ships"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rural",
+    "Slavery"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rural",
+    "Time Skip"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rural",
+    "Vikings"
+   ],
+   "weight": 0.7,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Boys' Love"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Class Struggle"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Parenthood"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Rural"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Ships"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Slavery"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Vikings"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Zombie"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Survival",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Time Skip",
+    "Torture"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Torture",
+    "Tragedy"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Torture",
+    "Travel"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Torture",
+    "War"
+   ],
+   "weight": 0.69,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Coming of Age"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Dystopian"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Elf"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Dystopian"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Elf"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Gore"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Coming of Age"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Dystopian"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Elf"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Swordplay"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Cosmic Horror"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Curses"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Demons"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Dystopian"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Elf"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Fairy"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Gods"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Magic"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Military"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Mythology"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Nudity"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Rape"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Torture"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Dystopian"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Elf"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Dystopian"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Elf"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Dystopian"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Elf"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Dystopian"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Elf"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Elf"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Fairy"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Foreign"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Found Family"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Gods"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Gore"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Magic"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Military"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Mythology"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Nudity"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Philosophy"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Politics"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Rape"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Rehabilitation"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Religion"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Revenge"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Survival"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Swordplay"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Time Skip"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Torture"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Tragedy"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Travel"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "War"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Fairy"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Foreign"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Found Family"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Gods"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Gore"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Magic"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Military"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Mythology"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Nudity"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Philosophy"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Politics"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Rape"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Rehabilitation"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Religion"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Revenge"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Survival"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Swordplay"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Time Skip"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Torture"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Tragedy"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Travel"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "War"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Samurai"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Sadism"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "Survival"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "Swordplay"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "Time Skip"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "Torture"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "Tragedy"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "Travel"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "War"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Survival",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "Zombie"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Time Skip",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Torture",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tragedy",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Travel",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "War",
+    "Witch"
+   ],
+   "weight": 0.68,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Anti-Hero"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Class Struggle"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Foreign"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Found Family"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Medieval"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Parenthood"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Politics"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Revenge"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Ships"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Slavery"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Time Skip"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Vikings"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Rural"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Rural"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Rural"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Heterosexual"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Magic"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Mythology"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Nudity"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Rape"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Religion"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Revenge"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Sadism"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Torture"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Witch"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Rural"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rural",
+    "Samurai"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rural",
+    "Survival"
+   ],
+   "weight": 0.67,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Ensemble Cast"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Ensemble Cast"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Ensemble Cast"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Revenge"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Ensemble Cast"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Revenge"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Ensemble Cast"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Ensemble Cast"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Ensemble Cast"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Ensemble Cast"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Ensemble Cast"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Fairy"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Foreign"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Gods"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Gore"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Heterosexual"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Magic"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Military"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Mythology"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Nudity"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Philosophy"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Politics"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Rape"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Rehabilitation"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Religion"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Revenge"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Sadism"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Survival"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Swordplay"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Time Skip"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Torture"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Tragedy"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Travel"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "War"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Witch"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Kaiju"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Magic"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Military"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Mythology"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Nudity"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Philosophy"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Politics"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Rape"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Rehabilitation"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Religion"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Revenge"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Sadism"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Survival"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Swordplay"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Time Skip"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Torture"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Tragedy"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Travel"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "War"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Witch"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Revenge"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Pirates"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Politics"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Rehabilitation"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Revenge"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Rural"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Ships"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Slavery"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Swordplay"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Time Skip"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Tragedy"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Travel"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Vikings"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "War"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Reincarnation",
+    "Revenge"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Wuxia"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Zombie"
+   ],
+   "weight": 0.66,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Environmental"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Religion"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Boys' Love"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Cultivation"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Historical"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Martial Arts"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Reincarnation"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Wuxia"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Zombie"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Environmental"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Environmental"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Religion"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "College",
+    "Demons"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "College",
+    "Dungeon"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "College",
+    "Necromancy"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "College",
+    "Super Power"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "College",
+    "Urban Fantasy"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "College",
+    "War"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Environmental"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Foreign"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Found Family"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Gore"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Historical"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Medieval"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Parenthood"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Philosophy"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Pirates"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Politics"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Rehabilitation"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Religion"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Revenge"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Rural"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Ships"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Slavery"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Swordplay"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Time Skip"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Tragedy"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Travel"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Vikings"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "War"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Parenthood",
+    "Religion"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Pirates",
+    "Religion"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Rural"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Ships"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Slavery"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Vikings"
+   ],
+   "weight": 0.65,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Heterosexual"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Martial Arts"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Rural"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Samurai"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "Skeleton"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Samurai",
+    "War"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Skeleton",
+    "Survival"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Skeleton",
+    "Swordplay"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Skeleton",
+    "Time Skip"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Skeleton",
+    "Torture"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Skeleton",
+    "Tragedy"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Skeleton",
+    "Travel"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Skeleton",
+    "War"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Skeleton",
+    "Witch"
+   ],
+   "weight": 0.64,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Body Horror"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Coming of Age"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Cosmic Horror"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Curses"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Demons"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Disability"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Dystopian"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Elf"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Ensemble Cast"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Fairy"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Foreign"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Found Family"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Gods"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Heterosexual"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Kaiju"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Military"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Mythology"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Nudity"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Philosophy"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Rape"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Rehabilitation"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Religion"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Sadism"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Skeleton"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Survival"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Time Skip"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Torture"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Witch"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Historical"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Historical"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Historical"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Historical"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Historical"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Historical"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Meta"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Suicide"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Time Loop"
+   ],
+   "weight": 0.63,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Cult"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Battle Royale"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Cult"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Cult"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Battle Royale"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Cosmic Horror"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Death Game"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Denpa"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Found Family"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Gods"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Historical"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Meta"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "POV"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Philosophy"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Suicide"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Survival"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Time Loop"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Tragedy"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Cult"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Cult"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Cult"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Curses"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Demons"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Disability"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Dystopian"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Elf"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Ensemble Cast"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Fairy"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Foreign"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Found Family"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Gods"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Gore"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Heterosexual"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Kaiju"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Magic"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Military"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Mythology"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Nudity"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Philosophy"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Politics"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Rape"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Rehabilitation"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Religion"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Revenge"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Sadism"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Skeleton"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Survival"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Swordplay"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Time Skip"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Torture"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Tragedy"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Travel"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "War"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Witch"
+   ],
+   "weight": 0.62,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Age Regression"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Amnesia"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Anti-Hero"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Body Horror"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Coming of Age"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Cosmic Horror"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Cult"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Curses"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Demons"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Disability"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Dystopian"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Elf"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Ensemble Cast"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Fairy"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Foreign"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Found Family"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Gods"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Gore"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Heterosexual"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Kaiju"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Magic"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Military"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Mythology"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Nudity"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Philosophy"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Politics"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Rape"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Rehabilitation"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Religion"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Revenge"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Sadism"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Skeleton"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Survival"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Swordplay"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Time Skip"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Torture"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Tragedy"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Travel"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "War"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Witch"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Biographical"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Cultivation"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Disability"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Ghost"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Heterosexual"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Martial Arts"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Samurai"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Survival"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Ghost"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Ghost"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Ghost"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Ghost"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Gore"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Heterosexual"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Historical"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Martial Arts"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Philosophy"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Rehabilitation"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Rural"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Samurai"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Survival"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Swordplay"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Travel"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "War"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Magic"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Politics"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Reincarnation"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Revenge"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Swordplay"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Tragedy"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Travel"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "War"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Wuxia"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Zombie"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Outdoor Activities"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Outdoor Activities",
+    "Philosophy"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Outdoor Activities",
+    "Rehabilitation"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Outdoor Activities",
+    "Rural"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Outdoor Activities",
+    "Samurai"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Outdoor Activities",
+    "Survival"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Outdoor Activities",
+    "Swordplay"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Outdoor Activities",
+    "Tragedy"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Outdoor Activities",
+    "Travel"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Outdoor Activities",
+    "War"
+   ],
+   "weight": 0.61,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Achronological Order",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Acting",
+    "Idol"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Agriculture"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Biographical"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Classic Literature"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Coming of Age"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Cultivation"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Disability"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Ghost"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Gore"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Heterosexual"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Historical"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Martial Arts"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Outdoor Activities"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Philosophy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Rehabilitation"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Rural"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Samurai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Survival"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Swordplay"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "Travel"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Adoption",
+    "War"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Gap",
+    "Boys' Love"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Gap",
+    "Coming of Age"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Gap",
+    "Slapstick"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Gap",
+    "Tsundere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Gap",
+    "Yandere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Age Regression",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Classic Literature"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Marriage"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Agriculture",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Isekai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Alternate Universe",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Amnesia",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Animals",
+    "Ghost"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anthology",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Marriage"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Anti-Hero",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Isekai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Astronomy",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Isekai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Battle Royale",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Cheating"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Classic Literature"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Coastal"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Kingdom Management"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Military"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Biographical",
+    "Time Skip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Horror",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Body Swapping",
+    "Demons"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Coming of Age"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Gore"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Slapstick"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Boys' Love",
+    "Yandere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Coming of Age"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Crime"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Criminal Organization"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Delinquents"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Ensemble Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Found Family"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Gangs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Ghost"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Martial Arts"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Tsundere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Bullying",
+    "Urban"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Class Struggle"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Coastal"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Foreign"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Heterosexual"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Historical"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Kingdom Management"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Military"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Politics"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Royal Affairs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Time Skip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cheating",
+    "War"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Coastal"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Heterosexual"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Kingdom Management"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Marriage"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "Military"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Class Struggle",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Coming of Age"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Cultivation"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Disability"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Ghost"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Gore"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Heterosexual"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Historical"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Martial Arts"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Outdoor Activities"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Philosophy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Rehabilitation"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Rural"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Samurai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Survival"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Swordplay"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "Travel"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classic Literature",
+    "War"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classical Music",
+    "Male Harem"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Classical Music",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "Foreign"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "Heterosexual"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "Historical"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "Kingdom Management"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "Military"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "Politics"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "Royal Affairs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "Time Skip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coastal",
+    "War"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "College",
+    "Magic"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Crime"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Criminal Organization"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Delinquents"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Gangs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Marriage"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Slapstick"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Urban"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Coming of Age",
+    "Yandere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Isekai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cosmic Horror",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "Criminal Organization"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "Delinquents"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "Ensemble Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "Found Family"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "Gangs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "Martial Arts"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "Tsundere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Crime",
+    "Urban"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "Delinquents"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "Ensemble Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "Found Family"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "Gangs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "Martial Arts"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "Tsundere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Criminal Organization",
+    "Urban"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cultivation",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Cult",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Curses",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Isekai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Death Game",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Delinquents",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Delinquents",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Delinquents",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Demons",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Isekai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Denpa",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Detective",
+    "Episodic"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Disability",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Drugs",
+    "Foreign"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Drugs",
+    "Heterosexual"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Drugs",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Drugs",
+    "Urban"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dungeon",
+    "Magic"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Dystopian",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Elf",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ensemble Cast",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Environmental",
+    "Marriage"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Fairy",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Kingdom Management"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Marriage"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Foreign",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Isekai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Marriage"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Found Family",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gangs",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gangs",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gangs",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Ghost",
+    "Revenge"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Isekai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Space"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Space Opera"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gods",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "LGBTQ+ Themes"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Marriage"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Reincarnation"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Wuxia"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Gore",
+    "Zombie"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Kingdom Management"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Royal Affairs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Heterosexual",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Isekai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Kingdom Management"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Marriage"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Military"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Historical",
+    "Vampire"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Idol",
+    "Parody"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "Long Strip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "Meta"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "Philosophy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "Suicide"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "Survival"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "Time Loop"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Isekai",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kaiju",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kingdom Management",
+    "Military"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kingdom Management",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kingdom Management",
+    "Politics"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kingdom Management",
+    "Royal Affairs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kingdom Management",
+    "Time Skip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kingdom Management",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Kingdom Management",
+    "War"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Tsundere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "LGBTQ+ Themes",
+    "Urban"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Martial Arts"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Meta"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Philosophy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Politics"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Post-Apocalyptic"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Reincarnation"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Suicide"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Survival"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Swordplay"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Time Loop"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Long Strip",
+    "Wuxia"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Necromancy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Parody"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Super Power"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Magic",
+    "Urban Fantasy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Male Harem",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Medieval"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Parenthood"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Philosophy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Pirates"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Politics"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Rehabilitation"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Revenge"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Rural"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Ships"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Slavery"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Swordplay"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Time Skip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Travel"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "Vikings"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Marriage",
+    "War"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Orphan"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "Primarily Teen Cast"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Martial Arts",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Military"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Mythology"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Nudity"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Rape"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Sadism"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Skeleton"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Survival"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Torture"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Medieval",
+    "Witch"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Meta",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "POV"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Royal Affairs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Military",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Mythology",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Nudity",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "Outdoor Activities"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "Philosophy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "Rehabilitation"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "Rural"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "Samurai"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "Survival"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "Swordplay"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "Travel"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Orphan",
+    "War"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "Politics"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "Royal Affairs"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "Time Skip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "POV",
+    "War"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Philosophy",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Photography",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Photography",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Politics",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Post-Apocalyptic",
+    "Religion"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Primarily Teen Cast",
+    "School"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Primarily Teen Cast",
+    "Tsundere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Primarily Teen Cast",
+    "Urban"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rape",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Rehabilitation",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Suicide"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Time Loop"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Religion",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Revenge",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Royal Affairs",
+    "Time Skip"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Royal Affairs",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Royal Affairs",
+    "Vampire"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Sadism",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "School",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "School",
+    "Tsundere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "School",
+    "Urban"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Skeleton",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Slapstick",
+    "Tsundere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Slapstick",
+    "Yandere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Space Opera",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Space",
+    "Space Opera"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Space",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Survival",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Swordplay",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Time Skip",
+    "Tomboy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tomboy",
+    "Torture"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tomboy",
+    "Tragedy"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tomboy",
+    "Travel"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tomboy",
+    "War"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tomboy",
+    "Witch"
+   ],
+   "weight": 0.6,
+   "works": 1
+  },
+  {
+   "pair": [
+    "Tsundere",
+    "Yandere"
+   ],
+   "weight": 0.6,
+   "works": 1
+  }
+ ]
+}
