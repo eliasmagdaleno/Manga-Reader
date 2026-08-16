@@ -1,0 +1,1082 @@
+{
+ "seeds": 86,
+ "unique": 107,
+ "recs": [
+  {
+   "malId": 583,
+   "title": "Claymore",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2
+   ]
+  },
+  {
+   "malId": 656,
+   "title": "Vagabond",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    642
+   ]
+  },
+  {
+   "malId": 642,
+   "title": "Vinland Saga",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    656
+   ]
+  },
+  {
+   "malId": 23390,
+   "title": "Shingeki no Kyojin",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2,
+    642
+   ]
+  },
+  {
+   "malId": 564,
+   "title": "Gantz",
+   "weight": 0,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2
+   ]
+  },
+  {
+   "malId": 1474,
+   "title": "Devilman",
+   "weight": 0,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2
+   ]
+  },
+  {
+   "malId": 736,
+   "title": "Shin Angyo Onshi",
+   "weight": 0,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2
+   ]
+  },
+  {
+   "malId": 70,
+   "title": "Übel Blatt",
+   "weight": 0,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2
+   ]
+  },
+  {
+   "malId": 116778,
+   "title": "Chainsaw Man",
+   "weight": 0,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    2
+   ]
+  },
+  {
+   "malId": 98270,
+   "title": "Fire Punch",
+   "weight": 0,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    2
+   ]
+  },
+  {
+   "malId": 2,
+   "title": "Berserk",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642,
+    656
+   ]
+  },
+  {
+   "malId": 16765,
+   "title": "Kingdom",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642
+   ]
+  },
+  {
+   "malId": 23685,
+   "title": "Wolfsmund",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642
+   ]
+  },
+  {
+   "malId": 85968,
+   "title": "Golden Kamuy",
+   "weight": 0,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642
+   ]
+  },
+  {
+   "malId": 11514,
+   "title": "Otoyomegatari",
+   "weight": 0,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642
+   ]
+  },
+  {
+   "malId": 731,
+   "title": "Eden: It's an Endless World!",
+   "weight": 0,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642
+   ]
+  },
+  {
+   "malId": 481,
+   "title": "Planetes",
+   "weight": 0,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    642
+   ]
+  },
+  {
+   "malId": 11701,
+   "title": "Shut Hell",
+   "weight": 0,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    642
+   ]
+  },
+  {
+   "malId": 7375,
+   "title": "Kokou no Hito",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656
+   ]
+  },
+  {
+   "malId": 658,
+   "title": "Mugen no Juunin",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656
+   ]
+  },
+  {
+   "malId": 727,
+   "title": "Shamo",
+   "weight": 0,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656
+   ]
+  },
+  {
+   "malId": 22,
+   "title": "Rurouni Kenshin: Meiji Kenkaku Romantan",
+   "weight": 0,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656
+   ]
+  },
+  {
+   "malId": 3285,
+   "title": "Holyland",
+   "weight": 0,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656
+   ]
+  },
+  {
+   "malId": 3868,
+   "title": "Shigurui",
+   "weight": 0,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    656
+   ]
+  },
+  {
+   "malId": 657,
+   "title": "Real",
+   "weight": 0,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    656
+   ]
+  },
+  {
+   "malId": 14582,
+   "title": "Gamaran",
+   "weight": 0,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    656
+   ]
+  },
+  {
+   "malId": 332,
+   "title": "Gravitation",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    765
+   ]
+  },
+  {
+   "malId": 3054,
+   "title": "Yume no Kodomo",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    765
+   ]
+  },
+  {
+   "malId": 15038,
+   "title": "Houkago no Charisma",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    782
+   ]
+  },
+  {
+   "malId": 747,
+   "title": "Blood+",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    782
+   ]
+  },
+  {
+   "malId": 8571,
+   "title": "Shin Getter Robo",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648
+   ]
+  },
+  {
+   "malId": 37601,
+   "title": "Sensei no Bulge",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648
+   ]
+  },
+  {
+   "malId": 8967,
+   "title": "Onanie Master Kurosawa",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648
+   ]
+  },
+  {
+   "malId": 14377,
+   "title": "Shin Mazinger Zero",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648
+   ]
+  },
+  {
+   "malId": 18074,
+   "title": "Getter Robo Saga",
+   "weight": 0,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1648
+   ]
+  },
+  {
+   "malId": 21,
+   "title": "Death Note",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1733,
+    22198
+   ]
+  },
+  {
+   "malId": 534,
+   "title": "Spiral: Suiri no Kizuna",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    1733
+   ]
+  },
+  {
+   "malId": 5901,
+   "title": "Pheromomania Syndrome",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686
+   ]
+  },
+  {
+   "malId": 678,
+   "title": "Kaikan♥Phrase",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686
+   ]
+  },
+  {
+   "malId": 103,
+   "title": "Never Give Up!",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686
+   ]
+  },
+  {
+   "malId": 7939,
+   "title": "Danshi Kinshi!!",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686
+   ]
+  },
+  {
+   "malId": 2699,
+   "title": "Vanilla Ice",
+   "weight": 0,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    2686
+   ]
+  },
+  {
+   "malId": 4270,
+   "title": "Hotaru no Hikari",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3686
+   ]
+  },
+  {
+   "malId": 443,
+   "title": "Mars",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3849
+   ]
+  },
+  {
+   "malId": 29,
+   "title": "Paradise Kiss",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3849
+   ]
+  },
+  {
+   "malId": 448,
+   "title": "Tenshi Kinryouku",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    3849
+   ]
+  },
+  {
+   "malId": 32315,
+   "title": "Biohazard: Marhawa Desire",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    4127
+   ]
+  },
+  {
+   "malId": 14073,
+   "title": "Akaboshi: Ibun Suikoden",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    10865
+   ]
+  },
+  {
+   "malId": 4192,
+   "title": "Ojousama wa Oyome-sama.",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    12614
+   ]
+  },
+  {
+   "malId": 10619,
+   "title": "Heureka",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    13853
+   ]
+  },
+  {
+   "malId": 23532,
+   "title": "Present wa Shinju",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15609
+   ]
+  },
+  {
+   "malId": 39813,
+   "title": "Akuma no Youna Anata",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15609
+   ]
+  },
+  {
+   "malId": 26149,
+   "title": "Ojousama no Untenshu",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    15609
+   ]
+  },
+  {
+   "malId": 28075,
+   "title": "Zerozaki Soushiki no Ningen Shiken",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16909
+   ]
+  },
+  {
+   "malId": 28743,
+   "title": "Dendrobates",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    16909
+   ]
+  },
+  {
+   "malId": 5734,
+   "title": "Cosplay★Animal",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    19205
+   ]
+  },
+  {
+   "malId": 422,
+   "title": "Yamato Nadeshiko Shichihenge♥",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    26967
+   ]
+  },
+  {
+   "malId": 57491,
+   "title": "Sono Otoko, Amatou ni Tsuki",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053
+   ]
+  },
+  {
+   "malId": 392,
+   "title": "Kimi wa Pet",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053
+   ]
+  },
+  {
+   "malId": 13099,
+   "title": "Bitou Lollipop",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053
+   ]
+  },
+  {
+   "malId": 18896,
+   "title": "Sekine-kun no Koi",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053
+   ]
+  },
+  {
+   "malId": 28226,
+   "title": "Bonnouji",
+   "weight": 0,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31053
+   ]
+  },
+  {
+   "malId": 16908,
+   "title": "Himitsu no Ai-chan",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31531
+   ]
+  },
+  {
+   "malId": 2921,
+   "title": "Kaichou wa Maid-sama!",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31531
+   ]
+  },
+  {
+   "malId": 24744,
+   "title": "Liar x Liar",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31531
+   ]
+  },
+  {
+   "malId": 13059,
+   "title": "Ugly Duckling to Swan",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    31531
+   ]
+  },
+  {
+   "malId": 3523,
+   "title": "Itazura na Kiss",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    33463
+   ]
+  },
+  {
+   "malId": 11734,
+   "title": "Watashitachi no Shiawase na Jikan",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091
+   ]
+  },
+  {
+   "malId": 35573,
+   "title": "Orange",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091
+   ]
+  },
+  {
+   "malId": 26965,
+   "title": "Sekai no Hate",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091
+   ]
+  },
+  {
+   "malId": 4207,
+   "title": "Boku no Hatsukoi wo Kimi ni Sasagu",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091
+   ]
+  },
+  {
+   "malId": 35035,
+   "title": "Kyou no Kira-kun",
+   "weight": 0,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091
+   ]
+  },
+  {
+   "malId": 1162,
+   "title": "Bitter Virgin",
+   "weight": 0,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091
+   ]
+  },
+  {
+   "malId": 65923,
+   "title": "Once Again",
+   "weight": 0,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    34091
+   ]
+  },
+  {
+   "malId": 9004,
+   "title": "Kono Yo no Owari e no Tabi",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35475
+   ]
+  },
+  {
+   "malId": 91432,
+   "title": "Katajikenai",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35475
+   ]
+  },
+  {
+   "malId": 18570,
+   "title": "Ultra Heaven",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    35475
+   ]
+  },
+  {
+   "malId": 89265,
+   "title": "Classi9",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    37463
+   ]
+  },
+  {
+   "malId": 660,
+   "title": "Versailles no Bara",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    40311
+   ]
+  },
+  {
+   "malId": 21525,
+   "title": "Akatsuki no Yona",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    41127
+   ]
+  },
+  {
+   "malId": 1061,
+   "title": "Meitantei Conan",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    58497
+   ]
+  },
+  {
+   "malId": 12837,
+   "title": "Crazy Girl Shin Bia-Ah",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    79467
+   ]
+  },
+  {
+   "malId": 79891,
+   "title": "Urakata!!",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    88125
+   ]
+  },
+  {
+   "malId": 95920,
+   "title": "Niehime to Kemono no Ou",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    96205
+   ]
+  },
+  {
+   "malId": 6310,
+   "title": "Saki",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    97644
+   ]
+  },
+  {
+   "malId": 121496,
+   "title": "Solo Leveling",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ]
+  },
+  {
+   "malId": 148985,
+   "title": "The Novel's Extra",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ]
+  },
+  {
+   "malId": 147217,
+   "title": "The World After the Fall",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ]
+  },
+  {
+   "malId": 130216,
+   "title": "Tomb Raider King",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ]
+  },
+  {
+   "malId": 132247,
+   "title": "A Returner's Magic Should Be Special",
+   "weight": 0,
+   "rank": 4,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ]
+  },
+  {
+   "malId": 146909,
+   "title": "SSS-Class Revival Hunter",
+   "weight": 0,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ]
+  },
+  {
+   "malId": 147317,
+   "title": "Lout of Count's Family",
+   "weight": 0,
+   "rank": 6,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ]
+  },
+  {
+   "malId": 147538,
+   "title": "Return to Player",
+   "weight": 0,
+   "rank": 7,
+   "inShippedTop8": true,
+   "seenFrom": [
+    132214
+   ]
+  },
+  {
+   "malId": 147272,
+   "title": "The Greatest Estate Developer",
+   "weight": 0,
+   "rank": 8,
+   "inShippedTop8": false,
+   "seenFrom": [
+    132214,
+    146878
+   ]
+  },
+  {
+   "malId": 147318,
+   "title": "How to Use a Returner",
+   "weight": 0,
+   "rank": 9,
+   "inShippedTop8": false,
+   "seenFrom": [
+    132214
+   ]
+  },
+  {
+   "malId": 104565,
+   "title": "Tokyo卍Revengers",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    133081
+   ]
+  },
+  {
+   "malId": 29983,
+   "title": "Noblesse",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    133081
+   ]
+  },
+  {
+   "malId": 158723,
+   "title": "Juvenile Offender",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    133081
+   ]
+  },
+  {
+   "malId": 170678,
+   "title": "King of the Arena",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    133081
+   ]
+  },
+  {
+   "malId": 1706,
+   "title": "JoJo no Kimyou na Bouken Part 7: Steel Ball Run",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    137200
+   ]
+  },
+  {
+   "malId": 153969,
+   "title": "Dusk Howler",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    137200
+   ]
+  },
+  {
+   "malId": 147577,
+   "title": "Return of the Mad Demon",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878
+   ]
+  },
+  {
+   "malId": 148454,
+   "title": "The Grand Mudang Saga",
+   "weight": 0,
+   "rank": 1,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878
+   ]
+  },
+  {
+   "malId": 147389,
+   "title": "Log-in Murim",
+   "weight": 0,
+   "rank": 2,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878
+   ]
+  },
+  {
+   "malId": 147662,
+   "title": "Best Teacher Baek",
+   "weight": 0,
+   "rank": 3,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878
+   ]
+  },
+  {
+   "malId": 177365,
+   "title": "The Youngest Disciple of the Hwasan Sect",
+   "weight": 0,
+   "rank": 5,
+   "inShippedTop8": true,
+   "seenFrom": [
+    146878
+   ]
+  },
+  {
+   "malId": 142629,
+   "title": "Exorcist wo Otosenai",
+   "weight": 0,
+   "rank": 0,
+   "inShippedTop8": true,
+   "seenFrom": [
+    156588
+   ]
+  }
+ ]
+}
