@@ -1,0 +1,27 @@
+{
+ "al": {
+  "rows": 399,
+  "searchFailures": 0,
+  "baselineResolved": 344,
+  "baselineUnresolved": 55,
+  "recovered": 36,
+  "recoveryRate": 0.6545,
+  "recoveredByQueryIndex": {
+   "2": 29,
+   "3": 4,
+   "4": 1,
+   "5": 2
+  },
+  "extraQueries": 105,
+  "extraQueriesPerRecovered": 2.92,
+  "wrongStrongArmPicks": 0,
+  "wrongDetail": [],
+  "baselineFuzzyPicks": 22,
+  "stoppedBy": "frame-exhausted",
+  "recoveredArms": {
+   "exact-malid": 35,
+   "fuzzy": 1
+  }
+ },
+ "note": "Numbers only. Gates are in docs/superpowers/specs/2026-08-15-search-input-width-measurement-protocol.md"
+}
