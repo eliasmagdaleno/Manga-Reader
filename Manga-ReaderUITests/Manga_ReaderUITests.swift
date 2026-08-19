@@ -474,4 +474,71 @@ final class Manga_ReaderUITests: XCTestCase {
             XCTAssertTrue(card.exists, "the For You rail should render at least one card")
         }
     }
+
+    // MARK: - ADR-0020 in-app run
+
+    /// Drives several MangaDex detail pages with `ADR0020_REVERSE_LOG=1` set, so that
+    /// `MALReverseResolver` writes one line per reverse target to
+    /// `Documents/adr0020-reverse.log`. The log is the observation; this test's job is
+    /// only to make the app do enough reverse resolution to fill it.
+    ///
+    /// Protocol: `docs/superpowers/specs/2026-08-19-adr-0020-in-app-run-protocol.md`.
+    /// Each detail page reverse-resolves up to 8 MAL recommendations. The first run drew
+    /// four pages and produced 19 targets with a single baseline miss — the protocol's
+    /// named "baseline resolves everything" failure mode, whose registered remedy is to
+    /// redraw. Twelve pages is that redraw: at the ~5% miss rate the first draw showed,
+    /// it aims well past the floor of 5.
+    ///
+    /// **This test asserts almost nothing on purpose.** It cannot: whether a row recovers
+    /// depends on live MangaDex and MAL, and an assertion on a recovery rate would make a
+    /// live-network flake look like a falsified ADR. The claims are scored off the log,
+    /// by hand, against a protocol committed before the run.
+    func testADR0020DriveReverseResolutionUnderLogging() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["ADR0020_REVERSE_LOG"] = "1"
+        app.launch()
+
+        let pagesToVisit = 12
+        var pagesOpened = 0
+
+        for index in 0..<pagesToVisit {
+            let card = app.buttons.matching(identifier: "mangaCoverCard").element(boundBy: index)
+            guard card.waitForExistence(timeout: 25) else { break }
+
+            card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+            let libraryToggle = app.buttons["Add to Library"]
+            let removeToggle = app.buttons["Remove from Library"]
+            if !libraryToggle.waitForExistence(timeout: 10) && !removeToggle.exists {
+                card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
+                _ = libraryToggle.waitForExistence(timeout: 10)
+            }
+            guard libraryToggle.exists || removeToggle.exists else { continue }
+            pagesOpened += 1
+
+            // Scroll to the bottom rail and give the MAL + MangaDex round-trips time to
+            // land. Reaching the header is what proves the resolution actually ran; a page
+            // left un-scrolled still builds the rail, but waiting on it here keeps the log
+            // and the screenshots describing the same moment.
+            let header = app.staticTexts["More Like This"]
+            let deadline = Date().addingTimeInterval(45)
+            while Date() < deadline && !header.exists {
+                app.swipeUp(velocity: .fast)
+                usleep(700_000)
+            }
+            usleep(3_000_000)
+
+            let shot = XCTAttachment(screenshot: app.screenshot())
+            shot.name = "detail-page-\(index)-rail"
+            shot.lifetime = .keepAlways
+            add(shot)
+
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            _ = app.buttons.matching(identifier: "mangaCoverCard")
+                .element(boundBy: 0).waitForExistence(timeout: 15)
+        }
+
+        XCTAssertGreaterThan(pagesOpened, 0,
+                             "the run establishes nothing if no detail page opened")
+    }
+
 }
