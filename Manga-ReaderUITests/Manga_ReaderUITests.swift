@@ -477,46 +477,101 @@ final class Manga_ReaderUITests: XCTestCase {
 
     // MARK: - ADR-0020 in-app run
 
-    /// Drives several MangaDex detail pages with `ADR0020_REVERSE_LOG=1` set, so that
-    /// `MALReverseResolver` writes one line per reverse target to
-    /// `Documents/adr0020-reverse.log`. The log is the observation; this test's job is
-    /// only to make the app do enough reverse resolution to fill it.
+    /// One seed for the enriched draw: a MangaDex title to search for, the substring that
+    /// identifies its result cell, and the known-missing reverse targets its MAL top 8
+    /// carries. The targets are here so a reader of a failing run can see what the row was
+    /// supposed to produce without opening the protocol.
+    private struct ReverseSeed {
+        let query: String
+        let match: String
+        let targets: String
+    }
+
+    /// The seed list registered in
+    /// `docs/superpowers/specs/2026-08-19-adr-0020-in-app-run-protocol-amendment-1.md`.
+    /// **Do not edit this array in response to a run.** Claim 6 says under-delivery is
+    /// answered with more seeds drawn by the published rule in a further amendment
+    /// committed before the re-run, never by swapping out the rows that disappointed.
+    private static let adr0020Seeds: [ReverseSeed] = [
+        .init(query: "Vagabond", match: "Vagabond", targets: "Mugen no Juunin"),
+        .init(query: "Golden Kamuy", match: "Golden Kamuy", targets: "Mugen no Juunin, Red"),
+        .init(query: "Meitantei Conan", match: "Meitantei Conan", targets: "Kindaichi, Q.E.D."),
+        .init(query: "Angel Sanctuary", match: "Tenshi Kinryouku", targets: "X"),
+        .init(query: "Kimi wa Pet", match: "Kimi wa Pet", targets: "Futago, The One"),
+        .init(query: "Eden: It's an Endless World", match: "Eden", targets: "Shinseiki Evangelion"),
+        .init(query: "Blood+ Adagio", match: "BLOOD+", targets: "Blood+"),
+        .init(query: "Ai wo Utau yori Ore ni Oborero", match: "Oborero", targets: "Kaikan Phrase"),
+        .init(query: "Kaichou-san Chi no Koneko", match: "Kaichou-san", targets: "Cosplay Animal"),
+        .init(query: "Hotaru no Hikari", match: "Hotaru no Hikari", targets: "Otoko no Isshou"),
+        .init(query: "Ugly Duckling to Swan", match: "Swan", targets: "Ahiru no Ouji-sama"),
+        .init(query: "Never Give Up", match: "Never Give Up", targets: "The One, Teppen!"),
+        .init(query: "Kaikan Phrase", match: "Kaikan", targets: "Love Monster"),
+    ]
+
+    /// Drives the thirteen registered seeds through **Search** with `ADR0020_REVERSE_LOG=1`
+    /// set, so that `MALReverseResolver` writes one line per reverse target to
+    /// `Documents/adr0020-reverse.log`. The log is the observation; this test's job is only
+    /// to make the app reverse-resolve the rows the protocol picked.
     ///
-    /// Protocol: `docs/superpowers/specs/2026-08-19-adr-0020-in-app-run-protocol.md`.
-    /// Each detail page reverse-resolves up to 8 MAL recommendations. The first run drew
-    /// four pages and produced 19 targets with a single baseline miss — the protocol's
-    /// named "baseline resolves everything" failure mode, whose registered remedy is to
-    /// redraw. Twelve pages is that redraw: at the ~5% miss rate the first draw showed,
-    /// it aims well past the floor of 5.
+    /// Protocol: `docs/superpowers/specs/2026-08-19-adr-0020-in-app-run-protocol.md`,
+    /// as amended by `…-amendment-1.md`.
     ///
-    /// **This test asserts almost nothing on purpose.** It cannot: whether a row recovers
-    /// depends on live MangaDex and MAL, and an assertion on a recovery rate would make a
-    /// live-network flake look like a falsified ADR. The claims are scored off the log,
-    /// by hand, against a protocol committed before the run.
+    /// **Search, not Home's grid.** Run 1 walked Home twice, at 4 pages and then 12, and got
+    /// byte-identical target sets both times: MAL's recommendations for popular titles
+    /// overlap almost completely and the reverse cache holds after the first resolve, so
+    /// more pages added no new targets. Popular titles are also the ones MangaDex files
+    /// under the spelling MAL leads with, so that cohort was selected against the effect
+    /// under test. These seeds are chosen instead — each one's MAL top 8 holds a target the
+    /// offline measurement already scored `baseline-unresolved`.
+    ///
+    /// **This test asserts almost nothing on purpose.** Whether a row recovers depends on
+    /// live MangaDex and MAL, and an assertion on a recovery rate would make a network flake
+    /// look like a falsified ADR. The claims are scored off the log, by hand, against a
+    /// protocol committed before the run. What it does assert is the frame: that seeds
+    /// actually opened, because a run where navigation failed must not be mistaken for a run
+    /// where widening had nothing to do.
     func testADR0020DriveReverseResolutionUnderLogging() throws {
         let app = XCUIApplication()
         app.launchEnvironment["ADR0020_REVERSE_LOG"] = "1"
         app.launch()
 
-        let pagesToVisit = 12
-        var pagesOpened = 0
+        var seedsOpened: [String] = []
+        var seedsMissed: [String] = []
 
-        for index in 0..<pagesToVisit {
-            let card = app.buttons.matching(identifier: "mangaCoverCard").element(boundBy: index)
-            guard card.waitForExistence(timeout: 25) else { break }
-
-            card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-            let libraryToggle = app.buttons["Add to Library"]
-            let removeToggle = app.buttons["Remove from Library"]
-            if !libraryToggle.waitForExistence(timeout: 10) && !removeToggle.exists {
-                card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-                _ = libraryToggle.waitForExistence(timeout: 10)
+        for seed in Self.adr0020Seeds {
+            app.buttons["Search"].tap()
+            let field = app.searchFields.firstMatch
+            guard field.waitForExistence(timeout: 15) else {
+                seedsMissed.append("\(seed.query) [no search field]")
+                continue
             }
-            guard libraryToggle.exists || removeToggle.exists else { continue }
-            pagesOpened += 1
+            field.tap()
+            // Clear whatever the previous seed left behind; the field persists across tabs.
+            if let existing = field.value as? String, !existing.isEmpty,
+               existing != "Search titles" {
+                field.buttons.firstMatch.tap()
+            }
+            field.typeText(seed.query + "\n")
+
+            let result = app.buttons
+                .matching(NSPredicate(format: "label CONTAINS[c] %@", seed.match))
+                .element(boundBy: 0)
+            guard result.waitForExistence(timeout: 30) else {
+                seedsMissed.append("\(seed.query) [no result]")
+                continue
+            }
+            result.tap()
+
+            let libraryToggle = app.buttons
+                .matching(NSPredicate(format: "label CONTAINS[c] %@", "Library")).firstMatch
+            guard libraryToggle.waitForExistence(timeout: 25) else {
+                seedsMissed.append("\(seed.query) [detail page never appeared]")
+                continue
+            }
+            seedsOpened.append(seed.query)
 
             // Scroll to the bottom rail and give the MAL + MangaDex round-trips time to
-            // land. Reaching the header is what proves the resolution actually ran; a page
+            // land. Reaching the header is what shows the resolution actually ran; a page
             // left un-scrolled still builds the rail, but waiting on it here keeps the log
             // and the screenshots describing the same moment.
             let header = app.staticTexts["More Like This"]
@@ -525,20 +580,23 @@ final class Manga_ReaderUITests: XCTestCase {
                 app.swipeUp(velocity: .fast)
                 usleep(700_000)
             }
-            usleep(3_000_000)
+            usleep(4_000_000)
 
             let shot = XCTAttachment(screenshot: app.screenshot())
-            shot.name = "detail-page-\(index)-rail"
+            shot.name = "seed-\(seed.query)-rail (expects: \(seed.targets))"
             shot.lifetime = .keepAlways
             add(shot)
 
             app.navigationBars.buttons.element(boundBy: 0).tap()
-            _ = app.buttons.matching(identifier: "mangaCoverCard")
-                .element(boundBy: 0).waitForExistence(timeout: 15)
+            _ = app.searchFields.firstMatch.waitForExistence(timeout: 15)
         }
 
-        XCTAssertGreaterThan(pagesOpened, 0,
-                             "the run establishes nothing if no detail page opened")
+        // Claim 7 needs every seed accounted for, so the misses are named in the failure
+        // text rather than left to be inferred from a count.
+        XCTAssertTrue(seedsMissed.isEmpty,
+                      "seeds that never reached a detail page: \(seedsMissed)")
+        XCTAssertGreaterThanOrEqual(seedsOpened.count, 10,
+                                    "the enriched draw needs most of its seeds to open; got \(seedsOpened)")
     }
 
 }
