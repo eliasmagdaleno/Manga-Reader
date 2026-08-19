@@ -21,7 +21,11 @@
 //  returns an unordered `[malId: Manga]` map and each caller arranges it. Folding the
 //  orderings in would mean a flag parameter (ADR-0011).
 //
-//  Network reaches this type through two injected closures rather than direct
+//  ADR-0020 widened what gets *searched*: up to three spellings per target instead of
+//  one, but only on rows the first spelling missed, and the extra spellings feed the
+//  exact-`malId` arm only. See `searchWidening` for why that asymmetry is the decision.
+//
+//  Network reaches this type through three injected closures rather than direct
 //  `MangaDexAPI` statics — the `MetadataUpgradeQueue.Sleep` / `AniListCandidateProvider
 //  .Resolve` pattern. The defaults are the real endpoints, so no call site changes; the
 //  point is that the cache-write discipline above is finally testable without a network.
@@ -31,34 +35,67 @@ import Foundation
 
 @MainActor
 final class MALReverseResolver {
-    /// MangaDex title search — the fan-out, one call per unresolved id.
+    /// MangaDex title search — the fan-out. One call per target, plus up to
+    /// `searchLimit - 1` more for a target whose first spelling missed (ADR-0020).
     typealias Search = @Sendable (String) async throws -> [Manga]
     /// Batch id fetch, covers included — one call for every cache hit combined.
     typealias FetchByIds = @Sendable ([String]) async throws -> [Manga]
+    /// Every spelling MAL knows a title by. Called **only** for a target that missed on
+    /// its baseline search and arrived carrying nothing to widen with (ADR-0020).
+    typealias FetchTitles = @Sendable (Int) async throws -> [String]
 
-    /// What reverse resolution actually needs: a MAL id to confirm against, and a title
-    /// to search MangaDex with. Not `MyAnimeListManga` — the AniList pool's candidates
-    /// arrive from AniList and only ever carried an `idMal`.
+    /// What reverse resolution actually needs: a MAL id to confirm against, and the
+    /// spellings to search MangaDex with. Not `MyAnimeListManga` — the AniList pool's
+    /// candidates arrive from AniList and only ever carried an `idMal`.
+    ///
+    /// **`titles` is ordered and the head is privileged** (ADR-0020): `titles[0]` is the
+    /// baseline query *and* the only left-hand side the fuzzy matcher ever sees. The rest
+    /// are reach, and reach only.
     struct ReverseTarget: Sendable, Equatable {
         let malId: Int
-        let title: String
+        let titles: [String]
+
+        /// The primary spelling. Non-optional because a target with no title cannot be
+        /// searched at all, and both construction sites drop such rows before they get here.
+        var title: String { titles.first ?? "" }
+
+        init(malId: Int, titles: [String]) {
+            self.malId = malId
+            self.titles = titles
+        }
+
+        init(malId: Int, title: String) {
+            self.init(malId: malId, titles: [title])
+        }
     }
+
+    /// How many spellings one target may spend on MangaDex searches, **including** the
+    /// baseline (ADR-0020 Decision 1). Measured, not inherited: query 2 recovers 86% of
+    /// everything available and query 3 takes it to 94%, while queries 4 and 5 together
+    /// buy 5 cards out of 84. Matches `MALEntityResolver.titleSearchLimit`, so the app
+    /// has one fan-out number rather than two.
+    static let searchLimit = 3
 
     private let store: EntityResolutionStore
     private let matcher: MALTitleMatcher
     private let search: Search
     private let fetchByIds: FetchByIds
+    private let fetchTitles: FetchTitles
 
     init(store: EntityResolutionStore = .shared,
          matcher: MALTitleMatcher = .init(),
          search: @escaping Search = { try await MangaDexAPI.searchManga(title: $0) },
          fetchByIds: @escaping FetchByIds = {
              try await MangaDexAPI.fetchMangaByIdsWithCovers(ids: $0)
+         },
+         fetchTitles: @escaping FetchTitles = {
+             try await MyAnimeListAPI.alternativeTitles(id: $0)
          }) {
         self.store = store
         self.matcher = matcher
         self.search = search
         self.fetchByIds = fetchByIds
+        self.fetchTitles = fetchTitles
     }
 
     /// Reverse-resolve `targets` to openable MangaDex titles, keyed by `malId`. Never
@@ -98,15 +135,18 @@ final class MALReverseResolver {
     /// than at the call site, so "which titles get searched" stays one decision in one
     /// place.
     ///
-    /// **Residual:** `AniListWork.knownTitles` carries romaji/english/native/synonyms but
-    /// only the primary reaches `MoreLikeThis.pickMatch`, which takes a single title.
-    /// Widening the matcher would change matching behaviour, so it stays parked
-    /// (ADR-0011); the strong arm — an exact `malId` hit among the search candidates —
-    /// does not depend on the title anyway.
+    /// **`knownTitles` is passed whole (ADR-0020).** It carries romaji/english/native/
+    /// synonyms, already in hand from a request already made, and this method used to
+    /// discard all but the first — so the AniList arm gets its widened search for **zero**
+    /// extra requests. The MAL arm is not so lucky; see `titlesForSearch`.
+    ///
+    /// The ADR-0011 residual this replaces was about *matcher* width, which stays parked:
+    /// the extra spellings are search input only, and the fuzzy matcher still sees just
+    /// `titles[0]`.
     func resolve(works: [AniListWork], limit: Int) async -> [Int: Manga] {
         await resolve(works.prefix(limit).compactMap { work in
-            guard let malId = work.malId, let title = work.knownTitles.first else { return nil }
-            return ReverseTarget(malId: malId, title: title)
+            guard let malId = work.malId, !work.knownTitles.isEmpty else { return nil }
+            return ReverseTarget(malId: malId, titles: work.knownTitles)
         })
     }
 
@@ -117,6 +157,7 @@ final class MALReverseResolver {
         guard !targets.isEmpty else { return [:] }
         let matcher = self.matcher
         let search = self.search
+        let fetchTitles = self.fetchTitles
         let maxConcurrent = 4
 
         // (malId, resolved Manga?, didSearch) — didSearch == false means the search threw.
@@ -129,12 +170,12 @@ final class MALReverseResolver {
                 guard let target = iterator.next() else { return }
                 group.addTask {
                     do {
-                        let candidates = try await search(target.title)
-                        let match = MoreLikeThis.pickMatch(targetMalId: target.malId,
-                                                           malTitle: target.title,
-                                                           candidates: candidates,
-                                                           matcher: matcher)
-                        return (target.malId, match, true)
+                        return (target.malId,
+                                try await Self.searchWidening(target,
+                                                              search: search,
+                                                              fetchTitles: fetchTitles,
+                                                              matcher: matcher),
+                                true)
                     } catch {
                         return (target.malId, nil, false)   // transient — cache nothing
                     }
@@ -162,4 +203,54 @@ final class MALReverseResolver {
         }
         return resolved
     }
+
+    /// One target's search, widened per ADR-0020.
+    ///
+    /// The baseline query runs both of `pickMatch`'s arms, exactly as it always has. The
+    /// **widened queries feed the strong arm only** — a candidate they surface can resolve
+    /// the row only by publishing the target `malId` (Decision 4).
+    ///
+    /// That asymmetry is the whole decision, so it is worth saying why in the one place a
+    /// reader will change it: 83 of the 84 recoveries measured came through the strong arm,
+    /// and the single fuzzy recovery on a widened pool was **wrong** — it matched an entry
+    /// whose `links.mal` named a different series, which ADR-0018 treats as authoritative
+    /// contradiction. Widening the fuzzy arm is not refuted, it is simply unevidenced; this
+    /// ships the half that was measured. A false link is worse than a refusal (ADR-0019).
+    ///
+    /// A throw on the baseline query propagates — the caller records nothing, because a
+    /// dropped connection says nothing about the title. A throw on a *widened* query is
+    /// swallowed: the baseline already completed, so the row genuinely was searched and a
+    /// miss is real information. Recording nothing there would forfeit a cache write the
+    /// app had already paid for.
+    private static func searchWidening(_ target: ReverseTarget,
+                                       search: Search,
+                                       fetchTitles: FetchTitles,
+                                       matcher: MALTitleMatcher) async throws -> Manga? {
+        guard let primary = target.titles.first else { return nil }
+
+        let baseline = try await search(primary)
+        if let match = MoreLikeThis.pickMatch(targetMalId: target.malId,
+                                              malTitle: target.title,
+                                              candidates: baseline,
+                                              matcher: matcher) {
+            return match
+        }
+
+        // Missed. Only now is it worth discovering spellings we do not already hold — and
+        // only a target that holds none, which in practice means the MAL arm.
+        var spellings = target.titles
+        if spellings.count < 2, let fetched = try? await fetchTitles(target.malId) {
+            var seenTitle = Set(spellings)
+            spellings += fetched.filter { seenTitle.insert($0).inserted }
+        }
+
+        var seen = Set(baseline.map(\.id))
+        for spelling in spellings.prefix(searchLimit).dropFirst() {
+            guard let more = try? await search(spelling) else { continue }
+            let added = more.filter { seen.insert($0.id).inserted }
+            if let exact = added.first(where: { $0.malId == target.malId }) { return exact }
+        }
+        return nil
+    }
+
 }
