@@ -180,6 +180,22 @@ struct MyAnimeListAPI {                              // Namespace-style struct f
         )
     }
 
+    /// Every spelling MAL knows this manga by, main title first — the widened search
+    /// input of ADR-0020, and the one request that arm costs.
+    ///
+    /// It exists as its own endpoint because `mangaDetail` cannot supply it: MAL does not
+    /// apply top-level `fields` to nested `recommendations` nodes, so a recommendation
+    /// arrives with `alternativeTitles == nil` no matter what the parent asked for. Asking
+    /// for the whole detail would also drag synopsis, genres, related manga and
+    /// recommendations across the wire for three strings.
+    static func alternativeTitles(id: Int) async throws -> [String] {
+        let manga: MyAnimeListManga = try await request(
+            path: "/manga/\(id)",
+            queryItems: [URLQueryItem(name: "fields", value: "alternative_titles")]
+        )
+        return manga.allTitles
+    }
+
     /// Generic GET + JSON decode helper for MAL endpoints.
     /// - Note: MAL is known to soft rate-limit (HTTP 429). On a 429 we retry once,
     ///         honoring the `Retry-After` header, before giving up — same behavior as
