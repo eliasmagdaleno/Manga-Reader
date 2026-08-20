@@ -295,7 +295,8 @@ final class SimulatorSeedTests: XCTestCase {
 
     // MARK: - The seeding run
 
-    /// The run itself. **It writes into the booted simulator's live app container**, and
+    /// The run itself. **It writes into the live app container of whatever simulator it is
+    /// running on**, which the script pins by device id rather than by `booted`, and
     /// is skipped unless `scripts/seed-simulator.sh` has dropped its marker file there.
     ///
     /// In place, rather than to a staging directory the script copies from: this target is
@@ -314,7 +315,7 @@ final class SimulatorSeedTests: XCTestCase {
     /// **Backing up the container is the script's job**, and it does that before writing
     /// the marker. By the time this runs, clobbering is the intent.
     @MainActor
-    func testSeedTheBootedSimulatorInPlace() throws {
+    func testSeedTheSimulatorInPlace() throws {
         let marker = SimulatorSeed.markerURL()
         guard FileManager.default.fileExists(atPath: marker.path) else {
             throw XCTSkip("no seeding marker; run scripts/seed-simulator.sh to seed")

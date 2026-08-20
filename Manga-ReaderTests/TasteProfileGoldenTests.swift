@@ -23,7 +23,7 @@
 //
 //  REGENERATING
 //      TEST_RUNNER_REGENERATE_GOLDENS=1 xcodebuild -scheme Manga-Reader \
-//        -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO \
+//        -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -parallel-testing-enabled NO \
 //        test -only-testing:Manga-ReaderTests/TasteProfileGoldenTests
 //
 //  The `TEST_RUNNER_` prefix is required; a bare `REGENERATE_GOLDENS=1` is silently dropped.
