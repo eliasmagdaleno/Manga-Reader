@@ -1,0 +1,43 @@
+pool targets: 12   all MAL-arm targets: 32
+
+mal      MAL arm's first spelling           AniList arm's first spelling       baseline
+2        Berserk                            Berserk                            same spelling — ordering cannot matter
+13       One Piece                          ONE PIECE                          same spelling — ordering cannot matter
+22       Rurouni Kenshin: Meiji Kenkaku Ro  Rurouni Kenshin: Meiji Kenkaku Ro  same spelling — ordering cannot matter
+70       Übel Blatt                         Übel Blatt                         same spelling — ordering cannot matter
+564      Gantz                              GANTZ                              same spelling — ordering cannot matter
+583      Claymore                           CLAYMORE                           same spelling — ordering cannot matter
+642      Vinland Saga                       Vinland Saga                       same spelling — ordering cannot matter
+656      Vagabond                           Vagabond                           same spelling — ordering cannot matter
+727      Shamo                              Shamo                              same spelling — ordering cannot matter
+736      Shin Angyo Onshi                   Shin Angyo Onshi                   same spelling — ordering cannot matter
+1075     7 Seeds                            7SEEDS                             both hit
+1133     Dorohedoro                         Dorohedoro                         same spelling — ordering cannot matter
+1474     Devilman                           Devilman                           same spelling — ordering cannot matter
+3031     Pandora Hearts                     Pandora Hearts                     same spelling — ordering cannot matter
+3285     Holyland                           Holyland                           same spelling — ordering cannot matter
+3868     Shigurui                           Shigurui                           same spelling — ordering cannot matter
+7375     Kokou no Hito                      Kokou no Hito                      same spelling — ordering cannot matter
+23390    Shingeki no Kyojin                 Shingeki no Kyojin                 same spelling — ordering cannot matter
+25515    JoJo no Kimyou na Bouken Part 8:   JoJo no Kimyou na Bouken: JoJolio  both hit
+33327    Tokyo Ghoul                        Tokyo Ghoul                        same spelling — ordering cannot matter
+85781    Dungeon Meshi                      Dungeon Meshi                      same spelling — ordering cannot matter
+85968    Golden Kamuy                       Golden Kamuy                       same spelling — ordering cannot matter
+98270    Fire Punch                         Fire Punch                         same spelling — ordering cannot matter
+100128   Yakusoku no Neverland              Yakusoku no Neverland              same spelling — ordering cannot matter
+111745   Tengoku Daimakyou                  Tengoku Daimakyou                  same spelling — ordering cannot matter
+112318   Jigokuraku                         Jigokuraku                         same spelling — ordering cannot matter
+113138   Jujutsu Kaisen                     Jujutsu Kaisen                     same spelling — ordering cannot matter
+116778   Chainsaw Man                       Chainsaw Man                       same spelling — ordering cannot matter
+117807   Tate no Kuni                       Tate no Kuni                       same spelling — ordering cannot matter
+118858   Dai Dark                           Dai Dark                           same spelling — ordering cannot matter
+135496   Dandadan                           Dandadan                           same spelling — ordering cannot matter
+143991   After God                          After God                          same spelling — ordering cannot matter
+
+shared targets:            32
+  same first spelling:     30   (ordering is a no-op)
+  different first spelling:2
+    both baselines hit:    2   (ordering is a no-op)
+    only MAL's hits:       0   (current order is the cheaper one)
+    only AniList's hits:   0   (current order costs a mangaDetail)
+    neither hits:          0   (both widen; MAL also pays mangaDetail)
