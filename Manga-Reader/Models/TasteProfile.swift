@@ -21,6 +21,14 @@ struct TasteProfile {
     /// owns the `WorkStore`) so this file stays a pure value type with no I/O.
     struct WorkSignal {
         let workId: WorkID
+        /// The Work's authoritative MyAnimeList id, or `nil` if it has none yet.
+        ///
+        /// Resolved by the caller, like `tags`, so this file stays a pure value type. It is
+        /// here because a seed is handed to `MoreLikeThisProvider`, whose first move is
+        /// `resolver.malId(for:)` — free when the `Manga` publishes an id, a live MAL title
+        /// search and matcher run when it does not. ADR-0018: an authoritative id is not a
+        /// resolution question, and the Work has held the answer since it was minted.
+        var malId: Int? = nil
         /// Every Listing's entries for this Work, from every source.
         let entries: [ReadingEntry]
         /// The Work's snapshot tags. Empty when the upgrade queue hasn't reached it.
@@ -147,6 +155,20 @@ struct TasteProfile {
     /// Top `limit` Works by engagement weight, each materialized to one representative
     /// `Manga`: prefer a saved library entry among its Listings (that one carries
     /// `malId`), else the most recently read entry.
+    /// The library listing with a MAL id attached when it has none of its own.
+    ///
+    /// A copy rather than a mutation because `Manga.malId` is a `let` — it is the source's
+    /// answer about its own listing, and nothing downstream should be able to edit it in
+    /// place. An id the listing already publishes always wins: it came from the source.
+    private static func stamping(_ manga: Manga, with malId: Int?) -> Manga {
+        guard manga.malId == nil, let malId else { return manga }
+        var stamped = Manga(id: manga.id, sourceId: manga.sourceId, title: manga.title,
+                            description: manga.description, status: manga.status,
+                            year: manga.year, coverURL: manga.coverURL, malId: malId)
+        stamped.altTitles = manga.altTitles
+        return stamped
+    }
+
     private static func makeSeeds(weighted: [(signal: WorkSignal, weight: Double)],
                                   libraryItems: [Manga],
                                   limit: Int) -> [SeedManga] {
@@ -159,14 +181,22 @@ struct TasteProfile {
             }
             .prefix(limit)
             .compactMap { item -> SeedManga? in
-                if let saved = item.signal.entries.compactMap({ libraryById[$0.mangaId] }).first {
-                    return SeedManga(manga: saved, weight: item.weight)
+                let entries = item.signal.entries
+                // The Work first, then whatever the source published on an entry. Both are
+                // authoritative (ADR-0018) and the Work absorbed the entry's id at mint, so
+                // they agree; the fallback matters only for a Work minted before the id
+                // reached it.
+                let malId = item.signal.malId ?? entries.compactMap(\.malId).first
+
+                if let saved = entries.compactMap({ libraryById[$0.mangaId] }).first {
+                    return SeedManga(manga: stamping(saved, with: malId),
+                                     weight: item.weight)
                 }
-                guard let e = item.signal.entries.max(by: { $0.updatedAt < $1.updatedAt })
-                        ?? item.signal.entries.first else { return nil }
+                guard let e = entries.max(by: { $0.updatedAt < $1.updatedAt })
+                        ?? entries.first else { return nil }
                 let manga = Manga(id: e.mangaId, sourceId: e.sourceId ?? "mangadex",
                                   title: e.mangaTitle, description: "", status: "unknown",
-                                  year: nil, coverURL: e.coverURL, malId: nil)
+                                  year: nil, coverURL: e.coverURL, malId: malId)
                 return SeedManga(manga: manga, weight: item.weight)
             }
     }

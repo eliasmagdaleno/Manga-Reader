@@ -163,6 +163,74 @@ final class WorkMintingTests: XCTestCase {
         XCTAssertNotNil(works.workId(for: ListingKey(sourceId: "weebcentral", mangaId: "wc-7")))
     }
 
+    /// The engine must hand the Work's MAL id to the profile, or every seed arrives at
+    /// `MoreLikeThisProvider` as a resolution question the Work already answered — a live
+    /// MAL title search per seed, up to five per For You refresh, for an id held since the
+    /// Work was minted (ADR-0018).
+    ///
+    /// Asserted on the profile the **real engine** builds and hands to its provider, not on
+    /// `TasteProfile.build` in isolation: the wiring is the part that can silently go
+    /// missing, and it is one `?.externalIds.mal` away from doing so.
+    @MainActor
+    func testTheEngineStampsSeedsWithTheWorksMalId() async throws {
+        let works = makeWorkStore()
+        let defaults = makeDefaults()
+        let history = HistoryStore(defaults: defaults, works: works, saveInterval: 0)
+
+        // Three tagged Works, because the rail refuses to build below the cold-start gate
+        // (ADR-0015) and a refusal never reaches the provider. Only the first carries a MAL
+        // id; the other two are here to open the gate.
+        // **No listing publishes a MAL id.** The id reaches the Work the way the upgrade
+        // queue delivers it, so the reading entries carry none — otherwise this passes on
+        // `makeSeeds`' entry fallback and says nothing about the engine. (Mutation-checked:
+        // with the entry carrying the id, blanking the engine's stamp still passed.)
+        let seeded = [("md-death-note", "Death Note"), ("md-berserk", "Berserk"),
+                      ("md-vagabond", "Vagabond")]
+        for (mangaId, title) in seeded {
+            let listing = Manga(id: mangaId, sourceId: "mangadex", title: title,
+                                description: "", status: "completed", year: nil,
+                                coverURL: nil, malId: nil)
+            history.record(manga: listing,
+                           chapter: Chapter(id: "\(mangaId)-c1", number: "1", title: nil),
+                           position: ReadingPosition(page: 19), pageCount: 20)
+            let id = try XCTUnwrap(works.workId(for: ListingKey(sourceId: "mangadex",
+                                                               mangaId: mangaId)))
+            works.applyProvisionalSnapshot(tags: [Tag(id: "t1", name: "Action", group: "genre")],
+                                           to: id)
+            if mangaId == "md-death-note" {
+                works.apply(AniListWork(anilistId: 30021, malId: 21,
+                                        knownTitles: [title], genres: ["Action"], tags: [],
+                                        publicationStatus: .finished, chapterTotal: 108),
+                            to: id)
+            }
+        }
+        history.flush()
+
+        let capture = CapturingProvider()
+        let engine = RecommendationEngine(history: history,
+                                          library: LibraryStore(defaults: defaults, works: works),
+                                          profileStore: TasteProfileStore(defaults: defaults),
+                                          workStore: works,
+                                          makeProvider: { _ in capture })
+        await engine.refresh()
+
+        let profile = try XCTUnwrap(capture.seen, "the engine never called its provider")
+        let seed = try XCTUnwrap(profile.seeds.first { $0.manga.id == "md-death-note" },
+                                 "no seed built from the read Work")
+        XCTAssertEqual(seed.manga.malId, 21,
+                       "the engine dropped the Work's MAL id on the way to the seed")
+    }
+
+    @MainActor
+    private final class CapturingProvider: CandidateProvider {
+        var seen: TasteProfile?
+        func candidates(for profile: TasteProfile,
+                        excluding: Set<String>, limit: Int) async throws -> [ScoredManga] {
+            seen = profile
+            return []
+        }
+    }
+
     @MainActor
     private func makeEngine(works: WorkStore) -> RecommendationEngine {
         RecommendationEngine(history: HistoryStore(defaults: makeDefaults()),

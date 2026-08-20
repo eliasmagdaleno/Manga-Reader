@@ -339,6 +339,7 @@ final class RecommendationEngine: ObservableObject {
 
         return order.map { id in
             TasteProfile.WorkSignal(workId: id,
+                                    malId: workStore.work(id)?.externalIds.mal,
                                     entries: entriesByWork[id] ?? [],
                                     tags: workStore.work(id)?.snapshot?.genres ?? [])
         }
