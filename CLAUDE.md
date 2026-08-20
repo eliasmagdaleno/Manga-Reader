@@ -21,14 +21,16 @@ The output of this code review is saved to `.agy_code_review.md`.
 
 Two non-obvious requirements apply to **every** `xcodebuild` invocation here:
 
-- **Target the iPhone 17 simulator** (`-destination 'platform=iOS Simulator,name=iPhone 17'`).
+- **Target the iPhone 17 Pro simulator** (`-destination 'platform=iOS Simulator,name=iPhone 17 Pro'`).
+  It is also the device holding the seeded fixture (see `scripts/seed-simulator.sh`), so a
+  run against a different device gets an empty library and quietly different results.
 - **Always pass `-parallel-testing-enabled NO` to `test`.** Without it `xcodebuild` spawns
   cloned simulator instances, which is unwanted here.
 
 Run a single test class or method (Swift Testing / XCTest via `xcodebuild`):
 
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
   -parallel-testing-enabled NO \
   test -only-testing:Manga-ReaderTests/Manga_ReaderTests/<testMethod>
 ```

@@ -36,7 +36,7 @@
 //
 //  REGENERATING
 //      TEST_RUNNER_REGENERATE_GOLDENS=1 xcodebuild -scheme Manga-Reader \
-//        -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO \
+//        -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -parallel-testing-enabled NO \
 //        test -only-testing:Manga-ReaderTests/RecommendationGoldenTests
 //
 //  The `TEST_RUNNER_` prefix is required and is not decoration: tests run in a separate process
