@@ -1,0 +1,118 @@
+#!/bin/bash
+# Re-seed the booted simulator's Manga-Reader container with the fixture.
+#
+# The simulator's on-device state is a fixture, not scratch data: works.json, the
+# reading history and the upgrade-attempt memory are what the recommender and the
+# ADR verification runs read. `simctl erase` destroyed it once already, and nothing
+# reconstructed it. This script is that reconstruction.
+#
+# It does NOT write the fixture itself. The seeding is a *test*
+# (SimulatorSeedTests.testSeedTheBootedSimulatorInPlace), because only a test can drive
+# the app's real stores — a shell script writing works.json by hand would be a second
+# definition of the on-disk shape, drifting silently the day `Work` changes. The unit
+# test target is hosted by the app, so that test already runs inside the very container
+# being seeded and writes in place.
+#
+# This script's whole job is the part a test cannot do: find the container, back it up,
+# and arm the run by dropping the marker file the test looks for. Without the marker the
+# test skips, so an ordinary `xcodebuild test` and CI never touch the container.
+#
+# Usage: ./scripts/seed-simulator.sh [--force]
+#
+#   --force   seed even though the container already holds a fixture
+#
+# This script never calls `simctl erase`.
+
+set -euo pipefail
+
+BUNDLE_ID="Elias-Magdaleno.Manga-Reader"
+SCHEME="Manga-Reader"
+DESTINATION="platform=iOS Simulator,name=iPhone 17"
+FORCE=0
+
+for arg in "$@"; do
+  case "$arg" in
+    --force) FORCE=1 ;;
+    *) echo "unknown argument: $arg" >&2; exit 2 ;;
+  esac
+done
+
+cd "$(dirname "$0")/.."
+
+# The app must be installed for the container to exist; a fresh clone or a post-erase
+# simulator has neither. Building the test bundle installs it, so say so rather than
+# failing with simctl's own opaque error.
+if ! CONTAINER=$(xcrun simctl get_app_container booted "$BUNDLE_ID" data 2>/dev/null); then
+  echo "no container for $BUNDLE_ID on the booted simulator." >&2
+  echo "boot the iPhone 17 simulator and run the app (or xcodebuild test) once first." >&2
+  exit 1
+fi
+
+SUPPORT="$CONTAINER/Library/Application Support"
+MARKER="$CONTAINER/Documents/seed-simulator.marker"
+
+if [ -f "$SUPPORT/works.json" ] && [ "$FORCE" -eq 0 ]; then
+  WORK_COUNT=$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1])).get("works", [])))' \
+               "$SUPPORT/works.json" 2>/dev/null || echo "?")
+  echo "the container already holds a fixture ($WORK_COUNT works)." >&2
+  echo "seeding replaces it. re-run with --force if that is what you want." >&2
+  echo "  $SUPPORT/works.json" >&2
+  exit 1
+fi
+
+# Back up before arming, not after: once the marker is written the next test run
+# clobbers the container, and a backup taken afterwards would back up the fixture.
+BACKUP="$PWD/.simulator-backups/$(date +%Y-%m-%d-%H%M%S)"
+mkdir -p "$BACKUP"
+[ -d "$SUPPORT" ] && cp -R "$SUPPORT" "$BACKUP/Application Support" 2>/dev/null || true
+# `-` rather than a path: the spawned process writes into the simulator's own filesystem
+# view, so a host path would not land where you expect.
+xcrun simctl spawn booted defaults export "$BUNDLE_ID" - > "$BACKUP/defaults.plist" 2>/dev/null || true
+echo "backed up the container to $BACKUP"
+
+mkdir -p "$CONTAINER/Documents"
+touch "$MARKER"
+
+echo "seeding..."
+set +e
+xcodebuild -scheme "$SCHEME" -destination "$DESTINATION" -parallel-testing-enabled NO \
+  test -only-testing:Manga-ReaderTests/SimulatorSeedTests/testSeedTheBootedSimulatorInPlace \
+  2>&1 | tee /tmp/seed-simulator.log | grep -E "^Test Case|seeded |error:"
+STATUS=${PIPESTATUS[0]}
+set -e
+
+# The test consumes the marker on the way in. A marker still sitting there means the run
+# never reached it — a build failure, the wrong simulator — and leaving it armed would
+# fire the destructive path on somebody's next ordinary test run.
+rm -f "$MARKER" "$(xcrun simctl get_app_container booted "$BUNDLE_ID" data)/Documents/seed-simulator.marker"
+
+# A skipped test exits 0. Without the marker the run skips, so success alone does not
+# mean anything was written — the test prints this line only after the bytes have landed.
+if [ "$STATUS" -eq 0 ] && ! grep -q "seeded " /tmp/seed-simulator.log; then
+  echo "the seeding test did not run (it skipped, or never reached the container)." >&2
+  echo "full log in /tmp/seed-simulator.log" >&2
+  exit 1
+fi
+
+if [ "$STATUS" -ne 0 ]; then
+  echo "seeding failed; full log in /tmp/seed-simulator.log" >&2
+  echo "the container is unchanged unless the test got past its marker check." >&2
+  echo "restore from $BACKUP if needed." >&2
+  exit "$STATUS"
+fi
+
+# Re-resolve: CoreSimulator rotates the data container's UUID when xcodebuild reinstalls
+# the app, carrying the contents across. The path from before the run is stale — reporting
+# against it says "no such works.json" about a container that was just seeded correctly.
+CONTAINER=$(xcrun simctl get_app_container booted "$BUNDLE_ID" data)
+SUPPORT="$CONTAINER/Library/Application Support"
+
+# Each unit test that needs an isolated defaults suite leaves an emptied plist behind in
+# the container. Harmless, but the fixture should not ship the test runner's litter.
+rm -f "$CONTAINER"/Library/Preferences/seed-tests-*.plist \
+      "$CONTAINER"/Library/Preferences/seed-keys-*.plist \
+      "$CONTAINER"/Library/Preferences/seed-run-*.plist 2>/dev/null || true
+
+echo
+echo "done. container: $CONTAINER"
+./scripts/queue-status.sh "$SUPPORT/works.json" 2>/dev/null || true
