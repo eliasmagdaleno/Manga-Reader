@@ -124,3 +124,21 @@ and the offline 3.09 remains the only cost figure.
 What it shows is mechanism, which is what Decision 5 asks for: the widening in `MALReverseResolver`
 fires in the shipped app, on live network, through the real UI, spends its extra request only on
 rows that missed, and turns rows that genuinely miss into resolved MangaDex entries.
+
+## Afterwards — what replaced the instrument
+
+With the run written up, `VerificationSwitches` and the `trace` calls inside
+`MALReverseResolver.searchWidening` are **deleted**, as that file's own header always said they
+would be. Nothing measures the path from inside the type any more.
+
+What stands in their place is `testADR0020WidenedCardsAppearInTheRail`, which asserts the
+user-visible half the log could not: that the fourteen recovered targets appear as **cards** in
+their seeds' rails, by MangaDex display title. Its scroll loop waits for the rail to be *hittable*
+rather than merely to `exist`, which is the fix for this run's screenshot gap — the attachments now
+show the rail.
+
+Its floors are deliberately below 100%: ≥ 10 of 13 rails brought on screen, ≥ 10 of 14 cards found.
+MAL's recommendation ordering shifts under the app, and a title with hundreds of chapters can
+outrun the scroll budget before the rail is reached — *Never Give Up* does, which is why reaching a
+rail is scored separately from opening a detail page. Neither condition says anything about
+widening, and neither should redden a build.

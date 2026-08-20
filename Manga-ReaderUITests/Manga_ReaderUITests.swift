@@ -477,14 +477,17 @@ final class Manga_ReaderUITests: XCTestCase {
 
     // MARK: - ADR-0020 in-app run
 
-    /// One seed for the enriched draw: a MangaDex title to search for, the substring that
-    /// identifies its result cell, and the known-missing reverse targets its MAL top 8
-    /// carries. The targets are here so a reader of a failing run can see what the row was
-    /// supposed to produce without opening the protocol.
+    /// One seed for the widening regression: a MangaDex title to search for, the substring
+    /// that identifies its result cell, and the cards its More Like This rail must show.
+    ///
+    /// `cards` are the **MangaDex display titles** of targets that ADR-0020's widening
+    /// recovered on 2026-08-19 — each one a row whose MAL spelling misses and whose MangaDex
+    /// spelling differs. They are the user-visible effect of the ADR: without widening these
+    /// cards are simply absent from the rail.
     private struct ReverseSeed {
         let query: String
         let match: String
-        let targets: String
+        let cards: [String]
     }
 
     /// The seed list registered in
@@ -492,54 +495,68 @@ final class Manga_ReaderUITests: XCTestCase {
     /// **Do not edit this array in response to a run.** Claim 6 says under-delivery is
     /// answered with more seeds drawn by the published rule in a further amendment
     /// committed before the re-run, never by swapping out the rows that disappointed.
+    ///
+    /// *Never Give Up*'s second registered target (Teppen!, MAL 10776) is **not** listed as a
+    /// card: it never appeared in the discharging run, which reported it as never-observed
+    /// rather than as a loss. Asserting on it here would encode a row we have never seen.
     private static let adr0020Seeds: [ReverseSeed] = [
-        .init(query: "Vagabond", match: "Vagabond", targets: "Mugen no Juunin"),
-        .init(query: "Golden Kamuy", match: "Golden Kamuy", targets: "Mugen no Juunin, Red"),
-        .init(query: "Meitantei Conan", match: "Meitantei Conan", targets: "Kindaichi, Q.E.D."),
-        .init(query: "Angel Sanctuary", match: "Tenshi Kinryouku", targets: "X"),
-        .init(query: "Kimi wa Pet", match: "Kimi wa Pet", targets: "Futago, The One"),
-        .init(query: "Eden: It's an Endless World", match: "Eden", targets: "Shinseiki Evangelion"),
-        .init(query: "Blood+ Adagio", match: "BLOOD+", targets: "Blood+"),
-        .init(query: "Ai wo Utau yori Ore ni Oborero", match: "Oborero", targets: "Kaikan Phrase"),
-        .init(query: "Kaichou-san Chi no Koneko", match: "Kaichou-san", targets: "Cosplay Animal"),
-        .init(query: "Hotaru no Hikari", match: "Hotaru no Hikari", targets: "Otoko no Isshou"),
-        .init(query: "Ugly Duckling to Swan", match: "Swan", targets: "Ahiru no Ouji-sama"),
-        .init(query: "Never Give Up", match: "Never Give Up", targets: "The One, Teppen!"),
-        .init(query: "Kaikan Phrase", match: "Kaikan", targets: "Love Monster"),
+        .init(query: "Vagabond", match: "Vagabond", cards: ["Mugen no Junin"]),
+        .init(query: "Golden Kamuy", match: "Golden Kamuy",
+              cards: ["Mugen no Junin", "RED: Living On the Edge"]),
+        .init(query: "Meitantei Conan", match: "Meitantei Conan",
+              cards: ["Kindaichi Case Files", "Q.E.D"]),
+        .init(query: "Angel Sanctuary", match: "Tenshi Kinryouku", cards: ["X (CLAMP)"]),
+        .init(query: "Kimi wa Pet", match: "Kimi wa Pet", cards: ["Futago", "The One"]),
+        .init(query: "Eden: It's an Endless World", match: "Eden",
+              cards: ["Neon Genesis Evangelion"]),
+        .init(query: "Blood+ Adagio", match: "BLOOD+", cards: ["BLOOD+"]),
+        .init(query: "Ai wo Utau yori Ore ni Oborero", match: "Oborero",
+              cards: ["Kaikan Phrase"]),
+        .init(query: "Kaichou-san Chi no Koneko", match: "Kaichou-san",
+              cards: ["Cosplay Animal"]),
+        .init(query: "Hotaru no Hikari", match: "Hotaru no Hikari",
+              cards: ["Lifetime of a Man"]),
+        .init(query: "Ugly Duckling to Swan", match: "Swan", cards: ["Ahiru no Oujisama"]),
+        .init(query: "Never Give Up", match: "Never Give Up", cards: ["The One"]),
+        .init(query: "Kaikan Phrase", match: "Kaikan", cards: ["Love Monster"]),
     ]
 
-    /// Drives the thirteen registered seeds through **Search** with `ADR0020_REVERSE_LOG=1`
-    /// set, so that `MALReverseResolver` writes one line per reverse target to
-    /// `Documents/adr0020-reverse.log`. The log is the observation; this test's job is only
-    /// to make the app reverse-resolve the rows the protocol picked.
+    /// Drives the thirteen registered seeds through **Search** and asserts that the cards
+    /// ADR-0020's widening recovers actually appear in each seed's More Like This rail.
     ///
-    /// Protocol: `docs/superpowers/specs/2026-08-19-adr-0020-in-app-run-protocol.md`,
-    /// as amended by `…-amendment-1.md`.
+    /// ADR-0020: `docs/adr/0020-widening-the-search-input-on-the-reverse-resolution-path.md`.
+    /// The discharging run is
+    /// `docs/superpowers/specs/2026-08-19-adr-0020-in-app-run-enriched.md`.
     ///
-    /// **Search, not Home's grid.** Run 1 walked Home twice, at 4 pages and then 12, and got
-    /// byte-identical target sets both times: MAL's recommendations for popular titles
-    /// overlap almost completely and the reverse cache holds after the first resolve, so
-    /// more pages added no new targets. Popular titles are also the ones MangaDex files
-    /// under the spelling MAL leads with, so that cohort was selected against the effect
-    /// under test. These seeds are chosen instead — each one's MAL top 8 holds a target the
-    /// offline measurement already scored `baseline-unresolved`.
+    /// **This asserts cards, not log lines.** The run that discharged Decision 5 read its
+    /// claims off a debug instrument inside `MALReverseResolver`; that instrument is deleted
+    /// now the run is written up, and what survives it is this: fourteen rows that miss on
+    /// MAL's spelling and are carried by MangaDex under another one. If widening regresses,
+    /// these cards vanish from the rail and this test says which ones.
     ///
-    /// **This test asserts almost nothing on purpose.** Whether a row recovers depends on
-    /// live MangaDex and MAL, and an assertion on a recovery rate would make a network flake
-    /// look like a falsified ADR. The claims are scored off the log, by hand, against a
-    /// protocol committed before the run. What it does assert is the frame: that seeds
-    /// actually opened, because a run where navigation failed must not be mistaken for a run
-    /// where widening had nothing to do.
-    func testADR0020DriveReverseResolutionUnderLogging() throws {
+    /// **The floor is 10 of 14, not 14 of 14, and that is deliberate.** Both MAL and MangaDex
+    /// are live here, and MAL's recommendation ordering shifts — a target can leave the top 8
+    /// that `MoreLikeThisProvider.topRecommendations` takes without anything in this app
+    /// changing. A hard all-or-nothing assertion would turn that into a red build. Losing a
+    /// third of the set is not ordering drift.
+    func testADR0020WidenedCardsAppearInTheRail() throws {
         let app = XCUIApplication()
-        app.launchEnvironment["ADR0020_REVERSE_LOG"] = "1"
         app.launch()
 
-        var seedsOpened: [String] = []
         var seedsMissed: [String] = []
+        var railsReached: [String] = []
+        var railsUnreached: [String] = []
+        var cardsFound: [String] = []
+        var cardsMissing: [String] = []
 
         for seed in Self.adr0020Seeds {
-            app.buttons["Search"].tap()
+            // Always start a seed from the Search tab with no detail page underneath. An
+            // earlier revision skipped this on the `continue` paths, so one seed that failed
+            // to reach its rail left its detail page open — and the next iteration found two
+            // "Search" buttons, the tab and the page's own, and failed on ambiguity rather
+            // than on anything to do with widening.
+            returnToSearchRoot(app)
+            searchTab(app).tap()
             let field = app.searchFields.firstMatch
             guard field.waitForExistence(timeout: 15) else {
                 seedsMissed.append("\(seed.query) [no search field]")
@@ -568,35 +585,91 @@ final class Manga_ReaderUITests: XCTestCase {
                 seedsMissed.append("\(seed.query) [detail page never appeared]")
                 continue
             }
-            seedsOpened.append(seed.query)
 
-            // Scroll to the bottom rail and give the MAL + MangaDex round-trips time to
-            // land. Reaching the header is what shows the resolution actually ran; a page
-            // left un-scrolled still builds the rail, but waiting on it here keeps the log
-            // and the screenshots describing the same moment.
+            // Scroll until the rail's first cell is **hittable**, not until its header
+            // `exists`. XCUITest reports a lazily-built element as existing while it is still
+            // below the fold, so the discharging run's screenshots were all framed at the top
+            // of the detail page and showed no cards at all. Hittability is what "on screen"
+            // actually means here, and it is also what makes the card assertions below
+            // meaningful rather than accidental.
             let header = app.staticTexts["More Like This"]
             let deadline = Date().addingTimeInterval(45)
-            while Date() < deadline && !header.exists {
+            while Date() < deadline && !railIsOnScreen(app, header: header) {
                 app.swipeUp(velocity: .fast)
                 usleep(700_000)
             }
-            usleep(4_000_000)
+            // Not reaching the rail is a **scroll budget** problem, not a navigation one:
+            // a seed with hundreds of chapters can outrun 45 seconds of swiping. The rail is
+            // built either way, so the card checks below still mean something — they just
+            // rest on `exists` rather than on a picture. Kept separate from `seedsMissed` so
+            // a long page never reads as a broken app.
+            if railIsOnScreen(app, header: header) {
+                railsReached.append(seed.query)
+            } else {
+                railsUnreached.append(seed.query)
+            }
+
+            for card in seed.cards {
+                let cell = app.buttons
+                    .matching(NSPredicate(format: "label CONTAINS[c] %@", card))
+                    .firstMatch
+                // The rail is horizontally scrollable and the target may sit off its right
+                // edge; `exists` is the right predicate for membership, hittability was the
+                // question for the rail as a whole.
+                if cell.waitForExistence(timeout: 10) {
+                    cardsFound.append("\(seed.query) → \(card)")
+                } else {
+                    cardsMissing.append("\(seed.query) → \(card)")
+                }
+            }
 
             let shot = XCTAttachment(screenshot: app.screenshot())
-            shot.name = "seed-\(seed.query)-rail (expects: \(seed.targets))"
+            shot.name = "seed-\(seed.query)-rail"
             shot.lifetime = .keepAlways
             add(shot)
-
-            app.navigationBars.buttons.element(boundBy: 0).tap()
-            _ = app.searchFields.firstMatch.waitForExistence(timeout: 15)
         }
 
-        // Claim 7 needs every seed accounted for, so the misses are named in the failure
-        // text rather than left to be inferred from a count.
+        // A run where navigation broke must never read as a run where widening had nothing
+        // to do, so the frame is asserted before the cards are.
         XCTAssertTrue(seedsMissed.isEmpty,
-                      "seeds that never reached a detail page: \(seedsMissed)")
-        XCTAssertGreaterThanOrEqual(seedsOpened.count, 10,
-                                    "the enriched draw needs most of its seeds to open; got \(seedsOpened)")
+                      "seeds whose detail page never opened: \(seedsMissed)")
+        XCTAssertGreaterThanOrEqual(
+            railsReached.count, 10,
+            "rails brought on screen \(railsReached.count)/13; outran the scroll budget: \(railsUnreached)")
+        XCTAssertGreaterThanOrEqual(
+            cardsFound.count, 10,
+            "widened cards found \(cardsFound.count)/14; missing: \(cardsMissing)")
+    }
+
+    /// True once the More Like This rail is actually on screen — either its header or one of
+    /// its cells is **hittable**, not merely `exists`.
+    ///
+    /// Both halves are needed. A card alone is the strong signal, but a title with no
+    /// recommendations renders the section header over an empty rail, and treating that as
+    /// "not reached" would spin the scroll loop to its deadline and then report a navigation
+    /// failure for what is really an empty rail. The card assertions tell those apart.
+    private func railIsOnScreen(_ app: XCUIApplication, header: XCUIElement) -> Bool {
+        if header.isHittable { return true }
+        return app.buttons.matching(identifier: "mangaCoverCard")
+            .allElementsBoundByIndex.contains { $0.isHittable }
+    }
+
+    /// The Search tab. A detail page carries its own "Search" affordance, so an unqualified
+    /// `app.buttons["Search"]` is ambiguous whenever one is open; the tab is the bottom-most
+    /// match.
+    private func searchTab(_ app: XCUIApplication) -> XCUIElement {
+        let matches = app.buttons.matching(NSPredicate(format: "label == %@", "Search"))
+            .allElementsBoundByIndex
+        return matches.max(by: { $0.frame.minY < $1.frame.minY }) ?? app.buttons["Search"]
+    }
+
+    /// Pops any open detail page so the next seed starts from a known state.
+    private func returnToSearchRoot(_ app: XCUIApplication) {
+        let back = app.navigationBars.buttons.element(boundBy: 0)
+        if back.exists && back.isHittable {
+            back.tap()
+            _ = app.searchFields.firstMatch.waitForExistence(timeout: 15)
+        }
     }
 
 }
