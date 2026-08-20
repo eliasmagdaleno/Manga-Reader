@@ -3,7 +3,8 @@
 - **Status:** **Accepted (2026-08-19).** Licensed by a measurement whose gates were registered
   before the run, and **verified in the app** on an enriched draw: 14 of 14 rows that missed on
   their first spelling recovered on a widened query, all through the strong arm. Decision 5 is
-  discharged with **one registered claim unmet** — the N = 3 bound was never observed *binding* —
+  discharged **on the MAL arm** — the AniList arm shares the code path but awaits a re-seeded
+  fixture — with **one registered claim unmet** — the N = 3 bound was never observed *binding* —
   which is recorded below rather than retried
 - **Licensed by:** [the 2026-08-15 search-input width measurement](../superpowers/specs/2026-08-15-search-input-width-measured.md)
   and [its protocol](../superpowers/specs/2026-08-15-search-input-width-measurement-protocol.md),
@@ -178,12 +179,20 @@ the offline rates say.
 
 #### Discharged 2026-08-19 — met on mechanism, unmet on the cap
 
+**Scope: the MAL arm.** Both arms funnel into the same `searchWidening` — `AppComposition` builds
+one `MALReverseResolver` and hands it to both consumers — so the widening *code path* verified here
+is literally the one the AniList pool uses. What differs is the spelling supply: `AniListWork`
+already carries romaji/english/native/synonyms, so `fetchTitles` never fires on that arm and it
+spends no extra request. The AniList arm is therefore **unverified in the app** and blocked on a
+fixture: its pool needs a taste profile, and the seeded simulator holding one was destroyed
+(run 1's write-up records the loss). Re-seeding it is the precondition, not more code.
+
 Two runs, both under protocols committed before launch. Run 1 walked Home's grid and saturated at
 19 targets with a single baseline miss against a floor of 5 — an inadequate fixture, reported as
 such ([run 1](../superpowers/specs/2026-08-19-adr-0020-in-app-run.md)). Run 2 replaced the
 navigation with Search over 13 seeds fixed in advance, each pre-checked to carry a target the
 offline measurement had already scored `baseline-unresolved`
-([Amendment 1](../superpowers/plans/2026-08-19-adr-0020-in-app-run-protocol-amendment-1.md),
+([Amendment 1](../superpowers/specs/2026-08-19-adr-0020-in-app-run-protocol-amendment-1.md),
 [results](../superpowers/specs/2026-08-19-adr-0020-in-app-run-enriched.md)).
 
 Against the bullets above:

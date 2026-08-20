@@ -1,6 +1,6 @@
 # ADR-0020 in the app — the enriched draw recovers, and claim 4 still does not bind
 
-**Runs [Protocol Amendment 1](../plans/2026-08-19-adr-0020-in-app-run-protocol-amendment-1.md)**,
+**Runs [Protocol Amendment 1](2026-08-19-adr-0020-in-app-run-protocol-amendment-1.md)**,
 registered in its own commit (`b95c861`) before this launch, over the base protocol
 `2026-08-19-adr-0020-in-app-run-protocol.md`. Raw log:
 `docs/superpowers/measurements/adr0020-in-app/run3-enriched.log`.
