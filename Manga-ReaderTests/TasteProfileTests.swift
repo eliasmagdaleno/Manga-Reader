@@ -202,4 +202,62 @@ final class TasteProfileTests: XCTestCase {
         XCTAssertEqual(profile.taggedMangaCount, 0)
         XCTAssertTrue(profile.isEmpty)
     }
+
+    // MARK: - Seeds carry the Work's MAL id (ADR-0018)
+
+    /// A seed is handed to `MoreLikeThisProvider`, which starts with
+    /// `resolver.malId(for:)` — a **free fast path** when the `Manga` already publishes an
+    /// id, and a live MAL title search plus matcher run when it does not. ADR-0018's rule is
+    /// that an authoritative id is not a resolution question, and the Work has held one
+    /// since it was minted. Dropping it here re-asks a question already answered, up to five
+    /// times per For You refresh.
+    func testASeedBuiltFromHistoryCarriesTheWorksMalId() {
+        let profile = TasteProfile.build(
+            signals: [TasteProfile.WorkSignal(workId: WorkID(), malId: 21,
+                                              entries: [entry("md-1", title: "Death Note")],
+                                              tags: [QueryableTag(name: "Action", group: "genre")])],
+            savedIds: [], moreLikeThis: [], now: now)
+
+        XCTAssertEqual(profile.seeds.first?.manga.malId, 21,
+                       "the seed re-asks MAL for an id the Work already holds")
+    }
+
+    /// The saved path builds its seed from the library listing rather than from history, so
+    /// it needs the same stamp — and it is the *more* important of the two, since a saved
+    /// title with no reading is exactly the case that has no `ReadingEntry` to fall back on.
+    func testASeedBuiltFromTheLibraryCarriesTheWorksMalId() {
+        let saved = Manga(id: "md-1", sourceId: "mangadex", title: "Death Note",
+                          description: "", status: "completed", year: nil,
+                          coverURL: nil, malId: nil)
+        let profile = TasteProfile.build(
+            signals: [TasteProfile.WorkSignal(workId: WorkID(), malId: 21,
+                                              entries: [entry("md-1", title: "Death Note")],
+                                              tags: [QueryableTag(name: "Action", group: "genre")])],
+            savedIds: ["md-1"], moreLikeThis: [], now: now,
+            libraryItems: [saved])
+
+        XCTAssertEqual(profile.seeds.first?.manga.id, "md-1", "wrong seed for the assertion")
+        XCTAssertEqual(profile.seeds.first?.manga.malId, 21,
+                       "the saved seed re-asks MAL for an id the Work already holds")
+    }
+
+    /// A Work with no id yet must not invent one — the entry's own `malId` is the next best
+    /// authority (the source published it, ADR-0018), and `nil` is the honest answer when
+    /// neither has one.
+    func testASeedWithNoKnownIdFallsBackToTheEntryAndThenToNil() {
+        var stamped = entry("md-2", title: "Berserk")
+        stamped.malId = 2
+        let withEntryId = TasteProfile.build(
+            signals: [TasteProfile.WorkSignal(workId: WorkID(), malId: nil, entries: [stamped],
+                                              tags: [QueryableTag(name: "Action", group: "genre")])],
+            savedIds: [], moreLikeThis: [], now: now)
+        XCTAssertEqual(withEntryId.seeds.first?.manga.malId, 2,
+                       "the entry published an id and the seed dropped it")
+
+        let withNone = TasteProfile.build(
+            signals: [signal([entry("md-3", title: "Unknown")],
+                             tags: [QueryableTag(name: "Action", group: "genre")])],
+            savedIds: [], moreLikeThis: [], now: now)
+        XCTAssertNil(withNone.seeds.first?.manga.malId)
+    }
 }
