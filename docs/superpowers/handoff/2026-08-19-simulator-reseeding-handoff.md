@@ -1,8 +1,9 @@
-# Handoff — simulator re-seeding, through step 5 (harvest left)
+# Handoff — simulator re-seeding, complete
 
 Branch `simulator-seeding`, rebased onto `main` (ddbb3b7). Seeding commits: `6ae89c1`
 (builder + Works), `c6df4a7` (history + library), `8bcf72f` (refusals), `9e162b1`
-(in-place run + script). **Only the harvest (step 4) is left.**
+(in-place run + script), `6da4781` (the harvest). **All six steps are done; the branch is
+ready for a PR.**
 
 ## Context
 
@@ -140,21 +141,56 @@ AniList, **AniList pool gate PASS**, 2 suppressed by attempt memory (1 `absentFr
 1 `unmatched`). The app launches against the seeded container and renders Home. 485 unit
 tests, 2 skipped (the seeding run plus the pre-existing one).
 
+### Step 4 — the harvest (`6da4781`)
+
+`scripts/harvest_seed_fixture.py`, three stages: `probe` (availability, no writes),
+`fetch` (live pull -> `scripts/seed-harvest.json`), `emit` (-> the generated
+`Manga-ReaderTests/SimulatorSeedFixture.swift`, no network). Two files committed so the
+Swift can be regenerated offline after a shape change, and generated **Swift** rather than
+a JSON resource so a `Row` change fails to compile instead of decoding into something
+quietly wrong.
+
+22 Works: 9 read (18 chapters), 12 saved, 2 refused. `Row` gained `coverURL` —
+`ReadingEntry` and `LibraryItem` each persist one, so a fixture without covers is a
+Library of grey rectangles.
+
+**Three things the harvest taught, each now enforced in the script:**
+
+- **An exact normalized title match or nothing.** MangaDex answers a search for a title it
+  does not carry with whatever it *does* carry — "Monster" returns "Futsuu to Bakemono",
+  "Blame!" returns "Black Jack Alive". The first run seeded both without complaint. The
+  picker now aborts with the candidate list instead of taking the top result.
+- **Licensed series are unreadable, not merely absent.** Their chapters survive as external
+  links to an official reader the app cannot open, so both `probe` and the harvest pass
+  `includeExternalUrl=0`. Vinland Saga, Death Note, JJK, Frieren, Spy x Family and Solo
+  Leveling have **zero** readable English chapters — they are in the fixture as saved or
+  browsed rows, and the reading half was authored around what is actually readable
+  (Berserk, Vagabond, Chainsaw Man, Dorohedoro, Hunter x Hunter, Made in Abyss, Horimiya,
+  Kaguya-sama, Kingdom).
+- `curl -g` is required, or every MangaDex array parameter (`includes[]`,
+  `translatedLanguage[]`) fails as a glob before a request is made; and `json.loads(...,
+  strict=False)`, or one control character in a description rejects the whole response.
+
+Two tests guard the generated file, since `sampleRows` covers the builder and nothing else
+would notice a regenerated fixture arriving empty, coverless or pointing at ids that 404:
+real UUID manga ids and covers on every row, both refusal shapes, reading that contains
+both a finished chapter and an in-progress one, and >= 5 tag pairs clearing the gate.
+
+### Step 6 — verified
+
+`./scripts/seed-simulator.sh --force`: 22 works seeded, 20 resolved to AniList, pool gate
+PASS, 2 suppressed by attempt memory. The app launches against it and **For You populates
+with real basis lines** — "Because you read Made in Abyss", "Because you read Chainsaw
+Man". 487 unit tests, 2 skipped.
+
 ## Left to do
 
-**Step 4, the harvest, and only that.** A one-time live pull of real AniList tags/ranks for
-~20 titles into a committed snapshot, replacing `SimulatorSeed.fixtureRows` — which today is
-just `sampleRows`, three real Works plus two refusals. `sampleRows` stays as the unit tests'
-fixture; `fixtureRows` exists as the single seam to swap.
+Nothing on the tool. Open the PR, and the ADR-0020 **AniList arm** is now unblocked — that
+run was what the fixture was rebuilt for.
 
-Three sample Works clear the ≥ 3-contributing-Works pool gate but are far too thin to make
-For You look like a real user's — that is what the harvest buys, and it is what the ADR-0020
-AniList arm actually needs.
-
-Then re-run `./scripts/seed-simulator.sh --force` and confirm For You populates (step 6). The
-launch check done so far only proves the container loads; the rails were not driven, and
-doing that properly means XCUITest assertions plus a screenshot attachment, not a bare
-screenshot.
+Worth knowing before that run: the seeded history all carries today's date
+(`HistoryStore.record` stamps `Date()` and offers no backdating hook), so the History tab
+shows a single date header. Order and position are correct, which is what the arm reads.
 
 ## Gotchas worth carrying
 
