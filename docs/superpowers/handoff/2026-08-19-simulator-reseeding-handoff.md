@@ -1,6 +1,7 @@
-# Handoff — simulator re-seeding, first slice done
+# Handoff — simulator re-seeding, through step 1
 
-Branch `simulator-seeding`, rebased onto `main` (ddbb3b7). Seeding commit: `6ae89c1`.
+Branch `simulator-seeding`, rebased onto `main` (ddbb3b7). Seeding commits: `6ae89c1`
+(builder + Works), `c6df4a7` (history + library + defaults payload).
 
 ## Context
 
@@ -43,6 +44,30 @@ with `xcp`; the pbxproj diff was a clean 8 lines).
 
 479 unit tests pass.
 
+### Step 1 — history, library, and the defaults payload (`c6df4a7`)
+
+- `Row` gained `reading: [Read]` (chapterId / number / page / pageCount) and `isSaved`.
+- `apply(_:to:history:library:)` drives `HistoryStore.record` and `LibraryStore.toggle` with
+  the **same `Manga` listing** it minted from, so reading and saving resolve to the Work the
+  AniList upgrade already stamped rather than minting a provisional, snapshot-less twin. A
+  test asserts exactly that.
+- `history.flush()` after the run: `record` writes through a throttle, so without it the run's
+  writes never land. **Mutation-checked** — deleting the flush reddens both defaults tests.
+- `SimulatorSeed.seededDefaultsKeys` + `defaultsPayload(from:)` → key -> base64, for the
+  script's `simctl ... defaults write -data <hex>` step. Only the three seeded keys travel
+  (`history.entries`, `history.readMarks`, `library.items`); the suite also collects
+  Foundation's own bookkeeping, and the `taste.*` keys hold explicit user feedback a fixture
+  has no business inventing — pre-dismissed titles would silently subtract from every
+  recommendation run made against the fixture.
+
+482 unit tests pass (1 pre-existing skip).
+
+**Known limitation, documented at the call site:** `HistoryStore.record` stamps `Date()` and
+offers no backdating hook, so the seeded history reads as a single day — the History tab shows
+one date header. Order and position are still correct (`record` prepends; rows apply
+oldest-first), and those are what the AniList arm reads. Backdating would mean either a new
+seam in `HistoryStore` or hand-writing the entries, and neither is worth it for a date header.
+
 ## Verified mechanism (spike)
 
 `xcrun simctl spawn booted defaults write <domain> <key> -data <hex>` round-trips real `Data`
@@ -53,8 +78,8 @@ the fixture is empty.
 
 ## Left to do
 
-1. **History and library rows** — extend `Row`/`apply` to emit `ReadingEntry` values and library
-   items, encoded by the real Codables, into a `defaults.json` (key → base64).
+Step 1 is done (above). Remaining, in order:
+
 2. **Upgrade attempts** — 2–3 rows including one refusal, so the ADR-0018 guard has something to
    release.
 3. **`SEED_SIMULATOR_OUT` run** — the test that writes `works.json`, `upgrade-attempts.json` and
@@ -70,6 +95,12 @@ the fixture is empty.
 ## Gotchas worth carrying
 
 - `WorkStore` is `@MainActor`-isolated — test helpers that build one must be too.
+- **SwiftUI ships its own `LibraryItem`,** and `@testable import Manga_Reader` re-exports it,
+  so decoding the library half needs `Manga_Reader.LibraryItem` — unqualified, it fails as
+  "ambiguous for type lookup".
+- **`flatMap(\.reading)` and friends do not compile here.** Key-path shorthand over
+  `SimulatorSeed.Row` produced "cannot infer key path type from context" (and once, a
+  compiler "failed to produce diagnostic" crash report); plain closures work.
 - Both git branch creation and `gh pr merge` were blocked by the permission classifier this
   session; simple single commands worked where compound ones did not.
 - **PR #57 (ADR-0020 accepted) is merged** — `ddbb3b7` on `main`, branch deleted. This branch has
@@ -80,3 +111,27 @@ the fixture is empty.
   the churn CLAUDE.md says Xcode strips on its own schedule — re-adding them is what creates the
   conflict, not anything about the seeding work. Post-rebase the pbxproj delta against `main` is
   exactly the 8 lines for the two new files, and 479 unit tests pass.
+
+### Step 1 — history, library, and the defaults payload (`c6df4a7`)
+
+- `Row` gained `reading: [Read]` (chapterId / number / page / pageCount) and `isSaved`.
+- `apply(_:to:history:library:)` drives `HistoryStore.record` and `LibraryStore.toggle` with
+  the **same `Manga` listing** it minted from, so reading and saving resolve to the Work the
+  AniList upgrade already stamped rather than minting a provisional, snapshot-less twin. A
+  test asserts exactly that.
+- `history.flush()` after the run: `record` writes through a throttle, so without it the run's
+  writes never land. **Mutation-checked** — deleting the flush reddens both defaults tests.
+- `SimulatorSeed.seededDefaultsKeys` + `defaultsPayload(from:)` → key -> base64, for the
+  script's `simctl ... defaults write -data <hex>` step. Only the three seeded keys travel
+  (`history.entries`, `history.readMarks`, `library.items`); the suite also collects
+  Foundation's own bookkeeping, and the `taste.*` keys hold explicit user feedback a fixture
+  has no business inventing — pre-dismissed titles would silently subtract from every
+  recommendation run made against the fixture.
+
+482 unit tests pass (1 pre-existing skip).
+
+**Known limitation, documented at the call site:** `HistoryStore.record` stamps `Date()` and
+offers no backdating hook, so the seeded history reads as a single day — the History tab shows
+one date header. Order and position are still correct (`record` prepends; rows apply
+oldest-first), and those are what the AniList arm reads. Backdating would mean either a new
+seam in `HistoryStore` or hand-writing the entries, and neither is worth it for a date header.
