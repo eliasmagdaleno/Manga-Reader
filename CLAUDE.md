@@ -11,12 +11,6 @@ package manager — pure SwiftUI + Foundation. Xcode project only (no SPM/CocoaP
 - Deployment target: iOS 17.5 (some UI branches on `#available(iOS 18.0, *)`)
 - Test targets: `Manga-ReaderTests` (unit), `Manga-ReaderUITests` (UI)
 
-## Code Review & AI Sync
-
-After every commit, a git hook runs an automated code review using Google Antigravity (agy). 
-The output of this code review is saved to `.agy_code_review.md`. 
-**Claude**: Always read `.agy_code_review.md` when starting a new session or after a commit to stay in the loop regarding recent changes, errors, and architectural notes.
-
 ## Commands
 
 Two non-obvious requirements apply to **every** `xcodebuild` invocation here:
