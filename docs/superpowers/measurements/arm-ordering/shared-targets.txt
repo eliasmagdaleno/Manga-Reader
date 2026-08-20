@@ -1,0 +1,21 @@
+pool targets: 12   shared with the MAL arm: 10
+
+mal      MAL arm's first spelling           AniList arm's first spelling       baseline
+2        Berserk                            Berserk                            same spelling — ordering cannot matter
+656      Vagabond                           Vagabond                           same spelling — ordering cannot matter
+1133     Dorohedoro                         Dorohedoro                         same spelling — ordering cannot matter
+23390    Shingeki no Kyojin                 Shingeki no Kyojin                 same spelling — ordering cannot matter
+33327    Tokyo Ghoul                        Tokyo Ghoul                        same spelling — ordering cannot matter
+98270    Fire Punch                         Fire Punch                         same spelling — ordering cannot matter
+100128   Yakusoku no Neverland              Yakusoku no Neverland              same spelling — ordering cannot matter
+112318   Jigokuraku                         Jigokuraku                         same spelling — ordering cannot matter
+113138   Jujutsu Kaisen                     Jujutsu Kaisen                     same spelling — ordering cannot matter
+116778   Chainsaw Man                       Chainsaw Man                       same spelling — ordering cannot matter
+
+shared targets:            10
+  same first spelling:     10   (ordering is a no-op)
+  different first spelling:0
+    both baselines hit:    0   (ordering is a no-op)
+    only MAL's hits:       0   (current order is the cheaper one)
+    only AniList's hits:   0   (current order costs a mangaDetail)
+    neither hits:          0   (both widen; MAL also pays mangaDetail)
