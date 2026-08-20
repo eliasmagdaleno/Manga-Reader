@@ -230,6 +230,29 @@ final class SimulatorSeedTests: XCTestCase {
         XCTAssertFalse(data.isEmpty)
     }
 
+    /// A stale resolution cache answers every reverse target without a search, which
+    /// silently disables the widening path any run against this fixture is there to
+    /// exercise. Two ADR-0020 AniList-arm launches were lost to exactly that.
+    @MainActor
+    func testSeedClearsInheritedResolutionCaches() throws {
+        let (works, _) = makeStore()
+        let name = "seed-clear-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: name) }
+        for key in SimulatorSeed.clearedDefaultsKeys {
+            defaults.set(Data("stale".utf8), forKey: key)
+        }
+
+        SimulatorSeed.clearInheritedState(in: defaults)
+
+        for key in SimulatorSeed.clearedDefaultsKeys {
+            XCTAssertNil(defaults.data(forKey: key),
+                         "\(key) survived seeding and would answer every reverse target")
+        }
+        XCTAssertFalse(SimulatorSeed.clearedDefaultsKeys.isEmpty)
+        _ = works
+    }
+
     // MARK: - The harvested fixture
 
     /// The generated fixture is what actually reaches the simulator, and it is the half
@@ -333,6 +356,7 @@ final class SimulatorSeedTests: XCTestCase {
             try? FileManager.default.removeItem(at: support.appendingPathComponent(name))
         }
         for key in SimulatorSeed.seededDefaultsKeys { defaults.removeObject(forKey: key) }
+        SimulatorSeed.clearInheritedState(in: defaults)
 
         let works = WorkStore(directory: support, saveDebounce: 0)
         let attempts = UpgradeAttemptMemory(directory: support, saveDebounce: 0)

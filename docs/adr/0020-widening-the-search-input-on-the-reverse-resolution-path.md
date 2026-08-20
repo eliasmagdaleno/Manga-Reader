@@ -3,9 +3,9 @@
 - **Status:** **Accepted (2026-08-19).** Licensed by a measurement whose gates were registered
   before the run, and **verified in the app** on an enriched draw: 14 of 14 rows that missed on
   their first spelling recovered on a widened query, all through the strong arm. Decision 5 is
-  discharged **on the MAL arm** — the AniList arm shares the code path but awaits a re-seeded
-  fixture — with **one registered claim unmet** — the N = 3 bound was never observed *binding* —
-  which is recorded below rather than retried
+  discharged **on the MAL arm** (2026-08-19), and amended 2026-08-20 by an AniList-arm run that
+  **closed the one claim left unmet** — the N = 3 bound, now observed binding — while leaving that
+  arm's own floor unmet for a reason recorded below
 - **Licensed by:** [the 2026-08-15 search-input width measurement](../superpowers/specs/2026-08-15-search-input-width-measured.md)
   and [its protocol](../superpowers/specs/2026-08-15-search-input-width-measurement-protocol.md),
   committed before any request was sent. Harness `scripts/search_width.py`; raw data in
@@ -226,6 +226,32 @@ widened row is an **upper bound**, not a typical case: 13 of 14 recoveries spent
 No rate here describes the wild — this cohort was assembled from known misses — but the *shape* of
 the distribution is not an artefact of that selection, since selecting for misses does not select
 for which query resolves them.
+
+#### Amended 2026-08-20 — the AniList arm run, and the cap closed
+
+The fixture that blocked the AniList arm exists again (`scripts/seed-simulator.sh`, #58), so the
+arm was run under [its own registered protocol](../superpowers/specs/2026-08-20-adr-0020-anilist-arm-protocol.md)
+([results](../superpowers/specs/2026-08-20-adr-0020-anilist-arm-results.md)).
+
+- **The N = 3 bound: now MET, binding.** *+Anima* held four spellings, issued **exactly three**
+  searches, and recovered at query 3. That is the shape both MAL runs went looking for and did not
+  find — stopped at the cap rather than spending what it had — and it satisfies this ADR's own
+  revisit trigger for closing the claim on real traffic. **The claim left unmet on 2026-08-19 is
+  discharged.** It was observed on the MAL arm; the cap is a property of `searchWidening`, which
+  both arms share.
+- **The AniList arm's floor: still unmet, for a newly understood reason.** Only **2 of 12** pool
+  targets entered `searchWidening` at all. The rest were already in the shared reverse cache, put
+  there by the MAL arm earlier in the same session — both consumers hold one `MALReverseResolver`,
+  both feed the same For You rail, and both draw from the same taste, so they ask about the same
+  popular titles and whichever asks first pays. The one AniList target that did miss baseline
+  recovered at query 2 (*BLAME!*).
+- **The full chain, visually: met.** *Mugen no Juunin* — this ADR's own opening example — missed on
+  its romaji title, recovered on query 2 as *Blade of the Immortal*, and renders as the first card
+  in the For You rail. The 2026-08-19 discharge could only meet this bullet in the log.
+
+**What stays open** is not the mechanism but its reach: how often the AniList pool gets to spend a
+widened query in the wild, given that the MAL arm resolves the overlap first. That is a question
+about ordering between two consumers, not about widening, and it is not one this ADR decided.
 
 ## What would reverse this
 
