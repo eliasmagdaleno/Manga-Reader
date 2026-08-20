@@ -130,9 +130,13 @@ The app builds and the core reading loop is implemented.
 - **Reader:** R→L is implemented as **reversed page order — NOT a mirror transform.** A
   previous mirror-based approach inverted zoomed panning. Paged zoom is `UIScrollView`-backed
   (`Components/ZoomableContainer.swift`) for native pinch/pan physics.
+- **Read state:** per-chapter read/unread marks ship (`HistoryStore`, since 2026-07-14) —
+  single and batch `markRead`/`markUnread`, mark-all-below, dimmed rows, unread badges.
+  Note `isRead` means **opened or manually marked**: recording on open is what mints the
+  Work and what makes the vertical reader record anything at all.
 - Design/spec/plan for shipped work live in `docs/superpowers/{specs,plans}/`.
 
-Still minimal: no cross-device sync, no per-chapter read/unread marks, manual refresh only.
+Still minimal: no cross-device sync, manual refresh only.
 
 ## Agent skills
 

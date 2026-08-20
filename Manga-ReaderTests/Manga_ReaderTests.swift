@@ -46,6 +46,12 @@ final class Manga_ReaderTests: XCTestCase {
         Manga(id: id, sourceId: sourceId, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil, malId: nil)
     }
 
+    /// A bare entry for exercising `isComplete`, whose only inputs are `page` and `pageCount`.
+    private func sampleEntry(page: Int, pageCount: Int) -> ReadingEntry {
+        ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "T", coverURL: nil, chapterId: "c",
+                     chapterNumber: "1", page: page, pageCount: pageCount, updatedAt: Date())
+    }
+
     @MainActor func testRecordPrependsNewEntry() throws {
         let store = makeHistoryStore()
         store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 2), pageCount: 10)
@@ -204,19 +210,64 @@ final class Manga_ReaderTests: XCTestCase {
 
     @MainActor func testReadChapterNumbersForManga() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 5)
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 1), pageCount: 5)
+        // Both read to the end — this test is about manga scoping, so keep the read rule
+        // itself out of it (`testReadChapterNumbersExcludesUnfinishedChapters` covers that).
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 4), pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 4), pageCount: 5)
         XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["1", "2"])
         XCTAssertTrue(store.readChapterNumbers(forManga: "other").isEmpty)
     }
 
     // MARK: - Read / unread marks
 
-    @MainActor func testOpenedChapterCountsAsRead() throws {
+    /// Inverted 2026-08-20. This used to assert that *opening* a chapter made it read.
+    /// That is what made the Bookmarks unread badge undercount: abandoning chapter 5 on
+    /// page 1 stopped it counting as unread. "Read" now means read to the end.
+    @MainActor func testOpenedButUnfinishedChapterIsNotRead() throws {
         let store = makeHistoryStore()
         store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 0), pageCount: 5)
-        XCTAssertTrue(store.isRead(chapterId: "c1"))       // has a history entry → read
-        XCTAssertFalse(store.isRead(chapterId: "c2"))
+        XCTAssertFalse(store.isRead(chapterId: "c1"))      // opened, not finished
+        XCTAssertFalse(store.isRead(chapterId: "c2"))      // never opened at all
+    }
+
+    @MainActor func testChapterReadToTheEndIsRead() throws {
+        let store = makeHistoryStore()
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 4), pageCount: 5)
+        XCTAssertTrue(store.isRead(chapterId: "c1"))
+    }
+
+    // MARK: - ReadingEntry.isComplete
+
+    func testIsCompleteOnLastPage() {
+        XCTAssertTrue(sampleEntry(page: 4, pageCount: 5).isComplete)
+    }
+
+    func testIsIncompleteOnePageShort() {
+        XCTAssertFalse(sampleEntry(page: 3, pageCount: 5).isComplete)
+    }
+
+    /// An entry recorded before any page loaded has `pageCount` 0, and `page >= -1` would
+    /// otherwise call that finished.
+    func testIsIncompleteWhenNoPagesLoaded() {
+        XCTAssertFalse(sampleEntry(page: 0, pageCount: 0).isComplete)
+    }
+
+    /// The badge reads this set, so an abandoned chapter has to stay out of it.
+    @MainActor func testReadChapterNumbersExcludesUnfinishedChapters() throws {
+        let store = makeHistoryStore()
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 4), pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 1), pageCount: 5)
+        XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["1"])
+    }
+
+    /// A manual mark outranks completion — that is the whole point of marking.
+    @MainActor func testManualMarkMakesAnUnfinishedChapterRead() throws {
+        let store = makeHistoryStore()
+        let chapter = Chapter(id: "c1", number: "1", title: nil)
+        store.record(manga: sampleManga("m"), chapter: chapter, position: ReadingPosition(page: 0), pageCount: 5)
+        XCTAssertFalse(store.isRead(chapterId: "c1"))
+        store.markRead(manga: sampleManga("m"), chapter: chapter)
+        XCTAssertTrue(store.isRead(chapterId: "c1"))
     }
 
     @MainActor func testMarkReadWithoutOpening() throws {

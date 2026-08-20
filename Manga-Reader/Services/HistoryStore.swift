@@ -42,6 +42,14 @@ struct ReadingEntry: Codable, Identifiable, Hashable {
         set { page = newValue.page; fraction = newValue.fraction }
     }
 
+    /// The chapter was read to its end.
+    ///
+    /// `record` only ever advances `page` (ADR-0014), so this is a durable fact about the
+    /// furthest point reached, not a snapshot of where the reader happens to be sitting.
+    /// The `pageCount > 0` guard matters: an entry recorded before any page loaded has a
+    /// count of 0, and `page >= -1` would otherwise call that finished.
+    var isComplete: Bool { pageCount > 0 && page >= pageCount - 1 }
+
     init(id: UUID, mangaId: String, mangaTitle: String, coverURL: URL?, chapterId: String,
          chapterNumber: String, page: Int, pageCount: Int, updatedAt: Date,
          sourceId: String? = nil, fraction: Double = 0, malId: Int? = nil) {
@@ -175,21 +183,24 @@ final class HistoryStore: ObservableObject {
         entries.first { $0.chapterId == chapterId }
     }
 
-    /// Chapter numbers considered read for a manga — opened (has a history
-    /// entry) or manually marked. Single source of truth shared by the chapter
-    /// rows and `LibraryStore` badge reconciliation.
+    /// Chapter numbers considered read for a manga — read to the end, or manually
+    /// marked. Single source of truth shared by the chapter rows and `LibraryStore`
+    /// badge reconciliation.
     func readChapterNumbers(forManga id: String) -> Set<String> {
-        var numbers = Set(entries.filter { $0.mangaId == id }.map(\.chapterNumber))
+        var numbers = Set(entries.filter { $0.mangaId == id && $0.isComplete }.map(\.chapterNumber))
         numbers.formUnion(readMarks.filter { $0.mangaId == id }.map(\.chapterNumber))
         return numbers
     }
 
     // MARK: Read / unread
 
-    /// True if the chapter has been opened (has a history entry) or manually
-    /// marked read.
+    /// True if the chapter was read to its end, or manually marked read.
+    ///
+    /// *Opening* is deliberately not enough. It used to be, which made the unread badge
+    /// undercount — abandoning a chapter on page 1 stopped it counting as unread. A
+    /// manual mark still outranks completion, which is the point of marking.
     func isRead(chapterId: String) -> Bool {
-        entries.contains { $0.chapterId == chapterId } ||
+        entries.contains { $0.chapterId == chapterId && $0.isComplete } ||
         readMarks.contains { $0.chapterId == chapterId }
     }
 
