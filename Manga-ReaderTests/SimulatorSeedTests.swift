@@ -42,6 +42,13 @@ final class SimulatorSeedTests: XCTestCase {
                                    "no Work minted for \(row.title)")
             let work = try XCTUnwrap(store.work(id))
             XCTAssertEqual(work.externalIds.mal, row.malId, "\(row.title) lost its MAL id")
+            // A refused row is deliberately left provisional — that is the state the
+            // ADR-0018 guard exists to release, so the fixture has to contain it.
+            guard row.refusal == nil else {
+                XCTAssertNil(work.snapshot,
+                             "\(row.title) is a refusal but was upgraded anyway")
+                continue
+            }
             let snapshot = try XCTUnwrap(work.snapshot, "\(row.title) has no snapshot")
             XCTAssertEqual(snapshot.provider, .anilist,
                            "\(row.title) kept its provisional snapshot")
@@ -131,9 +138,11 @@ final class SimulatorSeedTests: XCTestCase {
                             library: LibraryStore(defaults: defaults, works: works))
 
         XCTAssertEqual(works.allWorkIds().count, SimulatorSeed.sampleRows.count)
-        for id in works.allWorkIds() {
+        for row in SimulatorSeed.sampleRows where row.refusal == nil {
+            let id = try XCTUnwrap(works.workId(for: ListingKey(sourceId: row.sourceId,
+                                                               mangaId: row.mangaId)))
             XCTAssertNotNil(works.work(id)?.snapshot,
-                            "a seeded Work has no snapshot; a duplicate was minted")
+                            "\(row.title) has no snapshot; a duplicate was minted")
         }
     }
 
@@ -158,5 +167,63 @@ final class SimulatorSeedTests: XCTestCase {
             XCTAssertEqual(Data(base64Encoded: encoded), defaults.data(forKey: key),
                            "\(key) did not round-trip through base64")
         }
+    }
+
+    /// A fixture with nothing but successes cannot exercise the ADR-0018 guard: the
+    /// interesting behaviour is a Work the queue has already refused, and whether an
+    /// authoritative id releases it. So the seed carries both refusal shapes, and this
+    /// asserts they actually suppress — a stored `knownTitlesCount` that no longer
+    /// matches what `mint` produces would silently stop suppressing, and the fixture
+    /// would look fine while testing nothing.
+    @MainActor
+    func testSeedRecordsRefusalsThatActuallySuppress() throws {
+        let (works, dir) = makeStore()
+        let memory = UpgradeAttemptMemory(directory: dir, saveDebounce: 0)
+
+        SimulatorSeed.apply(SimulatorSeed.sampleRows, to: works, attempts: memory)
+
+        let refused = SimulatorSeed.sampleRows.filter { $0.refusal != nil }
+        XCTAssertFalse(refused.isEmpty, "the sample rows contain no refusal")
+        XCTAssertTrue(refused.contains { if case .unmatched = $0.refusal { return true }
+                                         else { return false } },
+                      "no .unmatched refusal in the seed")
+        XCTAssertTrue(refused.contains { if case .absentFromProvider = $0.refusal { return true }
+                                         else { return false } },
+                      "no .absentFromProvider refusal in the seed")
+
+        for row in SimulatorSeed.sampleRows {
+            let id = try XCTUnwrap(works.workId(for: ListingKey(sourceId: row.sourceId,
+                                                               mangaId: row.mangaId)))
+            let work = try XCTUnwrap(works.work(id))
+            XCTAssertEqual(memory.suppresses(work), row.refusal != nil,
+                           "\(row.title) suppression does not match its row")
+        }
+    }
+
+    /// The refusals only reach the simulator if they land in `upgrade-attempts.json`, and
+    /// `record` writes through a debounce — the same throttle that made the history half
+    /// arrive empty until the seed learned to flush.
+    @MainActor
+    func testSeedFlushesUpgradeAttemptsToDisk() throws {
+        let (works, dir) = makeStore()
+        let memory = UpgradeAttemptMemory(directory: dir, saveDebounce: 60)
+
+        SimulatorSeed.apply(SimulatorSeed.sampleRows, to: works, attempts: memory)
+
+        let file = dir.appendingPathComponent("upgrade-attempts.json")
+        let data = try XCTUnwrap(try? Data(contentsOf: file),
+                                 "upgrade-attempts.json was never written")
+        // Read back through a fresh memory rather than the JSON shape, which is private
+        // to the store on purpose.
+        let reloaded = UpgradeAttemptMemory(directory: dir, saveDebounce: 0)
+        let refusedTitles = SimulatorSeed.sampleRows.filter { $0.refusal != nil }.map(\.title)
+        for title in refusedTitles {
+            let row = try XCTUnwrap(SimulatorSeed.sampleRows.first { $0.title == title })
+            let id = try XCTUnwrap(works.workId(for: ListingKey(sourceId: row.sourceId,
+                                                               mangaId: row.mangaId)))
+            XCTAssertTrue(reloaded.suppresses(try XCTUnwrap(works.work(id))),
+                          "\(title)'s refusal did not survive the round trip")
+        }
+        XCTAssertFalse(data.isEmpty)
     }
 }

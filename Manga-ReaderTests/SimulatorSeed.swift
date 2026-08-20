@@ -51,6 +51,12 @@ enum SimulatorSeed {
         let reading: [Read]
         /// Whether the Work sits in the library.
         let isSaved: Bool
+        /// Why the upgrade queue refused this Work, or `nil` for a Work it upgraded.
+        ///
+        /// A refused row is left **provisional** — no AniList snapshot — because that is
+        /// the state the refusal is an answer to. Seeding a snapshot *and* a refusal
+        /// would produce a Work no drain could ever have created.
+        let refusal: UpgradeOutcome?
     }
 
     /// The defaults keys the seed writes. The suite it writes into also picks up
@@ -84,7 +90,8 @@ enum SimulatorSeed {
     /// reads order and position, not age. The History tab will show one date header.
     @MainActor
     static func apply(_ rows: [Row], to store: WorkStore,
-                      history: HistoryStore? = nil, library: LibraryStore? = nil) {
+                      history: HistoryStore? = nil, library: LibraryStore? = nil,
+                      attempts: UpgradeAttemptMemory? = nil) {
         for row in rows {
             let listing = Manga(id: row.mangaId,
                                 sourceId: row.sourceId,
@@ -95,14 +102,19 @@ enum SimulatorSeed {
                                 coverURL: nil,
                                 malId: row.malId)
             let id = store.mint(from: listing)
-            store.apply(AniListWork(anilistId: row.anilistId,
-                                    malId: row.malId,
-                                    knownTitles: [row.title],
-                                    genres: row.genres,
-                                    tags: row.tags,
-                                    publicationStatus: row.status,
-                                    chapterTotal: row.chapterTotal),
-                        to: id)
+            if let refusal = row.refusal {
+                // Refused Works stay provisional; the memory is the only record.
+                attempts?.record(refusal, for: id)
+            } else {
+                store.apply(AniListWork(anilistId: row.anilistId,
+                                        malId: row.malId,
+                                        knownTitles: [row.title],
+                                        genres: row.genres,
+                                        tags: row.tags,
+                                        publicationStatus: row.status,
+                                        chapterTotal: row.chapterTotal),
+                            to: id)
+            }
 
             // Reading and saving mint on their own (ADR-0007). They are handed the *same*
             // listing, so they resolve to the Work minted above instead of a provisional
@@ -119,6 +131,8 @@ enum SimulatorSeed {
         // `record` writes through a throttle; without this the last entries of the run
         // would still be unwritten when the payload is read.
         history?.flush()
+        // `record` writes through the same debounce `HistoryStore` does.
+        attempts?.flush()
     }
 
     /// A small hand-written set, used by the builder's own tests. The real fixture is
@@ -136,7 +150,7 @@ enum SimulatorSeed {
                                page: 41, pageCount: 42),
                       Row.Read(chapterId: "ch-berserk-2", chapterNumber: "2",
                                page: 12, pageCount: 40)],
-            isSaved: true),
+            isSaved: true, refusal: nil),
         Row(title: "Vinland Saga", sourceId: "mangadex", mangaId: "md-vinland",
             malId: 642, anilistId: 30642,
             genres: ["Action", "Adventure", "Drama"],
@@ -146,7 +160,7 @@ enum SimulatorSeed {
             status: .releasing, chapterTotal: nil,
             reading: [Row.Read(chapterId: "ch-vinland-1", chapterNumber: "1",
                                page: 53, pageCount: 54)],
-            isSaved: true),
+            isSaved: true, refusal: nil),
         Row(title: "Vagabond", sourceId: "mangadex", mangaId: "md-vagabond",
             malId: 656, anilistId: 30656,
             genres: ["Action", "Adventure", "Drama"],
@@ -154,6 +168,21 @@ enum SimulatorSeed {
                    RankedTag(name: "Tragedy", rank: 70),
                    RankedTag(name: "Historical", rank: 90)],
             status: .hiatus, chapterTotal: nil,
-            reading: [], isSaved: false),
+            reading: [], isSaved: false, refusal: nil),
+        // Two refusals, one of each shape, so the ADR-0018 guard has something to release.
+        // `knownTitlesCount: 1` is what `mint` produces from a single listing — the
+        // suppression test fails loudly if that ever stops being true.
+        Row(title: "Ranking of Kings", sourceId: "weebcentral", mangaId: "wc-ranking",
+            malId: nil, anilistId: 0,
+            genres: [], tags: [],
+            status: .releasing, chapterTotal: nil,
+            reading: [], isSaved: true,
+            refusal: .unmatched(knownTitlesCount: 1)),
+        Row(title: "Kagurabachi", sourceId: "mangadex", mangaId: "md-kagurabachi",
+            malId: 156901, anilistId: 0,
+            genres: [], tags: [],
+            status: .releasing, chapterTotal: nil,
+            reading: [], isSaved: false,
+            refusal: .absentFromProvider(malId: 156901)),
     ]
 }
