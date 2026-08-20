@@ -230,6 +230,69 @@ final class SimulatorSeedTests: XCTestCase {
         XCTAssertFalse(data.isEmpty)
     }
 
+    // MARK: - The harvested fixture
+
+    /// The generated fixture is what actually reaches the simulator, and it is the half
+    /// no unit test would otherwise touch — `sampleRows` covers the builder, and a
+    /// regenerated `SimulatorSeedFixture.swift` could arrive empty, coverless or pointing
+    /// at manga ids that 404 without a single test noticing.
+    ///
+    /// These assert the properties the fixture exists for, not its exact contents: the
+    /// harvest is re-runnable and its numbers move with MangaDex and AniList.
+    @MainActor
+    func testHarvestedFixtureIsUsableAsAFixture() throws {
+        let rows = SimulatorSeed.harvestedRows
+        XCTAssertGreaterThanOrEqual(rows.count, 15,
+                                    "too few Works to look like a real library")
+
+        for row in rows {
+            // Real MangaDex ids, so every seeded row opens in the app. A row minted from
+            // an invented id is a Library card that 404s on tap.
+            XCTAssertEqual(row.mangaId.count, 36, "\(row.title) has no UUID manga id")
+            XCTAssertEqual(row.sourceId, "mangadex")
+            XCTAssertNotNil(row.coverURL, "\(row.title) would show a grey rectangle")
+            if row.refusal == nil {
+                XCTAssertFalse(row.tags.isEmpty, "\(row.title) carries no ranked axis")
+            } else {
+                XCTAssertTrue(row.tags.isEmpty,
+                              "\(row.title) is a refusal but carries a ranked axis")
+            }
+        }
+
+        let read = rows.filter { !$0.reading.isEmpty }
+        XCTAssertGreaterThanOrEqual(read.count, 5, "too little reading to weight a taste profile")
+        XCTAssertGreaterThanOrEqual(rows.filter { $0.isSaved }.count, 5, "too small a library")
+        // Both refusal shapes, for the ADR-0018 guard.
+        XCTAssertEqual(rows.filter { $0.refusal != nil }.count, 2)
+
+        // A history where nothing was ever finished is a state the app cannot reach:
+        // "finished" is `page == pageCount - 1`, and Continue Reading, the in-progress
+        // badge and the taste signals all read that comparison.
+        let allReads = read.flatMap { $0.reading }
+        XCTAssertTrue(allReads.contains { $0.page == $0.pageCount - 1 },
+                      "nothing in the seeded history was ever finished")
+        XCTAssertTrue(allReads.contains { $0.page < $0.pageCount - 1 },
+                      "nothing in the seeded history is still in progress")
+    }
+
+    /// The gate the whole fixture exists to clear, asserted against the *harvested* rows
+    /// rather than the samples — real AniList ranks, and the >= 60 floor is theirs to
+    /// clear or miss.
+    @MainActor
+    func testHarvestedFixtureClearsTheTagPairGateWithRoom() throws {
+        let (store, _) = makeStore()
+        SimulatorSeed.apply(SimulatorSeed.harvestedRows, to: store)
+
+        let works = store.allWorkIds().compactMap { store.work($0) }
+        let weights = Dictionary(uniqueKeysWithValues: works.map { ($0.id, 1.0) })
+        let pairs = seedPairs(works: works, weights: weights,
+                              vocabulary: TagVocabulary(fetchedAt: Date(), entries: []))
+        let gated = pairs.filter { $0.contributingWorks.count >= 3 }
+        XCTAssertGreaterThanOrEqual(gated.count, 5,
+                                    "only \(gated.count) pairs cleared the gate; the "
+                                    + "AniList pool would query almost nothing")
+    }
+
     // MARK: - The seeding run
 
     /// The run itself. **It writes into the booted simulator's live app container**, and

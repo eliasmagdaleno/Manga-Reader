@@ -41,6 +41,12 @@ enum SimulatorSeed {
         let title: String
         let sourceId: String
         let mangaId: String
+        /// The cover the app would already be holding. `Manga` carries a ready-built
+        /// cover URL everywhere else in the app (every `/manga` query injects
+        /// `includes[]=cover_art` for exactly that), and `ReadingEntry` and `LibraryItem`
+        /// each persist one — so a fixture without covers shows a Library of grey
+        /// rectangles, which is not what a real user's looks like.
+        let coverURL: URL?
         let malId: Int?
         let anilistId: Int
         let genres: [String]
@@ -96,7 +102,7 @@ enum SimulatorSeed {
                                 description: "",
                                 status: row.status == .finished ? "completed" : "ongoing",
                                 year: nil,
-                                coverURL: nil,
+                                coverURL: row.coverURL,
                                 malId: row.malId)
             let id = store.mint(from: listing)
             if let refusal = row.refusal {
@@ -132,16 +138,16 @@ enum SimulatorSeed {
         attempts?.flush()
     }
 
-    /// The rows the seeding run installs. Until the AniList harvest lands this is the
-    /// sample set — one name, so the run and the unit tests cannot drift apart, and one
-    /// place to swap when the harvested snapshot replaces it.
-    static var fixtureRows: [Row] { sampleRows }
+    /// The rows the seeding run installs: the harvested set, generated into
+    /// `SimulatorSeedFixture.swift` from real MangaDex ids and real AniList tag ranks.
+    /// `sampleRows` below stays as the unit tests' own fixture, small enough to read.
+    static var fixtureRows: [Row] { harvestedRows }
 
     /// A small hand-written set, used by the builder's own tests. The real fixture is
     /// harvested from AniList into a committed snapshot; this stays small so the unit
     /// tests stay fast and readable.
     static let sampleRows: [Row] = [
-        Row(title: "Berserk", sourceId: "mangadex", mangaId: "md-berserk",
+        Row(title: "Berserk", sourceId: "mangadex", mangaId: "md-berserk", coverURL: nil,
             malId: 2, anilistId: 30002,
             genres: ["Action", "Adventure", "Drama"],
             tags: [RankedTag(name: "Male Protagonist", rank: 92),
@@ -153,7 +159,7 @@ enum SimulatorSeed {
                       Row.Read(chapterId: "ch-berserk-2", chapterNumber: "2",
                                page: 12, pageCount: 40)],
             isSaved: true, refusal: nil),
-        Row(title: "Vinland Saga", sourceId: "mangadex", mangaId: "md-vinland",
+        Row(title: "Vinland Saga", sourceId: "mangadex", mangaId: "md-vinland", coverURL: nil,
             malId: 642, anilistId: 30642,
             genres: ["Action", "Adventure", "Drama"],
             tags: [RankedTag(name: "Male Protagonist", rank: 90),
@@ -163,7 +169,7 @@ enum SimulatorSeed {
             reading: [Row.Read(chapterId: "ch-vinland-1", chapterNumber: "1",
                                page: 53, pageCount: 54)],
             isSaved: true, refusal: nil),
-        Row(title: "Vagabond", sourceId: "mangadex", mangaId: "md-vagabond",
+        Row(title: "Vagabond", sourceId: "mangadex", mangaId: "md-vagabond", coverURL: nil,
             malId: 656, anilistId: 30656,
             genres: ["Action", "Adventure", "Drama"],
             tags: [RankedTag(name: "Male Protagonist", rank: 94),
@@ -174,13 +180,13 @@ enum SimulatorSeed {
         // Two refusals, one of each shape, so the ADR-0018 guard has something to release.
         // `knownTitlesCount: 1` is what `mint` produces from a single listing — the
         // suppression test fails loudly if that ever stops being true.
-        Row(title: "Ranking of Kings", sourceId: "weebcentral", mangaId: "wc-ranking",
+        Row(title: "Ranking of Kings", sourceId: "weebcentral", mangaId: "wc-ranking", coverURL: nil,
             malId: nil, anilistId: 0,
             genres: [], tags: [],
             status: .releasing, chapterTotal: nil,
             reading: [], isSaved: true,
             refusal: .unmatched(knownTitlesCount: 1)),
-        Row(title: "Kagurabachi", sourceId: "mangadex", mangaId: "md-kagurabachi",
+        Row(title: "Kagurabachi", sourceId: "mangadex", mangaId: "md-kagurabachi", coverURL: nil,
             malId: 156901, anilistId: 0,
             genres: [], tags: [],
             status: .releasing, chapterTotal: nil,
