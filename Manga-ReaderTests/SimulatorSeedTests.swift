@@ -146,27 +146,30 @@ final class SimulatorSeedTests: XCTestCase {
         }
     }
 
-    /// The seeding run hands the shell script a `defaults.json` of key -> base64, because
-    /// `simctl spawn booted defaults write -data <hex>` is the only verified way to put
-    /// real `Data` into a simulator app's defaults. Only the seeded keys may travel: the
-    /// suite also holds Foundation's own bookkeeping, and writing that into the app's
-    /// domain would be seeding noise the app never wrote.
+    /// The in-place run wipes the app's own defaults for these keys before seeding, so
+    /// the list has to be exactly what the seed writes. Too short and stale state from a
+    /// previous fixture survives underneath the new one; too long and the run deletes a
+    /// key the app owns and the seed never sets.
+    ///
+    /// `taste.notInterested` / `taste.moreLikeThis` are deliberately excluded — they hold
+    /// explicit user feedback, and a fixture that pre-dismisses titles would silently
+    /// subtract from every recommendation run made against it.
     @MainActor
-    func testDefaultsPayloadCarriesExactlyTheSeededKeysAsBase64() throws {
+    func testSeededDefaultsKeysAreExactlyWhatTheSeedWrites() throws {
         let (works, _) = makeStore()
-        let defaults = makeDefaults()
+        let name = "seed-keys-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: name) }
         SimulatorSeed.apply(SimulatorSeed.sampleRows, to: works,
                             history: HistoryStore(defaults: defaults, works: works,
                                                   saveInterval: 0),
                             library: LibraryStore(defaults: defaults, works: works))
 
-        let payload = SimulatorSeed.defaultsPayload(from: defaults)
-
-        XCTAssertEqual(Set(payload.keys), Set(SimulatorSeed.seededDefaultsKeys))
-        for (key, encoded) in payload {
-            XCTAssertEqual(Data(base64Encoded: encoded), defaults.data(forKey: key),
-                           "\(key) did not round-trip through base64")
-        }
+        // The suite's *own* domain, not `dictionaryRepresentation()`: that one merges the
+        // whole search list, so it answers with the simulator's globals as well as ours.
+        let written = try XCTUnwrap(UserDefaults().persistentDomain(forName: name)).keys
+        XCTAssertEqual(Set(written), Set(SimulatorSeed.seededDefaultsKeys),
+                       "the seed writes a different set of keys than the run clears")
     }
 
     /// A fixture with nothing but successes cannot exercise the ADR-0018 guard: the
@@ -225,5 +228,69 @@ final class SimulatorSeedTests: XCTestCase {
                           "\(title)'s refusal did not survive the round trip")
         }
         XCTAssertFalse(data.isEmpty)
+    }
+
+    // MARK: - The seeding run
+
+    /// The run itself. **It writes into the booted simulator's live app container**, and
+    /// is skipped unless `scripts/seed-simulator.sh` has dropped its marker file there.
+    ///
+    /// In place, rather than to a staging directory the script copies from: this target is
+    /// hosted by the app, so the test process already runs inside the very container the
+    /// fixture is for — `WorkStore()`'s default directory *is* the app's Application
+    /// Support, and `UserDefaults.standard` *is* the app's domain. Writing anywhere else
+    /// would mean re-deriving both locations in shell and copying between them, which is
+    /// two more things to get wrong than seeding through the stores directly.
+    ///
+    /// The gate is a marker file rather than an environment variable because `xcodebuild`
+    /// forwards no environment into the test process — verified, with and without the
+    /// `TEST_RUNNER_` prefix. A marker the script drops into a container it located with
+    /// `simctl get_app_container` cannot be tripped by an ordinary `xcodebuild test` or
+    /// by CI, which is the property that matters for a destructive run.
+    ///
+    /// **Backing up the container is the script's job**, and it does that before writing
+    /// the marker. By the time this runs, clobbering is the intent.
+    @MainActor
+    func testSeedTheBootedSimulatorInPlace() throws {
+        let marker = SimulatorSeed.markerURL()
+        guard FileManager.default.fileExists(atPath: marker.path) else {
+            throw XCTSkip("no seeding marker; run scripts/seed-simulator.sh to seed")
+        }
+        // Consumed first, so a crash mid-seed cannot leave a marker that re-fires the
+        // destructive path on the next ordinary test run.
+        try FileManager.default.removeItem(at: marker)
+
+        let support = WorkStore.applicationSupportDirectory()
+        let defaults = UserDefaults.standard
+        // Seeding *onto* an existing fixture would merge, not replace — the stores load
+        // what is there and mint alongside it. Clear the halves the seed owns, and only
+        // those: the caches half rebuilds itself and is not ours to touch.
+        for name in ["works.json", "upgrade-attempts.json"] {
+            try? FileManager.default.removeItem(at: support.appendingPathComponent(name))
+        }
+        for key in SimulatorSeed.seededDefaultsKeys { defaults.removeObject(forKey: key) }
+
+        let works = WorkStore(directory: support, saveDebounce: 0)
+        let attempts = UpgradeAttemptMemory(directory: support, saveDebounce: 0)
+        SimulatorSeed.apply(SimulatorSeed.fixtureRows, to: works,
+                            history: HistoryStore(defaults: defaults, works: works,
+                                                  saveInterval: 0),
+                            library: LibraryStore(defaults: defaults, works: works),
+                            attempts: attempts)
+        works.flush()
+        defaults.synchronize()
+
+        // Assert against the container, not the in-memory stores: the whole point of the
+        // run is that the bytes reached the app's own locations.
+        XCTAssertEqual(works.allWorkIds().count, SimulatorSeed.fixtureRows.count)
+        for name in ["works.json", "upgrade-attempts.json"] {
+            XCTAssertTrue(FileManager.default.fileExists(
+                atPath: support.appendingPathComponent(name).path),
+                "\(name) is missing from the app container after seeding")
+        }
+        for key in SimulatorSeed.seededDefaultsKeys {
+            XCTAssertNotNil(defaults.data(forKey: key), "\(key) never reached the app's defaults")
+        }
+        print("seeded \(SimulatorSeed.fixtureRows.count) rows into \(support.path)")
     }
 }

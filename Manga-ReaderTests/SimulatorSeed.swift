@@ -59,25 +59,22 @@ enum SimulatorSeed {
         let refusal: UpgradeOutcome?
     }
 
-    /// The defaults keys the seed writes. The suite it writes into also picks up
-    /// Foundation's own bookkeeping, and `defaults.json` must carry only what the app
-    /// itself would have written — anything else is noise installed into a real domain.
+    /// The defaults keys the seed writes — and therefore the exact set the in-place run
+    /// clears first, so a previous fixture cannot survive underneath the new one.
     ///
     /// `taste.notInterested` / `taste.moreLikeThis` are deliberately absent: they hold
     /// explicit user feedback, and a fixture that pre-dismisses titles would silently
-    /// subtract from every recommendation run made against it.
+    /// subtract from every recommendation run made against it. Clearing them would erase
+    /// real feedback the seed never replaces.
     static let seededDefaultsKeys = ["history.entries", "history.readMarks", "library.items"]
 
-    /// The seeded keys as key -> base64, ready for `simctl spawn booted defaults write
-    /// <domain> <key> -data <hex>` — the one mechanism verified to round-trip real `Data`
-    /// into a simulator app's defaults.
-    static func defaultsPayload(from defaults: UserDefaults) -> [String: String] {
-        var payload: [String: String] = [:]
-        for key in seededDefaultsKeys {
-            guard let data = defaults.data(forKey: key) else { continue }
-            payload[key] = data.base64EncodedString()
-        }
-        return payload
+    /// Where `scripts/seed-simulator.sh` leaves the file that arms the seeding run.
+    ///
+    /// In Documents rather than Application Support so it never sits beside the fixture
+    /// files the run writes, and so a stray marker is visible next to nothing else.
+    static func markerURL() -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("seed-simulator.marker")
     }
 
     /// Mints each row's Listing, upgrades it with the row's AniList record, then reads and
@@ -134,6 +131,11 @@ enum SimulatorSeed {
         // `record` writes through the same debounce `HistoryStore` does.
         attempts?.flush()
     }
+
+    /// The rows the seeding run installs. Until the AniList harvest lands this is the
+    /// sample set — one name, so the run and the unit tests cannot drift apart, and one
+    /// place to swap when the harvested snapshot replaces it.
+    static var fixtureRows: [Row] { sampleRows }
 
     /// A small hand-written set, used by the builder's own tests. The real fixture is
     /// harvested from AniList into a committed snapshot; this stays small so the unit

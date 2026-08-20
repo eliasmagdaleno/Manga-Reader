@@ -8,3 +8,6 @@ Secrets.xcconfig
 # in every session and never carries anything worth committing.
 .DS_Store
 **/xcuserdata/
+
+# Container backups taken by scripts/seed-simulator.sh before it re-seeds.
+.simulator-backups/
