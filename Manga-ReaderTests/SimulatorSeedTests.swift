@@ -71,4 +71,92 @@ final class SimulatorSeedTests: XCTestCase {
                        + pairs.map { "\($0.pair.a)+\($0.pair.b)=\($0.contributingWorks.count)" }
                            .joined(separator: ", "))
     }
+
+    /// An isolated defaults suite, so seeding never touches the test runner's own
+    /// `standard` defaults and each test starts empty.
+    private func makeDefaults() -> UserDefaults {
+        let name = "seed-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: name)!
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: name) }
+        return defaults
+    }
+
+    /// The history and library halves must be written **by the real stores**, for the
+    /// same reason `works.json` is: the keys and the encoders are theirs, and a
+    /// hand-rolled copy drifts silently. This asserts the bytes that land in the suite
+    /// decode back through the app's own Codables.
+    @MainActor
+    func testSeedWritesHistoryAndLibraryThroughTheRealStores() throws {
+        let (works, _) = makeStore()
+        let defaults = makeDefaults()
+        let history = HistoryStore(defaults: defaults, works: works, saveInterval: 0)
+        let library = LibraryStore(defaults: defaults, works: works)
+
+        SimulatorSeed.apply(SimulatorSeed.sampleRows, to: works,
+                            history: history, library: library)
+
+        let entryData = try XCTUnwrap(defaults.data(forKey: "history.entries"),
+                                      "no history written to the defaults suite")
+        let entries = try JSONDecoder().decode([ReadingEntry].self, from: entryData)
+        let expectedReads = SimulatorSeed.sampleRows.flatMap { $0.reading }
+        XCTAssertEqual(entries.count, expectedReads.count)
+        XCTAssertEqual(Set(entries.map(\.chapterId)), Set(expectedReads.map { $0.chapterId }))
+        for entry in entries {
+            XCTAssertEqual(entry.sourceId, "mangadex", "\(entry.mangaTitle) lost its source")
+            XCTAssertNotNil(entry.malId, "\(entry.mangaTitle) lost its MAL id")
+        }
+
+        let itemData = try XCTUnwrap(defaults.data(forKey: "library.items"),
+                                     "no library written to the defaults suite")
+        // Qualified: SwiftUI ships a `LibraryItem` of its own, and `@testable import`
+        // re-exports it into this file.
+        let items = try JSONDecoder().decode([Manga_Reader.LibraryItem].self, from: itemData)
+        let expectedSaved = SimulatorSeed.sampleRows.filter { $0.isSaved }.map { $0.mangaId }
+        XCTAssertFalse(expectedSaved.isEmpty, "the sample rows save nothing to the library")
+        XCTAssertEqual(Set(items.map { $0.id }), Set(expectedSaved))
+    }
+
+    /// Reading is a commitment, so history and library rows mint Works of their own
+    /// (ADR-0007). If a seeded row were read or saved under a listing key the AniList
+    /// upgrade never touched, the fixture would carry a provisional twin — a Work with no
+    /// snapshot, invisible to the taste profile. One Work per row, not two.
+    @MainActor
+    func testHistoryAndLibraryRowsReuseTheMintedWork() throws {
+        let (works, _) = makeStore()
+        let defaults = makeDefaults()
+
+        SimulatorSeed.apply(SimulatorSeed.sampleRows, to: works,
+                            history: HistoryStore(defaults: defaults, works: works,
+                                                  saveInterval: 0),
+                            library: LibraryStore(defaults: defaults, works: works))
+
+        XCTAssertEqual(works.allWorkIds().count, SimulatorSeed.sampleRows.count)
+        for id in works.allWorkIds() {
+            XCTAssertNotNil(works.work(id)?.snapshot,
+                            "a seeded Work has no snapshot; a duplicate was minted")
+        }
+    }
+
+    /// The seeding run hands the shell script a `defaults.json` of key -> base64, because
+    /// `simctl spawn booted defaults write -data <hex>` is the only verified way to put
+    /// real `Data` into a simulator app's defaults. Only the seeded keys may travel: the
+    /// suite also holds Foundation's own bookkeeping, and writing that into the app's
+    /// domain would be seeding noise the app never wrote.
+    @MainActor
+    func testDefaultsPayloadCarriesExactlyTheSeededKeysAsBase64() throws {
+        let (works, _) = makeStore()
+        let defaults = makeDefaults()
+        SimulatorSeed.apply(SimulatorSeed.sampleRows, to: works,
+                            history: HistoryStore(defaults: defaults, works: works,
+                                                  saveInterval: 0),
+                            library: LibraryStore(defaults: defaults, works: works))
+
+        let payload = SimulatorSeed.defaultsPayload(from: defaults)
+
+        XCTAssertEqual(Set(payload.keys), Set(SimulatorSeed.seededDefaultsKeys))
+        for (key, encoded) in payload {
+            XCTAssertEqual(Data(base64Encoded: encoded), defaults.data(forKey: key),
+                           "\(key) did not round-trip through base64")
+        }
+    }
 }
