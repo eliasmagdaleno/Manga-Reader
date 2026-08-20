@@ -136,7 +136,9 @@ The app builds and the core reading loop is implemented.
   Work and what makes the vertical reader record anything at all.
 - Design/spec/plan for shipped work live in `docs/superpowers/{specs,plans}/`.
 
-Still minimal: no cross-device sync, manual refresh only.
+Still minimal: no cross-device sync; refreshing *content* is manual (pull-to-refresh only,
+nothing polls for new chapters) — though `MetadataUpgradeQueue` does run on its own on
+`scenePhase` becoming active.
 
 ## Agent skills
 
