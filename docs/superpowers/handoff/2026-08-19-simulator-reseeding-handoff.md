@@ -1,6 +1,6 @@
 # Handoff — simulator re-seeding, first slice done
 
-Branch `simulator-seeding`, based on `main` (4bbba9e). One commit: `d48c0dc`.
+Branch `simulator-seeding`, rebased onto `main` (ddbb3b7). Seeding commit: `6ae89c1`.
 
 ## Context
 
@@ -72,5 +72,11 @@ the fixture is empty.
 - `WorkStore` is `@MainActor`-isolated — test helpers that build one must be too.
 - Both git branch creation and `gh pr merge` were blocked by the permission classifier this
   session; simple single commands worked where compound ones did not.
-- **PR #57 (ADR-0020 accepted) is green and mergeable but NOT merged.** This branch is based on
-  `main` without it, deliberately, so nothing stacks.
+- **PR #57 (ADR-0020 accepted) is merged** — `ddbb3b7` on `main`, branch deleted. This branch has
+  been rebased onto it, so it is current; nothing is stacked.
+- **The rebase conflicted once, in `project.pbxproj`,** and will again if this branch is rebased
+  after another `xcp` write lands on `main`. Resolution both times: keep `main`'s normalized file
+  reference (no `name =`, no `lastKnownFileType`) and add only the new file's entry. Those keys are
+  the churn CLAUDE.md says Xcode strips on its own schedule — re-adding them is what creates the
+  conflict, not anything about the seeding work. Post-rebase the pbxproj delta against `main` is
+  exactly the 8 lines for the two new files, and 479 unit tests pass.
