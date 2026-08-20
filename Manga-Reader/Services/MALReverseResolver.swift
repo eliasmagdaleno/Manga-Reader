@@ -227,7 +227,6 @@ final class MALReverseResolver {
                                        fetchTitles: FetchTitles,
                                        matcher: MALTitleMatcher) async throws -> Manga? {
         guard let primary = target.titles.first else { return nil }
-
         let baseline = try await search(primary)
         if let match = MoreLikeThis.pickMatch(targetMalId: target.malId,
                                               malTitle: target.title,
@@ -248,7 +247,9 @@ final class MALReverseResolver {
         for spelling in spellings.prefix(searchLimit).dropFirst() {
             guard let more = try? await search(spelling) else { continue }
             let added = more.filter { seen.insert($0.id).inserted }
-            if let exact = added.first(where: { $0.malId == target.malId }) { return exact }
+            if let exact = added.first(where: { $0.malId == target.malId }) {
+                return exact
+            }
         }
         return nil
     }

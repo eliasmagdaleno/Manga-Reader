@@ -474,4 +474,202 @@ final class Manga_ReaderUITests: XCTestCase {
             XCTAssertTrue(card.exists, "the For You rail should render at least one card")
         }
     }
+
+    // MARK: - ADR-0020 in-app run
+
+    /// One seed for the widening regression: a MangaDex title to search for, the substring
+    /// that identifies its result cell, and the cards its More Like This rail must show.
+    ///
+    /// `cards` are the **MangaDex display titles** of targets that ADR-0020's widening
+    /// recovered on 2026-08-19 — each one a row whose MAL spelling misses and whose MangaDex
+    /// spelling differs. They are the user-visible effect of the ADR: without widening these
+    /// cards are simply absent from the rail.
+    private struct ReverseSeed {
+        let query: String
+        let match: String
+        let cards: [String]
+    }
+
+    /// The seed list registered in
+    /// `docs/superpowers/specs/2026-08-19-adr-0020-in-app-run-protocol-amendment-1.md`.
+    /// **Do not edit this array in response to a run.** Claim 6 says under-delivery is
+    /// answered with more seeds drawn by the published rule in a further amendment
+    /// committed before the re-run, never by swapping out the rows that disappointed.
+    ///
+    /// *Never Give Up*'s second registered target (Teppen!, MAL 10776) is **not** listed as a
+    /// card: it never appeared in the discharging run, which reported it as never-observed
+    /// rather than as a loss. Asserting on it here would encode a row we have never seen.
+    private static let adr0020Seeds: [ReverseSeed] = [
+        .init(query: "Vagabond", match: "Vagabond", cards: ["Mugen no Junin"]),
+        .init(query: "Golden Kamuy", match: "Golden Kamuy",
+              cards: ["Mugen no Junin", "RED: Living On the Edge"]),
+        .init(query: "Meitantei Conan", match: "Meitantei Conan",
+              cards: ["Kindaichi Case Files", "Q.E.D"]),
+        .init(query: "Angel Sanctuary", match: "Tenshi Kinryouku", cards: ["X (CLAMP)"]),
+        .init(query: "Kimi wa Pet", match: "Kimi wa Pet", cards: ["Futago", "The One"]),
+        .init(query: "Eden: It's an Endless World", match: "Eden",
+              cards: ["Neon Genesis Evangelion"]),
+        .init(query: "Blood+ Adagio", match: "BLOOD+", cards: ["BLOOD+"]),
+        .init(query: "Ai wo Utau yori Ore ni Oborero", match: "Oborero",
+              cards: ["Kaikan Phrase"]),
+        .init(query: "Kaichou-san Chi no Koneko", match: "Kaichou-san",
+              cards: ["Cosplay Animal"]),
+        .init(query: "Hotaru no Hikari", match: "Hotaru no Hikari",
+              cards: ["Lifetime of a Man"]),
+        .init(query: "Ugly Duckling to Swan", match: "Swan", cards: ["Ahiru no Oujisama"]),
+        .init(query: "Never Give Up", match: "Never Give Up", cards: ["The One"]),
+        .init(query: "Kaikan Phrase", match: "Kaikan", cards: ["Love Monster"]),
+    ]
+
+    /// Drives the thirteen registered seeds through **Search** and asserts that the cards
+    /// ADR-0020's widening recovers actually appear in each seed's More Like This rail.
+    ///
+    /// ADR-0020: `docs/adr/0020-widening-the-search-input-on-the-reverse-resolution-path.md`.
+    /// The discharging run is
+    /// `docs/superpowers/specs/2026-08-19-adr-0020-in-app-run-enriched.md`.
+    ///
+    /// **This asserts cards, not log lines.** The run that discharged Decision 5 read its
+    /// claims off a debug instrument inside `MALReverseResolver`; that instrument is deleted
+    /// now the run is written up, and what survives it is this: fourteen rows that miss on
+    /// MAL's spelling and are carried by MangaDex under another one. If widening regresses,
+    /// these cards vanish from the rail and this test says which ones.
+    ///
+    /// **The floor is 10 of 14, not 14 of 14, and that is deliberate.** Both MAL and MangaDex
+    /// are live here, and MAL's recommendation ordering shifts — a target can leave the top 8
+    /// that `MoreLikeThisProvider.topRecommendations` takes without anything in this app
+    /// changing. A hard all-or-nothing assertion would turn that into a red build. Losing a
+    /// third of the set is not ordering drift.
+    func testADR0020WidenedCardsAppearInTheRail() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        var seedsMissed: [String] = []
+        var railsReached: [String] = []
+        var railsUnreached: [String] = []
+        var cardsFound: [String] = []
+        var cardsMissing: [String] = []
+
+        for seed in Self.adr0020Seeds {
+            // Always start a seed from the Search tab with no detail page underneath. An
+            // earlier revision skipped this on the `continue` paths, so one seed that failed
+            // to reach its rail left its detail page open — and the next iteration found two
+            // "Search" buttons, the tab and the page's own, and failed on ambiguity rather
+            // than on anything to do with widening.
+            returnToSearchRoot(app)
+            searchTab(app).tap()
+            let field = app.searchFields.firstMatch
+            guard field.waitForExistence(timeout: 15) else {
+                seedsMissed.append("\(seed.query) [no search field]")
+                continue
+            }
+            field.tap()
+            // Clear whatever the previous seed left behind; the field persists across tabs.
+            if let existing = field.value as? String, !existing.isEmpty,
+               existing != "Search titles" {
+                field.buttons.firstMatch.tap()
+            }
+            field.typeText(seed.query + "\n")
+
+            let result = app.buttons
+                .matching(NSPredicate(format: "label CONTAINS[c] %@", seed.match))
+                .element(boundBy: 0)
+            guard result.waitForExistence(timeout: 30) else {
+                seedsMissed.append("\(seed.query) [no result]")
+                continue
+            }
+            result.tap()
+
+            let libraryToggle = app.buttons
+                .matching(NSPredicate(format: "label CONTAINS[c] %@", "Library")).firstMatch
+            guard libraryToggle.waitForExistence(timeout: 25) else {
+                seedsMissed.append("\(seed.query) [detail page never appeared]")
+                continue
+            }
+
+            // Scroll until the rail's first cell is **hittable**, not until its header
+            // `exists`. XCUITest reports a lazily-built element as existing while it is still
+            // below the fold, so the discharging run's screenshots were all framed at the top
+            // of the detail page and showed no cards at all. Hittability is what "on screen"
+            // actually means here, and it is also what makes the card assertions below
+            // meaningful rather than accidental.
+            let header = app.staticTexts["More Like This"]
+            let deadline = Date().addingTimeInterval(45)
+            while Date() < deadline && !railIsOnScreen(app, header: header) {
+                app.swipeUp(velocity: .fast)
+                usleep(700_000)
+            }
+            // Not reaching the rail is a **scroll budget** problem, not a navigation one:
+            // a seed with hundreds of chapters can outrun 45 seconds of swiping. The rail is
+            // built either way, so the card checks below still mean something — they just
+            // rest on `exists` rather than on a picture. Kept separate from `seedsMissed` so
+            // a long page never reads as a broken app.
+            if railIsOnScreen(app, header: header) {
+                railsReached.append(seed.query)
+            } else {
+                railsUnreached.append(seed.query)
+            }
+
+            for card in seed.cards {
+                let cell = app.buttons
+                    .matching(NSPredicate(format: "label CONTAINS[c] %@", card))
+                    .firstMatch
+                // The rail is horizontally scrollable and the target may sit off its right
+                // edge; `exists` is the right predicate for membership, hittability was the
+                // question for the rail as a whole.
+                if cell.waitForExistence(timeout: 10) {
+                    cardsFound.append("\(seed.query) → \(card)")
+                } else {
+                    cardsMissing.append("\(seed.query) → \(card)")
+                }
+            }
+
+            let shot = XCTAttachment(screenshot: app.screenshot())
+            shot.name = "seed-\(seed.query)-rail"
+            shot.lifetime = .keepAlways
+            add(shot)
+        }
+
+        // A run where navigation broke must never read as a run where widening had nothing
+        // to do, so the frame is asserted before the cards are.
+        XCTAssertTrue(seedsMissed.isEmpty,
+                      "seeds whose detail page never opened: \(seedsMissed)")
+        XCTAssertGreaterThanOrEqual(
+            railsReached.count, 10,
+            "rails brought on screen \(railsReached.count)/13; outran the scroll budget: \(railsUnreached)")
+        XCTAssertGreaterThanOrEqual(
+            cardsFound.count, 10,
+            "widened cards found \(cardsFound.count)/14; missing: \(cardsMissing)")
+    }
+
+    /// True once the More Like This rail is actually on screen — either its header or one of
+    /// its cells is **hittable**, not merely `exists`.
+    ///
+    /// Both halves are needed. A card alone is the strong signal, but a title with no
+    /// recommendations renders the section header over an empty rail, and treating that as
+    /// "not reached" would spin the scroll loop to its deadline and then report a navigation
+    /// failure for what is really an empty rail. The card assertions tell those apart.
+    private func railIsOnScreen(_ app: XCUIApplication, header: XCUIElement) -> Bool {
+        if header.isHittable { return true }
+        return app.buttons.matching(identifier: "mangaCoverCard")
+            .allElementsBoundByIndex.contains { $0.isHittable }
+    }
+
+    /// The Search tab. A detail page carries its own "Search" affordance, so an unqualified
+    /// `app.buttons["Search"]` is ambiguous whenever one is open; the tab is the bottom-most
+    /// match.
+    private func searchTab(_ app: XCUIApplication) -> XCUIElement {
+        let matches = app.buttons.matching(NSPredicate(format: "label == %@", "Search"))
+            .allElementsBoundByIndex
+        return matches.max(by: { $0.frame.minY < $1.frame.minY }) ?? app.buttons["Search"]
+    }
+
+    /// Pops any open detail page so the next seed starts from a known state.
+    private func returnToSearchRoot(_ app: XCUIApplication) {
+        let back = app.navigationBars.buttons.element(boundBy: 0)
+        if back.exists && back.isHittable {
+            back.tap()
+            _ = app.searchFields.firstMatch.waitForExistence(timeout: 15)
+        }
+    }
+
 }

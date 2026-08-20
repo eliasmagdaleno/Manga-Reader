@@ -1,7 +1,11 @@
 # ADR-0020 — Widening the search input on the reverse-resolution path
 
-- **Status:** **Proposed (2026-08-19).** Licensed by a measurement whose gates were registered
-  before the run; **not yet verified in the app.** Acceptance evidence is registered in Decision 5
+- **Status:** **Accepted (2026-08-19).** Licensed by a measurement whose gates were registered
+  before the run, and **verified in the app** on an enriched draw: 14 of 14 rows that missed on
+  their first spelling recovered on a widened query, all through the strong arm. Decision 5 is
+  discharged **on the MAL arm** — the AniList arm shares the code path but awaits a re-seeded
+  fixture — with **one registered claim unmet** — the N = 3 bound was never observed *binding* —
+  which is recorded below rather than retried
 - **Licensed by:** [the 2026-08-15 search-input width measurement](../superpowers/specs/2026-08-15-search-input-width-measured.md)
   and [its protocol](../superpowers/specs/2026-08-15-search-input-width-measurement-protocol.md),
   committed before any request was sent. Harness `scripts/search_width.py`; raw data in
@@ -173,6 +177,56 @@ of thing**. The measurement produced a *rate* on a sampled cohort; an in-app run
 A run recovering **zero** on five-plus unresolved rows falsifies the mechanism in the app, whatever
 the offline rates say.
 
+#### Discharged 2026-08-19 — met on mechanism, unmet on the cap
+
+**Scope: the MAL arm.** Both arms funnel into the same `searchWidening` — `AppComposition` builds
+one `MALReverseResolver` and hands it to both consumers — so the widening *code path* verified here
+is literally the one the AniList pool uses. What differs is the spelling supply: `AniListWork`
+already carries romaji/english/native/synonyms, so `fetchTitles` never fires on that arm and it
+spends no extra request. The AniList arm is therefore **unverified in the app** and blocked on a
+fixture: its pool needs a taste profile, and the seeded simulator holding one was destroyed
+(run 1's write-up records the loss). Re-seeding it is the precondition, not more code.
+
+Two runs, both under protocols committed before launch. Run 1 walked Home's grid and saturated at
+19 targets with a single baseline miss against a floor of 5 — an inadequate fixture, reported as
+such ([run 1](../superpowers/specs/2026-08-19-adr-0020-in-app-run.md)). Run 2 replaced the
+navigation with Search over 13 seeds fixed in advance, each pre-checked to carry a target the
+offline measurement had already scored `baseline-unresolved`
+([Amendment 1](../superpowers/specs/2026-08-19-adr-0020-in-app-run-protocol-amendment-1.md),
+[results](../superpowers/specs/2026-08-19-adr-0020-in-app-run-enriched.md)).
+
+Against the bullets above:
+
+- **Floor and recovery: met.** 14 rows missed on their first spelling; **14 recovered**, 0 wrong.
+  Every recovery came back through the exact-`malId` arm, so no recovered id needed hand-adjudication
+  — the strong arm makes correctness structural, per ADR-0018.
+- **The full chain: met in the log, not visually.** Each of the 14 carries the MangaDex id its
+  widened query returned. The screenshots do **not** show the rendered cards: the test's scroll loop
+  stops when the rail header `exists`, which XCUITest reports true while the element is still below
+  the fold. The rendering half of that bullet rests on the rail having been built and resolved, not
+  on a picture of it.
+- **The N = 3 bound binding: NOT met.** The amendment deliberately chose five targets carrying ≥ 4
+  spellings so a third search could be seen stopping at the cap. **All five recovered on their
+  second query.** The run's only 3-search row, *Red*, holds exactly three spellings — it spent what
+  it had rather than being stopped, the same shape that disqualified run 1's Katanagatari.
+- **Decision 4 holding: not observed, covered by unit test.** No widened-pool candidate matched only
+  fuzzily, so the restriction never fired. Per this decision's own wording that is declared as
+  test-covered, not as verified.
+
+**Why this is accepted rather than re-run.** The unmet claim is about a *bound*, and the run
+explains why it could not fire: recovery is concentrated at query 2, and a target that needs a third
+spelling and still succeeds appears rare enough that a cohort built specifically from known misses
+does not contain one. Chasing it would mean drawing seeds until a late recoverer appears — selecting
+the fixture on the outcome the claim is meant to test, which is the failure mode this protocol chain
+exists to prevent. The cap's arithmetic is covered by unit test; what the in-app run was for is the
+mechanism, and the mechanism is observed.
+
+**The practical consequence is a cost correction in our favour.** The offline 3.09 requests per
+widened row is an **upper bound**, not a typical case: 13 of 14 recoveries spent 2 searches, not 3.
+No rate here describes the wild — this cohort was assembled from known misses — but the *shape* of
+the distribution is not an artefact of that selection, since selecting for misses does not select
+for which query resolves them.
+
 ## What would reverse this
 
 - **Any wrong recovered id.** Precision-bias, unchanged from ADR-0019.
@@ -193,6 +247,9 @@ the offline rates say.
   fuzzy is the only arm, the post-hoc 41 → 55 finding needs its own registered protocol.
 - **If MAL starts populating `alternative_titles` on nested recommendation nodes**, the MAL arm's
   extra request disappears and the cost argument in Decision 2 gets stronger, not weaker.
+- **If a widened row is ever seen recovering at query 3 in the wild**, the N = 3 bound becomes
+  observable binding and the claim left unmet above can be closed on real traffic rather than on a
+  drawn cohort. Until then the cap is unit-tested and unwitnessed.
 
 ## The lesson this chain has now learned three times
 
