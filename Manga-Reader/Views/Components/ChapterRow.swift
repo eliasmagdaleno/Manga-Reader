@@ -20,7 +20,9 @@ struct ChapterRow: View {
         // chapter stays highlighted (your current spot). Finished/opened
         // chapters that aren't mid-read are dimmed.
         let progress = history.entry(forChapter: chapter.id)
-        let inProgress = progress.map { $0.pageCount > 0 && $0.page < $0.pageCount - 1 } ?? false
+        // `pageCount > 0` is not redundant with `!isComplete`: an entry recorded before any
+        // page loaded has a count of 0, which is neither finished nor mid-read.
+        let inProgress = progress.map { $0.pageCount > 0 && !$0.isComplete } ?? false
         let dimmed = history.isRead(chapterId: chapter.id) && !inProgress
 
         return HStack(spacing: 14) {
