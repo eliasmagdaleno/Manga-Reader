@@ -74,6 +74,17 @@ enum SimulatorSeed {
     /// real feedback the seed never replaces.
     static let seededDefaultsKeys = ["history.entries", "history.readMarks", "library.items"]
 
+    /// Answers the fixture must **not** inherit from whatever was in the container before.
+    ///
+    /// These are resolution caches, not state the seed writes — so they are cleared rather
+    /// than replaced. The ADR-0020 AniList-arm run is why they are here: two launches
+    /// produced an empty instrument log against a fully built pool because
+    /// `entityResolution.reverseCache` still held 107 answers from earlier sessions, so
+    /// every target was answered without a search and the path under test never ran.
+    /// ADR-0020 Decision 3 calls that a test-fixture problem in as many words. A fixture
+    /// that silently disables the path under test is worse than no fixture.
+    static let clearedDefaultsKeys = ["entityResolution.cache", "entityResolution.reverseCache"]
+
     /// Where `scripts/seed-simulator.sh` leaves the file that arms the seeding run.
     ///
     /// In Documents rather than Application Support so it never sits beside the fixture
@@ -81,6 +92,13 @@ enum SimulatorSeed {
     static func markerURL() -> URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("seed-simulator.marker")
+    }
+
+    /// Drops the answers a fixture must not inherit. Separate from `apply` because it is
+    /// destruction, not seeding: the in-place run calls both, and a unit test that only
+    /// wants rows in a store must not have to think about a defaults suite.
+    static func clearInheritedState(in defaults: UserDefaults) {
+        for key in clearedDefaultsKeys { defaults.removeObject(forKey: key) }
     }
 
     /// Mints each row's Listing, upgrades it with the row's AniList record, then reads and

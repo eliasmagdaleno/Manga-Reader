@@ -641,6 +641,53 @@ final class Manga_ReaderUITests: XCTestCase {
             "widened cards found \(cardsFound.count)/14; missing: \(cardsMissing)")
     }
 
+    /// The rail the ADR-0020 AniList-arm run was driven through
+    /// (`docs/superpowers/specs/2026-08-20-adr-0020-anilist-arm-results.md`).
+    ///
+    /// What survives the run is the regression it needs anyway: the For You rail — which is
+    /// where the AniList pool's reverse-resolved candidates surface — is built and reaches
+    /// the screen with cards on it. The instrument that scored the run is gone, so this
+    /// asserts the visible thing rather than the path.
+    ///
+    /// **Preconditions, none of them assertable from here:** a seeded library (the pool
+    /// gate needs 3+ AniList-resolved Works) plus live AniList and MangaDex. Run it through
+    /// `-only-testing:`, the way the other live tests in this file are run; CI runs unit
+    /// tests only.
+    func testForYouRailReachesTheScreenWithCards() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        // The rail is built from a live AniList query plus up to 12 MangaDex searches, so
+        // it arrives well after Home does. Waiting on the header's *existence* first is
+        // deliberate: it is the signal the section was built at all, which is what tells an
+        // empty log apart from a pool that never ran.
+        let header = app.staticTexts["For You"]
+        XCTAssertTrue(header.waitForExistence(timeout: 120),
+                      "the For You rail never appeared; the pool did not run, so an empty "
+                      + "log would say nothing about widening")
+
+        // Then scroll until it is **hittable**. `exists` is true for a lazily-built element
+        // still below the fold — the bug that made every screenshot in the MAL arm's
+        // discharging run useless.
+        let deadline = Date().addingTimeInterval(45)
+        while Date() < deadline && !railIsOnScreen(app, header: header) {
+            app.swipeUp(velocity: .fast)
+            usleep(700_000)
+        }
+        XCTAssertTrue(railIsOnScreen(app, header: header),
+                      "the For You rail never reached the screen")
+
+        // Claim 4's visual half: the card, on screen, in the rail the widened queries fed.
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "adr0020-anilist-arm-for-you-rail"
+        shot.lifetime = .keepAlways
+        add(shot)
+
+        XCTAssertTrue(app.buttons.matching(identifier: "mangaCoverCard")
+                        .allElementsBoundByIndex.contains { $0.isHittable },
+                      "the For You rail reached the screen with no cards on it")
+    }
+
     /// True once the More Like This rail is actually on screen — either its header or one of
     /// its cells is **hittable**, not merely `exists`.
     ///

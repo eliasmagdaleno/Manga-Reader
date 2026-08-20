@@ -227,16 +227,11 @@ final class MALReverseResolver {
                                        fetchTitles: FetchTitles,
                                        matcher: MALTitleMatcher) async throws -> Manga? {
         guard let primary = target.titles.first else { return nil }
-        var searched = [primary]
-        var fetchedTitles = false
-
         let baseline = try await search(primary)
         if let match = MoreLikeThis.pickMatch(targetMalId: target.malId,
                                               malTitle: target.title,
                                               candidates: baseline,
                                               matcher: matcher) {
-            trace(target, target.titles, searched, "baseline-resolved",
-                  match.malId == target.malId ? "exact" : "fuzzy", nil, match.id, fetchedTitles)
             return match
         }
 
@@ -246,45 +241,17 @@ final class MALReverseResolver {
         if spellings.count < 2, let fetched = try? await fetchTitles(target.malId) {
             var seenTitle = Set(spellings)
             spellings += fetched.filter { seenTitle.insert($0).inserted }
-            fetchedTitles = true
         }
 
         var seen = Set(baseline.map(\.id))
-        for (offset, spelling) in spellings.prefix(searchLimit).dropFirst().enumerated() {
+        for spelling in spellings.prefix(searchLimit).dropFirst() {
             guard let more = try? await search(spelling) else { continue }
-            searched.append(spelling)
             let added = more.filter { seen.insert($0.id).inserted }
             if let exact = added.first(where: { $0.malId == target.malId }) {
-                trace(target, spellings, searched, "recovered", "exact",
-                      offset + 2, exact.id, fetchedTitles)
                 return exact
             }
         }
-        trace(target, spellings, searched, "unresolved", "none", nil, nil, fetchedTitles)
         return nil
-    }
-
-    /// Debug-only observability for the ADR-0020 in-app run. Compiles to nothing in
-    /// release, and is an early return unless `ADR0020_REVERSE_LOG=1` is in the
-    /// environment. Delete with `VerificationSwitches` when the run is written up.
-    private static func trace(_ target: ReverseTarget,
-                              _ spellings: [String],
-                              _ searched: [String],
-                              _ outcome: String,
-                              _ arm: String,
-                              _ recoveredAtQuery: Int?,
-                              _ mangaDexId: String?,
-                              _ fetchedTitles: Bool) {
-        #if DEBUG
-        VerificationSwitches.logReverse(.init(malId: target.malId,
-                                              spellings: spellings,
-                                              searched: searched,
-                                              outcome: outcome,
-                                              arm: arm,
-                                              recoveredAtQuery: recoveredAtQuery,
-                                              mangaDexId: mangaDexId,
-                                              fetchedTitles: fetchedTitles))
-        #endif
     }
 
 }
