@@ -91,8 +91,20 @@ three named conditions would reopen it.
 
 Nothing is queued. In rough order of value:
 
-1. **Per-chapter read/unread marks** — the largest item on CLAUDE.md's own "still minimal"
-   list, and the seeded fixture now makes it testable against a realistic library.
+1. ~~**Per-chapter read/unread marks**~~ — **this item was wrong.** Added 2026-08-20, after
+   the session that picked it up: the feature had already shipped on 2026-07-14 in `c06605a`
+   — store, persistence, single and batch marks, UI, ~20 tests. It was listed here only
+   because CLAUDE.md's "still minimal" line still claimed it was missing, and this handoff
+   trusted that line without checking the source.
+
+   What was salvageable was a narrower real gap beside it: `isRead` counted a chapter as read
+   the moment it was *opened*, so abandoning one on page 1 made the Bookmarks unread badge
+   undercount. Fixed in #65 — "read" now means read to the end, via `ReadingEntry.isComplete`.
+   The stale CLAUDE.md claims were fixed in #65 and #66.
+
+   **The lesson, for whoever reads the next handoff:** a claim that something is *missing* is
+   the kind that rots silently, because nothing fails when a feature ships without updating
+   the line that says it does not exist. Grep before building.
 2. **Prove the recovery path** — `simctl erase` the old `iPhone 17` (which still holds a
    seeded fixture as an accidental backup), re-seed from scratch, and confirm the tool works
    before it is needed in anger.
