@@ -15,10 +15,13 @@ This branch builds a re-seeding tool so the next erase costs minutes, not a subs
 
 ## The design (approved)
 
-A Swift seeding routine in the **test target** drives the real store types against a temp
-directory; a shell script copies the result into the simulator container. Real encoders, so no
-drift; no live network, so it is deterministic and fast; tag data comes from a committed
+A Swift seeding routine in the **test target** drives the real store types. Real encoders, so
+no drift; no live network, so it is deterministic and fast; tag data comes from a committed
 snapshot that is regenerated deliberately.
+
+*Amended at step 3 (see below):* the original plan had the routine write to a temp directory
+and a shell script copy the result into the container. It writes **in place** instead — the
+test already runs inside the container — and the script's job shrank to backup and arming.
 
 Rejected: hand-writing the JSON (drifts from `Work`'s shape silently) and driving the whole
 thing through XCUITest (minutes per run, live-API dependent).
@@ -61,6 +64,9 @@ with `xcp`; the pbxproj diff was a clean 8 lines).
   has no business inventing — pre-dismissed titles would silently subtract from every
   recommendation run made against the fixture.
 
+  *`defaultsPayload` was deleted at step 3 — nothing copies defaults any more.
+  `seededDefaultsKeys` survives, now as the set the in-place run clears first.*
+
 482 unit tests pass (1 pre-existing skip).
 
 **Known limitation, documented at the call site:** `HistoryStore.record` stamps `Date()` and
@@ -69,49 +75,14 @@ one date header. Order and position are still correct (`record` prepends; rows a
 oldest-first), and those are what the AniList arm reads. Backdating would mean either a new
 seam in `HistoryStore` or hand-writing the entries, and neither is worth it for a date header.
 
-## Verified mechanism (spike)
+## Superseded: the `simctl defaults` spike
 
-`xcrun simctl spawn booted defaults write <domain> <key> -data <hex>` round-trips real `Data`
-into a simulator app's UserDefaults — wrote a 49-byte JSON payload to a throwaway domain and
-read the exact bytes back. This is how the history half gets written. The app's own domain
-(`Elias-Magdaleno.Manga-Reader`) currently **does not exist**, confirming the defaults half of
-the fixture is empty.
-
-## Left to do
-
-Step 1 is done (above). Remaining, in order:
-
-2. **Upgrade attempts** — 2–3 rows including one refusal, so the ADR-0018 guard has something to
-   release.
-3. **`SEED_SIMULATOR_OUT` run** — the test that writes `works.json`, `upgrade-attempts.json` and
-   `defaults.json` to a directory, skipped unless that env var is set.
-4. **The harvest** — a one-time live pull of real AniList tags/ranks for ~20 titles into a
-   committed snapshot, replacing `sampleRows` as the real fixture. `sampleRows` stays for unit
-   tests.
-5. **`scripts/seed-simulator.sh`** — locate the booted iPhone 17 and the container, run the test,
-   copy into Application Support, apply the defaults, **back up the existing container first**,
-   refuse to overwrite without `--force`, and never call `simctl erase`.
-6. **Verify** by launching the app and confirming For You populates; then the AniList arm run.
-
-## Gotchas worth carrying
-
-- `WorkStore` is `@MainActor`-isolated — test helpers that build one must be too.
-- **SwiftUI ships its own `LibraryItem`,** and `@testable import Manga_Reader` re-exports it,
-  so decoding the library half needs `Manga_Reader.LibraryItem` — unqualified, it fails as
-  "ambiguous for type lookup".
-- **`flatMap(\.reading)` and friends do not compile here.** Key-path shorthand over
-  `SimulatorSeed.Row` produced "cannot infer key path type from context" (and once, a
-  compiler "failed to produce diagnostic" crash report); plain closures work.
-- Both git branch creation and `gh pr merge` were blocked by the permission classifier this
-  session; simple single commands worked where compound ones did not.
-- **PR #57 (ADR-0020 accepted) is merged** — `ddbb3b7` on `main`, branch deleted. This branch has
-  been rebased onto it, so it is current; nothing is stacked.
-- **The rebase conflicted once, in `project.pbxproj`,** and will again if this branch is rebased
-  after another `xcp` write lands on `main`. Resolution both times: keep `main`'s normalized file
-  reference (no `name =`, no `lastKnownFileType`) and add only the new file's entry. Those keys are
-  the churn CLAUDE.md says Xcode strips on its own schedule — re-adding them is what creates the
-  conflict, not anything about the seeding work. Post-rebase the pbxproj delta against `main` is
-  exactly the 8 lines for the two new files, and 479 unit tests pass.
+An earlier spike established that `xcrun simctl spawn booted defaults write <domain> <key>
+-data <hex>` round-trips real `Data` into a simulator app's defaults, and concluded from an
+empty `defaults export` that the app's own domain did not exist. **Both halves are moot and
+the second was wrong** — see step 3 below. Nothing writes defaults through `simctl` any more,
+and `export` returns an empty dict for a sandboxed container whether or not the domain has
+contents.
 
 ### Step 2 — upgrade-attempt refusals (`8bcf72f`)
 
@@ -184,3 +155,28 @@ Then re-run `./scripts/seed-simulator.sh --force` and confirm For You populates 
 launch check done so far only proves the container loads; the rails were not driven, and
 doing that properly means XCUITest assertions plus a screenshot attachment, not a bare
 screenshot.
+
+## Gotchas worth carrying
+
+- `WorkStore` is `@MainActor`-isolated — test helpers that build one must be too.
+- **SwiftUI ships its own `LibraryItem`,** and `@testable import Manga_Reader` re-exports it,
+  so decoding the library half needs `Manga_Reader.LibraryItem` — unqualified, it fails as
+  "ambiguous for type lookup".
+- **`flatMap(\.reading)` and friends do not compile here.** Key-path shorthand over
+  `SimulatorSeed.Row` produced "cannot infer key path type from context" (and once, a
+  compiler "failed to produce diagnostic" crash report); plain closures work.
+- Both git branch creation and `gh pr merge` were blocked by the permission classifier this
+  session; simple single commands worked where compound ones did not.
+- **`xcodebuild` forwards no environment into the test process** — not plainly, not with the
+  `TEST_RUNNER_` prefix. Anything a test needs from outside has to arrive as a file.
+- **Test suites leak plists into the app container.** Every isolated `UserDefaults(suiteName:)`
+  leaves an emptied plist in `Library/Preferences/`; `removePersistentDomain` empties it but
+  does not delete it. The script sweeps `seed-*.plist` so the fixture ships clean.
+- **PR #57 (ADR-0020 accepted) is merged** — `ddbb3b7` on `main`, branch deleted. This branch has
+  been rebased onto it, so it is current; nothing is stacked.
+- **The rebase conflicted once, in `project.pbxproj`,** and will again if this branch is rebased
+  after another `xcp` write lands on `main`. Resolution both times: keep `main`'s normalized file
+  reference (no `name =`, no `lastKnownFileType`) and add only the new file's entry. Those keys are
+  the churn CLAUDE.md says Xcode strips on its own schedule — re-adding them is what creates the
+  conflict, not anything about the seeding work. Post-rebase the pbxproj delta against `main` is
+  exactly the 8 lines for the two new files, and 479 unit tests pass.
