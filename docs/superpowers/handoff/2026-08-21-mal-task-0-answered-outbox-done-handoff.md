@@ -58,13 +58,27 @@ authorization URL, and callback validation that checks `state` before reading an
   unopenable base configuration:
   `ln -s /Users/eliasmagdaleno/Manga-Reader/Secrets.xcconfig <worktree>/Secrets.xcconfig`.
 
-## Codex
+## Codex — Task 4 is prepared but NOT yet dispatched
 
-Codex was handed **Task 4** (`MALCredentialStore.swift` — Keychain storage and reinstall
-protection). The brief told it to branch off `main` in its own worktree and to leave
-`MALOAuth*` alone; Task 3 leaves `MALCredentialStore*` alone. The one shared file is
-`project.pbxproj`, because each new test file is registered with `xcp` — a small known
-conflict. Confirm Codex actually picked this up before starting Task 4 yourself.
+**Do this first.** Task 4 (`MALCredentialStore.swift` — Keychain storage and reinstall
+protection) is set up and waiting, but no agent has started it. Everything is staged:
+
+- worktree `/Users/eliasmagdaleno/Manga-Reader-mal-credentials`, branch `mal-credentials`
+  off `main`;
+- `Secrets.xcconfig` already symlinked in (without it every build fails);
+- `TASK-4-BRIEF.md` at the worktree root, and git-excluded so `git add -A` cannot sweep it
+  into a commit. The same brief is committed at
+  `docs/superpowers/handoff/2026-08-21-codex-task-4-brief.md` on this branch.
+
+The `codex` plugin (`openai-codex` marketplace) was installed at the end of the session and
+`/codex:setup` reports ready: Codex CLI 0.149.0, ChatGPT auth verified, review gate off. So
+Task 4 can be dispatched straight from Claude Code via `/codex:rescue` or the
+`codex:codex-rescue` agent — no terminal juggling, and no need for Orca, which the user could
+not get working. Point it at `TASK-4-BRIEF.md` in that worktree.
+
+**The boundary:** Codex takes `MALCredentialStore*` only and leaves `MALOAuth*` alone; Task 3
+leaves `MALCredentialStore*` alone. The one shared file is `project.pbxproj`, because each new
+test file is registered with `xcp` — a small, known, easily resolved conflict.
 
 ## Still gated
 
