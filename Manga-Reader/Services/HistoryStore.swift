@@ -105,6 +105,8 @@ struct ReadMark: Codable, Hashable {
 
 @MainActor
 final class HistoryStore: ObservableObject {
+    typealias ChapterCompleted = (ChapterCompletion) -> Void
+
     @Published private(set) var entries: [ReadingEntry] = []
     @Published private(set) var readMarks: [ReadMark] = []
 
@@ -116,6 +118,7 @@ final class HistoryStore: ObservableObject {
     /// history predates the Work store and most tests have no interest in it; the
     /// app wires it in `Manga_ReaderApp`.
     private let works: WorkStore?
+    private let chapterCompleted: ChapterCompleted
 
     /// How long a recorded position may sit unwritten. Only `record` waits — see
     /// `saveSoon()`.
@@ -123,10 +126,12 @@ final class HistoryStore: ObservableObject {
     private var pendingSave: Task<Void, Never>?
 
     init(defaults: UserDefaults = .standard, works: WorkStore? = nil,
-         saveInterval: TimeInterval = 2) {
+         saveInterval: TimeInterval = 2,
+         chapterCompleted: @escaping ChapterCompleted = { _ in }) {
         self.defaults = defaults
         self.works = works
         self.saveInterval = saveInterval
+        self.chapterCompleted = chapterCompleted
         load()
     }
 
@@ -138,9 +143,11 @@ final class HistoryStore: ObservableObject {
                 at recordedAt: Date = Date()) {
         // Reading is the strongest commitment signal there is. Minting is local and
         // network-free, so it is safe on this path — it runs on every page turn.
-        _ = works?.mint(from: manga)
+        let workID = works?.mint(from: manga)
+        var wasComplete = false
 
         if var first = entries.first, first.mangaId == manga.id, first.chapterId == chapter.id {
+            wasComplete = first.isComplete
             // Furthest position reached. `ReadingPosition` is ordered lexicographically,
             // so this keeps the larger fraction within a page and takes the whole new
             // pair on a higher one. Monotonicity is load-bearing: `page` is also the
@@ -172,6 +179,14 @@ final class HistoryStore: ObservableObject {
         }
         if entries.count > cap { entries.removeLast(entries.count - cap) }
         saveSoon()
+
+        if !wasComplete,
+           entries.first?.isComplete == true,
+           let workID,
+           let progress = MALChapterProgress.map(chapterNumber: chapter.number) {
+            chapterCompleted(ChapterCompletion(manga: manga, chapter: chapter, workID: workID,
+                                               progress: progress, completedAt: recordedAt))
+        }
     }
 
     func latestEntry(forManga id: String) -> ReadingEntry? {
