@@ -1,7 +1,10 @@
 # Handoff — Codex interop, and the `isRead` doc rot
 
-Session of 2026-08-21 (early). `main` is at `eb8a2de`. **One PR is open: #70.** Everything
-else this session touched is merged.
+Session of 2026-08-21 (early). **Updated later the same day: PR #70 merged as `13346d7`, and
+`main` is now there.** Nothing from this session is left open except this handoff itself.
+
+(As originally written this said `main` was at `eb8a2de` with #70 open — true at the time,
+and corrected here rather than left to rot, which is the very lesson below.)
 
 ## The one-paragraph version
 
@@ -12,7 +15,7 @@ definition of `isRead`, introduced by the session that changed `isRead` and neve
 PR #70 corrects the definition and replaces the copy with a symlink so the two cannot drift
 again. The MAL OAuth subsystem is Codex's, in progress on `mal-oauth-progress-plan`.
 
-## Open: PR #70
+## Merged: PR #70
 
 [#70](https://github.com/eliasmagdaleno/Manga-Reader/pull/70) — `codex-docs-sync`, three
 changes in one commit (`5ff46cb`):
@@ -26,7 +29,8 @@ changes in one commit (`5ff46cb`):
 3. **The shared skill installation is committed** — eight Swift/iOS skills under
    `.agents/skills/`, the `.claude/skills/` symlinks into them, and `skills-lock.json`.
 
-Merge it, or close it if the symlink turns out to be wrong for Codex.
+Merged as `13346d7` on 2026-08-21, both CI checks green; `codex-docs-sync` is deleted. If the
+symlink ever turns out wrong for Codex, replace it with a real file — don't reintroduce a copy.
 
 ## The gotcha that matters most: one checkout, two agents
 
@@ -76,7 +80,7 @@ not a regression.
 
 ## What is worth doing next
 
-1. **Merge or close #70.**
+1. ~~Merge or close #70.~~ Done — `13346d7`.
 2. **Give each agent its own Orca worktree**, so the shared-checkout collisions stop.
 3. **Let Codex finish the MAL subsystem**; the four product decisions in the 2026-08-21 MAL
    handoff (push-only vs import, auto-add, manual-mark sync, monotonicity) may still be
