@@ -80,10 +80,14 @@ pure unit-tested implementation.
   blank strings, named specials, ranges, locale commas, and overflow.
 - [ ] Write HistoryStore tests proving the sink fires once on `false -> true`, does not fire on
   repeated last-page callbacks, and receives the Work id returned by `mint`.
+- [ ] Prove that opening creates an incomplete history entry and mints its Work without making
+  `isRead` true or emitting a MAL event. Keep "has an entry" distinct from "is read" throughout.
 - [ ] Prove reopened/reread sessions cannot emit a larger duplicate unless their mapped progress
   is actually larger; downstream coalescing remains the final idempotency boundary.
 - [ ] Prove single/batch `markRead`, `markUnread`, toggles, history deletion, and clear never call
   the sink.
+- [ ] Keep the seeded-fixture expectation explicit: 18 history entries, 14 complete/read-through
+  entries, and four mid-chapter entries. A result of 14 here is not a regression.
 - [ ] Implement the pure mapper and the network-free completion callback.
 - [ ] Run `MALReadingProgressTests` and the existing reading-position/history tests.
 

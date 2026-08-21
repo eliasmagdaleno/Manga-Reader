@@ -136,6 +136,13 @@ compares false with the inserted value. Only `false -> true` invokes an injected
 network-free `ChapterCompleted` sink. Repeated last-page callbacks and rereads cannot create a
 larger duplicate after coalescing.
 
+A history entry is not itself a read chapter. Opening a chapter still creates an incomplete entry,
+mints the Work, and enables resume/vertical-reader recording, but `HistoryStore.isRead` becomes true
+only for a completed entry (`pageCount > 0 && page >= pageCount - 1`) or a manual read mark. Manual
+marks remain deliberately excluded from the MAL completion sink. The seeded fixture currently has
+18 history entries but only 14 completed entries; any test or metric on this path must preserve that
+distinction rather than treating all 18 entries as read.
+
 The sink receives the `Manga`, `Chapter`, mapped progress, completion time, and the `WorkID`
 returned by `WorkStore.mint`. It persists before scheduling network work. It never performs OAuth,
 Keychain, or network work on the reader path.
