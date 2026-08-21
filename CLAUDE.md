@@ -1,6 +1,11 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for coding agents working in this repository — Claude Code and Codex alike.
+
+**`AGENTS.md` is a symlink to this file.** One source of truth, so the two cannot drift:
+edit *this* file, never a copy. (They were separate files until 2026-08-21, and the copy
+had already gone stale about what `isRead` means.) If Codex ever needs genuinely different
+instructions, replace the symlink with a real file at that point — not before.
 
 ## Overview
 
@@ -132,8 +137,11 @@ The app builds and the core reading loop is implemented.
   (`Components/ZoomableContainer.swift`) for native pinch/pan physics.
 - **Read state:** per-chapter read/unread marks ship (`HistoryStore`, since 2026-07-14) —
   single and batch `markRead`/`markUnread`, mark-all-below, dimmed rows, unread badges.
-  Note `isRead` means **opened or manually marked**: recording on open is what mints the
-  Work and what makes the vertical reader record anything at all.
+  `isRead` means **read to the end, or manually marked** — `ReadingEntry.isComplete` is
+  `pageCount > 0 && page >= pageCount - 1` (#65, 2026-08-20). Opening a chapter still
+  records an entry, which is what mints the Work and what makes the vertical reader record
+  anything at all; but an opened-and-abandoned chapter is *not* read, so it still counts
+  toward the unread badge.
 - Design/spec/plan for shipped work live in `docs/superpowers/{specs,plans}/`.
 
 Still minimal: no cross-device sync; refreshing *content* is manual (pull-to-refresh only,
