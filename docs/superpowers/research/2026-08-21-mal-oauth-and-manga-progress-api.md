@@ -380,3 +380,50 @@ design/plan:
 - [MyAnimeList OAuth 2.0 authorization guide](https://myanimelist.net/apiconfig/references/authorization)
 - [MyAnimeList API v2 reference](https://myanimelist.net/apiconfig/references/api/v2)
 - [MyAnimeList API License and Developer Agreement](https://myanimelist.net/static/apiagreement.html)
+
+## 2026-08-21 — Task 0: developer-console inspection
+
+Inspected the existing published client at <https://myanimelist.net/apiconfig> against the
+Task 0 checklist. **The gate is open: no client secret is involved, so no backend token
+exchange is required and the feature proceeds as designed.** Non-secret facts only; the
+client ID is deliberately not reproduced here (it lives in the git-ignored
+`Secrets.xcconfig`, and MAL's console states it must not be disclosed).
+
+| Question | Answer |
+| --- | --- |
+| Client type | **`ios`** — a fixed value on the page, not a dropdown. MAL classifies this app as a native client. |
+| Client secret | **None.** The page renders a Client ID row and no secret row at all. |
+| `mangareader://oauth/mal` registered exactly | **Yes**, stored verbatim in *App Redirect URL* — custom scheme accepted, no host requirement, no trailing-slash rewrite. |
+| Redirect URI count | **One.** The field notes multiple URLs are separated by line breaks; only this one is present. |
+| Xcode URL type / callback scheme | **`mangareader`** — the Info.plist URL type must declare exactly this. |
+| API status | `PUBLISHED`. |
+
+### What this settles
+
+- The registration gap identified earlier in this note is closed. MAL's docs contemplate
+  clients without a secret but never explain how one is registered that way; the answer is
+  that App Type `ios` simply is not issued a secret. Nothing confidential would ship in the
+  binary, so the design's stop condition is not triggered.
+- Because **exactly one** redirect URI is registered, `redirect_uri` is optional in the
+  authorization request. Keep sending it anyway — it must match exactly when sent, and an
+  explicit value stays correct if a second URI is ever added.
+
+### Not answered by the console
+
+- **PKCE `S256`.** The page says nothing about PKCE at all. The public documentation still
+  specifies `plain` only, so the design's choice of `plain` with a fresh 43–128 character
+  verifier per request stands unchanged; there is no new evidence either way.
+- **Rate limits.** No published number on the API config page. The outbox retry/backoff
+  policy therefore remains an engineering judgement, not a documented contract.
+
+### Unrelated observation
+
+*Commercial / Non-Commercial* is set to `commercial` while *Purpose of Use* is `hobbyist`.
+That combination looks unintended and is worth a second look — it is an account/ToS matter,
+not a technical blocker for this feature.
+
+### Still gated
+
+Task 0 unblocks implementation only. The `PATCH` versus `PUT` question (Task 11) remains
+blocked on an explicitly approved live verification against a known list entry, with
+restoration of its prior state.
