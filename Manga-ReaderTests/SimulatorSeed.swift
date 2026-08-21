@@ -104,15 +104,16 @@ enum SimulatorSeed {
     /// Mints each row's Listing, upgrades it with the row's AniList record, then reads and
     /// saves it — each through the store that owns that state, exactly as the app would.
     ///
-    /// **Timestamps are "now".** `HistoryStore.record` stamps `Date()` and exposes no way
-    /// to backdate, so the seeded history lands as one day's reading rather than spread
-    /// across weeks. Ordering is still right — `record` prepends, so applying oldest-first
-    /// leaves the newest entry at index 0 — and every consumer this fixture exists for
-    /// reads order and position, not age. The History tab will show one date header.
+    /// Reading sessions are spread over consecutive calendar days ending at `now`.
+    /// Applying oldest-first still leaves the newest entry at index 0 because `record`
+    /// prepends. A single injected anchor makes both the generated fixture and unit tests
+    /// deterministic while normal app recording continues to default to `Date()`.
     @MainActor
     static func apply(_ rows: [Row], to store: WorkStore,
                       history: HistoryStore? = nil, library: LibraryStore? = nil,
-                      attempts: UpgradeAttemptMemory? = nil) {
+                      attempts: UpgradeAttemptMemory? = nil, now: Date = Date()) {
+        let readCount = rows.reduce(0) { $0 + $1.reading.count }
+        var readIndex = 0
         for row in rows {
             let listing = Manga(id: row.mangaId,
                                 sourceId: row.sourceId,
@@ -141,11 +142,17 @@ enum SimulatorSeed {
             // listing, so they resolve to the Work minted above instead of a provisional
             // twin the AniList upgrade never touched.
             for read in row.reading {
+                let daysBeforeNewest = readCount - readIndex - 1
+                let recordedAt = Calendar.current.date(byAdding: .day,
+                                                       value: -daysBeforeNewest,
+                                                       to: now) ?? now
                 history?.record(manga: listing,
                                 chapter: Chapter(id: read.chapterId, number: read.chapterNumber,
                                                  title: nil),
                                 position: ReadingPosition(page: read.page),
-                                pageCount: read.pageCount)
+                                pageCount: read.pageCount,
+                                at: recordedAt)
+                readIndex += 1
             }
             if row.isSaved { library?.toggle(listing) }
         }

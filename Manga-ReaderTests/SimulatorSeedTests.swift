@@ -98,9 +98,10 @@ final class SimulatorSeedTests: XCTestCase {
         let defaults = makeDefaults()
         let history = HistoryStore(defaults: defaults, works: works, saveInterval: 0)
         let library = LibraryStore(defaults: defaults, works: works)
+        let now = Date(timeIntervalSince1970: 1_785_758_400) // 2026-08-01 12:00 UTC
 
         SimulatorSeed.apply(SimulatorSeed.sampleRows, to: works,
-                            history: history, library: library)
+                            history: history, library: library, now: now)
 
         let entryData = try XCTUnwrap(defaults.data(forKey: "history.entries"),
                                       "no history written to the defaults suite")
@@ -108,6 +109,12 @@ final class SimulatorSeedTests: XCTestCase {
         let expectedReads = SimulatorSeed.sampleRows.flatMap { $0.reading }
         XCTAssertEqual(entries.count, expectedReads.count)
         XCTAssertEqual(Set(entries.map(\.chapterId)), Set(expectedReads.map { $0.chapterId }))
+        XCTAssertEqual(entries.first?.updatedAt, now)
+        XCTAssertEqual(entries.map(\.updatedAt), entries.map(\.updatedAt).sorted(by: >),
+                       "history is not newest-first")
+        XCTAssertEqual(Set(entries.map { Calendar.current.startOfDay(for: $0.updatedAt) }).count,
+                       expectedReads.count,
+                       "seeded reading sessions should occupy consecutive date groups")
         for entry in entries {
             XCTAssertEqual(entry.sourceId, "mangadex", "\(entry.mangaTitle) lost its source")
             XCTAssertNotNil(entry.malId, "\(entry.mangaTitle) lost its MAL id")

@@ -134,7 +134,8 @@ final class HistoryStore: ObservableObject {
     /// manga + chapter, update it in place; otherwise (including re-opening a
     /// chapter read previously) prepend a brand-new entry so the log stays a
     /// full chronological history of reading sessions.
-    func record(manga: Manga, chapter: Chapter, position: ReadingPosition, pageCount: Int) {
+    func record(manga: Manga, chapter: Chapter, position: ReadingPosition, pageCount: Int,
+                at recordedAt: Date = Date()) {
         // Reading is the strongest commitment signal there is. Minting is local and
         // network-free, so it is safe on this path — it runs on every page turn.
         _ = works?.mint(from: manga)
@@ -156,14 +157,14 @@ final class HistoryStore: ObservableObject {
 
             if advanced { first.position = position }
             first.pageCount = pageCount
-            first.updatedAt = Date()
+            first.updatedAt = recordedAt
             entries[0] = first
         } else {
             entries.insert(
                 ReadingEntry(id: UUID(), mangaId: manga.id, mangaTitle: manga.title,
                              coverURL: manga.coverURL, chapterId: chapter.id,
                              chapterNumber: chapter.number, page: position.page,
-                             pageCount: pageCount, updatedAt: Date(),
+                             pageCount: pageCount, updatedAt: recordedAt,
                              sourceId: manga.sourceId, fraction: position.fraction,
                              malId: manga.malId),
                 at: 0
