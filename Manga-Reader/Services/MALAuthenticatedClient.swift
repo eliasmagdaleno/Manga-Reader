@@ -106,14 +106,47 @@ struct MALAuthenticatedClient: Sendable {
 
     func currentUser() async throws -> MALUserIdentity {
         try await perform(
-            makeRequest: { URLRequest(url: url("users/@me", query: ["fields": "name,picture"])) },
-            decode: { data in
-                let payload = try JSONDecoder().decode(MALUserPayload.self, from: data)
-                return MALUserIdentity(id: payload.id,
-                                       name: payload.name,
-                                       pictureURL: Self.pictureURL(payload.picture))
-            }
+            makeRequest: { Self.identityRequest() },
+            decode: Self.decodeIdentity
         )
+    }
+
+    /// The identity read for a token that is not in the token manager yet — during sign-in,
+    /// where the account's own MAL id is exactly what is still unknown. It therefore has no
+    /// refresh-and-retry: a token seconds old has nothing to refresh from.
+    static func currentUser(
+        accessToken: String,
+        transport: any MALHTTPTransport
+    ) async throws -> MALUserIdentity {
+        var request = identityRequest()
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        let (data, response): (Data, HTTPURLResponse)
+        do {
+            (data, response) = try await transport.send(request)
+        } catch is CancellationError {
+            throw MALRequestFailure.cancelled
+        } catch let error as URLError where error.code == .cancelled {
+            throw MALRequestFailure.cancelled
+        } catch {
+            throw MALRequestFailure.transient(retryAfter: nil)
+        }
+        guard (200..<300).contains(response.statusCode) else { throw failure(for: response) }
+        do {
+            return try decodeIdentity(data)
+        } catch {
+            throw MALRequestFailure.unknown(status: response.statusCode)
+        }
+    }
+
+    private static func identityRequest() -> URLRequest {
+        URLRequest(url: staticURL("users/@me", query: ["fields": "name,picture"]))
+    }
+
+    private static func decodeIdentity(_ data: Data) throws -> MALUserIdentity {
+        let payload = try JSONDecoder().decode(MALUserPayload.self, from: data)
+        return MALUserIdentity(id: payload.id,
+                               name: payload.name,
+                               pictureURL: pictureURL(payload.picture))
     }
 
     /// The one title's entry, or `nil` when the signed-in user does not have it listed.
@@ -242,6 +275,10 @@ struct MALAuthenticatedClient: Sendable {
     }
 
     private func url(_ path: String, query: [String: String] = [:]) -> URL {
+        Self.staticURL(path, query: query)
+    }
+
+    private static func staticURL(_ path: String, query: [String: String] = [:]) -> URL {
         var components = URLComponents(
             url: Self.baseURL.appendingPathComponent(path),
             resolvingAgainstBaseURL: false
