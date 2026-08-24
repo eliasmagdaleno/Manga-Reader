@@ -37,6 +37,16 @@ actor MALTokenManager {
         return try await refresh(from: current).accessToken
     }
 
+    /// A token guaranteed to be newer than `staleToken`, for a caller whose request came back
+    /// 401 with it. If another caller already refreshed in the meantime the current token is
+    /// returned untouched; otherwise this joins the same single-flight refresh, so a burst of
+    /// 401s costs one token request.
+    func accessToken(replacing staleToken: String) async throws -> String {
+        guard let current = try current() else { throw MALTokenError.signedOut }
+        guard current.accessToken == staleToken else { return current.accessToken }
+        return try await refresh(from: current).accessToken
+    }
+
     /// Forgets the account locally. The MAL-side token is not revoked; MAL exposes no
     /// revocation endpoint.
     func signOut() throws {

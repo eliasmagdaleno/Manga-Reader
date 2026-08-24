@@ -9,15 +9,15 @@
 
 import Foundation
 
-/// The seam that keeps `URLSession` out of the tests. Deliberately narrow: one request in,
+/// The seam that keeps `URLSession` out of the tests, shared by the token and API clients. Deliberately narrow: one request in,
 /// data and an `HTTPURLResponse` out, so a test can script a status code and a body.
-protocol MALTokenTransport: Sendable {
+protocol MALHTTPTransport: Sendable {
     func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse)
 }
 
 /// Production adapter. A non-HTTP response cannot happen against an `https` URL, but it is
 /// reported rather than force-unwrapped.
-struct MALURLSessionTokenTransport: MALTokenTransport {
+struct MALURLSessionTransport: MALHTTPTransport {
     private let session: URLSession
 
     init(session: URLSession = .shared) {
@@ -83,13 +83,13 @@ enum MALTokenError: Error, Equatable, LocalizedError {
 /// Performs a token exchange or refresh and turns the reply into a `MALCredential`.
 struct MALTokenClient: Sendable {
     private let configuration: MALOAuthConfiguration
-    private let transport: any MALTokenTransport
+    private let transport: any MALHTTPTransport
     /// Injected so expiry is computed against a pinned clock in tests.
     private let now: @Sendable () -> Date
 
     init(
         configuration: MALOAuthConfiguration,
-        transport: any MALTokenTransport,
+        transport: any MALHTTPTransport,
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.configuration = configuration
