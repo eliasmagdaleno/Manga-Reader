@@ -43,13 +43,79 @@ struct AppComposition {
     let vocabularyStore: TagVocabularyStore
     let poolStore: AniListPoolStore
 
+    /// The MyAnimeList account, and the progress subsystem behind it. The account store is
+    /// observable and belongs in the environment for Settings; the coordinator and the
+    /// outbox are not — they publish nothing, and a view that could reach them could only
+    /// misuse them (ADR-0010). They are held here so they live for the app's lifetime.
+    let account: MALAccountStore
+    let malProgress: MALProgressCoordinator
+    let malOutbox: MALProgressOutbox
+
+    /// The redirect this app registers with MyAnimeList. One spelling, used by both the
+    /// authorization URL and the token exchange; MAL matches it exactly.
+    static let malRedirectURI = "mangareader://oauth/mal"
+
+    /// MAL's own reference contradicts itself on `PATCH` versus `PUT` for the list-status
+    /// setter, and picking one is Task 11's live verification against a known entry. This
+    /// is the single point that changes when that lands — nothing else names a verb.
+    static let malUpdateVerb: MALListUpdateVerb = .patch
+
+    /// The three injected seams below all default to the production object. They exist so a
+    /// test can build **this** graph — not a hand-rolled imitation of it — without a
+    /// Keychain, an AniList request, or a MyAnimeList search.
     init(defaults: UserDefaults = .standard,
-         directory: URL = WorkStore.applicationSupportDirectory()) {
+         directory: URL = WorkStore.applicationSupportDirectory(),
+         malCredentials: MALCredentialStore? = nil,
+         anilist injectedAniList: AniListAPI? = nil,
+         malResolver: MALEntityResolver? = nil) {
         // Built first: the three commitment paths below (read, save, feedback) all
         // mint into it, so they must share this one instance (ADR-0007).
         let wk = WorkStore(directory: directory)
         let lib = LibraryStore(defaults: defaults, works: wk)
-        let hist = HistoryStore(defaults: defaults, works: wk)
+
+        // The MyAnimeList stack, built before `HistoryStore` because the history store takes
+        // the completion sink at construction. Nothing here touches the network until the
+        // user signs in: the account restores from what is already on disk, and the drain
+        // only runs once `start()` is called with a signed-in account.
+        let outbox = MALProgressOutbox(directory: directory)
+        let malConfiguration = MALOAuthConfiguration(
+            clientID: (Bundle.main.object(forInfoDictionaryKey: "MALClientID") as? String) ?? "",
+            redirectURI: Self.malRedirectURI)
+        let malTransport = MALURLSessionTransport()
+        let credentials = malCredentials ?? MALCredentialStore(
+            dataStore: MALKeychainCredentialDataStore(),
+            markerStore: MALUserDefaultsInstallationMarkerStore(defaults: defaults))
+        let tokenClient = MALTokenClient(configuration: malConfiguration, transport: malTransport)
+        let tokens = MALTokenManager(client: tokenClient, store: credentials)
+        let malClient = MALAuthenticatedClient(tokens: tokens, transport: malTransport,
+                                               updateVerb: Self.malUpdateVerb)
+        let accountStore = MALAccountStore(
+            configuration: malConfiguration,
+            presenter: MALWebAuthPresenter(),
+            tokenClient: tokenClient,
+            credentials: credentials,
+            preferences: MALUserDefaultsAccountPreferenceStore(defaults: defaults),
+            outbox: outbox,
+            // The identity read for a token that is not in the manager yet — see
+            // `MALAuthenticatedClient.currentUser(accessToken:transport:)`.
+            fetchIdentity: { token in
+                try await MALAuthenticatedClient.currentUser(accessToken: token,
+                                                             transport: malTransport)
+            })
+        let malProgress = MALProgressCoordinator(
+            outbox: outbox,
+            client: malClient,
+            account: accountStore,
+            // The coordinator never resolves anything itself; it only reads what the Work
+            // already knows, and waits for the queue's signal otherwise.
+            malID: { wk.work($0)?.externalIds.mal })
+
+        // The completion sink. Synchronous and network-free by contract — it writes the
+        // completed chapter to the outbox and returns.
+        let hist = HistoryStore(defaults: defaults, works: wk,
+                                chapterCompleted: { [weak malProgress] completion in
+                                    malProgress?.chapterCompleted(completion)
+                                })
         let ts = TasteProfileStore(defaults: defaults)
 
         // One limiter, passed explicitly rather than left to `MetadataUpgradeQueue`'s
@@ -57,7 +123,7 @@ struct AppComposition {
         // owner of the rate limiter**, and that claim is only true by construction if
         // every AniList caller is handed the same instance. The queue and the pool draw on
         // the same 30/min budget.
-        let anilist = AniListAPI()
+        let anilist = injectedAniList ?? AniListAPI()
         let limiter = AniListRateLimiter()
         // Hoisted for the same reason as the limiter directly above, and it is the same
         // claim: the queue would otherwise build its own via `memory ?? UpgradeAttemptMemory()`
@@ -70,8 +136,14 @@ struct AppComposition {
         // A `VerificationSwitches` override sat here from 2026-08-11 to 2026-08-13 to
         // instrument the ADR-0019 runs; it was `#if DEBUG` and nil unless an environment
         // variable was set, and it is gone now that both runs are written up.
+        // The metadata → progress edge. The queue gains no progress dependency: it announces
+        // a Work whose external ids it just learned, and the coordinator decides what that
+        // is worth (Task 9 of the MAL plan).
         let upgrades = MetadataUpgradeQueue(works: wk, anilist: anilist, rateLimiter: limiter,
-                                            resolver: nil, memory: memory)
+                                            resolver: malResolver, memory: memory,
+                                            workMetadataChanged: { [weak malProgress] id in
+                                                malProgress?.workMetadataChanged(id)
+                                            })
 
         let vocab = TagVocabularyStore(fetch: { try await limiter.run { try await anilist.tagVocabulary() } })
         let pool = AniListPoolStore()
@@ -126,5 +198,8 @@ struct AppComposition {
         self.engine = rec
         self.vocabularyStore = vocab
         self.poolStore = pool
+        self.account = accountStore
+        self.malProgress = malProgress
+        self.malOutbox = outbox
     }
 }
