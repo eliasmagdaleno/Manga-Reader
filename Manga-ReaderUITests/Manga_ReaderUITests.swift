@@ -163,6 +163,108 @@ final class Manga_ReaderUITests: XCTestCase {
         }
     }
 
+    /// **A one-off live verification for MAL Task 12, not a CI test.** It reads a chapter of
+    /// a real title to the end, which is the only thing that may move MyAnimeList progress —
+    /// manual mark-as-read deliberately cannot. Run only with explicit approval and only
+    /// alongside the read/restore harness that records and puts back the entry's value.
+    ///
+    /// Chapter **124** is not arbitrary: the account sits at 100 chapters, and the coordinator
+    /// treats a desired progress at or below the remote value as already delivered
+    /// (`MALProgressCoordinator.swift:281`), so anything lower would verify nothing. 101 does
+    /// not exist — MangaDex's English list for this title jumps from 30 to 123.1.
+    func testLiveHorimiyaCompletionPushesProgress() throws {
+        // **Cannot run by accident.** This one writes to a real MyAnimeList account, so a
+        // plain `xcodebuild test` must skip it — the environment variable has to be set
+        // deliberately, and only alongside the read/restore harness described above.
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["MAL_LIVE_WRITE"] == "1",
+                          "live MAL write: set MAL_LIVE_WRITE=1 to run, and restore the entry after")
+
+        let app = XCUIApplication()
+        app.launchArguments += ["-uitest-source", "mangadex"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+
+        app.buttons["Search"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("Horimiya\n")
+
+        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Horimiya"))
+            .firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 25), "search should return Horimiya")
+        result.tap()
+
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 25), "should reach the detail page")
+
+        let showAll = app.buttons["showAllChaptersButton"]
+        for _ in 0..<10 where !showAll.exists {
+            app.swipeUp(velocity: .fast)
+            usleep(500_000)
+        }
+        XCTAssertTrue(showAll.exists, "Horimiya should have a full chapter list")
+        showAll.tap()
+
+        // Find chapter 124. The list is long, so scroll toward it rather than assuming it is
+        // on screen.
+        let chapter = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "CH·124"))
+            .firstMatch
+        var found = false
+        for _ in 0..<40 where !found {
+            if chapter.exists { found = true; break }
+            app.swipeUp(velocity: .fast)
+            usleep(300_000)
+        }
+        XCTAssertTrue(found, "chapter 124 should be in the list")
+        attach(app, name: "30-chapter-124-row")
+        chapter.tap()
+
+        // Read it to the last page. The indicator reads "n · total" and is part of the
+        // reader chrome, which is hidden until tapped — so reveal it before looking.
+        let indicator = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", " · "))
+            .firstMatch
+        for _ in 0..<12 where !indicator.exists {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            usleep(1_500_000)
+        }
+        XCTAssertTrue(indicator.waitForExistence(timeout: 30), "the reader should load pages")
+        let total = Self.indicatorTotal(indicator.label)
+        XCTAssertNotNil(total, "could not read a page count from '\(indicator.label)'")
+        let pages = total ?? 0
+        XCTAssertGreaterThan(pages, 1, "a one-page chapter would not prove paging")
+
+        // Direction is a property of the title's reading direction, so probe rather than
+        // assume: R→L is implemented as reversed page order, not a mirror.
+        var advancing = false
+        app.swipeLeft()
+        usleep(600_000)
+        if Self.indicatorCurrent(indicator.label) ?? 1 > 1 { advancing = true }
+
+        for _ in 0..<(pages + 5) {
+            if (Self.indicatorCurrent(indicator.label) ?? 0) >= pages { break }
+            if advancing { app.swipeLeft() } else { app.swipeRight() }
+            usleep(500_000)
+        }
+        attach(app, name: "31-last-page")
+        XCTAssertEqual(Self.indicatorCurrent(indicator.label), pages,
+                       "the chapter must reach its final page — anything less is not a completion")
+
+        // `HistoryStore` throttles its writes and flushes on `.background`; a run that just
+        // ends loses the entry, and with it the queued update.
+        XCUIDevice.shared.press(.home)
+        sleep(8)
+    }
+
+    private static func indicatorCurrent(_ label: String) -> Int? {
+        Int(label.split(separator: "·").first?.trimmingCharacters(in: .whitespaces) ?? "")
+    }
+
+    private static func indicatorTotal(_ label: String) -> Int? {
+        Int(label.split(separator: "·").last?.trimmingCharacters(in: .whitespaces) ?? "")
+    }
+
     private func attach(_ app: XCUIApplication, name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name
