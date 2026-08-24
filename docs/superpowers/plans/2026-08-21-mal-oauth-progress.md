@@ -346,8 +346,12 @@ is gone. `PUT` was not tested — it would be a second mutation for no decision 
   section at `AccessibilityXXXL` are all screenshotted and were inspected, not just asserted.
   Wiring `refreshing` needed an app change: the state had **no producer** — see
   `MALTokenManager.refreshDidChange`.
+- [x] **A genuine reader completion reaches MyAnimeList** — done 2026-08-24 with approval, on
+  Horimiya (MAL 42451). Read chapter 124 to its last page: 100 → 124 with `status` preserved as
+  `reading`, then restored to 100 and the restore confirmed from a fresh process.
+  `testLiveHorimiyaCompletionPushesProgress`, which skips unless `MAL_LIVE_WRITE=1`.
 - [ ] Exercise offline completion, relaunch persistence, foreground retry, toggle disable/enable,
-  logout cleanup, and reauthorization on the seeded iPhone 17 Pro.
+  and logout cleanup on the seeded iPhone 17 Pro.
 - [x] Confirm no secrets appear in source control, build settings output, logs, screenshots, test
   fixtures, or failure descriptions.
 - [x] Re-check `project.pbxproj` immediately before staging; discard only unrelated Xcode churn,
