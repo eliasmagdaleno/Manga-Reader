@@ -49,6 +49,10 @@ struct Manga_ReaderApp: App {
 #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uitest-mal-signed-out") {
             (ephemeralCredentials, ephemeralPreferences) = AppComposition.ephemeralMALAccount()
+        } else if let state = Self.uiTestAccountState {
+            // The other account states, on the same ephemeral stores and for the same
+            // reason: a screenshot of "signed in" must not be of the real account.
+            (ephemeralCredentials, ephemeralPreferences) = AppComposition.seededMALAccount(state)
         }
 #endif
         let composed = AppComposition(malCredentials: ephemeralCredentials,
@@ -64,6 +68,17 @@ struct Manga_ReaderApp: App {
         _engine = StateObject(wrappedValue: composed.engine)
         _account = StateObject(wrappedValue: composed.account)
     }
+
+#if DEBUG
+    /// `-uitest-mal-state <name>`, or nil. Its own property so the initializer and the
+    /// launch task read the same answer.
+    private static var uiTestAccountState: AppComposition.MALUITestAccountState? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-uitest-mal-state"),
+              arguments.indices.contains(index + 1) else { return nil }
+        return AppComposition.MALUITestAccountState(rawValue: arguments[index + 1])
+    }
+#endif
 
     private var appearance: AppearanceMode {
         AppearanceMode(rawValue: appearanceRaw) ?? .system
@@ -88,6 +103,19 @@ struct Manga_ReaderApp: App {
                     // Rebuilds the account from disk before anything asks whether the user
                     // is signed in, then drains whatever a previous session left queued.
                     account.restore()
+#if DEBUG
+                    // After `restore()`, so these sit on top of a real signed-in account
+                    // rather than replacing one.
+                    switch Self.uiTestAccountState {
+                    case .refreshing:
+                        account.refreshBegan()
+                    case .accountSwitch:
+                        account.seedPendingAccountSwitchForUITesting(previousUserID: 999_999,
+                                                                     pendingCount: 3)
+                    case .signedIn, .reauthorizationRequired, .none:
+                        break
+                    }
+#endif
                     malProgress.start()
                     // Collapses the AniList pool's cold start from three rail builds to
                     // two. Without it: build 1 finds no vocabulary and returns `[]` before

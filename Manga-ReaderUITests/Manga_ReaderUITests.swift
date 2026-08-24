@@ -90,6 +90,79 @@ final class Manga_ReaderUITests: XCTestCase {
         attach(app, name: "10-settings-mal-signed-out")
     }
 
+    /// **The four MAL Settings states that had never been rendered on a device** (MAL plan,
+    /// Task 12). Everything below the view — which branch a state maps to — is decided in
+    /// `MALAccountPresentation` and tested there; what only a device can answer is whether
+    /// the resulting section actually lays out, and at an accessibility text size whether it
+    /// still fits. The screenshots are the artifact.
+    ///
+    /// Runs on a seeded stand-in account, never this device's real one.
+    func testMyAnimeListSettingsStatesRender() throws {
+        for state in ["signed-in", "refreshing", "reauthorization-required", "account-switch"] {
+            let app = XCUIApplication()
+            app.launchArguments += ["-uitest-mal-state", state]
+            // A previous test can leave the simulator on its side, and these screenshots
+            // are the deliverable. Set it rather than inherit it.
+            XCUIDevice.shared.orientation = .portrait
+            app.launch()
+            app.tabBars.buttons["Settings"].tap()
+
+            XCTAssertTrue(app.staticTexts["MyAnimeList"].waitForExistence(timeout: 10),
+                          "the MyAnimeList section should be in Settings for \(state)")
+            // The switch alert is modal, so nothing under it is hittable — that state's
+            // screenshot is of the alert, which is the thing that had never been seen.
+            if state != "account-switch" { scrollToMALSection(app) }
+            // Every one of these is a signed-in-shaped section, so the sign-in offer must
+            // be gone — that is what tells a rendered state from a silently signed-out one.
+            XCTAssertFalse(app.buttons["Sign in"].exists,
+                           "\(state) should not be offering a fresh sign-in")
+            attach(app, name: "11-settings-mal-\(state)")
+
+            if state == "account-switch" {
+                XCTAssertTrue(app.buttons["Keep them"].waitForExistence(timeout: 5),
+                              "the account-switch alert should be up")
+                XCTAssertTrue(app.buttons["Delete queued updates"].exists)
+                app.buttons["Keep them"].tap()
+            }
+            app.terminate()
+        }
+    }
+
+    /// The signed-in section at the largest accessibility text size. Separate from the loop
+    /// above because the size is set by a launch argument to the whole app, not by state.
+    func testMyAnimeListSettingsAtAccessibilityTextSize() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uitest-mal-state", "signed-in",
+                                "-UIPreferredContentSizeCategoryName",
+                                "UICTContentSizeCategoryAccessibilityXXXL"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        app.tabBars.buttons["Settings"].tap()
+
+        XCTAssertTrue(app.staticTexts["MyAnimeList"].waitForExistence(timeout: 10),
+                      "the MyAnimeList section should survive accessibility text sizes")
+        scrollToMALSection(app)
+        attach(app, name: "12-settings-mal-large-text")
+    }
+
+    /// Existing in the hierarchy is not the same as being on screen, and a screenshot of
+    /// the section scrolled past proves nothing. MyAnimeList is the last section in
+    /// Settings, so this scrolls to the bottom — stopping at the header would leave the
+    /// card itself behind the tab bar, which is what the first attempt at this captured.
+    private func scrollToMALSection(_ app: XCUIApplication) {
+        let header = app.staticTexts["MyAnimeList"]
+        for _ in 0..<8 where !header.isHittable {
+            app.swipeUp(velocity: .fast)
+            usleep(400_000)
+        }
+        XCTAssertTrue(header.isHittable, "the MyAnimeList section should be reachable on screen")
+        // Past the header, to the end of the scroll view.
+        for _ in 0..<3 {
+            app.swipeUp(velocity: .fast)
+            usleep(400_000)
+        }
+    }
+
     private func attach(_ app: XCUIApplication, name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name

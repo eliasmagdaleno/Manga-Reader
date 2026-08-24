@@ -182,6 +182,16 @@ final class MALAccountStore: ObservableObject {
                           automaticallyAddsTitles: toggles.automaticallyAddsTitles)
     }
 
+#if DEBUG
+    /// The account-switch question, put on screen without a second real sign-in. The
+    /// question itself is produced by `finishSignIn` and unit-tested there; this exists
+    /// only so the alert's wording and buttons can be looked at on a device.
+    func seedPendingAccountSwitchForUITesting(previousUserID: Int, pendingCount: Int) {
+        pendingAccountSwitch = MALAccountSwitchRequest(previousUserID: previousUserID,
+                                                       pendingCount: pendingCount)
+    }
+#endif
+
     /// Marks the account as needing a fresh sign-in. Called when a request comes back
     /// `reauthorizationRequired`; the queue is retained, and local reading is unaffected.
     func reauthorizationRequired() {
