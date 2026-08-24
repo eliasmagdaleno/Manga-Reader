@@ -20,6 +20,7 @@
 		6FB3C6A88ECE9ABE9FF0A62A /* ReaderViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3077F8455CE3CDC586CB6F0 /* ReaderViewModelTests.swift */; };
 		75E67AE756E06B6B4F7705DF /* MALReadingProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FA67CD30FC7B8F6A41AE61C /* MALReadingProgressTests.swift */; };
 		8E3D24B2AEAA8B5E93AAE2D0 /* MALOAuthTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40EE9C870ACFE67902D8ADB6 /* MALOAuthTests.swift */; };
+		A434ADC0FC897EACBC2CE024 /* MALAccountStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED10F20BF60C2CD05761BFCB /* MALAccountStoreTests.swift */; };
 		AD1157092EA0000200CF2434 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1157092EA0000100CF2434 /* HistoryView.swift */; };
 		AD5501012E0000010000000A /* RecommendationGoldenTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5501012E0000010000000B /* RecommendationGoldenTests.swift */; };
 		AD5501022E0000010000000A /* AniListAPITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5501022E0000010000000B /* AniListAPITests.swift */; };
@@ -116,6 +117,7 @@
 		D3077F8455CE3CDC586CB6F0 /* ReaderViewModelTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ReaderViewModelTests.swift; sourceTree = "<group>"; };
 		DBC6F29C8208094651FCAC5C /* TagVocabularyStoreTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = TagVocabularyStoreTests.swift; sourceTree = "<group>"; };
 		E667FDCB0E51CEB963BB2E88 /* SimulatorSeedFixture.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SimulatorSeedFixture.swift; sourceTree = "<group>"; };
+		ED10F20BF60C2CD05761BFCB /* MALAccountStoreTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = MALAccountStoreTests.swift; path = MALAccountStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -247,6 +249,7 @@
 				C5E70158C296EAD62B78AD1B /* MALCredentialStoreTests.swift */,
 				692709FBEDCACC3B7ADB0FA2 /* MALTokenManagerTests.swift */,
 				3A3F7D58DAF1DEBCD14D548D /* MALAuthenticatedClientTests.swift */,
+				ED10F20BF60C2CD05761BFCB /* MALAccountStoreTests.swift */,
 			);
 			path = "Manga-ReaderTests";
 			sourceTree = "<group>";
@@ -457,6 +460,7 @@
 				BF0D50CF07C99D0717A2D054 /* MALCredentialStoreTests.swift in Sources */,
 				62786603ED6C1507118332E7 /* MALTokenManagerTests.swift in Sources */,
 				D4F82A4A59ADEB4914F54F25 /* MALAuthenticatedClientTests.swift in Sources */,
+				A434ADC0FC897EACBC2CE024 /* MALAccountStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
