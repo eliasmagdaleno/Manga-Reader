@@ -453,3 +453,63 @@ struct MALAccountSyncSummaryTests {
         #expect(retries == 1)
     }
 }
+
+// MARK: - Token refresh, as the account shows it
+
+@MainActor
+@Suite("MAL account refresh state")
+struct MALAccountRefreshStateTests {
+    private func signedIn() -> AccountFixture {
+        let preferences = InMemoryAccountPreferences()
+        preferences.save(MALAccountPreferences(profile: elias,
+                                               syncEnabled: false,
+                                               automaticallyAddsTitles: true))
+        let fixture = AccountFixture(
+            preferences: preferences,
+            storedCredential: MALStoredCredential(tokenType: "Bearer",
+                                                  accessToken: "access",
+                                                  refreshToken: "refresh",
+                                                  expiresAt: accountNow.addingTimeInterval(3_600),
+                                                  malUserID: elias.id))
+        fixture.store.restore()
+        return fixture
+    }
+
+    @Test("A refresh in flight shows as refreshing, and ends back on the saved preferences")
+    func refreshShowsAndClears() throws {
+        let fixture = signedIn()
+
+        fixture.store.refreshBegan()
+        #expect(fixture.store.state == .refreshing(profile: elias))
+
+        fixture.store.refreshEnded()
+        // Restated from what is saved, not from a remembered copy — the toggles here are
+        // deliberately not the defaults, so a hardcoded restatement fails this.
+        #expect(fixture.store.state == .signedIn(profile: elias,
+                                                 syncEnabled: false,
+                                                 automaticallyAddsTitles: true))
+    }
+
+    @Test("A refresh for a signed-out account changes nothing")
+    func refreshWhileSignedOutIsIgnored() throws {
+        let fixture = AccountFixture()
+
+        fixture.store.refreshBegan()
+
+        #expect(fixture.store.state == .signedOut)
+    }
+
+    @Test("A refresh that ended in reauthorization does not get restated as signed in")
+    func refreshEndDoesNotOverwriteReauthorization() throws {
+        let fixture = signedIn()
+        fixture.store.refreshBegan()
+
+        // The permanent-failure path: the client marks the account before the token
+        // manager's end notification lands. Whichever order they arrive in, the account
+        // must not claim to be signed in.
+        fixture.store.reauthorizationRequired()
+        fixture.store.refreshEnded()
+
+        #expect(fixture.store.state == .reauthorizationRequired(profile: elias))
+    }
+}

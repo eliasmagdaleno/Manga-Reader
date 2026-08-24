@@ -92,7 +92,15 @@ struct AppComposition {
             dataStore: MALKeychainCredentialDataStore(),
             markerStore: MALUserDefaultsInstallationMarkerStore(defaults: defaults))
         let tokenClient = MALTokenClient(configuration: malConfiguration, transport: malTransport)
-        let tokens = MALTokenManager(client: tokenClient, store: credentials)
+        // The refresh spinner in Settings, through the same weak-box shape as `drain` below
+        // and for the same reason: the token manager is built before the account store.
+        let refreshHandle = MALRefreshHandle()
+        let tokens = MALTokenManager(client: tokenClient, store: credentials) { isRefreshing in
+            Task { @MainActor in
+                guard let account = refreshHandle.account else { return }
+                if isRefreshing { account.refreshBegan() } else { account.refreshEnded() }
+            }
+        }
         // The verb is the client's verified default now — see `MALListUpdateVerb`.
         let malClient = MALAuthenticatedClient(tokens: tokens, transport: malTransport)
         // **Retry now** has to reach a coordinator that does not exist yet, and the
@@ -122,6 +130,7 @@ struct AppComposition {
             // already knows, and waits for the queue's signal otherwise.
             malID: { wk.work($0)?.externalIds.mal })
         drain.coordinator = malProgress
+        refreshHandle.account = accountStore
 
         // The completion sink. Synchronous and network-free by contract — it writes the
         // completed chapter to the outbox and returns.
@@ -223,4 +232,11 @@ struct AppComposition {
 @MainActor
 final class MALDrainHandle {
     weak var coordinator: MALProgressCoordinator?
+}
+
+/// The same indirection for the other direction of the same cycle: `MALTokenManager` is
+/// built before the account store it notifies about a refresh in flight. Weak for the same
+/// reason — the composition owns the store.
+final class MALRefreshHandle: @unchecked Sendable {
+    @MainActor weak var account: MALAccountStore?
 }

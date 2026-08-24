@@ -282,14 +282,125 @@ struct MALTokenManagerTests {
 
     private func makeManager(
         transport: ScriptedTokenTransport,
-        store: MALCredentialStore
+        store: MALCredentialStore,
+        refreshDidChange: @escaping @Sendable (Bool) -> Void = { _ in }
     ) -> MALTokenManager {
         MALTokenManager(
             client: MALTokenClient(configuration: testConfiguration,
                                    transport: transport,
                                    now: { self.now }),
             store: store,
-            now: { self.now }
+            now: { self.now },
+            refreshDidChange: refreshDidChange
+        )
+    }
+}
+
+// MARK: - What the account section is told about a refresh
+
+/// The spinner in Settings is driven by these notifications, so what matters is that each
+/// real token request produces exactly one `true`/`false` pair — a burst must not stack
+/// spinners, and a failed refresh must still clear one.
+@Suite("MAL token refresh notifications")
+struct MALTokenRefreshNotificationTests {
+    private let now = Date(timeIntervalSince1970: 1_000_000)
+
+    /// Ordered, and safe to read from the test after the manager has finished with it.
+    private actor Recorder {
+        private(set) var events: [Bool] = []
+        func record(_ value: Bool) { events.append(value) }
+    }
+
+    @Test("A refresh announces its start and its finish, in that order")
+    func announcesRefresh() async throws {
+        let recorder = Recorder()
+        let transport = ScriptedTokenTransport(steps: [
+            .response(status: 200, body: tokenBody(access: "a1", refresh: "r1", expiresIn: 3600))
+        ])
+        let store = makeStore()
+        try store.save(credential(access: "a0", refresh: "r0", expiresIn: 60, from: now))
+        let manager = makeManager(transport: transport, store: store, refreshDidChange: { value in
+            Task { await recorder.record(value) }
+        })
+
+        _ = try await manager.accessToken()
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(await recorder.events == [true, false])
+    }
+
+    @Test("A burst of callers sharing one refresh announces it once")
+    func burstAnnouncesOnce() async throws {
+        let recorder = Recorder()
+        let transport = ScriptedTokenTransport(steps: [
+            .response(status: 200, body: tokenBody(access: "a1", refresh: "r1", expiresIn: 3600))
+        ])
+        let store = makeStore()
+        try store.save(credential(access: "a0", refresh: "r0", expiresIn: 60, from: now))
+        let manager = makeManager(transport: transport, store: store, refreshDidChange: { value in
+            Task { await recorder.record(value) }
+        })
+
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for _ in 0..<10 {
+                group.addTask { _ = try await manager.accessToken() }
+            }
+            try await group.waitForAll()
+        }
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(await recorder.events == [true, false])
+    }
+
+    @Test("A refresh that fails still announces its finish")
+    func failedRefreshStillFinishes() async throws {
+        let recorder = Recorder()
+        let transport = ScriptedTokenTransport(steps: [
+            .response(status: 400, body: #"{"error":"invalid_grant"}"#)
+        ])
+        let store = makeStore()
+        try store.save(credential(access: "a0", refresh: "r0", expiresIn: 60, from: now))
+        let manager = makeManager(transport: transport, store: store, refreshDidChange: { value in
+            Task { await recorder.record(value) }
+        })
+
+        await #expect(throws: (any Error).self) { _ = try await manager.accessToken() }
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(await recorder.events == [true, false])
+    }
+
+    private func credential(
+        access: String,
+        refresh: String,
+        expiresIn: TimeInterval,
+        from date: Date
+    ) -> MALStoredCredential {
+        MALStoredCredential(tokenType: "Bearer",
+                            accessToken: access,
+                            refreshToken: refresh,
+                            expiresAt: date.addingTimeInterval(expiresIn),
+                            malUserID: 42)
+    }
+
+    private func makeStore() -> MALCredentialStore {
+        MALCredentialStore(dataStore: MALInMemoryCredentialDataStore(),
+                           markerStore: MALInMemoryInstallationMarkerStore(marker: "installation-1")
+        ) { "installation-1" }
+    }
+
+    private func makeManager(
+        transport: ScriptedTokenTransport,
+        store: MALCredentialStore,
+        refreshDidChange: @escaping @Sendable (Bool) -> Void
+    ) -> MALTokenManager {
+        MALTokenManager(
+            client: MALTokenClient(configuration: testConfiguration,
+                                   transport: transport,
+                                   now: { self.now }),
+            store: store,
+            now: { self.now },
+            refreshDidChange: refreshDidChange
         )
     }
 }

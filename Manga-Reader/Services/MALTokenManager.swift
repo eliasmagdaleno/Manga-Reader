@@ -13,6 +13,11 @@ actor MALTokenManager {
     private let client: MALTokenClient
     private let store: MALCredentialStore
     private let now: @Sendable () -> Date
+    /// Told `true` when a refresh starts and `false` when it ends. This is what makes
+    /// `MALAccountStore.State.refreshing` reachable — without it the state has a
+    /// presentation and no producer. Called at the single-flight boundary, so a burst of
+    /// pushes that shares one token request also shares one notification.
+    private let refreshDidChange: @Sendable (Bool) -> Void
 
     /// `false` until the Keychain has been read once; `credential` is meaningless before then.
     private var hasLoaded = false
@@ -23,11 +28,13 @@ actor MALTokenManager {
     init(
         client: MALTokenClient,
         store: MALCredentialStore,
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> Date = { Date() },
+        refreshDidChange: @escaping @Sendable (Bool) -> Void = { _ in }
     ) {
         self.client = client
         self.store = store
         self.now = now
+        self.refreshDidChange = refreshDidChange
     }
 
     /// A usable access token, refreshing first if the stored one is at or near expiry.
@@ -66,11 +73,17 @@ actor MALTokenManager {
     private func refresh(from current: MALStoredCredential) async throws -> MALStoredCredential {
         if let refreshTask { return try await refreshTask.value }
 
+        // Announced by the caller that *owns* the refresh — the joiners above returned
+        // already — and ended in the `defer`, so a refresh that throws still clears.
+        refreshDidChange(true)
         let task = Task<MALStoredCredential, any Error> { [self] in
             try await performRefresh(from: current)
         }
         refreshTask = task
-        defer { refreshTask = nil }
+        defer {
+            refreshTask = nil
+            refreshDidChange(false)
+        }
         return try await task.value
     }
 
