@@ -6,7 +6,7 @@ import Testing
 
 /// A scripted transport. Each `send` pops the next scripted step, so a test states exactly
 /// what the network does and how many times it was asked.
-private actor ScriptedTokenTransport: MALTokenTransport {
+private actor ScriptedTokenTransport: MALHTTPTransport {
     enum Step {
         case response(status: Int, body: String)
         case failure(any Error)
