@@ -361,9 +361,9 @@ is gone. `PUT` was not tested — it would be a second mutation for no decision 
   never intentional `xcp` file entries.
 - [x] Update README Deferred/current-state wording and add an ADR if implementation reveals a
   lasting architectural decision not already captured by the approved spec.
-- [ ] Check `git diff --check`, inspect the exact staged paths, commit the scoped implementation,
-  push the branch, and open a draft PR. Require SwiftLint and Build & unit tests to pass before
-  marking it ready.
+- [x] Check `git diff --check`, inspect the exact staged paths, commit the scoped implementation,
+  push the branch, and open a draft PR. PR #85 passed SwiftLint and Build & unit tests on
+  2026-08-24 before being marked ready.
 
 ### Still unverified after Task 12
 
