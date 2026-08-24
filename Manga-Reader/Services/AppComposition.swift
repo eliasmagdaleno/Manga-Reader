@@ -65,6 +65,47 @@ struct AppComposition {
          MALInMemoryAccountPreferenceStore())
     }
 
+#if DEBUG
+    /// The account states a UI test can put on screen, for the ones a device cannot be
+    /// talked into showing on demand. `signedIn` and `reauthorizationRequired` are reached
+    /// through `restore()`'s real branches — a cached profile with a credential, and one
+    /// without — so what those two verify is the genuine article. `refreshing` and the
+    /// account-switch alert are seeded on the store afterwards (see `MALAccountStore`),
+    /// because one waits on a token near expiry and the other on a completed sign-in as a
+    /// second user; both triggers stay covered by unit tests.
+    enum MALUITestAccountState: String {
+        case signedIn = "signed-in"
+        case reauthorizationRequired = "reauthorization-required"
+        case refreshing
+        case accountSwitch = "account-switch"
+    }
+
+    /// A stand-in account. Deliberately not the developer's — a screenshot of these states
+    /// is an artifact that outlives the run, and it should carry nobody's real name.
+    static let malUITestProfile = MALUserIdentity(id: 1_000_001,
+                                                 name: "UITestReader",
+                                                 pictureURL: nil)
+
+    static func seededMALAccount(
+        _ state: MALUITestAccountState
+    ) -> (MALCredentialStore, MALAccountPreferenceStore) {
+        let (credentials, preferences) = ephemeralMALAccount()
+        preferences.save(MALAccountPreferences(profile: malUITestProfile,
+                                               syncEnabled: true,
+                                               automaticallyAddsTitles: false))
+        // No credential is exactly what `restore()` reads as "needs reauthorization"; every
+        // other state here is a signed-in one and needs one present.
+        if state != .reauthorizationRequired {
+            try? credentials.save(MALStoredCredential(tokenType: "Bearer",
+                                                      accessToken: "uitest-access",
+                                                      refreshToken: "uitest-refresh",
+                                                      expiresAt: Date().addingTimeInterval(2_678_400),
+                                                      malUserID: malUITestProfile.id))
+        }
+        return (credentials, preferences)
+    }
+#endif
+
     /// The four injected seams below all default to the production object. They exist so a
     /// test can build **this** graph — not a hand-rolled imitation of it — without a
     /// Keychain, an AniList request, or a MyAnimeList search.
@@ -92,7 +133,15 @@ struct AppComposition {
             dataStore: MALKeychainCredentialDataStore(),
             markerStore: MALUserDefaultsInstallationMarkerStore(defaults: defaults))
         let tokenClient = MALTokenClient(configuration: malConfiguration, transport: malTransport)
-        let tokens = MALTokenManager(client: tokenClient, store: credentials)
+        // The refresh spinner in Settings, through the same weak-box shape as `drain` below
+        // and for the same reason: the token manager is built before the account store.
+        let refreshHandle = MALRefreshHandle()
+        let tokens = MALTokenManager(client: tokenClient, store: credentials) { isRefreshing in
+            Task { @MainActor in
+                guard let account = refreshHandle.account else { return }
+                if isRefreshing { account.refreshBegan() } else { account.refreshEnded() }
+            }
+        }
         // The verb is the client's verified default now — see `MALListUpdateVerb`.
         let malClient = MALAuthenticatedClient(tokens: tokens, transport: malTransport)
         // **Retry now** has to reach a coordinator that does not exist yet, and the
@@ -122,6 +171,7 @@ struct AppComposition {
             // already knows, and waits for the queue's signal otherwise.
             malID: { wk.work($0)?.externalIds.mal })
         drain.coordinator = malProgress
+        refreshHandle.account = accountStore
 
         // The completion sink. Synchronous and network-free by contract — it writes the
         // completed chapter to the outbox and returns.
@@ -223,4 +273,11 @@ struct AppComposition {
 @MainActor
 final class MALDrainHandle {
     weak var coordinator: MALProgressCoordinator?
+}
+
+/// The same indirection for the other direction of the same cycle: `MALTokenManager` is
+/// built before the account store it notifies about a refresh in flight. Weak for the same
+/// reason — the composition owns the store.
+final class MALRefreshHandle: @unchecked Sendable {
+    @MainActor weak var account: MALAccountStore?
 }

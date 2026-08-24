@@ -162,6 +162,36 @@ final class MALAccountStore: ObservableObject {
 
     private var skippedCount = 0
 
+    /// A token refresh started. Only a signed-in account can be refreshing — every other
+    /// state either has no token to refresh or is already telling the user something more
+    /// important, so this is a no-op there rather than a state that lies.
+    func refreshBegan() {
+        guard case let .signedIn(profile, _, _) = state else { return }
+        state = .refreshing(profile: profile)
+    }
+
+    /// The refresh finished, however it finished. Restated from the saved preferences
+    /// rather than from a remembered copy, and guarded on `.refreshing` — a refresh that
+    /// failed permanently has already moved the account to `reauthorizationRequired`, and
+    /// this must not talk it back into looking signed in.
+    func refreshEnded() {
+        guard case let .refreshing(profile) = state else { return }
+        let toggles = syncToggles
+        state = .signedIn(profile: profile,
+                          syncEnabled: toggles.syncEnabled,
+                          automaticallyAddsTitles: toggles.automaticallyAddsTitles)
+    }
+
+#if DEBUG
+    /// The account-switch question, put on screen without a second real sign-in. The
+    /// question itself is produced by `finishSignIn` and unit-tested there; this exists
+    /// only so the alert's wording and buttons can be looked at on a device.
+    func seedPendingAccountSwitchForUITesting(previousUserID: Int, pendingCount: Int) {
+        pendingAccountSwitch = MALAccountSwitchRequest(previousUserID: previousUserID,
+                                                       pendingCount: pendingCount)
+    }
+#endif
+
     /// Marks the account as needing a fresh sign-in. Called when a request comes back
     /// `reauthorizationRequired`; the queue is retained, and local reading is unaffected.
     func reauthorizationRequired() {

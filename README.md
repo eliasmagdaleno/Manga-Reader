@@ -68,17 +68,17 @@ The core reading loop is complete: Home, Library, History, Search, and Settings 
 - Cross-source search with infinite scroll
 - On-device recommendation engine (MangaDex-only for now — see below)
 - "Ink & Seal" design system, light/dark mode
+- **MyAnimeList as a canonical metadata layer** — a MAL client for titles, related manga, and recommendations
+- **Cross-source entity resolution** — matching a title to its MAL id (MangaDex exposes external-id links for most entries, making this closer to free there than for HTML-scraped sources) so the app knows every registered source that carries a given manga
+- **"More Like This"** — a rail on the manga detail page, driven by MAL relations and resolved across the sources you have registered
+- **MyAnimeList OAuth + push reading-progress tracking** — optional sign-in; chapters you finish in the reader are queued and sent to your MAL list. Nothing is on the reading path, and signed-out reading is unchanged
 
 **Next up:**
-- **MyAnimeList as a canonical metadata layer** — a read-only MAL client for titles, related manga, and recommendations
-- **Cross-source entity resolution** — matching a title to its MAL id (MangaDex already exposes external-id links for most entries, making this closer to free there than for HTML-scraped sources) so the app knows every registered source that carries a given manga
-- **"More Like This"** — a Netflix-style tab on the manga detail page, driven by MAL relations and resolved across every source you have registered
-- Extending the recommendation engine past MangaDex-only, as identity resolution allows
+- Extending the recommendation engine past MangaDex-only, as identity resolution allows (reverse resolution — external id → an openable Listing — is still MangaDex-only)
 
 **Deferred:**
 - Additional native sources, added opportunistically
 - A hot-loadable, third-party extension/repo system (Paperback/Aidoku-style) — an interesting distribution model, but not on the critical path for the recommendation work above, so shelved for now
-- MyAnimeList OAuth + push reading-progress tracking
 
 ## Acknowledgments
 

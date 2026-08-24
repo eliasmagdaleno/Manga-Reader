@@ -329,8 +329,8 @@ is gone. `PUT` was not tested — it would be a second mutation for no decision 
 
 ## Task 12: Full verification and delivery
 
-- [ ] Run focused MAL suites first.
-- [ ] Run the complete unit suite:
+- [x] Run focused MAL suites first.
+- [x] Run the complete unit suite (2026-08-24: 571 XCTest + 76 Swift Testing, 2 skipped, 0 failures):
 
   ```sh
   xcodebuild -scheme Manga-Reader \
@@ -338,19 +338,42 @@ is gone. `PUT` was not tested — it would be a second mutation for no decision 
     -parallel-testing-enabled NO test
   ```
 
-- [ ] Run SwiftLint using the repository's existing CI-equivalent command.
+- [x] Run SwiftLint using the repository's existing CI-equivalent command (42 warnings, 0 serious — unchanged baseline).
 - [ ] Build the app for the same destination and manually verify signed-out reading is unchanged.
+- [x] **Render every account state on a device** — done 2026-08-24 via `-uitest-mal-state`
+  (`testMyAnimeListSettingsStatesRender`, `testMyAnimeListSettingsAtAccessibilityTextSize`).
+  Signed-in, refreshing, reauthorization-required, the account-switch alert, and the signed-in
+  section at `AccessibilityXXXL` are all screenshotted and were inspected, not just asserted.
+  Wiring `refreshing` needed an app change: the state had **no producer** — see
+  `MALTokenManager.refreshDidChange`.
+- [x] **A genuine reader completion reaches MyAnimeList** — done 2026-08-24 with approval, on
+  Horimiya (MAL 42451). Read chapter 124 to its last page: 100 → 124 with `status` preserved as
+  `reading`, then restored to 100 and the restore confirmed from a fresh process.
+  `testLiveHorimiyaCompletionPushesProgress`, which skips unless `MAL_LIVE_WRITE=1`.
 - [ ] Exercise offline completion, relaunch persistence, foreground retry, toggle disable/enable,
-  logout cleanup, and reauthorization on the seeded iPhone 17 Pro.
-- [ ] Confirm no secrets appear in source control, build settings output, logs, screenshots, test
+  and logout cleanup on the seeded iPhone 17 Pro.
+- [x] Confirm no secrets appear in source control, build settings output, logs, screenshots, test
   fixtures, or failure descriptions.
-- [ ] Re-check `project.pbxproj` immediately before staging; discard only unrelated Xcode churn,
+- [x] Re-check `project.pbxproj` immediately before staging; discard only unrelated Xcode churn,
   never intentional `xcp` file entries.
-- [ ] Update README Deferred/current-state wording and add an ADR if implementation reveals a
+- [x] Update README Deferred/current-state wording and add an ADR if implementation reveals a
   lasting architectural decision not already captured by the approved spec.
 - [ ] Check `git diff --check`, inspect the exact staged paths, commit the scoped implementation,
   push the branch, and open a draft PR. Require SwiftLint and Build & unit tests to pass before
   marking it ready.
+
+### Still unverified after Task 12
+
+- **`PUT` as a list-update verb.** `PATCH` is verified and answers the question; a second
+  mutation of a real account would have changed no decision.
+- **Adding an unlisted title.** Unit-tested only — the Task 11 harness refused to write to an
+  unlisted title by design.
+- **`skippedCount` across launches.** In-memory, and the outbox stores no skipped item. If
+  Settings must show it after a relaunch, that is an outbox change nobody has scoped.
+- **The account-switch *trigger*.** Its presentation is now on screen, but reaching it for real
+  needs a completed sign-in as a second MAL user; the trigger stays unit-tested.
+- **The empty sync summary.** The signed-in section shows no summary line with an empty queue.
+  That is now confirmed to be what it *does*; whether it is what it *should* do is unasked.
 
 ## Completion criteria
 

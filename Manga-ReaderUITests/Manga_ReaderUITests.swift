@@ -90,6 +90,181 @@ final class Manga_ReaderUITests: XCTestCase {
         attach(app, name: "10-settings-mal-signed-out")
     }
 
+    /// **The four MAL Settings states that had never been rendered on a device** (MAL plan,
+    /// Task 12). Everything below the view — which branch a state maps to — is decided in
+    /// `MALAccountPresentation` and tested there; what only a device can answer is whether
+    /// the resulting section actually lays out, and at an accessibility text size whether it
+    /// still fits. The screenshots are the artifact.
+    ///
+    /// Runs on a seeded stand-in account, never this device's real one.
+    func testMyAnimeListSettingsStatesRender() throws {
+        for state in ["signed-in", "refreshing", "reauthorization-required", "account-switch"] {
+            let app = XCUIApplication()
+            app.launchArguments += ["-uitest-mal-state", state]
+            // A previous test can leave the simulator on its side, and these screenshots
+            // are the deliverable. Set it rather than inherit it.
+            XCUIDevice.shared.orientation = .portrait
+            app.launch()
+            app.tabBars.buttons["Settings"].tap()
+
+            XCTAssertTrue(app.staticTexts["MyAnimeList"].waitForExistence(timeout: 10),
+                          "the MyAnimeList section should be in Settings for \(state)")
+            // The switch alert is modal, so nothing under it is hittable — that state's
+            // screenshot is of the alert, which is the thing that had never been seen.
+            if state != "account-switch" { scrollToMALSection(app) }
+            // Every one of these is a signed-in-shaped section, so the sign-in offer must
+            // be gone — that is what tells a rendered state from a silently signed-out one.
+            XCTAssertFalse(app.buttons["Sign in"].exists,
+                           "\(state) should not be offering a fresh sign-in")
+            attach(app, name: "11-settings-mal-\(state)")
+
+            if state == "account-switch" {
+                XCTAssertTrue(app.buttons["Keep them"].waitForExistence(timeout: 5),
+                              "the account-switch alert should be up")
+                XCTAssertTrue(app.buttons["Delete queued updates"].exists)
+                app.buttons["Keep them"].tap()
+            }
+            app.terminate()
+        }
+    }
+
+    /// The signed-in section at the largest accessibility text size. Separate from the loop
+    /// above because the size is set by a launch argument to the whole app, not by state.
+    func testMyAnimeListSettingsAtAccessibilityTextSize() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uitest-mal-state", "signed-in",
+                                "-UIPreferredContentSizeCategoryName",
+                                "UICTContentSizeCategoryAccessibilityXXXL"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+        app.tabBars.buttons["Settings"].tap()
+
+        XCTAssertTrue(app.staticTexts["MyAnimeList"].waitForExistence(timeout: 10),
+                      "the MyAnimeList section should survive accessibility text sizes")
+        scrollToMALSection(app)
+        attach(app, name: "12-settings-mal-large-text")
+    }
+
+    /// Existing in the hierarchy is not the same as being on screen, and a screenshot of
+    /// the section scrolled past proves nothing. MyAnimeList is the last section in
+    /// Settings, so this scrolls to the bottom — stopping at the header would leave the
+    /// card itself behind the tab bar, which is what the first attempt at this captured.
+    private func scrollToMALSection(_ app: XCUIApplication) {
+        let header = app.staticTexts["MyAnimeList"]
+        for _ in 0..<8 where !header.isHittable {
+            app.swipeUp(velocity: .fast)
+            usleep(400_000)
+        }
+        XCTAssertTrue(header.isHittable, "the MyAnimeList section should be reachable on screen")
+        // Past the header, to the end of the scroll view.
+        for _ in 0..<3 {
+            app.swipeUp(velocity: .fast)
+            usleep(400_000)
+        }
+    }
+
+    /// **A one-off live verification for MAL Task 12, not a CI test.** It reads a chapter of
+    /// a real title to the end, which is the only thing that may move MyAnimeList progress —
+    /// manual mark-as-read deliberately cannot. Run only with explicit approval and only
+    /// alongside the read/restore harness that records and puts back the entry's value.
+    ///
+    /// Chapter **124** is not arbitrary: the account sits at 100 chapters, and the coordinator
+    /// treats a desired progress at or below the remote value as already delivered
+    /// (`MALProgressCoordinator.swift:281`), so anything lower would verify nothing. 101 does
+    /// not exist — MangaDex's English list for this title jumps from 30 to 123.1.
+    func testLiveHorimiyaCompletionPushesProgress() throws {
+        // **Cannot run by accident.** This one writes to a real MyAnimeList account, so a
+        // plain `xcodebuild test` must skip it — the environment variable has to be set
+        // deliberately, and only alongside the read/restore harness described above.
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["MAL_LIVE_WRITE"] == "1",
+                          "live MAL write: set MAL_LIVE_WRITE=1 to run, and restore the entry after")
+
+        let app = XCUIApplication()
+        app.launchArguments += ["-uitest-source", "mangadex"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+
+        app.buttons["Search"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("Horimiya\n")
+
+        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Horimiya"))
+            .firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 25), "search should return Horimiya")
+        result.tap()
+
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 25), "should reach the detail page")
+
+        let showAll = app.buttons["showAllChaptersButton"]
+        for _ in 0..<10 where !showAll.exists {
+            app.swipeUp(velocity: .fast)
+            usleep(500_000)
+        }
+        XCTAssertTrue(showAll.exists, "Horimiya should have a full chapter list")
+        showAll.tap()
+
+        // Find chapter 124. The list is long, so scroll toward it rather than assuming it is
+        // on screen.
+        let chapter = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "CH·124"))
+            .firstMatch
+        var found = false
+        for _ in 0..<40 where !found {
+            if chapter.exists { found = true; break }
+            app.swipeUp(velocity: .fast)
+            usleep(300_000)
+        }
+        XCTAssertTrue(found, "chapter 124 should be in the list")
+        attach(app, name: "30-chapter-124-row")
+        chapter.tap()
+
+        // Read it to the last page. The indicator reads "n · total" and is part of the
+        // reader chrome, which is hidden until tapped — so reveal it before looking.
+        let indicator = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", " · "))
+            .firstMatch
+        for _ in 0..<12 where !indicator.exists {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            usleep(1_500_000)
+        }
+        XCTAssertTrue(indicator.waitForExistence(timeout: 30), "the reader should load pages")
+        let total = Self.indicatorTotal(indicator.label)
+        XCTAssertNotNil(total, "could not read a page count from '\(indicator.label)'")
+        let pages = total ?? 0
+        XCTAssertGreaterThan(pages, 1, "a one-page chapter would not prove paging")
+
+        // Direction is a property of the title's reading direction, so probe rather than
+        // assume: R→L is implemented as reversed page order, not a mirror.
+        var advancing = false
+        app.swipeLeft()
+        usleep(600_000)
+        if Self.indicatorCurrent(indicator.label) ?? 1 > 1 { advancing = true }
+
+        for _ in 0..<(pages + 5) {
+            if (Self.indicatorCurrent(indicator.label) ?? 0) >= pages { break }
+            if advancing { app.swipeLeft() } else { app.swipeRight() }
+            usleep(500_000)
+        }
+        attach(app, name: "31-last-page")
+        XCTAssertEqual(Self.indicatorCurrent(indicator.label), pages,
+                       "the chapter must reach its final page — anything less is not a completion")
+
+        // `HistoryStore` throttles its writes and flushes on `.background`; a run that just
+        // ends loses the entry, and with it the queued update.
+        XCUIDevice.shared.press(.home)
+        sleep(8)
+    }
+
+    private static func indicatorCurrent(_ label: String) -> Int? {
+        Int(label.split(separator: "·").first?.trimmingCharacters(in: .whitespaces) ?? "")
+    }
+
+    private static func indicatorTotal(_ label: String) -> Int? {
+        Int(label.split(separator: "·").last?.trimmingCharacters(in: .whitespaces) ?? "")
+    }
+
     private func attach(_ app: XCUIApplication, name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name
@@ -117,13 +292,20 @@ final class Manga_ReaderUITests: XCTestCase {
         // re-layout while covers stream in can swallow the first tap).
         let firstCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
         XCTAssertTrue(firstCard.waitForExistence(timeout: 20), "a cover card should load on Home")
-        let libraryToggle = app.buttons["Add to Library"]
-        let removeToggle = app.buttons["Remove from Library"]
+        // Any of the detail page's library labels ("Add to Library", "In Library",
+        // "Remove from Library") proves it opened — which one shows depends on whether this
+        // device already has the title, and Home's ranking drifts, so naming one is a
+        // coin flip the test would lose.
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
         firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-        if !libraryToggle.waitForExistence(timeout: 8) && !removeToggle.exists {
+        // Retry only while the card is still there to tap. Once the push has happened the
+        // same coordinate lands on the detail page and can navigate deeper, out of reach of
+        // the assertion below — a slow detail page would then read as a broken one.
+        if !libraryToggle.waitForExistence(timeout: 8) && firstCard.isHittable {
             firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
         }
-        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15) || removeToggle.exists,
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15),
                       "should have opened a manga detail page")
 
         // The rail loads async (MAL + MangaDex round-trips) and sits at the very bottom.
@@ -160,13 +342,20 @@ final class Manga_ReaderUITests: XCTestCase {
 
         let firstCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
         XCTAssertTrue(firstCard.waitForExistence(timeout: 20), "a cover card should load on Home")
-        let libraryToggle = app.buttons["Add to Library"]
-        let removeToggle = app.buttons["Remove from Library"]
+        // Any of the detail page's library labels ("Add to Library", "In Library",
+        // "Remove from Library") proves it opened — which one shows depends on whether this
+        // device already has the title, and Home's ranking drifts, so naming one is a
+        // coin flip the test would lose.
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
         firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-        if !libraryToggle.waitForExistence(timeout: 8) && !removeToggle.exists {
+        // Retry only while the card is still there to tap. Once the push has happened the
+        // same coordinate lands on the detail page and can navigate deeper, out of reach of
+        // the assertion below — a slow detail page would then read as a broken one.
+        if !libraryToggle.waitForExistence(timeout: 8) && firstCard.isHittable {
             firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
         }
-        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15) || removeToggle.exists,
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15),
                       "should have opened a manga detail page")
 
         XCTAssertTrue(app.staticTexts["Chapters"].waitForExistence(timeout: 15),
@@ -189,17 +378,33 @@ final class Manga_ReaderUITests: XCTestCase {
     /// live. Taps through, toggles sort, then marks a chapter read via select mode.
     func testShowAllChaptersOpensFullListWithSortAndSelect() throws {
         let app = XCUIApplication()
+        // Two things this test must establish rather than inherit. The browse source is
+        // persisted (`SourceRegistry`), so a previous WeebCentral run would otherwise
+        // decide which catalog this searches.
+        app.launchArguments += ["-uitest-source", "mangadex"]
         app.launch()
 
-        let firstCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
-        XCTAssertTrue(firstCard.waitForExistence(timeout: 20), "a cover card should load on Home")
-        let libraryToggle = app.buttons["Add to Library"]
-        let removeToggle = app.buttons["Remove from Library"]
-        firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-        if !libraryToggle.waitForExistence(timeout: 8) && !removeToggle.exists {
-            firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-        }
-        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15) || removeToggle.exists,
+        // **Searched, not taken from Home.** The full-list screen only exists above five
+        // chapters, and Home's first card is whatever live ranking puts there — it was
+        // "6000: Rokusen", three chapters, the day this was written, and the row was
+        // correctly absent. Berserk is long, complete, and not going to shorten.
+        app.buttons["Search"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
+        field.tap()
+        field.typeText("Berserk\n")
+
+        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Berserk"))
+            .firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 25), "search should return Berserk")
+        result.tap()
+
+        // Any of the detail page's library labels ("Add to Library", "In Library",
+        // "Remove from Library") proves it opened — which one shows depends on whether this
+        // device already holds the title.
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 25),
                       "should have opened a manga detail page")
 
         // The "Show all" row only exists for titles with > 5 chapters. Scroll it into
@@ -211,6 +416,16 @@ final class Manga_ReaderUITests: XCTestCase {
             if showAll.exists { foundShowAll = true; break }
             app.swipeUp(velocity: .fast)
             usleep(500_000)
+        }
+        if !foundShowAll {
+            // Which title, and what the chapter section actually rendered — this assertion
+            // failed for two very different reasons historically (wrong source, short
+            // title), and the label alone cannot tell them apart.
+            attach(app, name: "20-show-all-missing")
+            let dump = XCTAttachment(string: app.debugDescription)
+            dump.name = "20-show-all-missing-hierarchy"
+            dump.lifetime = .keepAlways
+            add(dump)
         }
         XCTAssertTrue(foundShowAll, "a long title should show the 'Show all N chapters' row")
         showAll.tap()
@@ -324,12 +539,20 @@ final class Manga_ReaderUITests: XCTestCase {
         attach(app, name: "seed-01-weebcentral-home")
         card.tap()
 
+        // Either library state proves the detail page rendered, which is all this assertion
+        // ever meant. The test seeds a Work, so a title a previous run already added has
+        // satisfied it — re-adding is not what is being verified.
         let addToLibrary = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Add to Library"))
             .firstMatch
-        XCTAssertTrue(addToLibrary.waitForExistence(timeout: 45), "should reach a WeebCentral detail page")
+        let anyLibraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
+        XCTAssertTrue(anyLibraryToggle.waitForExistence(timeout: 45),
+                      "should reach a WeebCentral detail page")
         attach(app, name: "seed-02-detail")
-        addToLibrary.tap()
-        sleep(4)
+        if addToLibrary.exists {
+            addToLibrary.tap()
+            sleep(4)
+        }
         attach(app, name: "seed-03-after-add")
 
         // Background to force the stores to flush; a run that just ends loses the write.
