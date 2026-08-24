@@ -420,3 +420,36 @@ final class MALUserDefaultsAccountPreferenceStore: MALAccountPreferenceStore, @u
         }
     }
 }
+
+/// A signed-out MAL account that leaves no trace, for UI tests.
+///
+/// `MALInMemoryCredentialDataStore` alone is not enough to reach `.signedOut`: `restore()`
+/// reads preferences *first*, and a cached profile with no credential is
+/// `.reauthorizationRequired`. Isolating the account therefore takes both halves.
+final class MALInMemoryAccountPreferenceStore: MALAccountPreferenceStore, @unchecked Sendable {
+    private let lock = NSLock()
+    private var preferences: MALAccountPreferences?
+    private var queuedAccountUserID: Int?
+
+    init() {}
+
+    func load() -> MALAccountPreferences? {
+        lock.withLock { preferences }
+    }
+
+    func save(_ preferences: MALAccountPreferences) {
+        lock.withLock { self.preferences = preferences }
+    }
+
+    func clear() {
+        lock.withLock { preferences = nil }
+    }
+
+    func loadQueuedAccountUserID() -> Int? {
+        lock.withLock { queuedAccountUserID }
+    }
+
+    func saveQueuedAccountUserID(_ userID: Int?) {
+        lock.withLock { queuedAccountUserID = userID }
+    }
+}

@@ -72,6 +72,9 @@ final class Manga_ReaderUITests: XCTestCase {
     /// so this test failing is how that shows up).
     func testSettingsShowsTheSignedOutMyAnimeListSection() throws {
         let app = XCUIApplication()
+        // Without this the test reads the real Keychain and preferences: it passes on a
+        // fresh simulator and fails on any machine where someone has actually signed in.
+        app.launchArguments.append("-uitest-mal-signed-out")
         app.launch()
 
         app.tabBars.buttons["Settings"].tap()

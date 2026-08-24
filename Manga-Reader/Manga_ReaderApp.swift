@@ -41,7 +41,18 @@ struct Manga_ReaderApp: App {
     /// The graph itself lives in `AppComposition`, where it can be built against temp
     /// storage and asserted on. This initializer does nothing but adopt what it built.
     init() {
-        let composed = AppComposition()
+        // A UI test asserting the signed-out MyAnimeList section must not read this
+        // device's real account, or it passes on fresh CI and fails on any machine that
+        // has signed in. `#if DEBUG` so no release build can be talked out of its account.
+        var ephemeralCredentials: MALCredentialStore?
+        var ephemeralPreferences: MALAccountPreferenceStore?
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitest-mal-signed-out") {
+            (ephemeralCredentials, ephemeralPreferences) = AppComposition.ephemeralMALAccount()
+        }
+#endif
+        let composed = AppComposition(malCredentials: ephemeralCredentials,
+                                      malPreferences: ephemeralPreferences)
         self.vocabularyStore = composed.vocabularyStore
         self.poolStore = composed.poolStore
         self.malProgress = composed.malProgress

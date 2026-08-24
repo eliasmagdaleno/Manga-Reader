@@ -60,12 +60,23 @@ struct AppComposition {
     /// is the single point that changes when that lands — nothing else names a verb.
     static let malUpdateVerb: MALListUpdateVerb = .patch
 
-    /// The three injected seams below all default to the production object. They exist so a
+    /// A MAL account isolated from this device's real one. UI tests that assert the
+    /// signed-out section need it: they otherwise read the developer's actual Keychain and
+    /// preferences, so the assertion passes on fresh CI and fails on any machine that has
+    /// ever signed in. Both halves are required — see `MALInMemoryAccountPreferenceStore`.
+    static func ephemeralMALAccount() -> (MALCredentialStore, MALAccountPreferenceStore) {
+        (MALCredentialStore(dataStore: MALInMemoryCredentialDataStore(),
+                            markerStore: MALInMemoryInstallationMarkerStore()),
+         MALInMemoryAccountPreferenceStore())
+    }
+
+    /// The four injected seams below all default to the production object. They exist so a
     /// test can build **this** graph — not a hand-rolled imitation of it — without a
     /// Keychain, an AniList request, or a MyAnimeList search.
     init(defaults: UserDefaults = .standard,
          directory: URL = WorkStore.applicationSupportDirectory(),
          malCredentials: MALCredentialStore? = nil,
+         malPreferences: MALAccountPreferenceStore? = nil,
          anilist injectedAniList: AniListAPI? = nil,
          malResolver: MALEntityResolver? = nil) {
         // Built first: the three commitment paths below (read, save, feedback) all
@@ -98,7 +109,8 @@ struct AppComposition {
             presenter: MALWebAuthPresenter(),
             tokenClient: tokenClient,
             credentials: credentials,
-            preferences: MALUserDefaultsAccountPreferenceStore(defaults: defaults),
+            preferences: malPreferences
+                ?? MALUserDefaultsAccountPreferenceStore(defaults: defaults),
             outbox: outbox,
             // The identity read for a token that is not in the manager yet — see
             // `MALAuthenticatedClient.currentUser(accessToken:transport:)`.
@@ -209,7 +221,6 @@ struct AppComposition {
         self.malOutbox = outbox
     }
 }
-
 
 /// The one indirection in this file: `MALAccountStore`'s **Retry now** needs the
 /// coordinator, and the coordinator needs the account store. Weak on purpose — the
