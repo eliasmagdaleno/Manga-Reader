@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import os
 
 /// The seam that keeps `URLSession` out of the tests, shared by the token and API clients. Deliberately narrow: one request in,
 /// data and an `HTTPURLResponse` out, so a test can script a status code and a body.
@@ -97,6 +98,11 @@ struct MALTokenClient: Sendable {
         self.now = now
     }
 
+#if DEBUG
+    private static let contractLog = Logger(subsystem: "Elias-Magdaleno.Manga-Reader",
+                                            category: "mal.contract")
+#endif
+
     func fetch(_ request: MALTokenRequest) async throws -> MALCredential {
         let (data, response) = try await send(request)
 
@@ -113,6 +119,16 @@ struct MALTokenClient: Sendable {
             throw MALTokenError.malformedResponse
         }
         guard token.expiresIn > 0 else { throw MALTokenError.invalidExpiry }
+
+#if DEBUG
+        // Task 11 needs the real `expires_in`, and MAL's own docs contradict themselves about
+        // it. Only the integer seconds and the token type are emitted — never a token, a code,
+        // or a verifier — and only in DEBUG, so nothing of this reaches a release build.
+        // `.notice`, not `.debug`: debug records live in a memory buffer that `log show`
+        // cannot read back, so a debug-level probe is unrecoverable after the fact.
+        MALTokenClient.contractLog.notice(
+            "MAL token response: type=\(token.tokenType, privacy: .public) expires_in=\(token.expiresIn, privacy: .public)s")
+#endif
 
         return MALCredential(response: token, receivedAt: now())
     }

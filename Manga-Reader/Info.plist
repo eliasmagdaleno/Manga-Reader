@@ -10,7 +10,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>com.eliasmagdaleno.Manga-Reader.oauth</string>
+			<string>Elias-Magdaleno.Manga-Reader.oauth</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>mangareader</string>
