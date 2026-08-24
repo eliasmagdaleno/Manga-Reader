@@ -201,9 +201,12 @@ another client from advancing progress in the intervening instant. V1 guarantees
 never sends a value lower than the remote value it most recently observed; absolute cross-client
 monotonicity is impossible under the published API and is stated as such in the design.
 
-The official reference contradicts itself on `PATCH` versus `PUT`. The transport keeps the verb in
-one implementation point, but production completion is blocked on an explicitly approved live
-verification against a known list entry, including restoration of its prior state.
+The official reference contradicts itself on `PATCH` versus `PUT`. **Resolved 2026-08-24: it is
+`PATCH`**, measured against a known list entry under explicit approval, with the entry restored
+and the restoration confirmed from a fresh process. Omitting `status` from the body preserves the
+entry's existing status, which is the behaviour this design's minimal write depends on. The
+transport still keeps the verb in one implementation point so a future contract change can be
+re-measured the same way. See the Task 11b section of the research note.
 
 ## Failure and retry policy
 

@@ -310,15 +310,22 @@ approval with the exact preview.
   granted scope behavior, and actual `expires_in` without recording secrets. *(2026-08-24:
   callback round-tripped, `Bearer`, `expires_in=2678400` — 31 days, not the documented hour.
   Signed-in Settings state rendered on device for the first time.)*
-- [ ] Select a MAL manga whose current list presence, status, and chapter progress are known.
-- [ ] Present: title/id, current remote values, candidate HTTP verb, exact fields/value to send,
+- [x] Select a MAL manga whose current list presence, status, and chapter progress are known.
+- [x] Present: title/id, current remote values, candidate HTTP verb, exact fields/value to send,
   expected result, and restoration operation.
-- [ ] Obtain explicit approval immediately before sending the update.
-- [ ] Determine whether the supported verb is PATCH or PUT; capture only status/headers/sanitized
+- [x] Obtain explicit approval immediately before sending the update.
+- [x] Determine whether the supported verb is PATCH or PUT; capture only status/headers/sanitized
   response shape.
-- [ ] Restore the prior remote state if verification changed it and confirm restoration.
-- [ ] Lock the verified verb into `MALAuthenticatedClient` and update research/design with dated
+- [x] Restore the prior remote state if verification changed it and confirm restoration.
+- [x] Lock the verified verb into `MALAuthenticatedClient` and update research/design with dated
   evidence. If neither verb works as expected, stop and revise the design.
+
+**Outcome (2026-08-24):** **`PATCH`.** Verified against Horimiya (MAL 42451), which was
+`reading` at 100 chapters; sent `num_chapters_read=101` with no `status` field, MAL echoed
+`reading`/101, the entry was restored to 100, and a fresh process confirmed the restoration.
+The `#if DEBUG` launch-argument harness used for this has been deleted.
+`MALAuthenticatedClient.updateVerb` now defaults to `.patch` and `AppComposition.malUpdateVerb`
+is gone. `PUT` was not tested — it would be a second mutation for no decision it would change.
 
 ## Task 12: Full verification and delivery
 

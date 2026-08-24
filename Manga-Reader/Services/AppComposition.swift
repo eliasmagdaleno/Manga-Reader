@@ -55,11 +55,6 @@ struct AppComposition {
     /// authorization URL and the token exchange; MAL matches it exactly.
     static let malRedirectURI = "mangareader://oauth/mal"
 
-    /// MAL's own reference contradicts itself on `PATCH` versus `PUT` for the list-status
-    /// setter, and picking one is Task 11's live verification against a known entry. This
-    /// is the single point that changes when that lands — nothing else names a verb.
-    static let malUpdateVerb: MALListUpdateVerb = .patch
-
     /// A MAL account isolated from this device's real one. UI tests that assert the
     /// signed-out section need it: they otherwise read the developer's actual Keychain and
     /// preferences, so the assertion passes on fresh CI and fails on any machine that has
@@ -98,8 +93,8 @@ struct AppComposition {
             markerStore: MALUserDefaultsInstallationMarkerStore(defaults: defaults))
         let tokenClient = MALTokenClient(configuration: malConfiguration, transport: malTransport)
         let tokens = MALTokenManager(client: tokenClient, store: credentials)
-        let malClient = MALAuthenticatedClient(tokens: tokens, transport: malTransport,
-                                               updateVerb: Self.malUpdateVerb)
+        // The verb is the client's verified default now — see `MALListUpdateVerb`.
+        let malClient = MALAuthenticatedClient(tokens: tokens, transport: malTransport)
         // **Retry now** has to reach a coordinator that does not exist yet, and the
         // coordinator needs the account store — so the button goes through a box that is
         // filled in a few lines below. Weak, so the graph holds no cycle.

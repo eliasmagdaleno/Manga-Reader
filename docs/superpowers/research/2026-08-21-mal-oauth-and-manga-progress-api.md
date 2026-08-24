@@ -468,3 +468,43 @@ change made.
 - **`PATCH` versus `PUT`.** Untouched. `AppComposition.malUpdateVerb` remains an unverified
   `.patch` until the mutation half of Task 11 runs under its own approval.
 
+## 2026-08-24 — Task 11b: `PATCH` versus `PUT`, measured
+
+**`PATCH` is the verb.** Verified live against a known list entry with explicit approval, using
+a temporary `#if DEBUG` launch-argument harness that has since been deleted.
+
+### Method
+
+The entry was read first, mutated by exactly one chapter, read back, restored, and read a third
+time from a *fresh process* to confirm the restoration independently. `status` was deliberately
+omitted from the request body, so any change to it would have been a contract violation rather
+than something the test asked for. The outbox was confirmed empty beforehand so no concurrent
+delivery could muddy the result.
+
+```
+CONTRACT before:      status=reading  chapters=100  → sending num_chapters_read=101
+CONTRACT after PATCH: status=reading  chapters=101  verdict=VERB ACCEPTED  statusPreserved=true
+CONTRACT restore:     status=reading  chapters=100  RESTORED
+CONTRACT read (new process): status=reading chapters=100
+```
+
+### What this settles
+
+- **`PATCH /manga/{id}/my_list_status` is accepted** and the value lands.
+- **Omitting `status` preserves the entry's existing status.** This is the behaviour
+  `MALListStatusUpdate` was designed around — that an existing `reading`/`completed`/etc. must
+  survive a progress update — and it is now measured rather than assumed.
+- The response echoes the updated entry, which is what makes the coordinator's
+  "delivery requires the returned status to report progress ≥ desired" rule workable.
+
+`MALAuthenticatedClient.updateVerb` now defaults to `.patch`. It stays configurable so a future
+contract change can be re-measured the same way, but nothing names a verb at the call site any
+more — `AppComposition.malUpdateVerb` is deleted.
+
+### Not settled
+
+- **Whether `PUT` *also* works.** Not tested: the question was which verb is supported, and
+  `PATCH` answers it. Testing `PUT` would mean a second mutation for no decision it would change.
+- **Adding a title that is not yet on the list.** The harness refused to write to an unlisted
+  title by design, so the add path is still only covered by unit tests.
+

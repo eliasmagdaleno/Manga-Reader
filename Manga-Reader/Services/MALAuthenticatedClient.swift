@@ -13,9 +13,12 @@
 import Foundation
 
 /// MAL's own reference contradicts itself on whether the list-status setter is `PATCH` or
-/// `PUT`, so the verb lives in exactly one place and is chosen by the caller. There is no
-/// default on purpose: picking one is blocked on a live verification against a known list
-/// entry (Task 11), not on a guess made here.
+/// `PUT`. **`PATCH` is the answer**, measured on 2026-08-24 against a real list entry: it was
+/// accepted, the value landed, and the entry's `status` survived the write untouched. The verb
+/// stays configurable only so a future contract change can be tested the same way.
+///
+/// See the Task 11 section of
+/// `docs/superpowers/research/2026-08-21-mal-oauth-and-manga-progress-api.md`.
 enum MALListUpdateVerb: String, Sendable {
     case patch = "PATCH"
     case put = "PUT"
@@ -96,7 +99,9 @@ struct MALAuthenticatedClient: Sendable {
     private let transport: any MALHTTPTransport
     private let updateVerb: MALListUpdateVerb
 
-    init(tokens: MALTokenManager, transport: any MALHTTPTransport, updateVerb: MALListUpdateVerb) {
+    init(tokens: MALTokenManager,
+         transport: any MALHTTPTransport,
+         updateVerb: MALListUpdateVerb = .patch) {
         self.tokens = tokens
         self.transport = transport
         self.updateVerb = updateVerb
