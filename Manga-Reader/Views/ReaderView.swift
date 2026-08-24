@@ -598,6 +598,10 @@ struct ReaderView: View {
             Button { dismiss() } label: {
                 chromeIcon("xmark", tint: Ink.primary)
             }
+            // The reader hides both bars, so this is the only way out; an icon with no
+            // label leaves it unreachable to VoiceOver and unaddressable to UI tests.
+            .accessibilityLabel("Close reader")
+            .accessibilityIdentifier("readerCloseButton")
             Spacer()
 
             VStack(spacing: 2) {
@@ -647,6 +651,9 @@ struct ReaderView: View {
             .background(Capsule().fill(Ink.surface.opacity(0.9)))
             .overlay(Capsule().strokeBorder(Ink.hairline, lineWidth: 1))
             .padding(.bottom, 12)
+            // Matching this by its " · " text alone is ambiguous — the end-of-chapter marker
+            // reads "END · N PAGES" and a chapter row can carry a middle dot too.
+            .accessibilityIdentifier("readerPageIndicator")
     }
 
     private var loadingState: some View {
