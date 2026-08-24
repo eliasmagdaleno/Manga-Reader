@@ -52,6 +52,10 @@ final class MALAccountStore: ObservableObject {
 
     @Published private(set) var state: State = .signedOut
     @Published private(set) var pendingAccountSwitch: MALAccountSwitchRequest?
+    /// The queue as Settings shows it. Recomputed from the outbox rather than counted
+    /// incrementally: the outbox is the durable truth, and a counter that drifts from it
+    /// would be worse than no counter at all.
+    @Published private(set) var syncSummary: MALSyncSummary = .empty
 
     private let configuration: MALOAuthConfiguration
     private let presenter: any MALAuthPresenting
@@ -60,6 +64,9 @@ final class MALAccountStore: ObservableObject {
     private let preferences: any MALAccountPreferenceStore
     private let outbox: any MALProgressOutboxProtocol
     private let fetchIdentity: @Sendable (String) async throws -> MALUserIdentity
+    /// **Retry now**. The account store owns no drain — the coordinator does — so this is
+    /// the seam between the button and the queue.
+    private let retryDelivery: () -> Void
     private let now: @Sendable () -> Date
     private let makeVerifier: @Sendable () -> String
     private let makeState: @Sendable () -> String
@@ -76,6 +83,7 @@ final class MALAccountStore: ObservableObject {
         preferences: any MALAccountPreferenceStore,
         outbox: any MALProgressOutboxProtocol,
         fetchIdentity: @escaping @Sendable (String) async throws -> MALUserIdentity,
+        retryDelivery: @escaping () -> Void = {},
         now: @escaping @Sendable () -> Date = { Date() },
         makeVerifier: @escaping @Sendable () -> String = {
             MALPKCE.makeVerifier(randomBytes: MALAccountStore.randomBytes)
@@ -89,6 +97,7 @@ final class MALAccountStore: ObservableObject {
         self.preferences = preferences
         self.outbox = outbox
         self.fetchIdentity = fetchIdentity
+        self.retryDelivery = retryDelivery
         self.now = now
         self.makeVerifier = makeVerifier
         self.makeState = makeState
@@ -102,17 +111,56 @@ final class MALAccountStore: ObservableObject {
     func restore() {
         guard let cached = preferences.load() else {
             state = .signedOut
+            syncSummary = .empty
             return
         }
         let credential = try? credentials.load()
         guard credential != nil else {
             state = .reauthorizationRequired(profile: cached.profile)
+            refreshSyncSummary()
             return
         }
         state = .signedIn(profile: cached.profile,
                           syncEnabled: cached.syncEnabled,
                           automaticallyAddsTitles: cached.automaticallyAddsTitles)
+        refreshSyncSummary()
     }
+
+    /// The two switches as last saved, for the states that do not restate them.
+    var syncToggles: MALSyncToggles {
+        guard let record = preferences.load() else { return .defaults }
+        return MALSyncToggles(syncEnabled: record.syncEnabled,
+                              automaticallyAddsTitles: record.automaticallyAddsTitles)
+    }
+
+    /// Recounts the queue for the signed-in account. `skipped` is not in the outbox — a
+    /// skipped title is dropped, not stored — so the drain reports it and it is carried
+    /// here until the app restarts.
+    func refreshSyncSummary(skipped: Int? = nil) {
+        if let skipped { skippedCount = skipped }
+        guard let userID = currentProfile?.id else {
+            syncSummary = .empty
+            return
+        }
+        let counts = outbox.summary(userID: userID)
+        syncSummary = MALSyncSummary(pending: counts.pending,
+                                     failed: counts.blocked,
+                                     waiting: counts.deferred,
+                                     skipped: skippedCount)
+    }
+
+    /// Called by the drain after an item's outcome, so Settings follows the queue without
+    /// polling it.
+    func syncActivityChanged(skipped: Int) {
+        refreshSyncSummary(skipped: skipped)
+    }
+
+    /// **Retry now**: drain again, immediately, including past a pause.
+    func retryNow() {
+        retryDelivery()
+    }
+
+    private var skippedCount = 0
 
     /// Marks the account as needing a fresh sign-in. Called when a request comes back
     /// `reauthorizationRequired`; the queue is retained, and local reading is unaffected.

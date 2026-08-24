@@ -90,6 +90,8 @@ struct SettingsView: View {
                             }
                     }
 
+                    MALAccountSettingsView()
+
                     VStack(alignment: .leading, spacing: 14) {
                         InkSectionHeader("About", eyebrow: "Info")
                         VStack(spacing: 0) {

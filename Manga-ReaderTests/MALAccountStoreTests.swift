@@ -112,7 +112,8 @@ private struct AccountFixture {
         tokenSteps: [(status: Int, body: String)] = [(200, exchangeBody)],
         identity: @escaping @Sendable (String) async throws -> MALUserIdentity = { _ in elias },
         preferences: InMemoryAccountPreferences = InMemoryAccountPreferences(),
-        storedCredential: MALStoredCredential? = nil
+        storedCredential: MALStoredCredential? = nil,
+        retryDelivery: @escaping () -> Void = {}
     ) {
         directory = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString)
@@ -138,6 +139,7 @@ private struct AccountFixture {
             preferences: self.preferences,
             outbox: outbox,
             fetchIdentity: identity,
+            retryDelivery: retryDelivery,
             now: { accountNow }
         )
     }
@@ -384,5 +386,70 @@ struct MALAccountStoreReauthorizationTests {
 
         #expect(fixture.outbox.summary(userID: 42).pending == 1)
         #expect(fixture.store.pendingAccountSwitch == nil)
+    }
+}
+
+// MARK: - Sync summary
+
+@MainActor
+@Suite("MAL sync summary")
+struct MALAccountSyncSummaryTests {
+    private func signedIn(retryDelivery: @escaping () -> Void = {}) -> AccountFixture {
+        let preferences = InMemoryAccountPreferences()
+        preferences.save(MALAccountPreferences(profile: elias,
+                                               syncEnabled: true,
+                                               automaticallyAddsTitles: true))
+        let fixture = AccountFixture(
+            preferences: preferences,
+            storedCredential: MALStoredCredential(tokenType: "Bearer",
+                                                  accessToken: "access",
+                                                  refreshToken: "refresh",
+                                                  expiresAt: accountNow.addingTimeInterval(3_600),
+                                                  malUserID: elias.id),
+            retryDelivery: retryDelivery)
+        fixture.store.restore()
+        return fixture
+    }
+
+    @Test("The summary counts this account's queue and nobody else's")
+    func countsOwnQueue() throws {
+        let fixture = signedIn()
+        let when = accountNow
+        try fixture.outbox.enqueue(userID: elias.id, mangaID: 1, desiredProgress: 3,
+                                   completedAt: when)
+        try fixture.outbox.enqueue(userID: elias.id, mangaID: 2, desiredProgress: 3,
+                                   completedAt: when)
+        try fixture.outbox.defer(userID: elias.id, workID: WorkID(), desiredProgress: 3,
+                                 completedAt: when)
+        try fixture.outbox.enqueue(userID: 999, mangaID: 3, desiredProgress: 3, completedAt: when)
+        let blocked = try #require(fixture.outbox.nextEligible(userID: elias.id, at: when))
+        try fixture.outbox.reschedule(blocked, failure: .permanent, nextAttemptAt: .distantFuture)
+
+        fixture.store.refreshSyncSummary()
+
+        #expect(fixture.store.syncSummary == MALSyncSummary(pending: 1, failed: 1,
+                                                            waiting: 1, skipped: 0))
+    }
+
+    @Test("Titles the drain skipped are reported alongside the queue")
+    func skippedTitles() {
+        let fixture = signedIn()
+
+        fixture.store.syncActivityChanged(skipped: 4)
+
+        #expect(fixture.store.syncSummary.skipped == 4)
+    }
+
+    /// Retry now must reach the drain. The account store cannot drain anything itself —
+    /// it does not own the coordinator — so this is the seam, and this test is what says
+    /// the button is wired to something rather than to nothing.
+    @Test("Retry now asks the drain to run")
+    func retryNowRunsTheDrain() {
+        var retries = 0
+        let fixture = signedIn(retryDelivery: { retries += 1 })
+
+        fixture.store.retryNow()
+
+        #expect(retries == 1)
     }
 }

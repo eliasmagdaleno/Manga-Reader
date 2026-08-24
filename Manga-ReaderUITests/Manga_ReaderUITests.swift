@@ -65,6 +65,28 @@ final class Manga_ReaderUITests: XCTestCase {
         attach(app, name: "02-detail")
     }
 
+    /// The signed-out MyAnimeList section, in the real Settings screen. It is the one state
+    /// reachable without an account, and the only wiring that cannot be proven below the
+    /// UI: that `MALAccountSettingsView` is actually in `SettingsView`, and that the store
+    /// reaches it through the environment (a missing `environmentObject` traps at runtime,
+    /// so this test failing is how that shows up).
+    func testSettingsShowsTheSignedOutMyAnimeListSection() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        app.tabBars.buttons["Settings"].tap()
+
+        let header = app.staticTexts["MyAnimeList"]
+        XCTAssertTrue(header.waitForExistence(timeout: 10),
+                      "the MyAnimeList section should be in Settings")
+        XCTAssertTrue(app.buttons["Sign in"].exists,
+                      "signed out, the section offers Sign in")
+        XCTAssertFalse(app.staticTexts["Sync reading progress"].exists,
+                       "signed out, no account controls are rendered")
+
+        attach(app, name: "10-settings-mal-signed-out")
+    }
+
     private func attach(_ app: XCUIApplication, name: String) {
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = name
