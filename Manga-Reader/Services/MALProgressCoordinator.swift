@@ -37,6 +37,9 @@ protocol MALSyncAccount: AnyObject {
     var syncEnabled: Bool { get }
     var automaticallyAddsTitles: Bool { get }
     func reauthorizationRequired()
+    /// Told after each item's outcome so Settings can follow the queue without polling it.
+    /// `skipped` is cumulative for this session — a skipped title is dropped, not stored.
+    func syncActivityChanged(skipped: Int)
 }
 
 extension MALAccountStore: MALSyncAccount {
@@ -236,6 +239,7 @@ final class MALProgressCoordinator {
             case .delivered, .skipped:
                 try? outbox.markDelivered(item)
                 if case .skipped = outcome { skippedCount += 1 }
+                account.syncActivityChanged(skipped: skippedCount)
             case .cancelled:
                 // Not an attempt. The item is left exactly as it was.
                 return
@@ -243,8 +247,10 @@ final class MALProgressCoordinator {
                 try? outbox.reschedule(item, failure: failure,
                                        nextAttemptAt: nextAttempt(after: item,
                                                                   retryAfter: retryAfter))
+                account.syncActivityChanged(skipped: skippedCount)
             case .blockItem:
                 try? outbox.reschedule(item, failure: .permanent, nextAttemptAt: .distantFuture)
+                account.syncActivityChanged(skipped: skippedCount)
             case let .pause(reason):
                 if reason == .reauthorizationRequired { account.reauthorizationRequired() }
                 pause = reason

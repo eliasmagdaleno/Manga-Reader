@@ -71,10 +71,13 @@ private final class FakeSyncAccount: MALSyncAccount {
     var syncEnabled = true
     var automaticallyAddsTitles = true
     private(set) var reauthorizationCount = 0
+    private(set) var reportedSkipped: [Int] = []
 
     init(userID: Int? = 7) { self.syncUserID = userID }
 
     func reauthorizationRequired() { reauthorizationCount += 1 }
+
+    func syncActivityChanged(skipped: Int) { reportedSkipped.append(skipped) }
 }
 
 // MARK: - Tests
@@ -247,6 +250,7 @@ final class MALProgressCoordinatorTests: XCTestCase {
         XCTAssertEqual(client.calls, [.read(mangaID: 42)])
         XCTAssertNil(outbox.nextEligible(userID: 7, at: now))
         XCTAssertEqual(coordinator.skippedCount, 1)
+        XCTAssertEqual(account.reportedSkipped, [1], "Settings follows the drain, not a poll")
     }
 
     func testAnUpdateReportingLessThanDesiredIsNotTreatedAsDelivered() async {

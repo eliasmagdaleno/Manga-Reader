@@ -89,6 +89,10 @@ struct AppComposition {
         let tokens = MALTokenManager(client: tokenClient, store: credentials)
         let malClient = MALAuthenticatedClient(tokens: tokens, transport: malTransport,
                                                updateVerb: Self.malUpdateVerb)
+        // **Retry now** has to reach a coordinator that does not exist yet, and the
+        // coordinator needs the account store — so the button goes through a box that is
+        // filled in a few lines below. Weak, so the graph holds no cycle.
+        let drain = MALDrainHandle()
         let accountStore = MALAccountStore(
             configuration: malConfiguration,
             presenter: MALWebAuthPresenter(),
@@ -101,7 +105,8 @@ struct AppComposition {
             fetchIdentity: { token in
                 try await MALAuthenticatedClient.currentUser(accessToken: token,
                                                              transport: malTransport)
-            })
+            },
+            retryDelivery: { drain.coordinator?.retryNow() })
         let malProgress = MALProgressCoordinator(
             outbox: outbox,
             client: malClient,
@@ -109,6 +114,7 @@ struct AppComposition {
             // The coordinator never resolves anything itself; it only reads what the Work
             // already knows, and waits for the queue's signal otherwise.
             malID: { wk.work($0)?.externalIds.mal })
+        drain.coordinator = malProgress
 
         // The completion sink. Synchronous and network-free by contract — it writes the
         // completed chapter to the outbox and returns.
@@ -202,4 +208,13 @@ struct AppComposition {
         self.malProgress = malProgress
         self.malOutbox = outbox
     }
+}
+
+
+/// The one indirection in this file: `MALAccountStore`'s **Retry now** needs the
+/// coordinator, and the coordinator needs the account store. Weak on purpose — the
+/// composition owns the coordinator, and this must not be a second owner.
+@MainActor
+final class MALDrainHandle {
+    weak var coordinator: MALProgressCoordinator?
 }
