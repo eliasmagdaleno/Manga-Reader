@@ -107,7 +107,9 @@ final class MetadataUpgradeQueueTests: XCTestCase {
                            resolver: MALEntityResolver? = nil,
                            memory: UpgradeAttemptMemory? = nil,
                            idleInterval: TimeInterval = 60,
-                           sleep: @escaping MetadataUpgradeQueue.Sleep = { _ in }) -> MetadataUpgradeQueue {
+                           sleep: @escaping MetadataUpgradeQueue.Sleep = { _ in },
+                           workMetadataChanged: @escaping (WorkID) -> Void = { _ in })
+        -> MetadataUpgradeQueue {
         MetadataUpgradeQueue(
             works: works,
             anilist: anilist ?? self.anilist(Self.mediaJSON()),
@@ -118,7 +120,8 @@ final class MetadataUpgradeQueueTests: XCTestCase {
             memory: memory ?? makeMemory(),
             idleInterval: idleInterval,
             now: { self.noon },
-            sleep: sleep)
+            sleep: sleep,
+            workMetadataChanged: workMetadataChanged)
     }
 
     // MARK: - The upgrade path
@@ -142,6 +145,35 @@ final class MetadataUpgradeQueueTests: XCTestCase {
 
     /// A Work that already carries a MAL id skips resolution entirely — the search
     /// closure traps if it is ever called.
+    /// The signal the MAL progress subsystem waits on. The queue owns metadata and knows
+    /// nothing about progress; it only announces that a Work has learned external ids, and
+    /// it announces the *surviving* id, because writing the ids may have merged the Work
+    /// away.
+    @MainActor func testLearningExternalIdsAnnouncesTheSurvivingWork() async {
+        let works = makeStore()
+        let id = works.mint(from: listing("md-1"))
+        var announced: [WorkID] = []
+        let queue = makeQueue(works: works, workMetadataChanged: { announced.append($0) })
+
+        _ = await queue.drainOnce(now: noon)
+
+        XCTAssertEqual(announced.first, id)
+        XCTAssertEqual(works.work(id)?.externalIds.mal, 121_496)
+    }
+
+    @MainActor func testAWorkWithNothingNewToLearnAnnouncesNothing() async {
+        let works = makeStore()
+        _ = works.mint(from: listing("md-1"))
+        var announced: [WorkID] = []
+        let queue = makeQueue(works: works, workMetadataChanged: { announced.append($0) })
+        _ = await queue.drainOnce(now: noon)
+        announced.removeAll()
+
+        _ = await queue.drainOnce(now: noon)
+
+        XCTAssertEqual(announced, [])
+    }
+
     @MainActor func testAWorkThatAlreadyCarriesAMalIdIsNotSearchedAgain() async {
         let works = makeStore()
         let id = works.mint(from: listing("md-1", malId: 121_496))

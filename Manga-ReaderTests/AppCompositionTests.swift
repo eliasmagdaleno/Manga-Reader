@@ -101,4 +101,104 @@ final class AppCompositionTests: XCTestCase {
         XCTAssertEqual(composition.works.allWorkIds().count, 1,
                        "reading must mint into the WorkStore the composition shares")
     }
+
+    // MARK: - MyAnimeList progress
+
+    /// A signed-in account, assembled the way a relaunch assembles one: a cached profile in
+    /// the isolated defaults and a credential in an in-memory Keychain stand-in. No network
+    /// and no web sheet — the sign-in flow has its own suite.
+    private func signedInComposition(userID: Int = 7) -> AppComposition {
+        let dataStore = MALInMemoryCredentialDataStore()
+        let credentials = MALCredentialStore(
+            dataStore: dataStore,
+            markerStore: MALInMemoryInstallationMarkerStore(marker: "installation-1"))
+        try? credentials.save(MALStoredCredential(
+            tokenType: "Bearer", accessToken: "access", refreshToken: "refresh",
+            expiresAt: Date().addingTimeInterval(3_600), malUserID: userID))
+        let profile = MALUserIdentity(id: userID, name: "reader", pictureURL: nil)
+        MALUserDefaultsAccountPreferenceStore(defaults: defaults).save(
+            MALAccountPreferences(profile: profile,
+                                  syncEnabled: true,
+                                  automaticallyAddsTitles: true))
+
+        let composition = AppComposition(
+            defaults: defaults,
+            directory: directory,
+            malCredentials: credentials,
+            anilist: AniListAPI(transport: { _ in
+                (Self.anilistMediaJSON,
+                 HTTPURLResponse(url: AniListAPI.endpoint, statusCode: 200,
+                                 httpVersion: nil, headerFields: nil)!)
+            }),
+            malResolver: MALEntityResolver(
+                store: EntityResolutionStore(defaults: defaults),
+                search: { title in [MALCandidate(malId: 121_496, titles: [title])] },
+                bridgeSearch: MALEntityResolver.noBridge))
+        composition.account.restore()
+        return composition
+    }
+
+    private static let anilistMediaJSON = Data("""
+    {"data":{"Media":{
+      "id":105398, "idMal":121496,
+      "title":{"romaji":"Na Honjaman Level Up","english":"Solo Leveling","native":null},
+      "synonyms":[], "genres":["Action"], "tags":[{"name":"Dungeon","rank":95}],
+      "status":"FINISHED", "chapters":201
+    }}}
+    """.utf8)
+
+    private func completeRead(_ composition: AppComposition, _ manga: Manga) {
+        composition.history.record(manga: manga,
+                                  chapter: Chapter(id: "c-\(manga.id)", number: "12", title: nil),
+                                  position: ReadingPosition(page: 9),
+                                  pageCount: 10)
+    }
+
+    /// The reader path reaching the outbox: `HistoryStore`'s completion sink has to be the
+    /// coordinator the composition built, or a finished chapter is simply never queued.
+    func testACompletedChapterReachesTheMALOutboxThroughTheCompositionsCoordinator() {
+        let composition = signedInComposition()
+
+        completeRead(composition, Manga(id: "md-1", sourceId: "mangadex", title: "Solo Leveling",
+                                        description: "", status: "ongoing", year: nil,
+                                        coverURL: nil, malId: 121_496))
+
+        XCTAssertEqual(composition.malOutbox.summary(userID: 7).pending, 1)
+        XCTAssertEqual(composition.malOutbox.nextEligible(userID: 7, at: Date())?.mangaID,
+                       121_496)
+    }
+
+    /// The whole promotion chain in one, which is the only place it exists: a chapter
+    /// finished before the Work has a MAL id waits deferred, the upgrade queue learns the
+    /// id, and its metadata signal has to be wired to the same coordinator for that waiting
+    /// progress to become sendable.
+    func testProgressDeferredForAnUnresolvedWorkIsPromotedWhenTheQueueLearnsItsMALID() async {
+        let composition = signedInComposition()
+
+        completeRead(composition, Manga(id: "md-1", sourceId: "mangadex", title: "Solo Leveling",
+                                        description: "", status: "ongoing", year: nil,
+                                        coverURL: nil, malId: nil))
+        XCTAssertEqual(composition.malOutbox.summary(userID: 7).deferred, 1,
+                       "with no MAL id there is nothing to enqueue against yet")
+
+        _ = await composition.queue.drainOnce(now: Date())
+
+        XCTAssertEqual(composition.malOutbox.summary(userID: 7).deferred, 0)
+        XCTAssertEqual(composition.malOutbox.nextEligible(userID: 7, at: Date())?.mangaID,
+                       121_496)
+    }
+
+    /// Signed out, the same reading records nothing for MAL. Worth its own test because the
+    /// composition is where the account object could accidentally be a fresh, never-restored
+    /// store that reports somebody as signed in.
+    func testASignedOutCompositionQueuesNoMALProgress() {
+        let composition = makeComposition()
+
+        completeRead(composition, Manga(id: "md-1", sourceId: "mangadex", title: "Solo Leveling",
+                                        description: "", status: "ongoing", year: nil,
+                                        coverURL: nil, malId: 121_496))
+
+        XCTAssertEqual(composition.malOutbox.summary(userID: 7).pending, 0)
+        XCTAssertEqual(composition.malOutbox.summary(userID: 7).deferred, 0)
+    }
 }

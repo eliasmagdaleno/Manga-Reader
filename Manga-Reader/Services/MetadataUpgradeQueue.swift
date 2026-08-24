@@ -48,6 +48,10 @@ final class MetadataUpgradeQueue: ObservableObject {
     private let idleInterval: TimeInterval
     private let now: () -> Date
     private let sleep: Sleep
+    /// Announced after a Work learns external ids, carrying the id that survived — writing
+    /// ids may merge two Works, and the caller needs the survivor. Default no-op: the queue
+    /// owns metadata and must not grow a dependency on whoever is listening (ADR-0010).
+    private let workMetadataChanged: (WorkID) -> Void
 
     init(works: WorkStore,
          anilist: AniListAPI = AniListAPI(),
@@ -58,7 +62,8 @@ final class MetadataUpgradeQueue: ObservableObject {
          memory: UpgradeAttemptMemory? = nil,
          idleInterval: TimeInterval = 60,
          now: @escaping () -> Date = Date.init,
-         sleep: @escaping Sleep = { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) }) {
+         sleep: @escaping Sleep = { try await Task.sleep(nanoseconds: UInt64($0 * 1_000_000_000)) },
+         workMetadataChanged: @escaping (WorkID) -> Void = { _ in }) {
         self.works = works
         self.anilist = anilist
         self.rateLimiter = rateLimiter
@@ -70,6 +75,7 @@ final class MetadataUpgradeQueue: ObservableObject {
         self.idleInterval = idleInterval
         self.now = now
         self.sleep = sleep
+        self.workMetadataChanged = workMetadataChanged
     }
 
     /// The last engagement-weight map the recommender pushed (ADR-0009). **Replaces**
@@ -197,6 +203,10 @@ final class MetadataUpgradeQueue: ObservableObject {
         // Resolve before you remember (ADR-0010). The line above may have merged this
         // Work away; `work(_:)` follows the alias, so `live.id` is the survivor.
         guard let live = works.work(work.id) else { return .idle }
+
+        // The Work now carries a MAL id. Anything waiting on that — the progress outbox's
+        // deferred table — is told here, and told about the survivor of any merge above.
+        workMetadataChanged(live.id)
 
         // The merge may have answered the question already. Fetching now would spend a
         // paced request to overwrite good data with the same data.
