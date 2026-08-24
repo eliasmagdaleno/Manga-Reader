@@ -427,3 +427,44 @@ not a technical blocker for this feature.
 Task 0 unblocks implementation only. The `PATCH` versus `PUT` question (Task 11) remains
 blocked on an explicitly approved live verification against a known list entry, with
 restoration of its prior state.
+
+## 2026-08-24 — Task 11a: live authorization (no mutation)
+
+One real authorization was performed against the published `ios` client on the iPhone 17 Pro
+simulator, with explicit approval. **No list mutation was involved**; the `PATCH` versus `PUT`
+question remains open and separately gated. No token, code, or verifier was logged, recorded,
+or written anywhere — the probe emits the token *type* and `expires_in` only, under `#if DEBUG`.
+
+### What the live exchange settles
+
+| Question | Measured |
+| --- | --- |
+| Callback | `mangareader://oauth/mal` round-tripped through `ASWebAuthenticationSession` and returned to the app. Registration and the `mangareader` URL type are both confirmed working end to end. |
+| `token_type` | `Bearer` |
+| **`expires_in`** | **`2678400` — exactly 31 days.** |
+| Sign-out then re-authorization | Clean; a second exchange succeeded with no residual state. |
+
+### The lifetime contradiction is resolved
+
+The overview table's **"access token: one hour" is simply wrong**, and the documented example
+value of `2415600` (≈28 days) is not what this client receives either. The measured lifetime is
+31 days.
+
+This vindicates the design decision recorded above: compute expiry from each received
+`expires_in` rather than hard-coding any documented figure. Had the client trusted the
+one-hour table row it would have refreshed roughly 744 times more often than necessary; had it
+trusted the 28-day example it would have treated a live token as expired three days early.
+
+`MALCredential.refreshMargin` is 5 minutes. Against a 31-day lifetime that is comfortable, and
+it remains correct if MAL ever shortens the token — the margin is relative, not absolute. No
+change made.
+
+### Not settled by this exchange
+
+- **Granted scope.** MAL exposes no scope parameter and the consent screen states no scopes, so
+  there is nothing to record beyond "whatever a published `ios` client is granted".
+- **Refresh-token lifetime.** Only the access token's `expires_in` is returned. The one-month
+  refresh figure in the docs is still unverified and cannot be verified without waiting.
+- **`PATCH` versus `PUT`.** Untouched. `AppComposition.malUpdateVerb` remains an unverified
+  `.patch` until the mutation half of Task 11 runs under its own approval.
+

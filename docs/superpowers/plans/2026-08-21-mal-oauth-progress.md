@@ -306,8 +306,10 @@ whole-list endpoint to the v1 interface.
 This task mutates the user's MAL account. Stop immediately before the mutation and request explicit
 approval with the exact preview.
 
-- [ ] Complete one real authorization only after Task 0. Record callback success/denial shape,
-  granted scope behavior, and actual `expires_in` without recording secrets.
+- [x] Complete one real authorization only after Task 0. Record callback success/denial shape,
+  granted scope behavior, and actual `expires_in` without recording secrets. *(2026-08-24:
+  callback round-tripped, `Bearer`, `expires_in=2678400` — 31 days, not the documented hour.
+  Signed-in Settings state rendered on device for the first time.)*
 - [ ] Select a MAL manga whose current list presence, status, and chapter progress are known.
 - [ ] Present: title/id, current remote values, candidate HTTP verb, exact fields/value to send,
   expected result, and restoration operation.
