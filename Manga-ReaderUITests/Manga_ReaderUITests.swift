@@ -117,13 +117,20 @@ final class Manga_ReaderUITests: XCTestCase {
         // re-layout while covers stream in can swallow the first tap).
         let firstCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
         XCTAssertTrue(firstCard.waitForExistence(timeout: 20), "a cover card should load on Home")
-        let libraryToggle = app.buttons["Add to Library"]
-        let removeToggle = app.buttons["Remove from Library"]
+        // Any of the detail page's library labels ("Add to Library", "In Library",
+        // "Remove from Library") proves it opened — which one shows depends on whether this
+        // device already has the title, and Home's ranking drifts, so naming one is a
+        // coin flip the test would lose.
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
         firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-        if !libraryToggle.waitForExistence(timeout: 8) && !removeToggle.exists {
+        // Retry only while the card is still there to tap. Once the push has happened the
+        // same coordinate lands on the detail page and can navigate deeper, out of reach of
+        // the assertion below — a slow detail page would then read as a broken one.
+        if !libraryToggle.waitForExistence(timeout: 8) && firstCard.isHittable {
             firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
         }
-        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15) || removeToggle.exists,
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15),
                       "should have opened a manga detail page")
 
         // The rail loads async (MAL + MangaDex round-trips) and sits at the very bottom.
@@ -160,13 +167,20 @@ final class Manga_ReaderUITests: XCTestCase {
 
         let firstCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
         XCTAssertTrue(firstCard.waitForExistence(timeout: 20), "a cover card should load on Home")
-        let libraryToggle = app.buttons["Add to Library"]
-        let removeToggle = app.buttons["Remove from Library"]
+        // Any of the detail page's library labels ("Add to Library", "In Library",
+        // "Remove from Library") proves it opened — which one shows depends on whether this
+        // device already has the title, and Home's ranking drifts, so naming one is a
+        // coin flip the test would lose.
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
         firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-        if !libraryToggle.waitForExistence(timeout: 8) && !removeToggle.exists {
+        // Retry only while the card is still there to tap. Once the push has happened the
+        // same coordinate lands on the detail page and can navigate deeper, out of reach of
+        // the assertion below — a slow detail page would then read as a broken one.
+        if !libraryToggle.waitForExistence(timeout: 8) && firstCard.isHittable {
             firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
         }
-        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15) || removeToggle.exists,
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15),
                       "should have opened a manga detail page")
 
         XCTAssertTrue(app.staticTexts["Chapters"].waitForExistence(timeout: 15),
@@ -189,17 +203,33 @@ final class Manga_ReaderUITests: XCTestCase {
     /// live. Taps through, toggles sort, then marks a chapter read via select mode.
     func testShowAllChaptersOpensFullListWithSortAndSelect() throws {
         let app = XCUIApplication()
+        // Two things this test must establish rather than inherit. The browse source is
+        // persisted (`SourceRegistry`), so a previous WeebCentral run would otherwise
+        // decide which catalog this searches.
+        app.launchArguments += ["-uitest-source", "mangadex"]
         app.launch()
 
-        let firstCard = app.buttons.matching(identifier: "mangaCoverCard").firstMatch
-        XCTAssertTrue(firstCard.waitForExistence(timeout: 20), "a cover card should load on Home")
-        let libraryToggle = app.buttons["Add to Library"]
-        let removeToggle = app.buttons["Remove from Library"]
-        firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-        if !libraryToggle.waitForExistence(timeout: 8) && !removeToggle.exists {
-            firstCard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35)).tap()
-        }
-        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 15) || removeToggle.exists,
+        // **Searched, not taken from Home.** The full-list screen only exists above five
+        // chapters, and Home's first card is whatever live ranking puts there — it was
+        // "6000: Rokusen", three chapters, the day this was written, and the row was
+        // correctly absent. Berserk is long, complete, and not going to shorten.
+        app.buttons["Search"].tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
+        field.tap()
+        field.typeText("Berserk\n")
+
+        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Berserk"))
+            .firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 25), "search should return Berserk")
+        result.tap()
+
+        // Any of the detail page's library labels ("Add to Library", "In Library",
+        // "Remove from Library") proves it opened — which one shows depends on whether this
+        // device already holds the title.
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 25),
                       "should have opened a manga detail page")
 
         // The "Show all" row only exists for titles with > 5 chapters. Scroll it into
@@ -211,6 +241,16 @@ final class Manga_ReaderUITests: XCTestCase {
             if showAll.exists { foundShowAll = true; break }
             app.swipeUp(velocity: .fast)
             usleep(500_000)
+        }
+        if !foundShowAll {
+            // Which title, and what the chapter section actually rendered — this assertion
+            // failed for two very different reasons historically (wrong source, short
+            // title), and the label alone cannot tell them apart.
+            attach(app, name: "20-show-all-missing")
+            let dump = XCTAttachment(string: app.debugDescription)
+            dump.name = "20-show-all-missing-hierarchy"
+            dump.lifetime = .keepAlways
+            add(dump)
         }
         XCTAssertTrue(foundShowAll, "a long title should show the 'Show all N chapters' row")
         showAll.tap()
@@ -324,12 +364,20 @@ final class Manga_ReaderUITests: XCTestCase {
         attach(app, name: "seed-01-weebcentral-home")
         card.tap()
 
+        // Either library state proves the detail page rendered, which is all this assertion
+        // ever meant. The test seeds a Work, so a title a previous run already added has
+        // satisfied it — re-adding is not what is being verified.
         let addToLibrary = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Add to Library"))
             .firstMatch
-        XCTAssertTrue(addToLibrary.waitForExistence(timeout: 45), "should reach a WeebCentral detail page")
+        let anyLibraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
+        XCTAssertTrue(anyLibraryToggle.waitForExistence(timeout: 45),
+                      "should reach a WeebCentral detail page")
         attach(app, name: "seed-02-detail")
-        addToLibrary.tap()
-        sleep(4)
+        if addToLibrary.exists {
+            addToLibrary.tap()
+            sleep(4)
+        }
         attach(app, name: "seed-03-after-add")
 
         // Background to force the stores to flush; a run that just ends loses the write.

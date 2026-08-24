@@ -34,7 +34,20 @@ final class SourceRegistry: ObservableObject {
         precondition(!sources.isEmpty, "SourceRegistry requires at least one source")
         self.sources = sources
         // Restore the persisted active source if it still exists; otherwise fall back to the first.
-        let stored = UserDefaults.standard.string(forKey: Self.activeKey)
+        let stored: String?
+#if DEBUG
+        // A UI test that needs a MangaDex-only browse path must not inherit this device's
+        // previously selected source, or it passes on fresh CI and fails after a WeebCentral run.
+        let arguments = ProcessInfo.processInfo.arguments
+        if let index = arguments.firstIndex(of: "-uitest-source"),
+           arguments.indices.contains(index + 1) {
+            stored = arguments[index + 1]
+        } else {
+            stored = UserDefaults.standard.string(forKey: Self.activeKey)
+        }
+#else
+        stored = UserDefaults.standard.string(forKey: Self.activeKey)
+#endif
         self.activeSourceID = sources.contains(where: { $0.id == stored }) ? stored! : sources[0].id
     }
 
