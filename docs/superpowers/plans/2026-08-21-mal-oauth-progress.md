@@ -54,13 +54,21 @@ pure unit-tested implementation.
 
 **Evidence to record:** append a dated section to the research note; never record secrets.
 
-- [ ] Inspect the MAL developer console and confirm whether the existing client is a public/native
+- [x] Inspect the MAL developer console and confirm whether the existing client is a public/native
   client or expects a secret.
-- [ ] Confirm that `mangareader://oauth/mal` (or the final chosen URI) can be registered exactly.
-- [ ] Confirm the Xcode URL type/callback scheme that corresponds to the registered URI.
-- [ ] If MAL requires a confidential client secret in the shipped app, stop: do not embed it.
-  Amend the design around a backend token exchange or decline the feature.
-- [ ] Record only client type, callback URI, and non-secret configuration outcome.
+- [x] Confirm that `mangareader://oauth/mal` (or the final chosen URI) can be registered exactly.
+- [x] Confirm the Xcode URL type/callback scheme that corresponds to the registered URI.
+- [x] If MAL requires a confidential client secret in the shipped app, stop: do not embed it.
+  Amend the design around a backend token exchange or decline the feature. *(Not triggered:
+  App Type `ios` is issued no secret.)*
+- [x] Record only client type, callback URI, and non-secret configuration outcome.
+
+**Outcome (2026-08-24):** gate open. Console inspection recorded 2026-08-21 in the research
+note; re-confirmed against the live console 2026-08-24, unchanged. App Type `ios`, no client
+secret row, `mangareader://oauth/mal` registered verbatim as the sole redirect URI, status
+`PUBLISHED`. The shipped `MAL_CLIENT_ID` was confirmed to be this same app by digest
+comparison, without reproducing either value. The `mangareader` URL type now ships in
+`Manga-Reader/Info.plist` and was verified in the built bundle.
 
 ## Task 1: Add pure progress mapping and completion events
 
