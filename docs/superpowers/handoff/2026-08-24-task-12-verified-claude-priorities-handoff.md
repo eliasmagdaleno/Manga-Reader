@@ -1,5 +1,13 @@
 # Handoff — Task 12 verified independently; three items queued for Claude
 
+> **STATUS 2026-08-24 (late evening): the queue below is fully consumed. Historical record —
+> do not work from it.** All three items shipped: item 1 (Settings screenshot evidence) as
+> PR #88, item 2 (`LibraryStore.refresh()` source routing) as PR #86, item 3 (the UI-test
+> env-var gate) as PR #87 — where the premise was measured and found **false**; `xcodebuild`
+> *can* pass the variable, as a shell-prefixed `TEST_RUNNER_MAL_LIVE_WRITE=1`. See
+> `2026-08-24-github-issues-and-orca-handoff.md` for current state. The backlog now lives in
+> GitHub Issues, not in handoff docs.
+
 Session of 2026-08-24 (evening). This handoff covers **Claude's lane only**. Codex is
 continuing its own product/design work in parallel — see *Who owns what* at the bottom before
 touching anything.
