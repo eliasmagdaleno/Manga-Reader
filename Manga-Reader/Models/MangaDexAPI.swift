@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Public Types (used by Views / ViewModels)
 
-/// A lightweight representation of a manga item that ALWAYS carries a cover URL if available.
+// A lightweight representation of a manga item that ALWAYS carries a cover URL if available.
 // `Codable`/`Equatable` are declared here rather than in an extension because Swift only
 // synthesizes them in the file that declares the type. ADR-0011's pool cache persists
 // resolved `Manga` values whole — a lossy mirror could not produce an openable candidate —
