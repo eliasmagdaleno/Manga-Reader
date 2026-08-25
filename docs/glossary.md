@@ -293,6 +293,47 @@ available evidence that a tuning change did what was intended.
 
 ## Library & Collections
 
+**Library refresh** — checking the Listings linked to saved Works for chapter availability, then
+updating the Library's last observed state. It is **Work-level and source-aware**: the globally
+active browse Source is not the source of truth for every saved item. A refresh may be initiated by
+the user, when the app becomes active, or opportunistically in the background.
+
+**Background Library refresh** — a best-effort Library refresh requested while the app is not
+active. iOS decides whether and when it runs, so it carries **no exact cadence or delivery-time
+guarantee**. The product asks for opportunities up to a few times per day and heals on the next app
+activation or manual refresh.
+
+**New-chapter event** — one Work's observed chapter frontier advancing beyond the frontier the app
+previously persisted. Emitted once at the Work level even when more than one linked Listing exposes
+the release, so one release does not become one notification per Source. A late source catching up
+to an already-observed frontier is not a new-chapter event. The first successful refresh after a
+Work is saved establishes its **notification baseline** and emits nothing; existing chapters are
+not newly released merely because the app observed them for the first time. A failed Listing is
+unknown, never evidence that the frontier did not advance. One successful trusted Listing may
+advance the Work even when another fails; if all fail, no event is emitted and the stale state is
+shown inside the app for a foreground retry.
+
+**Notification baseline** — the persisted chapter frontier from which later new-chapter events are
+measured. The first successful refresh after saving or re-saving a Work establishes it without
+emitting an event. Muting preserves the baseline; removing the Work from the Library removes its
+notification state.
+
+**Newly discovered** — a presentation state for chapters added since the user last viewed that
+Work's chapter list. Viewing the list may clear this emphasis. It is **not** read state: **unread**
+clears only when a chapter is completed or manually marked read.
+
+**New-chapter notification** — an opt-in local notification created from a new-chapter event found
+by a background Library refresh. Saving a title follows it by default after notification permission
+is granted; a global setting and a per-title mute can suppress delivery without removing the title
+from the Library. Adult-title details stay off the lock screen unless the user explicitly allows
+them; the default adult notification says only that a followed title has new chapters. Multiple new
+chapters discovered for one Work produce one title-level notification, and iOS groups notifications
+when several Works update together. Opening one leads to the Work's chapter list with the new
+chapters emphasized — never straight to the newest chapter, which could skip unread chapters.
+Removing a Work cancels its pending notifications; muting suppresses delivery but keeps refresh and
+in-app update state. Notification authorization and in-app Updates are independent: denying the
+former never disables the latter.
+
 **Collection** (`LibraryCollection`) — a named group for organizing saved manga. May be a system default collection or user-created custom collection.
 
 **System Collection** — built-in default collection (`Reading`, `On Hold`, `Planned`, `Dropped`). Cannot be deleted or renamed; can be enabled/disabled and reordered.
@@ -357,4 +398,3 @@ strands a user. The same split governs the upgrade queue
 when a chapter is already on screen, which is exactly the case a failed advance leaves behind;
 blanking out a chapter being read to report that a *different* one is missing is what the commit
 ordering exists to prevent.
-

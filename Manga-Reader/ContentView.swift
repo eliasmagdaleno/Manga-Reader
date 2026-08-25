@@ -7,19 +7,30 @@
 
 import SwiftUI
 
-struct ContentView: View {
-    @State private var selectedTab: Tabs = .home
-    @StateObject private var webViewService = WebViewService.shared
+enum AppTab: Equatable, Hashable, Identifiable {
+    case home
+    case bookmarks
+    case history
+    case search
+    case settings
 
-    enum Tabs: Equatable, Hashable, Identifiable {
-        case home
-        case bookmarks
-        case history
-        case search
-        case settings
+    var id: Self { self }
+}
 
-        var id: Self { self }
+private struct SelectAppTabKey: EnvironmentKey {
+    static let defaultValue: (AppTab) -> Void = { _ in }
+}
+
+extension EnvironmentValues {
+    var selectAppTab: (AppTab) -> Void {
+        get { self[SelectAppTabKey.self] }
+        set { self[SelectAppTabKey.self] = newValue }
     }
+}
+
+struct ContentView: View {
+    @State private var selectedTab: AppTab = .home
+    @StateObject private var webViewService = WebViewService.shared
 
     var body: some View {
         Group {
@@ -29,27 +40,27 @@ struct ContentView: View {
                         .tabItem {
                             Label("Home", systemImage: "house")
                         }
-                        .tag(Tabs.home)
+                        .tag(AppTab.home)
                     BookmarksView()
                         .tabItem {
                             Label("Library", systemImage: "books.vertical")
                         }
-                        .tag(Tabs.bookmarks)
+                        .tag(AppTab.bookmarks)
                     HistoryView()
                         .tabItem {
                             Label("History", systemImage: "clock.arrow.circlepath")
                         }
-                        .tag(Tabs.history)
+                        .tag(AppTab.history)
                     SearchView()
                         .tabItem {
                             Label("Search", systemImage: "magnifyingglass")
                         }
-                        .tag(Tabs.search)
+                        .tag(AppTab.search)
                     SettingsView()
                         .tabItem {
                             Label("Settings", systemImage: "gear")
                         }
-                        .tag(Tabs.settings)
+                        .tag(AppTab.settings)
                 }
                 .tabViewStyle(.sidebarAdaptable)
             } else {
@@ -58,35 +69,35 @@ struct ContentView: View {
                         .tabItem {
                             Label("Home", systemImage: "house")
                         }
-                        .tag(Tabs.home)
+                        .tag(AppTab.home)
                     BookmarksView()
                         .tabItem {
                             Label("Library", systemImage: "books.vertical")
                         }
-                        .tag(Tabs.bookmarks)
+                        .tag(AppTab.bookmarks)
                     HistoryView()
                         .tabItem {
                             Label("History", systemImage: "clock.arrow.circlepath")
                         }
-                        .tag(Tabs.history)
+                        .tag(AppTab.history)
                     SearchView()
                         .tabItem {
                             Label("Search", systemImage: "magnifyingglass")
                         }
-                        .tag(Tabs.search)
+                        .tag(AppTab.search)
                     SettingsView()
                         .tabItem {
                             Label("Settings", systemImage: "gear")
                         }
-                        .tag(Tabs.settings)
+                        .tag(AppTab.settings)
                 }
                 .tabViewStyle(.automatic)
             }
         }
+        .environment(\.selectAppTab) { selectedTab = $0 }
         .sheet(isPresented: $webViewService.isChallengeActive,
-               onDismiss: { webViewService.cancelChallenge() }) {
-            CloudflareChallengeView()
-        }
+               onDismiss: { webViewService.cancelChallenge() },
+               content: { CloudflareChallengeView() })
     }
 }
 

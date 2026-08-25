@@ -19,21 +19,24 @@ struct SourceLogoView: View {
     var size: CGFloat = 16
 
     var body: some View {
-        if let image = UIImage(named: "SourceLogo-\(sourceID)") {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: size, height: size)
-        } else {
-            RoundedRectangle(cornerRadius: size * 0.25)
-                .fill(Ink.sealSoft)
-                .frame(width: size, height: size)
-                .overlay(
-                    Text(sourceID.prefix(1).uppercased())
-                        .font(.inkDisplay(size * 0.62))
-                        .foregroundStyle(Ink.seal)
-                )
+        Group {
+            if let image = UIImage(named: "SourceLogo-\(sourceID)") {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: size, height: size)
+            } else {
+                RoundedRectangle(cornerRadius: size * 0.25)
+                    .fill(Ink.sealSoft)
+                    .frame(width: size, height: size)
+                    .overlay(
+                        Text(sourceID.prefix(1).uppercased())
+                            .font(.inkDisplay(size * 0.62))
+                            .foregroundStyle(Ink.seal)
+                    )
+            }
         }
+        .accessibilityHidden(true)
     }
 }
 
@@ -45,6 +48,7 @@ struct SourceLogoView: View {
 struct SourceChipBar: View {
     let sources: [any MangaSource]
     let activeID: String
+    var accessibilityVerb = "Browse"
     let onSelect: (String) -> Void
 
     var body: some View {
@@ -86,7 +90,10 @@ struct SourceChipBar: View {
             )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Browse \(source.name)")
+        .frame(minHeight: 44)
+        .accessibilityLabel("\(accessibilityVerb) \(source.name)")
+        .accessibilityInputLabels([source.name, "\(accessibilityVerb) \(source.name)"])
+        .accessibilityValue(active ? "Selected" : "Not selected")
         .accessibilityAddTraits(active ? [.isSelected] : [])
     }
 }
@@ -114,5 +121,7 @@ struct SourceStamp: View {
             RoundedRectangle(cornerRadius: 4)
                 .fill(Ink.sealSoft)
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Source: \(name)")
     }
 }

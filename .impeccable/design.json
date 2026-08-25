@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-24T00:00:00-07:00",
+  "title": "Design System: Manga Reader — Ink & Seal",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Warm Paper", "canonical": "#FBFAF8", "tonalRamp": ["#201E1B", "#3D3934", "#5F5951", "#837B70", "#A9A196", "#CDC7BE", "#EAE6E0", "#FBFAF8"] },
+      "ink": { "role": "neutral", "displayName": "Primary Ink", "canonical": "#17140F", "tonalRamp": ["#17140F", "#312C25", "#4D463C", "#6B6256", "#8D8376", "#B1A99F", "#D8D3CD", "#F5F2EE"] },
+      "seal": { "role": "primary", "displayName": "Vermilion Seal", "canonical": "#B93624", "tonalRamp": ["#34100B", "#5A1A12", "#84261B", "#A92E20", "#B93624", "#DD6E5B", "#EFA99B", "#F9E3DE"] },
+      "surface-recessed": { "role": "neutral", "displayName": "Recessed Paper", "canonical": "#F1EEE9", "tonalRamp": ["#1F1D1A", "#393632", "#56514B", "#756F67", "#999188", "#BDB6AD", "#DDD8D1", "#F1EEE9"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Editorial Display", "purpose": "Identity-bearing manga and section titles." },
+      "body": { "displayName": "Native Reading", "purpose": "Controls, descriptions, and sustained reading." },
+      "metadata": { "displayName": "Metadata Stamp", "purpose": "Terse chapter, source, state, and count labels." }
+    },
+    "shadows": [
+      { "name": "cover-plate", "value": "0 3px 6px rgba(0,0,0,0.10)", "purpose": "A short ambient lift under manga covers." },
+      { "name": "floating-surface", "value": "0 4px 10px rgba(0,0,0,0.18)", "purpose": "Reader banners and genuinely floating controls only." }
+    ],
+    "motion": [
+      { "name": "native-state", "value": "platform default", "purpose": "Pressed, focus, navigation, and presentation transitions." },
+      { "name": "reduced-motion", "value": "crossfade or no animation", "purpose": "Replacement for nonessential spatial movement when Reduce Motion is enabled." }
+    ],
+    "breakpoints": [
+      { "name": "compact", "value": "available-width driven" },
+      { "name": "regular", "value": "iPad or regular horizontal size class" },
+      { "name": "accessibility", "value": "Dynamic Type accessibility categories" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Seal Action",
+      "kind": "button",
+      "description": "The scarce primary action treatment.",
+      "html": "<button class=\"ds-seal-action\">START READING</button>",
+      "css": ".ds-seal-action { min-height:44px; border:0; border-radius:12px; padding:10px 16px; background:#B93624; color:#fff; font:600 15px -apple-system,BlinkMacSystemFont,sans-serif; } .ds-seal-action:hover { background:#A92E20; } .ds-seal-action:focus-visible { outline:3px solid rgba(185,54,36,.35); outline-offset:2px; } .ds-seal-action:active { transform:scale(.98); }"
+    },
+    {
+      "name": "Metadata Stamp",
+      "kind": "chip",
+      "refersTo": "stamp-neutral",
+      "description": "A compact printed-spine fact label.",
+      "html": "<span class=\"ds-stamp\">CH·012</span>",
+      "css": ".ds-stamp { display:inline-flex; border-radius:4px; padding:3px 6px; background:#F1EEE9; color:#6B655C; font:600 11px ui-monospace,SFMono-Regular,monospace; letter-spacing:.5px; }"
+    },
+    {
+      "name": "Active Source Chip",
+      "kind": "chip",
+      "refersTo": "source-chip-active",
+      "description": "A selected source with seal color and explicit outline.",
+      "html": "<button class=\"ds-source-chip\" aria-pressed=\"true\">MANGADEX</button>",
+      "css": ".ds-source-chip { min-height:44px; border:1px solid #B93624; border-radius:9px; padding:7px 11px; background:#FBE7E2; color:#B93624; font:700 11px ui-monospace,SFMono-Regular,monospace; letter-spacing:.8px; } .ds-source-chip:hover { background:#F8D6CE; } .ds-source-chip:focus-visible { outline:3px solid rgba(185,54,36,.3); outline-offset:2px; }"
+    },
+    {
+      "name": "Cover Plate",
+      "kind": "card",
+      "description": "Cover-led card with a fine frame, editorial title, and physical lift.",
+      "html": "<article class=\"ds-cover-card\"><div class=\"ds-cover-art\"></div><strong>A Manga Title</strong><span>CH·012</span></article>",
+      "css": ".ds-cover-card { display:grid; gap:8px; width:128px; color:#17140F; font-family:ui-serif,Georgia,serif; } .ds-cover-art { aspect-ratio:128/182; border:1px solid #E5E0D7; border-radius:8px; background:radial-gradient(circle,#A9A296 1px,#F1EEE9 1.5px); background-size:10px 10px; box-shadow:0 3px 6px rgba(0,0,0,.10); } .ds-cover-card span { width:max-content; border-radius:4px; padding:3px 6px; background:#F1EEE9; color:#6B655C; font:600 10px ui-monospace,SFMono-Regular,monospace; }"
+    },
+    {
+      "name": "Section Header",
+      "kind": "custom",
+      "description": "A vermilion tick, informative eyebrow, and editorial title.",
+      "html": "<header class=\"ds-section\"><i></i><span><small>BASED ON YOUR READING</small><strong>For You</strong></span></header>",
+      "css": ".ds-section { display:flex; align-items:center; gap:10px; color:#17140F; } .ds-section i { width:4px; height:22px; border-radius:2px; background:#B93624; } .ds-section span { display:grid; gap:1px; } .ds-section small { color:#6B655C; font:600 10px ui-monospace,SFMono-Regular,monospace; letter-spacing:1.6px; } .ds-section strong { font:700 22px ui-serif,Georgia,serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Ink & Seal",
+    "overview": "Ink & Seal treats the app as a carefully printed reading companion rather than a generic media catalog. Warm paper and near-black ink form the quiet field; cover art supplies most of the color; a vermilion seal marks only meaningful status, selection, and action. The interface is comfortably sparse, cover-led, and unmistakably native. The brand layer lives in serif display moments, monospaced metadata stamps, hairline-framed cover plates, and screentone placeholders. System navigation, controls, text styles, safe areas, zooming, and gestures retain iOS behavior.",
+    "keyCharacteristics": ["Warm paper and ink surfaces with a complete near-black dark appearance.", "A single, scarce vermilion accent inspired by a printer's seal.", "Serif titles paired with system body text and monospaced metadata.", "Cover-led composition, generous gutters, fine frames, and manga screentone texture.", "Native interaction structure with branded details rather than custom platform replacements."],
+    "rules": [
+      { "name": "The One Seal Rule", "body": "Vermilion is the only brand accent. Do not introduce competing accent colors for categories or decoration.", "section": "colors" },
+      { "name": "The Contrast Before Patina Rule", "body": "Warmth and subtlety never justify unreadable text; strengthen a semantic role before sacrificing legibility.", "section": "colors" },
+      { "name": "The Editorial Moment Rule", "body": "Serif belongs to identity-bearing titles, not every label or control.", "section": "typography" },
+      { "name": "The Text Style Rule", "body": "Brand type must derive from Dynamic Type text styles; fixed point sizes are not part of the durable system.", "section": "typography" },
+      { "name": "The Printed Surface Rule", "body": "If a hairline or tonal step communicates containment, do not add a shadow.", "section": "elevation" }
+    ],
+    "dos": ["Do let cover art provide the screen's visual variety while the surrounding interface stays calm.", "Do use semantic, appearance-aware colors and verify light, dark, increased-contrast, and differentiate-without-color states.", "Do derive branded typography and layout metrics from Dynamic Type and available container size.", "Do retain native controls, navigation, focus, gestures, and zoom physics."],
+    "donts": ["Don't add gradients, glass effects, competing accents, or decorative shadows.", "Don't use vermilion as ambient decoration or for low-priority metadata.", "Don't turn every label into uppercase monospaced text.", "Don't preserve a fixed phone composition on iPad or at accessibility text sizes.", "Don't hide a primary task behind a gesture without a visible and VoiceOver-operable route."]
+  }
+}

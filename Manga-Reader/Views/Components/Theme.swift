@@ -49,13 +49,13 @@ enum Ink {
     /// Secondary text — authors, captions.
     static let secondary = dynamicColor(light: 0x6B655C, dark: 0xA6A199)
     /// Tertiary text — faint metadata.
-    static let tertiary = dynamicColor(light: 0xA9A296, dark: 0x6F6A63)
+    static let tertiary = dynamicColor(light: 0x756E64, dark: 0xAAA49B)
 
     /// Hairline dividers and card frames.
     static let hairline = dynamicColor(light: 0xE5E0D7, dark: 0x2E2C34)
 
     /// The seal — vermilion (朱). The one accent. Use with restraint.
-    static let seal = dynamicColor(light: 0xE5482F, dark: 0xFF5C43)
+    static let seal = dynamicColor(light: 0xB93624, dark: 0xFF6B55)
     /// Seal at low opacity, for tint fills behind the accent.
     static let sealSoft = dynamicColor(light: 0xFBE7E2, dark: 0x3A1F1B)
 }
@@ -65,12 +65,24 @@ enum Ink {
 extension Font {
     /// Serif display face (New York, ships with iOS). Titles and section heads.
     static func inkDisplay(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {
-        .system(size: size, weight: weight, design: .serif)
+        let style: Font.TextStyle = switch size {
+        case ..<21: .title3
+        case ..<25: .title2
+        case ..<30: .title
+        default: .largeTitle
+        }
+        return .system(style, design: .serif).weight(weight)
     }
 
     /// Monospaced metadata stamp — "CH·012", page counts, spine labels.
     static func inkMono(_ size: CGFloat, weight: Font.Weight = .medium) -> Font {
-        .system(size: size, weight: weight, design: .monospaced)
+        let style: Font.TextStyle = switch size {
+        case ..<11: .caption
+        case ..<12: .footnote
+        case ..<13: .subheadline
+        default: .body
+        }
+        return .system(style, design: .monospaced).weight(weight)
     }
 }
 

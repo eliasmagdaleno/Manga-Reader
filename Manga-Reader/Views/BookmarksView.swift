@@ -12,13 +12,17 @@ import SwiftUI
 struct BookmarksView: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.selectAppTab) private var selectAppTab
 
     @State private var selectedCollectionId = "all"
     @State private var showingManagementSheet = false
     @State private var refreshBannerMessage: String? = nil
     @State private var showingRefreshBanner = false
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: Gutter.rail), count: 3)
+    private let columns = [
+        GridItem(.adaptive(minimum: 104, maximum: 180), spacing: Gutter.rail)
+    ]
 
     var body: some View {
         NavigationStack {
@@ -34,13 +38,17 @@ struct BookmarksView: View {
                         InkEmptyState(
                             symbol: "books.vertical",
                             title: "Your library is empty",
-                            message: "Tap Add to Library on any title to keep it here for quick access."
+                            message: "Save titles to keep them here and see which chapters are unread.",
+                            actionTitle: "Browse Titles",
+                            action: { selectAppTab(.home) }
                         )
                     } else if displayedItems.isEmpty {
                         InkEmptyState(
                             symbol: "folder.badge.questionmark",
                             title: "No titles in this collection",
-                            message: "Add manga to this collection from any detail page, or switch to another tab."
+                            message: "Add a saved title to this collection, or manage which collections are shown.",
+                            actionTitle: "Manage Collections",
+                            action: { showingManagementSheet = true }
                         )
                     } else {
                         ScrollView {
@@ -67,31 +75,7 @@ struct BookmarksView: View {
                         }
                         .background(Ink.background)
                         .refreshable {
-                            let impact = UIImpactFeedbackGenerator(style: .medium)
-                            impact.impactOccurred()
-
-                            withAnimation(.easeInOut(duration: 2.0)) {
-                                refreshBannerMessage = "Updating library..."
-                                showingRefreshBanner = true
-                            }
-
-                            await library.refresh()
-
-                            let notification = UINotificationFeedbackGenerator()
-                            notification.notificationOccurred(.success)
-
-                            withAnimation(.easeInOut(duration: 2.0)) {
-                                refreshBannerMessage = "Library updated"
-                            }
-
-                            Task {
-                                try? await Task.sleep(nanoseconds: 4_500_000_000)
-                                await MainActor.run {
-                                    withAnimation(.easeInOut(duration: 2.0)) {
-                                        showingRefreshBanner = false
-                                    }
-                                }
-                            }
+                            await refreshLibrary()
                         }
                     }
                 }
@@ -124,12 +108,21 @@ struct BookmarksView: View {
                             .strokeBorder(Ink.hairline, lineWidth: 1)
                     )
                     .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 }
             }
             .background(Ink.background)
             .navigationTitle("Library")
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await refreshLibrary() }
+                    } label: {
+                        Label("Refresh Library", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(library.isRefreshing)
+                    .accessibilityHint("Checks saved titles for new chapters")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingManagementSheet = true
@@ -142,6 +135,29 @@ struct BookmarksView: View {
             .sheet(isPresented: $showingManagementSheet) {
                 CollectionManagementView()
             }
+        }
+    }
+
+    private func refreshLibrary() async {
+        guard !library.isRefreshing else { return }
+
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+            refreshBannerMessage = "Updating library…"
+            showingRefreshBanner = true
+        }
+
+        await library.refresh()
+
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+            refreshBannerMessage = "Library updated"
+        }
+        UIAccessibility.post(notification: .announcement, argument: "Library updated")
+
+        try? await Task.sleep(for: .seconds(4.5))
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+            showingRefreshBanner = false
         }
     }
 
@@ -181,7 +197,7 @@ struct BookmarksView: View {
     private func collectionTabChip(id: String, title: String, count: Int) -> some View {
         let isSelected = selectedCollectionId == id
         return Button {
-            withAnimation(.snappy(duration: 0.18)) {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.18)) {
                 selectedCollectionId = id
             }
         } label: {
@@ -205,6 +221,8 @@ struct BookmarksView: View {
             )
         }
         .buttonStyle(.plain)
+        .frame(minHeight: 44)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
     }
 }
 

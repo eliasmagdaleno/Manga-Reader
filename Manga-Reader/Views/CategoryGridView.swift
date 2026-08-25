@@ -20,7 +20,9 @@ struct CategoryGridView: View {
     @StateObject private var loader: PagedMangaLoader
     @State private var loadedOnce = false
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: Gutter.rail), count: 3)
+    private let columns = [
+        GridItem(.adaptive(minimum: 104, maximum: 180), spacing: Gutter.rail)
+    ]
 
     /// An infinite-scroll grid over a paged feed.
     /// - Parameter pageSize: Raise it for feeds that shrink after server-side dedupe

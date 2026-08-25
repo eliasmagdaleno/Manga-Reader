@@ -12,6 +12,9 @@ struct MangaDetailView: View {
     @EnvironmentObject private var history: HistoryStore
     @EnvironmentObject private var works: WorkStore
     @EnvironmentObject private var engine: RecommendationEngine
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ScaledMetric(relativeTo: .title) private var coverWidth: CGFloat = 132
+    @ScaledMetric(relativeTo: .title) private var coverHeight: CGFloat = 188
     @StateObject private var moreLikeThis = MoreLikeThisViewModel()
     @State private var synopsisExpanded = false
     @State private var showingWebPage = false
@@ -99,7 +102,11 @@ struct MangaDetailView: View {
     // MARK: Hero — cover plate on flat paper: title, authors, metadata stamps.
 
     private var hero: some View {
-        HStack(alignment: .bottom, spacing: 16) {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16))
+            : AnyLayout(HStackLayout(alignment: .bottom, spacing: 16))
+
+        return layout {
             // Cover plate.
             AsyncImage(url: manga.coverURL) { phase in
                 switch phase {
@@ -108,7 +115,7 @@ struct MangaDetailView: View {
                 default: CoverPlaceholder()
                 }
             }
-            .frame(width: 132, height: 188)
+            .frame(width: min(coverWidth, 198), height: min(coverHeight, 282))
             .clipShape(RoundedRectangle(cornerRadius: Gutter.cardRadius))
             .overlay(
                 RoundedRectangle(cornerRadius: Gutter.cardRadius)
@@ -120,8 +127,7 @@ struct MangaDetailView: View {
                 Text(manga.title)
                     .font(.inkDisplay(26))
                     .foregroundStyle(Ink.primary)
-                    .lineLimit(4)
-                    .minimumScaleFactor(0.6)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 if !vm.authors.isEmpty {
                     Text(vm.authors.joined(separator: " · "))
@@ -412,9 +418,22 @@ struct MangaDetailView: View {
             InkSectionHeader("Chapters", eyebrow: "\(vm.chapters.count) available")
                 .padding(.trailing, Gutter.page)
 
-            if let error = vm.errorMessage, vm.chapters.isEmpty {
-                InkNotice(error)
+            if !vm.chapters.isEmpty {
+                Label("Press and hold a chapter for read actions", systemImage: "hand.tap")
+                    .font(.footnote)
+                    .foregroundStyle(Ink.secondary)
                     .padding(.horizontal, Gutter.page)
+            }
+
+            if let error = vm.errorMessage, vm.chapters.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    InkNotice("Chapters couldn't load. \(error)")
+                    Button("Try Chapters Again", action: vm.load)
+                        .font(.subheadline.bold())
+                        .foregroundStyle(Ink.seal)
+                        .frame(minHeight: 44)
+                }
+                .padding(.horizontal, Gutter.page)
             } else if vm.chapters.isEmpty {
                 Text(vm.isLoading ? "Loading chapters…" : "No chapters yet.")
                     .font(.footnote)
@@ -450,6 +469,17 @@ struct MangaDetailView: View {
                             } label: {
                                 Label("Mark all below as read", systemImage: "arrow.down.to.line")
                             }
+                        }
+                        .accessibilityAction(named: history.isRead(chapterId: chapter.id)
+                                             ? "Mark as unread" : "Mark as read") {
+                            history.toggleRead(manga: manga, chapter: chapter)
+                        }
+                        .accessibilityAction(named: "Mark this and all below as read") {
+                            let sorted = sortChapters(vm.chapters, descending: true)
+                            guard let index = sorted.firstIndex(where: { $0.id == chapter.id }) else {
+                                return
+                            }
+                            history.markRead(manga: manga, chapters: Array(sorted[index...]))
                         }
                         Divider().overlay(Ink.hairline)
                             .padding(.leading, Gutter.page)
