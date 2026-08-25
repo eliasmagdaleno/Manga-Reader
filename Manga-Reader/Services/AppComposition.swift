@@ -125,6 +125,13 @@ struct AppComposition {
         // user signs in: the account restores from what is already on disk, and the drain
         // only runs once `start()` is called with a signed-in account.
         let outbox = MALProgressOutbox(directory: directory)
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitest-mal-reset-outbox") {
+            // Task 12's stand-in-account checks share the seeded app container. Isolate each
+            // initial launch without risking another account's durable queued work.
+            try? outbox.clear(userID: Self.malUITestProfile.id)
+        }
+#endif
         let malConfiguration = MALOAuthConfiguration(
             clientID: (Bundle.main.object(forInfoDictionaryKey: "MALClientID") as? String) ?? "",
             redirectURI: Self.malRedirectURI)
@@ -143,7 +150,15 @@ struct AppComposition {
             }
         }
         // The verb is the client's verified default now — see `MALListUpdateVerb`.
-        let malClient = MALAuthenticatedClient(tokens: tokens, transport: malTransport)
+        // Only this client takes the simulated outage; `tokenClient` above keeps the real
+        // transport so a `-uitest-mal-offline` run cannot disturb a real account's credentials.
+        var progressTransport: any MALHTTPTransport = malTransport
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitest-mal-offline") {
+            progressTransport = MALOfflineTransport()
+        }
+#endif
+        let malClient = MALAuthenticatedClient(tokens: tokens, transport: progressTransport)
         // **Retry now** has to reach a coordinator that does not exist yet, and the
         // coordinator needs the account store — so the button goes through a box that is
         // filled in a few lines below. Weak, so the graph holds no cycle.

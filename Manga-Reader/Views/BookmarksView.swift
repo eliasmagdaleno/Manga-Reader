@@ -56,6 +56,9 @@ struct BookmarksView: View {
                                         )
                                     }
                                     .buttonStyle(.plain)
+                                    // The grid's only stable handle for UI tests; the label is
+                                    // the title, which varies with whatever is in the library.
+                                    .accessibilityIdentifier("libraryCoverCard")
                                 }
                             }
                             .padding(.horizontal, Gutter.page)

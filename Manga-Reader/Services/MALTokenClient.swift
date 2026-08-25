@@ -158,3 +158,20 @@ struct MALTokenClient: Sendable {
         return code
     }
 }
+
+#if DEBUG
+/// A transport that always fails as if the network were gone, for the manual verification of
+/// offline completion, relaunch persistence, and foreground retry.
+///
+/// It exists because those checks need MyAnimeList to be *unreachable* while MangaDex stays
+/// reachable — the reader still has to load pages to complete a chapter. Blocking the host at
+/// the machine level would break both and needs root; this breaks exactly one dependency.
+///
+/// `AppComposition` gives it only to the authenticated client, never to `MALTokenClient`, so a
+/// simulated outage cannot push a real signed-in account toward reauthorization.
+struct MALOfflineTransport: MALHTTPTransport {
+    func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        throw URLError(.notConnectedToInternet)
+    }
+}
+#endif

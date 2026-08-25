@@ -968,3 +968,407 @@ final class Manga_ReaderUITests: XCTestCase {
     }
 
 }
+
+// MARK: - Task 12's remaining manual checks
+//
+// Offline completion, relaunch persistence, foreground retry, the sync toggle, sign-out
+// cleanup, and signed-out reading. All six run on the **seeded stand-in account**
+// (`AppComposition.malUITestProfile`, id 1_000_001) rather than this device's real one, and
+// two independent things keep them off a real MyAnimeList list:
+//
+// 1. the seeded credential is the string `uitest-access`, which cannot authenticate; and
+// 2. `-uitest-mal-offline` swaps the authenticated client's transport for one that always
+//    fails, so no request leaves the process at all.
+//
+// They are not gated: CI runs `-only-testing:Manga-ReaderTests`, so this target never runs
+// there, and every other live UI test in this file is ungated for the same reason. Each drives
+// the real reader over the network, so run them by name rather than as part of a whole-target
+// sweep.
+extension Manga_ReaderUITests {
+
+    /// **Signed-out reading is unchanged** (MAL plan, Task 12).
+    ///
+    /// The claim is a negative one — that an app with no MyAnimeList account reads exactly as
+    /// it did before the feature — so the test drives a whole chapter to its last page and
+    /// then confirms Settings still offers only **Sign in**. The queue assertion that pairs
+    /// with it is made outside the process, against `mal-progress-outbox.json`: a UI test
+    /// cannot see the app's container.
+    func testSignedOutReadingIsUnchanged() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uitest-mal-signed-out", "-uitest-mal-reset-outbox",
+                                "-uitest-source", "mangadex"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+
+        let pages = try readFirstLibraryChapterToItsLastPage(app, screenshotPrefix: "40-signed-out")
+        XCTAssertGreaterThan(pages, 1, "a one-page chapter would not prove paging")
+
+        returnToTabBar(app)
+        app.tabBars.buttons["Settings"].tap()
+        XCTAssertTrue(app.staticTexts["MyAnimeList"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Sign in"].exists,
+                      "reading while signed out must not have signed anyone in")
+        XCTAssertFalse(syncQueue(in: app).exists,
+                       "signed out, a completed chapter must not produce a queue summary")
+        attach(app, name: "41-signed-out-settings-after-reading")
+    }
+
+    /// **Offline completion, and that it survives a relaunch** (MAL plan, Task 12).
+    ///
+    /// One test rather than two because the second claim is only meaningful about an item the
+    /// first one queued: the queue has to be observed before the relaunch to know what the
+    /// relaunch preserved.
+    func testOfflineCompletionQueuesAndSurvivesRelaunch() throws {
+        let arguments = ["-uitest-mal-state", "signed-in",
+                         "-uitest-mal-offline",
+                         "-uitest-source", "mangadex"]
+
+        let app = XCUIApplication()
+        app.launchArguments += ["-uitest-mal-reset-outbox"] + arguments
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+
+        _ = try readFirstLibraryChapterToItsLastPage(app, screenshotPrefix: "50-offline")
+
+        // `HistoryStore` throttles its writes and the outbox flushes on `.background`; a run
+        // that goes straight to Settings can beat its own persistence.
+        XCUIDevice.shared.press(.home)
+        sleep(6)
+        app.activate()
+
+        returnToTabBar(app)
+        app.tabBars.buttons["Settings"].tap()
+        let queue = syncQueue(in: app)
+        XCTAssertTrue(queue.waitForExistence(timeout: 15),
+                      "a completion with MyAnimeList unreachable must be queued, not dropped")
+        let queuedBefore = queue.value as? String ?? ""
+        XCTAssertTrue(queuedBefore.contains("waiting to send"),
+                      "expected a pending line, got '\(queuedBefore)'")
+        attach(app, name: "51-offline-queued")
+
+        // The relaunch. `terminate()` rather than a second `launch()` on a live app, so this
+        // is a genuine cold start reading the queue back off disk.
+        app.terminate()
+        let relaunched = XCUIApplication()
+        relaunched.launchArguments += arguments
+        relaunched.launch()
+        relaunched.tabBars.buttons["Settings"].tap()
+
+        let queueAfter = syncQueue(in: relaunched)
+        XCTAssertTrue(queueAfter.waitForExistence(timeout: 15),
+                      "the queued update must survive a relaunch")
+        XCTAssertEqual(queueAfter.value as? String, queuedBefore,
+                       "the relaunched queue should be the same queue, not a rebuilt one")
+        attach(relaunched, name: "52-offline-queued-after-relaunch")
+    }
+
+    /// **Turning sync off stops queueing, and turning it back on resumes** (MAL plan, Task 12).
+    ///
+    /// The interesting half is the first: `MALProgressCoordinator.chapterCompleted` returns
+    /// early when sync is off, so a chapter finished in that window is never queued and never
+    /// arrives late. Reading the *same* chapter again after re-enabling is what separates
+    /// "not queued" from "queued but not shown".
+    func testDisablingSyncStopsQueueingAndReenablingResumes() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uitest-mal-state", "signed-in",
+                                "-uitest-mal-offline",
+                                "-uitest-mal-reset-outbox",
+                                "-uitest-source", "mangadex"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+
+        app.tabBars.buttons["Settings"].tap()
+        let toggle = app.switches["Sync reading progress"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 10), "the sync toggle should be in Settings")
+        XCTAssertEqual(toggle.value as? String, "1", "the seeded account starts with sync on")
+        toggle.tap()
+        XCTAssertEqual(toggle.value as? String, "0", "the toggle should turn sync off")
+        attach(app, name: "60-sync-disabled")
+
+        _ = try readFirstLibraryChapterToItsLastPage(app, screenshotPrefix: "61-sync-off")
+        XCUIDevice.shared.press(.home)
+        sleep(6)
+        app.activate()
+
+        returnToTabBar(app)
+        app.tabBars.buttons["Settings"].tap()
+        XCTAssertFalse(syncQueue(in: app).exists,
+                       "a chapter finished with sync off must not be queued")
+        attach(app, name: "62-sync-off-nothing-queued")
+
+        // Back on. The same chapter is already complete, so re-reading it is what proves the
+        // path is live again rather than merely that the toggle flipped.
+        let toggleAgain = app.switches["Sync reading progress"]
+        XCTAssertTrue(toggleAgain.waitForExistence(timeout: 10))
+        toggleAgain.tap()
+        XCTAssertEqual(toggleAgain.value as? String, "1")
+        attach(app, name: "63-sync-reenabled")
+
+        _ = try readFirstLibraryChapterToItsLastPage(app, screenshotPrefix: "64-sync-on")
+        XCUIDevice.shared.press(.home)
+        sleep(6)
+        app.activate()
+
+        returnToTabBar(app)
+        app.tabBars.buttons["Settings"].tap()
+        let resumedQueue = syncQueue(in: app)
+        XCTAssertTrue(resumedQueue.waitForExistence(timeout: 15),
+                      "a completion after re-enabling sync must be queued")
+        XCTAssertTrue((resumedQueue.value as? String ?? "").contains("waiting to send"),
+                      "re-enabled sync should resume the normal delivery path")
+        attach(app, name: "65-sync-on-queued")
+    }
+
+    /// **Signing out clears the account and its queued work** (MAL plan, Task 12).
+    ///
+    /// Runs against the seeded stand-in credential, so this signs nothing real out. The queue
+    /// is loaded first, because "sign-out clears the queue" is a claim about a queue that
+    /// exists.
+    func testSignOutClearsTheAccountAndItsQueue() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uitest-mal-state", "signed-in",
+                                "-uitest-mal-offline",
+                                "-uitest-mal-reset-outbox",
+                                "-uitest-source", "mangadex"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+
+        _ = try readFirstLibraryChapterToItsLastPage(app, screenshotPrefix: "70-before-signout")
+        XCUIDevice.shared.press(.home)
+        sleep(6)
+        app.activate()
+
+        returnToTabBar(app)
+        app.tabBars.buttons["Settings"].tap()
+        XCTAssertTrue(syncQueue(in: app).waitForExistence(timeout: 15),
+                      "there should be something queued to lose")
+        attach(app, name: "71-queued-before-signout")
+
+        let signOut = app.buttons["Sign out on this device"]
+        for _ in 0..<8 where !signOut.isHittable {
+            app.swipeUp()
+            usleep(400_000)
+        }
+        XCTAssertTrue(signOut.isHittable, "the sign-out button should be reachable")
+        signOut.tap()
+
+        XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 15),
+                      "signing out should return the section to its signed-out state")
+        XCTAssertFalse(syncQueue(in: app).exists,
+                       "sign-out must clear the queued updates, not orphan them")
+        XCTAssertFalse(app.switches["Sync reading progress"].exists,
+                       "signed out, no account controls remain")
+        attach(app, name: "72-after-signout")
+    }
+
+    /// **Foreground retry** (MAL plan, Task 12).
+    ///
+    /// Once the persisted backoff is eligible, backgrounding and returning must make the
+    /// coordinator re-attempt queued work instead of leaving it dormant until another event.
+    ///
+    /// What this observes is that the attempt *happens* (the item's retry count advances and
+    /// the section keeps reporting it as pending). That it *succeeds* against a real list was
+    /// proved separately by `testLiveHorimiyaCompletionPushesProgress`; here the credential is
+    /// a stand-in and cannot deliver by construction.
+    func testForegroundingRetriesQueuedWork() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uitest-mal-state", "signed-in",
+                                "-uitest-mal-offline",
+                                "-uitest-mal-reset-outbox",
+                                "-uitest-source", "mangadex"]
+        XCUIDevice.shared.orientation = .portrait
+        app.launch()
+
+        _ = try readFirstLibraryChapterToItsLastPage(app, screenshotPrefix: "80-foreground-retry")
+        XCUIDevice.shared.press(.home)
+        sleep(6)
+        app.activate()
+
+        returnToTabBar(app)
+        app.tabBars.buttons["Settings"].tap()
+        let queue = syncQueue(in: app)
+        XCTAssertTrue(queue.waitForExistence(timeout: 15))
+        attach(app, name: "81-queued")
+
+        // Background past the initial one-minute retry window, then return. Foregrounding
+        // starts a fresh drain, which should attempt the now-eligible item immediately. The
+        // persisted retry-count assertion is made outside the process after this run.
+        XCUIDevice.shared.press(.home)
+        sleep(65)
+        app.activate()
+
+        XCTAssertTrue(queue.waitForExistence(timeout: 15),
+                      "the item must survive a foreground retry that could not deliver")
+        attach(app, name: "82-after-foreground")
+    }
+
+    // MARK: Shared driver
+
+    private func syncQueue(in app: XCUIApplication) -> XCUIElement {
+        // SwiftUI's combined accessibility element is projected as a StaticText on the
+        // current simulator runtime, but that implementation detail is not part of the UI's
+        // semantic contract. Match the explicit label regardless of XCTest element type.
+        app.descendants(matching: .any)["Sync queue"]
+    }
+
+    /// Walks back out of the reader and the detail stack until the tab bar is on screen.
+    /// The reader hides it, so every check that reads a chapter and then wants Settings has
+    /// to come back up first.
+    private func returnToTabBar(_ app: XCUIApplication) {
+        for _ in 0..<10 {
+            if app.tabBars.buttons["Settings"].exists { return }
+
+            // The reader hides the navigation bar and the tab bar, so its own close button is
+            // the only way out — and the chrome holding it is hidden until the screen is
+            // tapped.
+            let close = app.buttons["readerCloseButton"]
+            if close.exists && close.isHittable {
+                close.tap()
+                usleep(1_200_000)
+                continue
+            }
+            let back = app.navigationBars.buttons.firstMatch
+            if back.exists && back.isHittable {
+                back.tap()
+                usleep(1_200_000)
+                continue
+            }
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            usleep(1_200_000)
+        }
+        XCTAssertTrue(app.tabBars.buttons["Settings"].waitForExistence(timeout: 10),
+                      "should be able to get back to the tab bar after reading")
+    }
+
+    /// The title these checks read. Named rather than "whatever is first in the library"
+    /// because the seeded library's first card is Junjou Romantica **on WeebCentral**, and a
+    /// second source's detail page is a variable none of these checks are about — the same
+    /// inherited-source trap that produced Issue #81.
+    private static let manualCheckTitle = "Chainsaw Man"
+    private static let manualCheckChapterStamp = "CH·97"
+
+    /// Opens `manualCheckTitle` from the library, reads its first chapter to the last page,
+    /// and returns the page count. Factored out because five checks above differ only in what
+    /// they assert afterwards — the completion itself is the same act every time.
+    @discardableResult
+    // swiftlint:disable:next cyclomatic_complexity
+    private func readFirstLibraryChapterToItsLastPage(
+        _ app: XCUIApplication,
+        screenshotPrefix: String
+    ) throws -> Int {
+        app.tabBars.buttons["Library"].tap()
+
+        // Selecting a tab preserves that tab's NavigationStack. A second traversal in the
+        // same test therefore returns to the prior detail page, not necessarily the grid.
+        let anyCard = app.buttons.matching(identifier: "libraryCoverCard").firstMatch
+        for _ in 0..<6 where !anyCard.exists {
+            let back = app.navigationBars.buttons.firstMatch
+            guard back.exists && back.isHittable else { break }
+            back.tap()
+            usleep(800_000)
+        }
+
+        let card = app.buttons.matching(identifier: "libraryCoverCard")
+            .matching(NSPredicate(format: "label CONTAINS[c] %@", Self.manualCheckTitle))
+            .firstMatch
+        for _ in 0..<8 where !card.exists {
+            app.swipeUp(velocity: .fast)
+            usleep(400_000)
+        }
+        XCTAssertTrue(card.waitForExistence(timeout: 20),
+                      "\(Self.manualCheckTitle) should be in the seeded library")
+        // `tap()` on the element, not a normalized coordinate: the grid re-lays out as covers
+        // stream in, and a coordinate computed from the matched frame lands on whichever cell
+        // has moved into that spot. That is how an earlier run of this read Made in Abyss
+        // while asserting nothing about which title it had opened.
+        card.tap()
+
+        let libraryToggle = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Library"))
+            .firstMatch
+        XCTAssertTrue(libraryToggle.waitForExistence(timeout: 25), "should reach the detail page")
+        XCTAssertTrue(app.staticTexts[Self.manualCheckTitle].waitForExistence(timeout: 15),
+                      "should have opened \(Self.manualCheckTitle), not another library title")
+
+        // Chapters 230–232 are listed but currently have no pages on MangaDex. Pin this
+        // exercise to a chapter whose at-home payload is known to contain readable pages
+        // instead of taking whichever metadata row is newest.
+        // CONTAINS rather than BEGINSWITH: a resume marker or unread badge can precede it.
+        let chapter = app.buttons.matching(
+            NSPredicate(format: "label CONTAINS %@", Self.manualCheckChapterStamp)
+        )
+            .firstMatch
+        _ = chapter.waitForExistence(timeout: 25)   // chapters arrive over the network
+        for _ in 0..<10 where !chapter.exists {
+            app.swipeUp(velocity: .fast)
+            usleep(800_000)
+        }
+        XCTAssertTrue(chapter.waitForExistence(timeout: 20),
+                      "the title should list \(Self.manualCheckChapterStamp) — hierarchy:\n\(app.debugDescription)")
+
+        // Completion notifications are edge-triggered: HistoryStore emits only when a
+        // chapter moves from incomplete to complete. Reset through the real UI so this
+        // manual exercise remains repeatable after a failed run that already reached the
+        // final page, without adding a test-only history mutation to the app.
+        chapter.press(forDuration: 1)
+        let markUnread = app.buttons["Mark as unread"]
+        if markUnread.waitForExistence(timeout: 3) {
+            markUnread.tap()
+        } else {
+            XCTAssertTrue(app.buttons["Mark as read"].exists,
+                          "the chapter context menu should expose its read state")
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.1)).tap()
+        }
+
+        attach(app, name: "\(screenshotPrefix)-chapter-row")
+        chapter.tap()
+
+        // Reader chrome is hidden until tapped, so the page indicator does not exist yet.
+        let indicator = app.staticTexts["readerPageIndicator"]
+        for _ in 0..<12 where !indicator.exists {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            usleep(1_500_000)
+        }
+        XCTAssertTrue(
+            indicator.waitForExistence(timeout: 30),
+            "the reader should load pages — hierarchy:\n\(app.debugDescription)"
+        )
+        guard let pages = Self.indicatorTotal(indicator.label) else {
+            XCTFail("could not read a page count from '\(indicator.label)'")
+            return 0
+        }
+        XCTAssertGreaterThan(pages, 1, "a one-page chapter would not prove paging")
+
+        // Reading direction is a property of the title, so probe rather than assume: R→L is
+        // reversed page order here, not a mirror. Probing backwards, because the reader
+        // restores the last position — a chapter already read opens *on* its final page, and
+        // a forward probe there advances into the next chapter instead.
+        let before = Self.indicatorCurrent(indicator.label) ?? 1
+        app.swipeRight()
+        usleep(700_000)
+        let backwardIsSwipeRight = (Self.indicatorCurrent(indicator.label) ?? before) < before
+
+        // To the first page, so the run that follows is a real traversal of the whole chapter
+        // rather than whatever the restored position left.
+        for _ in 0..<(pages + 5) {
+            if (Self.indicatorCurrent(indicator.label) ?? 1) <= 1 { break }
+            if backwardIsSwipeRight { app.swipeRight() } else { app.swipeLeft() }
+            usleep(400_000)
+        }
+        XCTAssertEqual(Self.indicatorCurrent(indicator.label), 1,
+                       "should be able to get back to the first page, indicator '\(indicator.label)'")
+
+        // And forward to the last one. Reaching it is what records the completion.
+        for _ in 0..<(pages + 5) {
+            if (Self.indicatorCurrent(indicator.label) ?? 0) >= pages { break }
+            if backwardIsSwipeRight { app.swipeLeft() } else { app.swipeRight() }
+            usleep(400_000)
+        }
+        XCTAssertEqual(Self.indicatorCurrent(indicator.label), pages,
+                       """
+                       the chapter must reach its final page — anything less is not a \
+                       completion. Indicator '\(indicator.label)', pages \(pages)
+                       """)
+        attach(app, name: "\(screenshotPrefix)-last-page")
+        return pages
+    }
+}

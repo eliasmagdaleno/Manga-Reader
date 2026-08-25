@@ -339,7 +339,9 @@ is gone. `PUT` was not tested — it would be a second mutation for no decision 
   ```
 
 - [x] Run SwiftLint using the repository's existing CI-equivalent command (42 warnings, 0 serious — unchanged baseline).
-- [ ] Build the app for the same destination and manually verify signed-out reading is unchanged.
+- [x] Build the app for the same destination and manually verify signed-out reading is unchanged
+  (2026-08-24: read MangaDex Chainsaw Man chapter 97 end to end while signed out; Settings
+  remained signed out and the MAL outbox stayed empty).
 - [x] **Render every account state on a device** — done 2026-08-24 via `-uitest-mal-state`
   (`testMyAnimeListSettingsStatesRender`, `testMyAnimeListSettingsAtAccessibilityTextSize`).
   Signed-in, refreshing, reauthorization-required, the account-switch alert, and the signed-in
@@ -350,17 +352,18 @@ is gone. `PUT` was not tested — it would be a second mutation for no decision 
   Horimiya (MAL 42451). Read chapter 124 to its last page: 100 → 124 with `status` preserved as
   `reading`, then restored to 100 and the restore confirmed from a fresh process.
   `testLiveHorimiyaCompletionPushesProgress`, which skips unless `MAL_LIVE_WRITE=1`.
-- [ ] Exercise offline completion, relaunch persistence, foreground retry, toggle disable/enable,
-  and logout cleanup on the seeded iPhone 17 Pro.
+- [x] Exercise offline completion, relaunch persistence, foreground retry, toggle disable/enable,
+  and logout cleanup on the seeded iPhone 17 Pro (2026-08-24: five focused UI checks passed.
+  The foreground check also advanced the persisted stand-in item's retry count from 1 to 2).
 - [x] Confirm no secrets appear in source control, build settings output, logs, screenshots, test
   fixtures, or failure descriptions.
 - [x] Re-check `project.pbxproj` immediately before staging; discard only unrelated Xcode churn,
   never intentional `xcp` file entries.
 - [x] Update README Deferred/current-state wording and add an ADR if implementation reveals a
   lasting architectural decision not already captured by the approved spec.
-- [ ] Check `git diff --check`, inspect the exact staged paths, commit the scoped implementation,
-  push the branch, and open a draft PR. Require SwiftLint and Build & unit tests to pass before
-  marking it ready.
+- [x] Check `git diff --check`, inspect the exact staged paths, commit the scoped implementation,
+  push the branch, and open a draft PR. PR #85 passed SwiftLint and Build & unit tests on
+  2026-08-24 before being marked ready.
 
 ### Still unverified after Task 12
 
