@@ -87,10 +87,15 @@ final class LibraryStore: ObservableObject {
     /// library predates the Work store and most tests have no interest in it; the
     /// app wires it in `Manga_ReaderApp`.
     private let works: WorkStore?
+    /// Resolves each saved item's own source during `refresh()`. Injectable so tests can
+    /// register stub sources; the app uses the shared registry.
+    private let registryOverride: SourceRegistry?
+    private var registry: SourceRegistry { registryOverride ?? .shared }
 
-    init(defaults: UserDefaults = .standard, works: WorkStore? = nil) {
+    init(defaults: UserDefaults = .standard, works: WorkStore? = nil, registry: SourceRegistry? = nil) {
         self.defaults = defaults
         self.works = works
+        self.registryOverride = registry
         loadCollections()
         loadItems()
     }
@@ -274,8 +279,15 @@ final class LibraryStore: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
-        let current = items
-        let source = SourceRegistry.shared.active
+        // Pair each item with the source it was saved from, up front on the main actor:
+        // asking the active browse source for every id sends e.g. a WeebCentral slug to
+        // MangaDex. A nil `sourceId` predates multi-source and means MangaDex (as everywhere
+        // else); only an unregistered source id falls through to the active source.
+        let registry = self.registry
+        let fallback = registry.source(id: MangaDexSource.sourceID) ?? registry.active
+        let current: [(item: LibraryItem, source: MangaSource)] = items.map { item in
+            (item, item.sourceId.flatMap { registry.source(id: $0) } ?? fallback)
+        }
         let maxConcurrent = 4
         let results: [(String, [String])] = await withTaskGroup(
             of: (String, [String])?.self
@@ -283,7 +295,8 @@ final class LibraryStore: ObservableObject {
             var iterator = current.makeIterator()
 
             func addNext() {
-                guard let item = iterator.next() else { return }
+                guard let next = iterator.next() else { return }
+                let (item, source) = next
                 group.addTask {
                     guard let chapters = try? await source.chapters(mangaId: item.id) else { return nil }
                     return (item.id, chapters.map(\.number))
