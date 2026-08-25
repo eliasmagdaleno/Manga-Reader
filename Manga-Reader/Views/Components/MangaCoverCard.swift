@@ -13,7 +13,7 @@ struct MangaCoverCard: View {
     let coverURL: URL?         // Remote cover URL (may be nil)
     var stamp: String? = nil   // Optional metadata stamp, e.g. "CH·012" or "NEW"
     var stampTinted = false    // Draw the stamp in the seal color
-    var badge: String? = nil   // Top-left corner badge overlay, e.g. unread count "403"
+    var badge: String? = nil   // Top-left unread count; the rendered label states its meaning.
     var fill = false           // Fill the grid cell's width (3-up grid) vs. fixed 128pt rail card
 
     var body: some View {
@@ -43,7 +43,7 @@ struct MangaCoverCard: View {
                 )
                 .overlay(alignment: .topLeading) {
                     if let badge {
-                        Text(badge)
+                        Text("\(badge) unread")
                             .font(.inkMono(10, weight: .bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
@@ -71,6 +71,14 @@ struct MangaCoverCard: View {
             }
         }
         .frame(maxWidth: fill ? .infinity : Gutter.coverWidth, alignment: .leading)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilitySummary)
+    }
+
+    private var accessibilitySummary: String {
+        [title, badge.map { "\($0) unread chapters" }, stamp]
+            .compactMap { $0 }
+            .joined(separator: ", ")
     }
 
     /// The sized, clipped box the cover art fills. In `fill` mode the grid cell

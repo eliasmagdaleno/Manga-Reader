@@ -10,6 +10,7 @@ import SwiftUI
 
 struct HistoryView: View {
     @EnvironmentObject private var history: HistoryStore
+    @Environment(\.selectAppTab) private var selectAppTab
 
     @State private var showingClearConfirmation = false
 
@@ -20,7 +21,9 @@ struct HistoryView: View {
                     InkEmptyState(
                         symbol: "clock.arrow.circlepath",
                         title: "No reading history",
-                        message: "Chapters you read will appear here so you can pick up where you left off."
+                        message: "Open a chapter and it will appear here so you can continue later.",
+                        actionTitle: "Find Something to Read",
+                        action: { selectAppTab(.search) }
                     )
                 } else {
                     List {
@@ -86,7 +89,7 @@ struct HistoryView: View {
                         .font(.inkMono(11, weight: .medium))
                         .foregroundStyle(Ink.seal)
                     Text(entry.updatedAt.formatted(.relative(presentation: .named)))
-                        .font(.caption2)
+                        .font(.footnote)
                         .foregroundStyle(Ink.tertiary)
                 }
             }
@@ -99,7 +102,7 @@ struct HistoryView: View {
             } label: {
                 Label("View Manga Details", systemImage: "book")
             }
-            
+
             Button(role: .destructive) {
                 history.delete(entry)
             } label: {
@@ -114,7 +117,7 @@ struct HistoryView: View {
         for entry in history.entries {
             let key = Self.dayLabel(entry.updatedAt)
             if buckets[key] == nil { buckets[key] = []; order.append(key) }
-            
+
             // Only add the first (most recent) entry per manga for the given day
             if !(buckets[key]?.contains(where: { $0.mangaId == entry.mangaId }) ?? false) {
                 buckets[key]?.append(entry)
@@ -140,7 +143,16 @@ struct HistoryView: View {
 // behind it (ADR-0018 amendment 1), not a view-local convenience.
 extension ReadingEntry {
     var asManga: Manga {
-        Manga(id: mangaId, sourceId: sourceId ?? MangaDexSource.sourceID, title: mangaTitle, description: "", status: "unknown", year: nil, coverURL: coverURL, malId: malId)
+        Manga(
+            id: mangaId,
+            sourceId: sourceId ?? MangaDexSource.sourceID,
+            title: mangaTitle,
+            description: "",
+            status: "unknown",
+            year: nil,
+            coverURL: coverURL,
+            malId: malId
+        )
     }
     var asChapter: Chapter {
         Chapter(id: chapterId, number: chapterNumber, title: nil)

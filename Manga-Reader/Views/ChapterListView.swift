@@ -13,6 +13,7 @@ struct ChapterListView: View {
     let manga: Manga
     let chapters: [Chapter]
     @EnvironmentObject private var history: HistoryStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var descending = true
     @State private var isSelecting = false
     @State private var selectedIDs: Set<String> = []
@@ -48,7 +49,7 @@ struct ChapterListView: View {
                                 Label(read ? "Mark as unread" : "Mark as read",
                                       systemImage: read ? "circle" : "checkmark.circle")
                             }
-                            
+
                             Button {
                                 let sorted = sortChapters(chapters, descending: descending)
                                 if let idx = sorted.firstIndex(where: { $0.id == chapter.id }) {
@@ -58,12 +59,30 @@ struct ChapterListView: View {
                                 Label("Mark all below as read", systemImage: "arrow.down.to.line")
                             }
                         }
+                        .accessibilityAction(named: readActionName(for: chapter)) {
+                            history.toggleRead(manga: manga, chapter: chapter)
+                        }
+                        .accessibilityAction(named: "Mark this and all below as read") {
+                            markAllBelow(chapter)
+                        }
                     }
                     Divider().overlay(Ink.hairline)
                         .padding(.leading, Gutter.page)
                 }
             }
             .padding(.vertical, 8)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !isSelecting {
+                Label("Use Select for batch changes, or press and hold a chapter for more actions.",
+                      systemImage: "hand.tap")
+                    .font(.footnote)
+                    .foregroundStyle(Ink.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Gutter.page)
+                    .padding(.vertical, 10)
+                    .background(Ink.surfaceAlt)
+            }
         }
         .background(Ink.background)
         .navigationTitle("Chapters")
@@ -73,7 +92,7 @@ struct ChapterListView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 if isSelecting {
                     Button {
-                        withAnimation(.snappy(duration: 0.2)) {
+                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
                             isSelecting = false
                             selectedIDs.removeAll()
                         }
@@ -86,7 +105,7 @@ struct ChapterListView: View {
                 } else {
                     HStack(spacing: 16) {
                         Button {
-                            withAnimation(.snappy(duration: 0.2)) { isSelecting = true }
+                            withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { isSelecting = true }
                         } label: {
                             Text("SELECT")
                                 .font(.inkMono(11, weight: .semibold))
@@ -94,7 +113,7 @@ struct ChapterListView: View {
                                 .foregroundStyle(Ink.seal)
                         }
                         Button {
-                            withAnimation(.snappy(duration: 0.2)) { descending.toggle() }
+                            withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { descending.toggle() }
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: "arrow.up.arrow.down")
@@ -110,7 +129,7 @@ struct ChapterListView: View {
             if isSelecting {
                 ToolbarItemGroup(placement: .bottomBar) {
                     Button(allSelected ? "Deselect All" : "Select All") {
-                        withAnimation(.snappy(duration: 0.2)) {
+                        withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
                             selectedIDs = allSelected ? [] : Set(chapters.map(\.id))
                         }
                     }
@@ -145,9 +164,19 @@ struct ChapterListView: View {
         } else {
             history.markUnread(manga: manga, chapters: picked)
         }
-        withAnimation(.snappy(duration: 0.2)) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
             isSelecting = false
             selectedIDs.removeAll()
         }
+    }
+
+    private func readActionName(for chapter: Chapter) -> String {
+        history.isRead(chapterId: chapter.id) ? "Mark as unread" : "Mark as read"
+    }
+
+    private func markAllBelow(_ chapter: Chapter) {
+        let sorted = sortChapters(chapters, descending: descending)
+        guard let index = sorted.firstIndex(where: { $0.id == chapter.id }) else { return }
+        history.markRead(manga: manga, chapters: Array(sorted[index...]))
     }
 }

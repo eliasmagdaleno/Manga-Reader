@@ -9,6 +9,7 @@ struct SearchView: View {
     @StateObject private var vm = SearchViewModel()
     @ObservedObject private var registry = SourceRegistry.shared
     @AppStorage("settings.showAdultSources") private var showAdultSources = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var query = ""
 
     var body: some View {
@@ -17,12 +18,20 @@ struct SearchView: View {
                 LazyVStack(alignment: .leading, spacing: Gutter.section) {
                     // Search source picker — same chip bar as Home, but it only
                     // scopes search and never changes the app-wide active source.
-                    SourceChipBar(
-                        sources: registry.visibleSources(includeAdult: showAdultSources),
-                        activeID: vm.selectedSourceID ?? registry.activeSourceID
-                    ) { id in
-                        withAnimation(.snappy(duration: 0.2)) {
-                            vm.selectSource(id: id)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Search source · only affects these results", systemImage: "line.3.horizontal.decrease.circle")
+                            .font(.footnote)
+                            .foregroundStyle(Ink.secondary)
+                            .padding(.horizontal, Gutter.page)
+
+                        SourceChipBar(
+                            sources: registry.visibleSources(includeAdult: showAdultSources),
+                            activeID: vm.selectedSourceID ?? registry.activeSourceID,
+                            accessibilityVerb: "Search"
+                        ) { id in
+                            withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
+                                vm.selectSource(id: id)
+                            }
                         }
                     }
 

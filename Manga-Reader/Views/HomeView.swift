@@ -6,9 +6,11 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @StateObject private var vm = HomeViewModel()
     @ObservedObject private var registry = SourceRegistry.shared
     @EnvironmentObject private var engine: RecommendationEngine
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("settings.showAdultSources") private var showAdultSources = false
 
     var body: some View {
@@ -20,18 +22,31 @@ struct HomeView: View {
                 LazyVStack(alignment: .leading, spacing: Gutter.section) {
 
                     // Source switcher — every visible source, one tap away.
-                    SourceChipBar(
-                        sources: registry.visibleSources(includeAdult: showAdultSources),
-                        activeID: registry.activeSourceID
-                    ) { id in
-                        withAnimation(.snappy(duration: 0.2)) {
-                            registry.activeSourceID = id
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Browse source · changes Home discovery", systemImage: "globe")
+                            .font(.footnote)
+                            .foregroundStyle(Ink.secondary)
+                            .padding(.horizontal, Gutter.page)
+
+                        SourceChipBar(
+                            sources: registry.visibleSources(includeAdult: showAdultSources),
+                            activeID: registry.activeSourceID
+                        ) { id in
+                            withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
+                                registry.activeSourceID = id
+                            }
                         }
                     }
 
                     if let err = vm.errorMessage {
-                        InkNotice(err)
-                            .padding(.horizontal, Gutter.page)
+                        VStack(alignment: .leading, spacing: 10) {
+                            InkNotice("Home couldn't update. \(err)")
+                            Button("Try Home Again", action: vm.refresh)
+                                .font(.subheadline.bold())
+                                .foregroundStyle(Ink.seal)
+                                .frame(minHeight: 44)
+                        }
+                        .padding(.horizontal, Gutter.page)
                     }
 
                     if vm.isLoading && vm.popular.isEmpty {
@@ -42,29 +57,32 @@ struct HomeView: View {
                     // except when the engine reports the gate can never open (ADR-0015).
                     if !engine.recommendations.isEmpty {
                         VStack(alignment: .leading, spacing: 14) {
-                            InkSectionHeader("For You", eyebrow: "Based on your reading")
-                                .overlay(alignment: .trailing) {
-                                    NavigationLink {
-                                        // Recommendations are a bounded ranked list, so the
-                                        // grid loads the full pool once then ends (offset > 0
-                                        // → empty page → PagedMangaLoader stops).
-                                        CategoryGridView(
-                                            title: "For You",
-                                            initialItems: engine.recommendations.map(\.manga),
-                                            pagedFetch: { _, offset in
-                                                offset == 0 ? await engine.rankedRecommendations() : []
-                                            })
-                                    } label: {
-                                        HStack(spacing: 3) {
-                                            Text("See all")
-                                            Image(systemName: "chevron.right")
-                                        }
-                                        .font(.inkMono(11, weight: .semibold))
-                                        .foregroundStyle(Ink.seal)
+                            (dynamicTypeSize.isAccessibilitySize
+                             ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                             : AnyLayout(ZStackLayout(alignment: .trailing))) {
+                                InkSectionHeader("For You", eyebrow: "Based on your reading")
+                                NavigationLink {
+                                    // Recommendations are a bounded ranked list, so the
+                                    // grid loads the full pool once then ends (offset > 0
+                                    // → empty page → PagedMangaLoader stops).
+                                    CategoryGridView(
+                                        title: "For You",
+                                        initialItems: engine.recommendations.map(\.manga),
+                                        pagedFetch: { _, offset in
+                                            offset == 0 ? await engine.rankedRecommendations() : []
+                                        })
+                                } label: {
+                                    HStack(spacing: 3) {
+                                        Text("See all")
+                                        Image(systemName: "chevron.right")
                                     }
-                                    .buttonStyle(.plain)
-                                    .padding(.trailing, Gutter.page)
+                                    .font(.inkMono(11, weight: .semibold))
+                                    .foregroundStyle(Ink.seal)
                                 }
+                                .buttonStyle(.plain)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                                .padding(.trailing, Gutter.page)
+                            }
                             RecommendationRail(
                                 items: engine.recommendations,
                                 onNotInterested: { engine.markNotInterested($0) },
@@ -141,22 +159,25 @@ struct HomeView: View {
                          pagedFetch: @escaping (_ limit: Int, _ offset: Int) async throws -> [Manga]) -> some View {
         if !items.isEmpty {
             VStack(alignment: .leading, spacing: 14) {
-                InkSectionHeader(title, eyebrow: eyebrow)
-                    .overlay(alignment: .trailing) {
-                        NavigationLink {
-                            CategoryGridView(title: title, initialItems: items,
-                                             pageSize: pageSize, pagedFetch: pagedFetch)
-                        } label: {
-                            HStack(spacing: 3) {
-                                Text("See all")
-                                Image(systemName: "chevron.right")
-                            }
-                            .font(.inkMono(11, weight: .semibold))
-                            .foregroundStyle(Ink.seal)
+                (dynamicTypeSize.isAccessibilitySize
+                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                 : AnyLayout(ZStackLayout(alignment: .trailing))) {
+                    InkSectionHeader(title, eyebrow: eyebrow)
+                    NavigationLink {
+                        CategoryGridView(title: title, initialItems: items,
+                                         pageSize: pageSize, pagedFetch: pagedFetch)
+                    } label: {
+                        HStack(spacing: 3) {
+                            Text("See all")
+                            Image(systemName: "chevron.right")
                         }
-                        .buttonStyle(.plain)
-                        .padding(.trailing, Gutter.page)
+                        .font(.inkMono(11, weight: .semibold))
+                        .foregroundStyle(Ink.seal)
                     }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.trailing, Gutter.page)
+                }
                 MangaRail(items: items, stampFor: stamp, stampTinted: tinted)
             }
         }
@@ -200,6 +221,7 @@ struct InkNotice: View {
         }
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 10).fill(Ink.sealSoft))
+        .accessibilityElement(children: .combine)
     }
 }
 

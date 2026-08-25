@@ -13,7 +13,9 @@ import SwiftUI
 struct PagedMangaGrid: View {
     @ObservedObject var loader: PagedMangaLoader
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: Gutter.rail), count: 3)
+    private let columns = [
+        GridItem(.adaptive(minimum: 104, maximum: 180), spacing: Gutter.rail)
+    ]
 
     var body: some View {
         LazyVGrid(columns: columns, alignment: .leading, spacing: Gutter.section) {

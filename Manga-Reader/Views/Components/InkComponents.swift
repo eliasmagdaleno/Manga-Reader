@@ -124,6 +124,8 @@ struct InkEmptyState: View {
     let symbol: String
     let title: String
     let message: String
+    var actionTitle: String? = nil
+    var action: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 14) {
@@ -143,8 +145,18 @@ struct InkEmptyState: View {
                 .foregroundStyle(Ink.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
+            if let actionTitle, let action {
+                Button(actionTitle, action: action)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                    .frame(minHeight: 44)
+                    .padding(.horizontal, 18)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Ink.seal))
+                    .buttonStyle(.plain)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Ink.background)
+        .accessibilityElement(children: .contain)
     }
 }

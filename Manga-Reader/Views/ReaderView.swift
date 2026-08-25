@@ -129,10 +129,12 @@ struct ReaderView: View {
 
     @AppStorage("readingMode") private var mode: ReadingMode = .rightToLeft
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @EnvironmentObject private var history: HistoryStore
 
     @State private var currentPage = 0
-    @State private var showChrome = false
+    @State private var showChrome = true
 
     /// Held by `ReaderView` rather than by `verticalReader`, so the live position survives a
     /// reading-mode switch — which is what lets each mode resume from the other's notion of
@@ -202,16 +204,16 @@ struct ReaderView: View {
         .overlay(alignment: .top) {
             VStack(spacing: 10) {
                 if chromeVisible {
-                    topBar.transition(.move(edge: .top).combined(with: .opacity))
+                    topBar.transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 }
                 if let message = visibleBanner {
-                    banner(message).transition(.move(edge: .top).combined(with: .opacity))
+                    banner(message).transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 }
             }
         }
         .overlay(alignment: .bottom) {
             if chromeVisible && mode.isPaged && !vm.pages.isEmpty {
-                pageIndicator.transition(.move(edge: .bottom).combined(with: .opacity))
+                pageIndicator.transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
             }
         }
         .statusBarHidden(!chromeVisible)
@@ -290,11 +292,13 @@ struct ReaderView: View {
     }
 
     private func acknowledgeBanner() {
-        withAnimation(.snappy(duration: 0.22)) { acknowledgedRequest = vm.lastCompletedRequest }
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) {
+            acknowledgedRequest = vm.lastCompletedRequest
+        }
     }
 
     private func toggleChrome() {
-        withAnimation(.snappy(duration: 0.22)) { showChrome.toggle() }
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.22)) { showChrome.toggle() }
     }
 
     /// The one door to the store. Monotonicity is the store's job now (ADR-0014 decision 3),
@@ -522,7 +526,7 @@ struct ReaderView: View {
                     if !vm.pages.isEmpty && !vm.isLoading {
                         if let next = vm.nextChapter {
                             InterstitialPage(chapter: next, isNext: true)
-                                .frame(height: UIScreen.main.bounds.height * 0.8)
+                                .containerRelativeFrame(.vertical) { height, _ in height * 0.8 }
 
                             // Latched per chapter. This trigger sits below an interstitial at
                             // the bottom of the strip, and the chapter it loads replaces the
@@ -601,6 +605,7 @@ struct ReaderView: View {
             // The reader hides both bars, so this is the only way out; an icon with no
             // label leaves it unreachable to VoiceOver and unaddressable to UI tests.
             .accessibilityLabel("Close reader")
+            .accessibilityInputLabels(["Close", "Close reader"])
             .accessibilityIdentifier("readerCloseButton")
             Spacer()
 
@@ -626,6 +631,9 @@ struct ReaderView: View {
             } label: {
                 chromeIcon("book.pages", tint: Ink.seal)
             }
+            .accessibilityLabel("Reading mode")
+            .accessibilityInputLabels(["Reading mode", "Mode"])
+            .accessibilityValue(mode.label)
         }
         .padding(.horizontal, Gutter.page)
         .padding(.top, 8)
@@ -635,8 +643,8 @@ struct ReaderView: View {
         Image(systemName: symbol)
             .font(.system(size: 16, weight: .semibold))
             .foregroundStyle(tint)
-            .frame(width: 40, height: 40)
-            .background(Circle().fill(Ink.surface.opacity(0.92)))
+            .frame(width: 44, height: 44)
+            .background(Circle().fill(reduceTransparency ? Ink.surface : Ink.surface.opacity(0.92)))
             .overlay(Circle().strokeBorder(Ink.hairline, lineWidth: 1))
             .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
     }
@@ -648,7 +656,7 @@ struct ReaderView: View {
             .foregroundStyle(Ink.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
-            .background(Capsule().fill(Ink.surface.opacity(0.9)))
+            .background(Capsule().fill(reduceTransparency ? Ink.surface : Ink.surface.opacity(0.9)))
             .overlay(Capsule().strokeBorder(Ink.hairline, lineWidth: 1))
             .padding(.bottom, 12)
             // Matching this by its " · " text alone is ambiguous — the end-of-chapter marker
