@@ -73,18 +73,30 @@ xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone
 
 ## Gotchas found this session
 
-**`xcodebuild` cannot pass an environment variable to a UI test here.** Neither a shell
-`FOO=1` nor `TEST_RUNNER_FOO=1` reached `ProcessInfo` in the test bundle, with `test` or
-`test-without-building`. This is the same limitation the fixture-seeding tool worked around
-with a marker file. I removed my `XCTSkipUnless` gates instead: **CI runs
-`-only-testing:Manga-ReaderTests`**, so the UI target never runs there, and every other live
-UI test in that file is ungated for the same reason.
+**~~`xcodebuild` cannot pass an environment variable to a UI test here.~~ WRONG — corrected
+2026-08-24 (evening).** It can. A shell `TEST_RUNNER_MAL_LIVE_WRITE=1` reaches the runner as
+`MAL_LIVE_WRITE`; `xcodebuild` strips the `TEST_RUNNER_` prefix on the way in. Re-measured
+with a throwaway probe test that dumped `ProcessInfo.processInfo.environment`:
 
-**Therefore `testLiveHorimiyaCompletionPushesProgress` cannot currently be armed from the
-CLI** — its `MAL_LIVE_WRITE=1` gate can only be set from an Xcode scheme. Its live leg was
-verified by hand last session, not by running that test. Failing closed is the right
-behaviour for a gate that writes to a real account, but the comment implies a CLI usage that
-does not work.
+| Invocation | Reached `ProcessInfo`? |
+|---|---|
+| shell `MAL_LIVE_WRITE=1` | no |
+| shell `TEST_RUNNER_MAL_LIVE_WRITE=1` | **yes**, as `MAL_LIVE_WRITE` |
+| `xcodebuild … TEST_RUNNER_MAL_LIVE_WRITE=1` (build-setting argument) | no |
+
+Confirmed with both `test` and `test-without-building`. The middle row is the one that works,
+and it is a *shell* variable — passing the same string as an xcodebuild build-setting argument
+does **not** work, which is the likely source of the original mismeasurement.
+
+So no marker file is needed, and `XCTSkipUnless` gates are usable from the CLI after all.
+`testLiveHorimiyaCompletionPushesProgress` keeps its gate and now documents this invocation.
+The reason the *other* live UI tests stay ungated is unchanged and still stands on its own:
+**CI runs `-only-testing:Manga-ReaderTests`**, so the UI target never runs there.
+
+**~~Therefore `testLiveHorimiyaCompletionPushesProgress` cannot currently be armed from the
+CLI.~~ Also wrong**, and for the same reason — it arms fine with the `TEST_RUNNER_` prefix
+above. Its live leg was still verified by hand rather than by running that test, and failing
+closed remains the right behaviour for a gate that writes to a real account.
 
 **Do not tap library cards by normalized coordinate.** The grid re-lays out as covers stream
 in, so a coordinate computed from the matched frame lands on whichever cell has moved into
