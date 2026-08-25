@@ -201,7 +201,7 @@ struct MyAnimeListAPI {                              // Namespace-style struct f
     ///         honoring the `Retry-After` header, before giving up — same behavior as
     ///         MangaDexAPI.request.
     private static func request<T: Decodable>(path: String,
-                                               queryItems: [URLQueryItem]) async throws -> T {
+                                              queryItems: [URLQueryItem]) async throws -> T {
         guard var comps = URLComponents(string: baseURL + path) else {
             throw MyAnimeListError.invalidURL
         }

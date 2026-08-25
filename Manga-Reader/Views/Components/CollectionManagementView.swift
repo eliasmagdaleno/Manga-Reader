@@ -37,7 +37,10 @@ struct CollectionManagementView: View {
                 } header: {
                     Text("Create Collection")
                 } footer: {
-                    Text("Default collections (Reading, On Hold, Planned, Dropped) can be toggled on or off. Swipe a custom collection left to delete or rename.")
+                    Text(
+                        "Default collections (Reading, On Hold, Planned, Dropped) can be toggled on or off. "
+                            + "Swipe a custom collection left to delete or rename."
+                    )
                 }
 
                 Section {

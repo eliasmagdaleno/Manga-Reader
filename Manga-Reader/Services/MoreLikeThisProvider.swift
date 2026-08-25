@@ -29,7 +29,7 @@ final class MoreLikeThisProvider {
     /// `nonisolated` so it's callable synchronously without hopping to the main actor
     /// (it touches no actor-isolated state); tests call it directly.
     nonisolated static func topRecommendations(_ recs: [MyAnimeListMangaDetail.Recommendation],
-                                   limit: Int) -> [MyAnimeListMangaDetail.Recommendation] {
+                                               limit: Int) -> [MyAnimeListMangaDetail.Recommendation] {
         Array(recs.sorted { $0.numRecommendations > $1.numRecommendations }.prefix(limit))
     }
 

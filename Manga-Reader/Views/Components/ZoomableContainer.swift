@@ -78,12 +78,12 @@ struct ZoomableContainer<Content: View>: UIViewRepresentable {
     func updateUIView(_ scrollView: UIScrollView, context: Context) {
         let coordinator = context.coordinator
         coordinator.onSingleTap = onSingleTap
-        
+
         if coordinator.lastContentID != contentID {
             coordinator.hostingController?.rootView = hostedRoot(coordinator)
             coordinator.lastContentID = contentID
         }
-        
+
         if coordinator.lastIsActive != isActive {
             coordinator.lastIsActive = isActive
             if !isActive { coordinator.resetZoom() }

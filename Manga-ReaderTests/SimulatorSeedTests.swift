@@ -194,11 +194,13 @@ final class SimulatorSeedTests: XCTestCase {
 
         let refused = SimulatorSeed.sampleRows.filter { $0.refusal != nil }
         XCTAssertFalse(refused.isEmpty, "the sample rows contain no refusal")
-        XCTAssertTrue(refused.contains { if case .unmatched = $0.refusal { return true }
-                                         else { return false } },
+        XCTAssertTrue(refused.contains {
+            if case .unmatched = $0.refusal { return true } else { return false }
+        },
                       "no .unmatched refusal in the seed")
-        XCTAssertTrue(refused.contains { if case .absentFromProvider = $0.refusal { return true }
-                                         else { return false } },
+        XCTAssertTrue(refused.contains {
+            if case .absentFromProvider = $0.refusal { return true } else { return false }
+        },
                       "no .absentFromProvider refusal in the seed")
 
         for row in SimulatorSeed.sampleRows {

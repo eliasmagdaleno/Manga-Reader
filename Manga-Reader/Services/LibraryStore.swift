@@ -346,10 +346,9 @@ final class LibraryStore: ObservableObject {
            let decoded = try? JSONDecoder().decode([LibraryCollection].self, from: data) {
             var merged = decoded
             // Ensure any missing system collection exists
-            for sys in LibraryCollection.defaultCollections {
-                if !merged.contains(where: { $0.id == sys.id }) {
-                    merged.append(sys)
-                }
+            for sys in LibraryCollection.defaultCollections
+            where !merged.contains(where: { $0.id == sys.id }) {
+                merged.append(sys)
             }
             collections = merged.sorted(by: { $0.sortOrder < $1.sortOrder })
         } else {
