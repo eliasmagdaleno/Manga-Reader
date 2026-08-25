@@ -285,6 +285,46 @@ final class Manga_ReaderUITests: XCTestCase {
         add(shot)
     }
 
+    /// Captures Settings only after the MyAnimeList evidence is visibly above the tab bar.
+    /// `isHittable` is deliberately not used: XCTest reports elements covered by the tab bar
+    /// as hittable on the current runtime, which produced correctly asserted but useless
+    /// screenshots twice. Frame containment is the artifact contract.
+    private func attachSettingsEvidence(_ app: XCUIApplication, name: String) {
+        let queue = syncQueue(in: app)
+        let candidates = [
+            queue,
+            app.switches["Sync reading progress"],
+            app.buttons["Sign in"],
+            app.staticTexts["MyAnimeList"]
+        ]
+        guard let evidence = candidates.first(where: \.exists) else {
+            XCTFail("Settings screenshot '\(name)' has no MyAnimeList evidence element")
+            attach(app, name: name)
+            return
+        }
+
+        let tabBar = app.tabBars.firstMatch
+        for _ in 0..<10 {
+            let top = app.frame.minY + 8
+            let bottom = tabBar.exists ? tabBar.frame.minY - 8 : app.frame.maxY - 8
+            let frame = evidence.frame
+            if frame.minY >= top && frame.maxY <= bottom { break }
+            if frame.maxY > bottom {
+                app.swipeUp()
+            } else {
+                app.swipeDown()
+            }
+            usleep(400_000)
+        }
+
+        let visibleBottom = tabBar.exists ? tabBar.frame.minY - 8 : app.frame.maxY - 8
+        XCTAssertGreaterThanOrEqual(evidence.frame.minY, app.frame.minY + 8,
+                                    "Settings evidence must be below the top edge in '\(name)'")
+        XCTAssertLessThanOrEqual(evidence.frame.maxY, visibleBottom,
+                                 "Settings evidence must be above the tab bar in '\(name)'")
+        attach(app, name: name)
+    }
+
     func testLaunchPerformance() throws {
         if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
             // This measures how long it takes to launch your application.
@@ -1057,7 +1097,7 @@ extension Manga_ReaderUITests {
         let queuedBefore = queue.value as? String ?? ""
         XCTAssertTrue(queuedBefore.contains("waiting to send"),
                       "expected a pending line, got '\(queuedBefore)'")
-        attach(app, name: "51-offline-queued")
+        attachSettingsEvidence(app, name: "51-offline-queued")
 
         // The relaunch. `terminate()` rather than a second `launch()` on a live app, so this
         // is a genuine cold start reading the queue back off disk.
@@ -1072,7 +1112,7 @@ extension Manga_ReaderUITests {
                       "the queued update must survive a relaunch")
         XCTAssertEqual(queueAfter.value as? String, queuedBefore,
                        "the relaunched queue should be the same queue, not a rebuilt one")
-        attach(relaunched, name: "52-offline-queued-after-relaunch")
+        attachSettingsEvidence(relaunched, name: "52-offline-queued-after-relaunch")
     }
 
     /// **Turning sync off stops queueing, and turning it back on resumes** (MAL plan, Task 12).
@@ -1096,7 +1136,7 @@ extension Manga_ReaderUITests {
         XCTAssertEqual(toggle.value as? String, "1", "the seeded account starts with sync on")
         toggle.tap()
         XCTAssertEqual(toggle.value as? String, "0", "the toggle should turn sync off")
-        attach(app, name: "60-sync-disabled")
+        attachSettingsEvidence(app, name: "60-sync-disabled")
 
         _ = try readFirstLibraryChapterToItsLastPage(app, screenshotPrefix: "61-sync-off")
         XCUIDevice.shared.press(.home)
@@ -1107,7 +1147,7 @@ extension Manga_ReaderUITests {
         app.tabBars.buttons["Settings"].tap()
         XCTAssertFalse(syncQueue(in: app).exists,
                        "a chapter finished with sync off must not be queued")
-        attach(app, name: "62-sync-off-nothing-queued")
+        attachSettingsEvidence(app, name: "62-sync-off-nothing-queued")
 
         // Back on. The same chapter is already complete, so re-reading it is what proves the
         // path is live again rather than merely that the toggle flipped.
@@ -1115,7 +1155,7 @@ extension Manga_ReaderUITests {
         XCTAssertTrue(toggleAgain.waitForExistence(timeout: 10))
         toggleAgain.tap()
         XCTAssertEqual(toggleAgain.value as? String, "1")
-        attach(app, name: "63-sync-reenabled")
+        attachSettingsEvidence(app, name: "63-sync-reenabled")
 
         _ = try readFirstLibraryChapterToItsLastPage(app, screenshotPrefix: "64-sync-on")
         XCUIDevice.shared.press(.home)
@@ -1129,7 +1169,7 @@ extension Manga_ReaderUITests {
                       "a completion after re-enabling sync must be queued")
         XCTAssertTrue((resumedQueue.value as? String ?? "").contains("waiting to send"),
                       "re-enabled sync should resume the normal delivery path")
-        attach(app, name: "65-sync-on-queued")
+        attachSettingsEvidence(app, name: "65-sync-on-queued")
     }
 
     /// **Signing out clears the account and its queued work** (MAL plan, Task 12).
@@ -1155,7 +1195,7 @@ extension Manga_ReaderUITests {
         app.tabBars.buttons["Settings"].tap()
         XCTAssertTrue(syncQueue(in: app).waitForExistence(timeout: 15),
                       "there should be something queued to lose")
-        attach(app, name: "71-queued-before-signout")
+        attachSettingsEvidence(app, name: "71-queued-before-signout")
 
         let signOut = app.buttons["Sign out on this device"]
         for _ in 0..<8 where !signOut.isHittable {
@@ -1171,7 +1211,7 @@ extension Manga_ReaderUITests {
                        "sign-out must clear the queued updates, not orphan them")
         XCTAssertFalse(app.switches["Sync reading progress"].exists,
                        "signed out, no account controls remain")
-        attach(app, name: "72-after-signout")
+        attachSettingsEvidence(app, name: "72-after-signout")
     }
 
     /// **Foreground retry** (MAL plan, Task 12).
@@ -1201,7 +1241,7 @@ extension Manga_ReaderUITests {
         app.tabBars.buttons["Settings"].tap()
         let queue = syncQueue(in: app)
         XCTAssertTrue(queue.waitForExistence(timeout: 15))
-        attach(app, name: "81-queued")
+        attachSettingsEvidence(app, name: "81-queued")
 
         // Background past the initial one-minute retry window, then return. Foregrounding
         // starts a fresh drain, which should attempt the now-eligible item immediately. The
@@ -1212,7 +1252,7 @@ extension Manga_ReaderUITests {
 
         XCTAssertTrue(queue.waitForExistence(timeout: 15),
                       "the item must survive a foreground retry that could not deliver")
-        attach(app, name: "82-after-foreground")
+        attachSettingsEvidence(app, name: "82-after-foreground")
     }
 
     // MARK: Shared driver
