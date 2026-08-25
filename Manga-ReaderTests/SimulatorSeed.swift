@@ -25,13 +25,14 @@ enum SimulatorSeed {
     /// fixture with plausible names and invented ranks would clear or miss that gate for
     /// reasons unrelated to the app.
     struct Row {
+        // Read belongs to its enclosing seed row fixture.
         /// One chapter the seeded user has read, and how far into it they got.
         ///
         /// `pageCount` matters as much as `page`: "finished" is `page == pageCount - 1`,
         /// and Continue Reading, the in-progress badge and the taste signals all read that
         /// comparison rather than a flag. A fixture with every entry parked mid-chapter
         /// would show a home screen the app can never actually reach.
-        struct Read {
+        struct Read { // swiftlint:disable:this nesting
             let chapterId: String
             let chapterNumber: String
             let page: Int

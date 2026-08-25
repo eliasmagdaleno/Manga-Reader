@@ -9,6 +9,9 @@ import XCTest
 import UIKit
 @testable import Manga_Reader
 
+// This legacy integration suite intentionally keeps shared helpers and state in one XCTestCase.
+// Splitting it solely for lint would require project-file churn without changing test coverage.
+// swiftlint:disable:next type_body_length
 final class Manga_ReaderTests: XCTestCase {
 
     override func setUpWithError() throws {
@@ -54,25 +57,32 @@ final class Manga_ReaderTests: XCTestCase {
 
     @MainActor func testRecordPrependsNewEntry() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 2), pageCount: 10)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 0), pageCount: 8)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 2), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil),
+                     position: ReadingPosition(page: 0), pageCount: 8)
         XCTAssertEqual(store.entries.count, 2)
         XCTAssertEqual(store.entries.first?.chapterId, "c2") // most-recent-first
     }
 
     @MainActor func testRecordSameChapterUpdatesInPlace() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 2), pageCount: 10)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 5), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 2), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 5), pageCount: 10)
         XCTAssertEqual(store.entries.count, 1)
         XCTAssertEqual(store.entries.first?.page, 5)
     }
 
     @MainActor func testRecordNonConsecutiveChapterCreatesNewEntry() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 3), pageCount: 10) // reopened later
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 1), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c2", number: "2", title: nil),
+                     position: ReadingPosition(page: 1), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 3), pageCount: 10) // reopened later
         XCTAssertEqual(store.entries.count, 3)          // new session, not an in-place update
         XCTAssertEqual(store.entries.first?.chapterId, "c1")
         XCTAssertEqual(store.entries.first?.page, 3)
@@ -80,19 +90,23 @@ final class Manga_ReaderTests: XCTestCase {
 
     @MainActor func testLatestEntryForManga() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga("a"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
-        store.record(manga: sampleManga("b"), chapter: Chapter(id: "c2", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
+        store.record(manga: sampleManga("a"), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 1), pageCount: 10)
+        store.record(manga: sampleManga("b"), chapter: Chapter(id: "c2", number: "1", title: nil),
+                     position: ReadingPosition(page: 1), pageCount: 10)
         XCTAssertEqual(store.latestEntry(forManga: "a")?.chapterId, "c1")
         XCTAssertNil(store.latestEntry(forManga: "zzz"))
     }
 
     @MainActor func testDeleteAndClear() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 1), pageCount: 10)
         let entry = store.entries[0]
         store.delete(entry)
         XCTAssertTrue(store.entries.isEmpty)
-        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 1), pageCount: 10)
+        store.record(manga: sampleManga(), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 1), pageCount: 10)
         store.clear()
         XCTAssertTrue(store.entries.isEmpty)
     }
@@ -127,7 +141,8 @@ final class Manga_ReaderTests: XCTestCase {
 
     func testReadingEntryDecodesLegacyJSONAsNil() throws {
         // JSON saved before sourceId existed.
-        let legacy = #"{"id":"00000000-0000-0000-0000-000000000000","mangaId":"m","mangaTitle":"T","coverURL":null,"chapterId":"c","chapterNumber":"1","page":0,"pageCount":5,"updatedAt":0}"#
+        let legacy = #"{"id":"00000000-0000-0000-0000-000000000000","mangaId":"m","mangaTitle":"T","coverURL":null,"#
+            + #""chapterId":"c","chapterNumber":"1","page":0,"pageCount":5,"updatedAt":0}"#
             .data(using: .utf8)!
         let entry = try JSONDecoder().decode(ReadingEntry.self, from: legacy)
         XCTAssertNil(entry.sourceId)
@@ -212,8 +227,10 @@ final class Manga_ReaderTests: XCTestCase {
         let store = makeHistoryStore()
         // Both read to the end — this test is about manga scoping, so keep the read rule
         // itself out of it (`testReadChapterNumbersExcludesUnfinishedChapters` covers that).
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 4), pageCount: 5)
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 4), pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 4), pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c2", number: "2", title: nil),
+                     position: ReadingPosition(page: 4), pageCount: 5)
         XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["1", "2"])
         XCTAssertTrue(store.readChapterNumbers(forManga: "other").isEmpty)
     }
@@ -225,14 +242,16 @@ final class Manga_ReaderTests: XCTestCase {
     /// page 1 stopped it counting as unread. "Read" now means read to the end.
     @MainActor func testOpenedButUnfinishedChapterIsNotRead() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 0), pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 0), pageCount: 5)
         XCTAssertFalse(store.isRead(chapterId: "c1"))      // opened, not finished
         XCTAssertFalse(store.isRead(chapterId: "c2"))      // never opened at all
     }
 
     @MainActor func testChapterReadToTheEndIsRead() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 4), pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 4), pageCount: 5)
         XCTAssertTrue(store.isRead(chapterId: "c1"))
     }
 
@@ -255,8 +274,10 @@ final class Manga_ReaderTests: XCTestCase {
     /// The badge reads this set, so an abandoned chapter has to stay out of it.
     @MainActor func testReadChapterNumbersExcludesUnfinishedChapters() throws {
         let store = makeHistoryStore()
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil), position: ReadingPosition(page: 4), pageCount: 5)
-        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c2", number: "2", title: nil), position: ReadingPosition(page: 1), pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c1", number: "1", title: nil),
+                     position: ReadingPosition(page: 4), pageCount: 5)
+        store.record(manga: sampleManga("m"), chapter: Chapter(id: "c2", number: "2", title: nil),
+                     position: ReadingPosition(page: 1), pageCount: 5)
         XCTAssertEqual(store.readChapterNumbers(forManga: "m"), ["1"])
     }
 
@@ -570,7 +591,9 @@ final class Manga_ReaderTests: XCTestCase {
     @MainActor func testDetailViewModelLoadsThroughInjectedSource() async {
         let source = MockSource(
             id: "mock", name: "Mock",
-            detail: MangaDetail(description: "desc", authors: ["Author"], tags: [Tag(id: "t1", name: "Action", group: "genre")], contentRating: "safe"),
+            detail: MangaDetail(description: "desc", authors: ["Author"],
+                                tags: [Tag(id: "t1", name: "Action", group: "genre")],
+                                contentRating: "safe"),
             stubChapters: [Chapter(id: "c1", number: "1", title: "One"),
                            Chapter(id: "c2", number: "2", title: nil)]
         )
@@ -642,7 +665,18 @@ final class Manga_ReaderTests: XCTestCase {
         // A /manga list entry decoded exactly as the API layer does it must carry the
         // MangaDex source id so downstream source resolution works.
         let json = #"""
-        {"data":[{"id":"abc","attributes":{"title":{"en":"Berserk"},"description":{"en":"d"},"status":"ongoing","year":1989},"relationships":[]}]}
+        {
+          "data": [{
+            "id": "abc",
+            "attributes": {
+              "title": {"en": "Berserk"},
+              "description": {"en": "d"},
+              "status": "ongoing",
+              "year": 1989
+            },
+            "relationships": []
+          }]
+        }
         """#.data(using: .utf8)!
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -1171,7 +1205,9 @@ final class Manga_ReaderTests: XCTestCase {
             var isNSFW: Bool { true }
             func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
             func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
-            func mangaDetail(id: String) async throws -> MangaDetail { MangaDetail(description: "", authors: [], tags: [], contentRating: nil) }
+            func mangaDetail(id: String) async throws -> MangaDetail {
+                MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+            }
             func chapters(mangaId: String) async throws -> [Chapter] { [] }
             func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
         }
@@ -1200,7 +1236,10 @@ final class Manga_ReaderTests: XCTestCase {
     ///   the moment the load is superseded — exercising the "cancellation is not a
     ///   user-facing error" path.
     private actor SupersededSource: MangaSource {
-        enum FirstCallBehavior { case parkUntilReleased, sleepCancellably }
+        // The behavior is private test scaffolding for its enclosing source actor.
+        enum FirstCallBehavior { // swiftlint:disable:this nesting
+            case parkUntilReleased, sleepCancellably
+        }
 
         nonisolated let id = "superseded"
         nonisolated let name = "Superseded"
@@ -1321,7 +1360,8 @@ final class Manga_ReaderTests: XCTestCase {
     }
 
     func testMangaDexToChapterUsesPublishAt() throws {
-        let json = #"{"chapter":"12","title":"T","translatedLanguage":"en","publishAt":"2024-01-15T12:00:00+00:00","readableAt":"2024-01-16T12:00:00+00:00"}"#
+        let json = #"{"chapter":"12","title":"T","translatedLanguage":"en","#
+            + #""publishAt":"2024-01-15T12:00:00+00:00","readableAt":"2024-01-16T12:00:00+00:00"}"#
         let attrs = try JSONDecoder().decode(ChapterAttributes.self, from: Data(json.utf8))
         XCTAssertEqual(attrs.toChapter(id: "c1").date, Chapter.parseISO8601("2024-01-15T12:00:00+00:00"))
     }
@@ -1653,6 +1693,8 @@ final class Manga_ReaderTests: XCTestCase {
 
     // MARK: - TasteProfile
 
+    // Keeping the fixture's independent fields explicit makes call sites describe each scenario.
+    // swiftlint:disable:next function_parameter_count
     private func entry(_ mangaId: String, chapter: String, page: Int, pageCount: Int,
                        daysAgo: Double, now: Date) -> ReadingEntry {
         ReadingEntry(id: UUID(), mangaId: mangaId, mangaTitle: mangaId, coverURL: nil,
@@ -3310,5 +3352,5 @@ final class Manga_ReaderTests: XCTestCase {
                                  sourceId: "mangadex", fraction: 0)
         XCTAssertNil(entry.asManga.malId)
     }
-
-}
+    // This legacy integration suite remains a single file to avoid project-file-only churn.
+} // swiftlint:disable:this file_length
