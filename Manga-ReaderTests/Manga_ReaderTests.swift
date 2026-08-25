@@ -462,6 +462,52 @@ final class Manga_ReaderTests: XCTestCase {
         XCTAssertFalse(store.contains("m2"))
     }
 
+    /// Records which manga ids it was asked to refresh, so a test can prove routing.
+    private actor RefreshRoutingSource: MangaSource {
+        let id: String
+        let name: String
+        private var asked: [String] = []
+
+        init(id: String) {
+            self.id = id
+            self.name = id
+        }
+
+        func askedIds() -> [String] { asked }
+
+        func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+        func mangaDetail(id: String) async throws -> MangaDetail {
+            MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+        }
+        func chapters(mangaId: String) async throws -> [Chapter] {
+            asked.append(mangaId)
+            return [Chapter(id: "\(self.id)-c1", number: "1", title: nil)]
+        }
+        func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+    }
+
+    /// `refresh()` must ask each saved item's own source, not the active browse source —
+    /// otherwise a WeebCentral slug gets sent to MangaDex whenever MangaDex is active.
+    @MainActor func testRefreshAsksEachItemsOwnSource() async {
+        let mangadex = RefreshRoutingSource(id: MangaDexSource.sourceID)
+        let weebcentral = RefreshRoutingSource(id: "weebcentral")
+        let registry = SourceRegistry(sources: [mangadex, weebcentral])
+        registry.activeSourceID = MangaDexSource.sourceID
+
+        let suite = UserDefaults(suiteName: "test.lib.\(UUID().uuidString)")!
+        let store = LibraryStore(defaults: suite, registry: registry)
+        store.toggle(sampleManga("md-1", sourceId: MangaDexSource.sourceID))
+        store.toggle(sampleManga("wc-1", sourceId: "weebcentral"))
+
+        await store.refresh()
+
+        let mdAsked = await mangadex.askedIds()
+        let wcAsked = await weebcentral.askedIds()
+        XCTAssertEqual(mdAsked, ["md-1"])
+        XCTAssertEqual(wcAsked, ["wc-1"], "The WeebCentral item must not be refreshed against MangaDex")
+    }
+
     // MARK: - Source abstraction
 
     /// Minimal in-memory `MangaSource` proving the protocol is mockable / bridge-friendly.
