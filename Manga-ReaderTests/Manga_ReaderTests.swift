@@ -141,9 +141,10 @@ final class Manga_ReaderTests: XCTestCase {
 
     func testReadingEntryDecodesLegacyJSONAsNil() throws {
         // JSON saved before sourceId existed.
-        let legacy = #"{"id":"00000000-0000-0000-0000-000000000000","mangaId":"m","mangaTitle":"T","coverURL":null,"#
-            + #""chapterId":"c","chapterNumber":"1","page":0,"pageCount":5,"updatedAt":0}"#
-            .data(using: .utf8)!
+        let legacy = (
+            #"{"id":"00000000-0000-0000-0000-000000000000","mangaId":"m","mangaTitle":"T","coverURL":null,"#
+                + #""chapterId":"c","chapterNumber":"1","page":0,"pageCount":5,"updatedAt":0}"#
+        ).data(using: .utf8)!
         let entry = try JSONDecoder().decode(ReadingEntry.self, from: legacy)
         XCTAssertNil(entry.sourceId)
         // ADR-0018: and before malId existed. Every entry already on disk is one of these.
