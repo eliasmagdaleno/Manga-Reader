@@ -174,10 +174,23 @@ final class Manga_ReaderUITests: XCTestCase {
     /// not exist — MangaDex's English list for this title jumps from 30 to 123.1.
     func testLiveHorimiyaCompletionPushesProgress() throws {
         // **Cannot run by accident.** This one writes to a real MyAnimeList account, so a
-        // plain `xcodebuild test` must skip it — the environment variable has to be set
-        // deliberately, and only alongside the read/restore harness described above.
+        // plain `xcodebuild test` must skip it — the variable has to be set deliberately,
+        // and only alongside the read/restore harness described above.
+        //
+        // From the CLI the variable must carry the `TEST_RUNNER_` prefix, which `xcodebuild`
+        // strips before handing it to the runner process. A bare `MAL_LIVE_WRITE=1` in the
+        // shell does *not* reach `ProcessInfo` and the test silently skips:
+        //
+        //     TEST_RUNNER_MAL_LIVE_WRITE=1 xcodebuild -scheme Manga-Reader \
+        //       -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+        //       -parallel-testing-enabled NO \
+        //       test -only-testing:Manga-ReaderUITests/Manga_ReaderUITests/\
+        //     testLiveHorimiyaCompletionPushesProgress
+        //
+        // Verified 2026-08-24 with both `test` and `test-without-building`. An Xcode scheme's
+        // environment variable works too, and needs no prefix.
         try XCTSkipUnless(ProcessInfo.processInfo.environment["MAL_LIVE_WRITE"] == "1",
-                          "live MAL write: set MAL_LIVE_WRITE=1 to run, and restore the entry after")
+                          "live MAL write: set TEST_RUNNER_MAL_LIVE_WRITE=1 to run, and restore the entry after")
 
         let app = XCUIApplication()
         app.launchArguments += ["-uitest-source", "mangadex"]

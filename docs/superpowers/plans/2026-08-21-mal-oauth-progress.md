@@ -351,10 +351,13 @@ is gone. `PUT` was not tested — it would be a second mutation for no decision 
 - [x] **A genuine reader completion reaches MyAnimeList** — done 2026-08-24 with approval, on
   Horimiya (MAL 42451). Read chapter 124 to its last page: 100 → 124 with `status` preserved as
   `reading`, then restored to 100 and the restore confirmed from a fresh process.
-  `testLiveHorimiyaCompletionPushesProgress`, which skips unless `MAL_LIVE_WRITE=1`.
+  `testLiveHorimiyaCompletionPushesProgress`, which skips unless `MAL_LIVE_WRITE=1` — set
+  from the CLI as `TEST_RUNNER_MAL_LIVE_WRITE=1`, which `xcodebuild` strips the prefix from.
 - [x] Exercise offline completion, relaunch persistence, foreground retry, toggle disable/enable,
   and logout cleanup on the seeded iPhone 17 Pro (2026-08-24: five focused UI checks passed.
-  The foreground check also advanced the persisted stand-in item's retry count from 1 to 2).
+  The foreground check also advanced the persisted stand-in item's retry count from 1 to 2 —
+  re-confirmed 2026-08-24 by running `testForegroundingRetriesQueuedWork` alone and reading
+  the outbox immediately: `retryCount: 2`, `userID: 1000001`, `desiredProgress: 97`).
 - [x] Confirm no secrets appear in source control, build settings output, logs, screenshots, test
   fixtures, or failure descriptions.
 - [x] Re-check `project.pbxproj` immediately before staging; discard only unrelated Xcode churn,

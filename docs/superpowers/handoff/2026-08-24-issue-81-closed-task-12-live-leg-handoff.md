@@ -80,7 +80,8 @@ preserves it.
 as already delivered (`MALProgressCoordinator.swift:281`), so anything ≤ 100 verifies nothing —
 and 101 does not exist: MangaDex's English list for this title runs 1–30, then jumps to 123.1.
 
-`testLiveHorimiyaCompletionPushesProgress` is committed but **skips unless `MAL_LIVE_WRITE=1`**.
+`testLiveHorimiyaCompletionPushesProgress` is committed but **skips unless `MAL_LIVE_WRITE=1`**
+— from the CLI, set it as `TEST_RUNNER_MAL_LIVE_WRITE=1` (`xcodebuild` strips the prefix).
 
 ## Gotchas
 
