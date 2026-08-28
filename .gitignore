@@ -9,5 +9,10 @@ Secrets.xcconfig
 .DS_Store
 **/xcuserdata/
 
+# Pre-run MAL list entries recorded by scripts/mal_live_write.py. These are the only
+# record of what the real account looked like before a live write, so they are kept on
+# disk but never committed.
+.mal-live-write/
+
 # Container backups taken by scripts/seed-simulator.sh before it re-seeds.
 .simulator-backups/
