@@ -7,7 +7,23 @@ protocol BGTaskLike: AnyObject {
     func setTaskCompleted(success: Bool)
 }
 
-extension BGTask: @MainActor BGTaskLike {}
+/// A main-actor box around `BGTask`. Conforming `BGTask` directly would need an
+/// isolated conformance (`extension BGTask: @MainActor BGTaskLike`), which is
+/// Swift 6.2 syntax that CI's Xcode 16 toolchain rejects. The box is created
+/// inside `MainActor.assumeIsolated`, where the task is already ours to touch.
+@MainActor
+final class BGTaskBox: BGTaskLike {
+    private let task: BGTask
+
+    init(_ task: BGTask) { self.task = task }
+
+    var expirationHandler: (() -> Void)? {
+        get { task.expirationHandler }
+        set { task.expirationHandler = newValue }
+    }
+
+    func setTaskCompleted(success: Bool) { task.setTaskCompleted(success: success) }
+}
 
 @MainActor
 protocol BackgroundTaskScheduling {
@@ -23,7 +39,7 @@ struct BGTaskSchedulerAdapter: BackgroundTaskScheduling {
 
     func register(identifier: String, handler: @escaping (BGTaskLike) -> Void) -> Bool {
         scheduler.register(forTaskWithIdentifier: identifier, using: .main) { task in
-            MainActor.assumeIsolated { handler(task) }
+            MainActor.assumeIsolated { handler(BGTaskBox(task)) }
         }
     }
 
