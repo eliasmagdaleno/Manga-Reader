@@ -5,7 +5,7 @@
 account (issue #93). This wraps that run so the account is put back exactly as it
 was found:
 
-    export MAL_ACCESS_TOKEN=...            # a token with write scope
+    export MAL_ACCESS_TOKEN=...            # from scripts/mal_oauth_token.py
     scripts/mal_live_write.py snapshot     # record the current list entry
     scripts/mal_live_write.py fire         # snapshot, run the test, restore
     scripts/mal_live_write.py restore      # put the recorded entry back
@@ -57,7 +57,8 @@ def token() -> str:
     if not value:
         sys.exit(
             "MAL_ACCESS_TOKEN is not set. This harness talks to the real account "
-            "directly; it cannot read the token out of the simulator keychain."
+            "directly; it cannot read the token out of the simulator keychain. "
+            "Run scripts/mal_oauth_token.py to mint one."
         )
     return value
 
