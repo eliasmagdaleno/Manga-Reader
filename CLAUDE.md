@@ -18,19 +18,19 @@ package manager — pure SwiftUI + Foundation. Xcode project only (no SPM/CocoaP
 
 ## Commands
 
-Two non-obvious requirements apply to **every** `xcodebuild` invocation here:
+One non-obvious requirement applies to **every** `xcodebuild` invocation here:
 
 - **Target the iPhone 17 Pro simulator** (`-destination 'platform=iOS Simulator,name=iPhone 17 Pro'`).
   It is also the device holding the seeded fixture (see `scripts/seed-simulator.sh`), so a
   run against a different device gets an empty library and quietly different results.
-- **Always pass `-parallel-testing-enabled NO` to `test`.** Without it `xcodebuild` spawns
-  cloned simulator instances, which is unwanted here.
+- **Use parallel testing.** This repository now runs on an M5 MacBook with enough overhead for
+  Xcode's cloned simulator instances. Leave parallel testing enabled (the default), or pass
+  `-parallel-testing-enabled YES` when an explicit setting is useful.
 
 Run a single test class or method (Swift Testing / XCTest via `xcodebuild`):
 
 ```sh
 xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -parallel-testing-enabled NO \
   test -only-testing:Manga-ReaderTests/Manga_ReaderTests/<testMethod>
 ```
 

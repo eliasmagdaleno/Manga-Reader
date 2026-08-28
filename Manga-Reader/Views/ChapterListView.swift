@@ -13,6 +13,8 @@ struct ChapterListView: View {
     let manga: Manga
     let chapters: [Chapter]
     @EnvironmentObject private var history: HistoryStore
+    @EnvironmentObject private var works: WorkStore
+    @EnvironmentObject private var updates: UpdateStateStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var descending = true
     @State private var isSelecting = false
@@ -143,6 +145,7 @@ struct ChapterListView: View {
             }
         }
         .accessibilityIdentifier("chapterListScreen")
+        .task { clearNewlyDiscovered() }
     }
 
     private var allSelected: Bool {
@@ -178,5 +181,10 @@ struct ChapterListView: View {
         let sorted = sortChapters(chapters, descending: descending)
         guard let index = sorted.firstIndex(where: { $0.id == chapter.id }) else { return }
         history.markRead(manga: manga, chapters: Array(sorted[index...]))
+    }
+
+    private func clearNewlyDiscovered() {
+        guard let workId = works.workId(for: ListingKey(manga)) else { return }
+        updates.clearNewlyDiscovered(workId: workId)
     }
 }

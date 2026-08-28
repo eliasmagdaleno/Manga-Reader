@@ -30,6 +30,10 @@ struct AppComposition {
     let works: WorkStore
     let engine: RecommendationEngine
     let queue: MetadataUpgradeQueue
+    let updates: UpdateStateStore
+    let refresh: LibraryRefreshCoordinator
+    let notifier: UpdateNotifier
+    let scheduler: UpdateScheduler
 
     /// The one attempt memory. Exposed because it is *shared* — see `init` — and a shared
     /// instance is exactly the kind of thing a test needs to reach to prove the sharing.
@@ -114,7 +118,8 @@ struct AppComposition {
          malCredentials: MALCredentialStore? = nil,
          malPreferences: MALAccountPreferenceStore? = nil,
          anilist injectedAniList: AniListAPI? = nil,
-         malResolver: MALEntityResolver? = nil) {
+         malResolver: MALEntityResolver? = nil,
+         registry: SourceRegistry? = nil) {
         // Built first: the three commitment paths below (read, save, feedback) all
         // mint into it, so they must share this one instance (ADR-0007).
         let wk = WorkStore(directory: directory)
@@ -196,6 +201,23 @@ struct AppComposition {
                                 })
         let ts = TasteProfileStore(defaults: defaults)
 
+        // One update state owner and one refresh pipeline for pull-to-refresh, activation,
+        // and background delivery. Keeping the graph here makes accidental private stores
+        // in any of those entry points visible to AppCompositionTests.
+        let updateState = UpdateStateStore(directory: directory, works: wk)
+        let refreshCoordinator = LibraryRefreshCoordinator(
+            works: wk, library: lib, history: hist, updates: updateState, registry: registry)
+        lib.configureRefreshCoordinator(refreshCoordinator)
+        let updateNotifier = UpdateNotifier(updates: updateState, works: wk, library: lib,
+                                            defaults: defaults)
+        let updateScheduler = UpdateScheduler(
+            coordinator: refreshCoordinator,
+            notifier: updateNotifier,
+            flushStores: {
+                updateState.flush()
+                wk.flush()
+            })
+
         // One limiter, passed explicitly rather than left to `MetadataUpgradeQueue`'s
         // default argument. ADR-0011 amends ADR-0007's "one owner of the client" to **one
         // owner of the rate limiter**, and that claim is only true by construction if
@@ -273,6 +295,10 @@ struct AppComposition {
         self.taste = ts
         self.attempts = memory
         self.queue = upgrades
+        self.updates = updateState
+        self.refresh = refreshCoordinator
+        self.notifier = updateNotifier
+        self.scheduler = updateScheduler
         self.engine = rec
         self.vocabularyStore = vocab
         self.poolStore = pool

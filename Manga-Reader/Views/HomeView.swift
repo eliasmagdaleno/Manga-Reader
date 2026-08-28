@@ -10,6 +10,11 @@ struct HomeView: View {
     @StateObject private var vm = HomeViewModel()
     @ObservedObject private var registry = SourceRegistry.shared
     @EnvironmentObject private var engine: RecommendationEngine
+    @EnvironmentObject private var library: LibraryStore
+    @EnvironmentObject private var history: HistoryStore
+    @EnvironmentObject private var works: WorkStore
+    @EnvironmentObject private var updates: UpdateStateStore
+    @Environment(\.selectAppTab) private var selectAppTab
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("settings.showAdultSources") private var showAdultSources = false
 
@@ -51,6 +56,42 @@ struct HomeView: View {
 
                     if vm.isLoading && vm.popular.isEmpty {
                         loadingRail
+                    }
+
+                    let updateSummaries = LibraryUpdatesPresentation.summaries(
+                        works: works, library: library, history: history, updates: updates)
+                    let discoveredUpdates = updateSummaries.filter { $0.newlyDiscoveredCount > 0 }
+                    if library.items.isEmpty {
+                        noSavedWorksState
+                    } else {
+                        VStack(alignment: .leading, spacing: 12) {
+                            UpdatesHeader(
+                                totalUnread: updateSummaries.reduce(0) { $0 + $1.unreadChapterCount },
+                                lastChecked: updateSummaries.compactMap(\.lastSuccessfulCheck).max(),
+                                isRefreshing: library.isRefreshing,
+                                refresh: refreshUpdates
+                            )
+                            let recoverySources = Set(updateSummaries.flatMap(\.recoverySummaries)).sorted()
+                            if !recoverySources.isEmpty {
+                                InkNotice("Couldn't check \(recoverySources.joined(separator: ", ")). Try again.")
+                                    .padding(.horizontal, Gutter.page)
+                            }
+                            if !discoveredUpdates.isEmpty {
+                                ForEach(LibraryUpdatesPresentation.homeSummaries(discoveredUpdates)) { summary in
+                                    WorkUpdateRow(summary: summary)
+                                        .padding(.horizontal, Gutter.page)
+                                }
+                                if discoveredUpdates.count > UpdateTuning.homeSummaryLimit {
+                                    NavigationLink("View all \(discoveredUpdates.count) updates") {
+                                        BookmarksView(initialCollectionId: BookmarksView.updatesFilterID)
+                                    }
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(Ink.seal)
+                                    .padding(.horizontal, Gutter.page)
+                                    .frame(minHeight: 44)
+                                }
+                            }
+                        }
                     }
 
                     // Personalized rail #0 — hidden until there's enough reading signal,
@@ -187,6 +228,38 @@ struct HomeView: View {
         manga.year.map { String($0) }
     }
 
+    private func refreshUpdates() {
+        guard !library.isRefreshing else { return }
+        Task {
+            await library.refresh()
+            let summaries = LibraryUpdatesPresentation.summaries(
+                works: works, library: library, history: history, updates: updates)
+            let failed = Set(summaries.flatMap(\.recoverySummaries))
+            let announcement = failed.isEmpty
+                ? "Library updates complete"
+                : "Library updates complete. Some sources need another check."
+            UIAccessibility.post(notification: .announcement, argument: announcement)
+        }
+    }
+
+    private var noSavedWorksState: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            InkSectionHeader("Keep your library current", eyebrow: "Updates")
+            Text("Save titles to your Library to keep their chapters current.")
+                .font(.footnote)
+                .foregroundStyle(Ink.secondary)
+                .padding(.horizontal, Gutter.page)
+            HStack(spacing: 12) {
+                Button("Browse Titles") { selectAppTab(.home) }
+                Button("Search Titles") { selectAppTab(.search) }
+            }
+            .font(.subheadline.bold())
+            .foregroundStyle(Ink.seal)
+            .padding(.horizontal, Gutter.page)
+            .frame(minHeight: 44)
+        }
+    }
+
     // Skeleton rail shown on first load.
     private var loadingRail: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -235,6 +308,7 @@ struct InkNotice: View {
         .environmentObject(history)
         .environmentObject(taste)
         .environmentObject(works)
+        .environmentObject(UpdateStateStore(works: works))
         .environmentObject(RecommendationEngine(history: history, library: library,
                                                 profileStore: taste, workStore: works))
 }

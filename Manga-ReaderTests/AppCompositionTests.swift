@@ -49,6 +49,15 @@ final class AppCompositionTests: XCTestCase {
         AppComposition(defaults: defaults, directory: directory)
     }
 
+    func testUpdateSubsystemObjectsAreSharedInstances() {
+        let composition = makeComposition()
+
+        XCTAssertTrue(composition.updates === composition.updates)
+        XCTAssertTrue(composition.refresh === composition.refresh)
+        XCTAssertTrue(composition.notifier === composition.notifier)
+        XCTAssertTrue(composition.scheduler === composition.scheduler)
+    }
+
     /// Reads a manga from a scraping source under an opaque id, so nothing can tag it —
     /// the untaggable case, minted through the app's own commitment path rather than
     /// inserted into `WorkStore` directly.

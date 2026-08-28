@@ -10,12 +10,15 @@
 import SwiftUI
 
 struct BookmarksView: View {
+    static let updatesFilterID = "updates"
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
+    @EnvironmentObject private var works: WorkStore
+    @EnvironmentObject private var updates: UpdateStateStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.selectAppTab) private var selectAppTab
 
-    @State private var selectedCollectionId = "all"
+    @State private var selectedCollectionId: String
     @State private var showingManagementSheet = false
     @State private var refreshBannerMessage: String? = nil
     @State private var showingRefreshBanner = false
@@ -24,6 +27,10 @@ struct BookmarksView: View {
         GridItem(.adaptive(minimum: 104, maximum: 180), spacing: Gutter.rail)
     ]
 
+    init(initialCollectionId: String = "all") {
+        _selectedCollectionId = State(initialValue: initialCollectionId)
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -31,7 +38,7 @@ struct BookmarksView: View {
                     collectionPickerBar
                 }
 
-                let displayedItems = library.items(in: selectedCollectionId)
+                let displayedItems = displayedLibraryItems
 
                 Group {
                     if library.items.isEmpty {
@@ -173,6 +180,12 @@ struct BookmarksView: View {
                     count: library.items.count
                 )
 
+                collectionTabChip(
+                    id: Self.updatesFilterID,
+                    title: "Updates",
+                    count: updateMangaIDs.count
+                )
+
                 // Enabled collections tabs
                 ForEach(library.enabledCollections) { collection in
                     let count = library.items(in: collection.id).count
@@ -224,6 +237,20 @@ struct BookmarksView: View {
         .frame(minHeight: 44)
         .accessibilityValue(isSelected ? "Selected" : "Not selected")
     }
+
+    private var updateMangaIDs: Set<String> {
+        return Set(LibraryUpdatesPresentation.summaries(
+            works: works, library: library, history: history,
+            updates: updates
+        ).filter { $0.newlyDiscoveredCount > 0 }.map(\.displayManga.id))
+    }
+
+    private var displayedLibraryItems: [LibraryItem] {
+        if selectedCollectionId == Self.updatesFilterID {
+            return library.items.filter { updateMangaIDs.contains($0.id) }
+        }
+        return library.items(in: selectedCollectionId)
+    }
 }
 
 private extension LibraryItem {
@@ -238,7 +265,10 @@ private extension LibraryItem {
 }
 
 #Preview {
+    let works = WorkStore()
     BookmarksView()
         .environmentObject(LibraryStore())
         .environmentObject(HistoryStore())
+        .environmentObject(works)
+        .environmentObject(UpdateStateStore(works: works))
 }
