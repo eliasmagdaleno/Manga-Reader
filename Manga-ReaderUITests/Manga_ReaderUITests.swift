@@ -165,8 +165,9 @@ final class Manga_ReaderUITests: XCTestCase {
 
     /// **A one-off live verification for MAL Task 12, not a CI test.** It reads a chapter of
     /// a real title to the end, which is the only thing that may move MyAnimeList progress —
-    /// manual mark-as-read deliberately cannot. Run only with explicit approval and only
-    /// alongside the read/restore harness that records and puts back the entry's value.
+    /// manual mark-as-read deliberately cannot. Run only with explicit approval, and only
+    /// through `scripts/mal_live_write.py fire` — that harness records the account's list
+    /// entry before the run and puts it back afterwards, including when the run fails.
     ///
     /// Chapter **124** is not arbitrary: the account sits at 100 chapters, and the coordinator
     /// treats a desired progress at or below the remote value as already delivered
@@ -183,12 +184,14 @@ final class Manga_ReaderUITests: XCTestCase {
         //
         //     TEST_RUNNER_MAL_LIVE_WRITE=1 xcodebuild -scheme Manga-Reader \
         //       -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-        //       -parallel-testing-enabled NO \
         //       test -only-testing:Manga-ReaderUITests/Manga_ReaderUITests/\
         //     testLiveHorimiyaCompletionPushesProgress
         //
         // Verified 2026-08-24 with both `test` and `test-without-building`. An Xcode scheme's
         // environment variable works too, and needs no prefix.
+        //
+        // `scripts/mal_live_write.py fire` is the invocation to reach for: it runs exactly the
+        // command above with the account's list entry recorded first and restored after.
         try XCTSkipUnless(ProcessInfo.processInfo.environment["MAL_LIVE_WRITE"] == "1",
                           "live MAL write: set TEST_RUNNER_MAL_LIVE_WRITE=1 to run, and restore the entry after")
 
