@@ -28,8 +28,8 @@ either succeeds or throws, and assumes the Work it started with still exists whe
 - **`EntityResolutionStore` reads UserDefaults exactly once, in `init`** (`:67-70`), into an
   in-memory dictionary that `resolution(sourceId:mangaId:)` serves (`:72-74`). It never reloads. The
   detail-page path writes through `.shared` (`:58`), which is `MoreLikeThisProvider`'s default
-  (`MoreLikeThisProvider.swift:20`). `MyAnimeListDebugView.swift:138` constructs a fresh instance
-  instead.
+  (`MoreLikeThisProvider.swift:20`). `MyAnimeListDebugView.swift:138` constructed a fresh instance
+  instead — see Amendment 1; that view no longer exists.
 - **Only `AniListError.notFound` is terminal** (`AniListAPI.swift:23-28`). It is raised both by a
   GraphQL 404 and by a null `Media` (`:172`).
 - **Two of the three sleep sources are already injectable.** `AniListRateLimiter.init(minimumInterval:)`
@@ -308,7 +308,8 @@ unless the instance is `.shared`**. The store loads UserDefaults into memory onc
 frozen at launch and cannot see anything the session records. The fast path becomes a dead branch and
 the queue pays a MAL search fan-out for answers the app already had — silently, because the wrong
 wiring compiles and passes every test that injects its own store. `MyAnimeListDebugView.swift:138`
-already makes exactly this mistake, which is the evidence that it is worth writing down.
+already made exactly this mistake, which is the evidence that it was worth writing down (see
+Amendment 1 — the view has since been retired, so that citation no longer resolves).
 
 Injecting the whole resolver rather than only the store is what lets tests combine both seams the
 resolver already has: `MALEntityResolver(store: EntityResolutionStore(defaults: isolated), search:
@@ -355,3 +356,20 @@ write" looks like an oversight unless it is stated.
   `profileAndExclusions()` stops being the only place a profile is built.
 - If merged-away attempt records ever become measurable, the answer is a prune during
   `loadIfNeeded` keyed on ids the store no longer yields — not a merge notification.
+
+## Amendment 1 — the cited evidence no longer exists (2026-08-28)
+
+Two places above cite `MyAnimeListDebugView.swift:138` as a live example of a queue holding its own
+`EntityResolutionStore` instead of `.shared`. **That file was deleted** in `342514a`, "Retire
+MyAnimeListDebugView and its three throwaway live UI tests (#27)". The citation is kept rather than
+scrubbed because the mistake it names is the reason the decision was written down; but nothing in
+the tree demonstrates it any more, so a reader chasing the reference will come up empty.
+
+The decision itself is unaffected: `.shared` is still what the wiring must inject, and the reasoning
+never depended on the debug view being present. What changed is only that the standing counter-example
+is gone — which, if anything, weakens the *evidence* while leaving the *argument* intact.
+
+Found by a documentation-rot pass that checked every backticked file path in `docs/` against the
+tree. It was the only stale path; the glossary's numeric claims (60s idle interval, three-consecutive-
+failure breaker, 14-day attempt-memory TTL, AniList's measured 30/min) were all re-verified against
+the code and still hold.
