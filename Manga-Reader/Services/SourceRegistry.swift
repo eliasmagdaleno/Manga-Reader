@@ -75,6 +75,13 @@ final class SourceRegistry: ObservableObject {
         source(id: manga.sourceId) ?? active
     }
 
+    /// Update checks use MangaDex for legacy or unregistered source ids, falling back
+    /// to the active source only when MangaDex itself is unavailable in this registry.
+    func sourceForRefresh(sourceId: String?) -> MangaSource {
+        let fallback = source(id: MangaDexSource.sourceID) ?? active
+        return sourceId.flatMap { source(id: $0) } ?? fallback
+    }
+
     /// Sources eligible to show in the picker: adult sources only when opted in.
     func visibleSources(includeAdult: Bool) -> [MangaSource] {
         sources.filter { includeAdult || !$0.isNSFW }

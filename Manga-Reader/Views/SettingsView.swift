@@ -4,12 +4,20 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 struct SettingsView: View {
     @AppStorage(appearanceStorageKey) private var appearanceRaw = AppearanceMode.system.rawValue
     @AppStorage("settings.showAdultSources") private var showAdultSources = false
+    @AppStorage(UpdateNotifier.notificationsEnabledKey) private var notificationsEnabled = true
     @ObservedObject private var registry = SourceRegistry.shared
+    @EnvironmentObject private var library: LibraryStore
+    @EnvironmentObject private var history: HistoryStore
+    @EnvironmentObject private var works: WorkStore
+    @EnvironmentObject private var updates: UpdateStateStore
+    @Environment(\.openURL) private var openURL
     @State private var showingCollectionsSheet = false
+    @State private var notificationSummary = NotificationAuthorizationSummary.notRequested
 
     var body: some View {
         NavigationStack {
@@ -48,6 +56,35 @@ struct SettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(Ink.tertiary)
                             .padding(.horizontal, Gutter.page)
+                    }
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        InkSectionHeader("Updates", eyebrow: "Library")
+                        VStack(spacing: 0) {
+                            aboutRow("In-app", inAppUpdateStatus)
+                            Divider().overlay(Ink.hairline).padding(.leading, Gutter.page)
+                            aboutRow("System notifications", notificationStatusText)
+                            Divider().overlay(Ink.hairline).padding(.leading, Gutter.page)
+                            Toggle("Notify about new chapters", isOn: $notificationsEnabled)
+                                .font(.subheadline)
+                                .tint(Ink.seal)
+                                .padding(.horizontal, Gutter.page)
+                                .frame(minHeight: 50)
+                                .onChange(of: notificationsEnabled) { _, enabled in
+                                    if enabled { Task { await requestNotificationsIfNeeded() } }
+                                }
+                            if effectiveNotificationSummary == .unavailable {
+                                Divider().overlay(Ink.hairline).padding(.leading, Gutter.page)
+                                Button("Open System Settings", systemImage: "gear", action: openSystemSettings)
+                                    .font(.subheadline)
+                                    .foregroundStyle(Ink.seal)
+                                    .padding(.horizontal, Gutter.page)
+                                    .frame(minHeight: 50)
+                            }
+                        }
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Ink.surface))
+                        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Ink.hairline, lineWidth: 1))
+                        .padding(.horizontal, Gutter.page)
                     }
 
                     VStack(alignment: .leading, spacing: 14) {
@@ -109,6 +146,7 @@ struct SettingsView: View {
             }
             .background(Ink.background)
             .navigationTitle("Settings")
+            .task { await refreshNotificationSummary() }
             .sheet(isPresented: $showingCollectionsSheet) {
                 CollectionManagementView()
             }
@@ -127,6 +165,64 @@ struct SettingsView: View {
         }
         .padding(.horizontal, Gutter.page)
         .padding(.vertical, 15)
+    }
+
+    private var inAppUpdateStatus: String {
+        let summaries = LibraryUpdatesPresentation.summaries(
+            works: works, library: library, history: history, updates: updates)
+        guard !library.items.isEmpty else { return "No saved titles" }
+        guard summaries.contains(where: { $0.freshness != .notChecked }) else { return "Not checked yet" }
+        let count = summaries.count(where: { $0.newlyDiscoveredCount > 0 })
+        return count == 1 ? "1 title with updates" : "\(count) titles with updates"
+    }
+
+    private var notificationStatusText: String {
+        switch effectiveNotificationSummary {
+        case .notRequested: "Not requested"
+        case .enabled: "Allowed"
+        case .unavailable: "Unavailable"
+        }
+    }
+
+    private func refreshNotificationSummary() async {
+        if let fixtureSummary = Self.uiTestNotificationSummary {
+            notificationSummary = fixtureSummary
+            return
+        }
+        let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        switch status {
+        case .authorized, .provisional, .ephemeral:
+            notificationSummary = .enabled
+        case .notDetermined:
+            notificationSummary = .notRequested
+        default:
+            notificationSummary = .unavailable
+        }
+    }
+
+    private var effectiveNotificationSummary: NotificationAuthorizationSummary {
+        Self.uiTestNotificationSummary ?? notificationSummary
+    }
+
+    private static var uiTestNotificationSummary: NotificationAuthorizationSummary? {
+#if DEBUG
+        ProcessInfo.processInfo.arguments.contains("-uitest-updates-state") ? .notRequested : nil
+#else
+        nil
+#endif
+    }
+
+    private func requestNotificationsIfNeeded() async {
+        let center = UNUserNotificationCenter.current()
+        if await center.notificationSettings().authorizationStatus == .notDetermined {
+            _ = try? await center.requestAuthorization(options: [.alert, .badge, .sound])
+        }
+        await refreshNotificationSummary()
+    }
+
+    private func openSystemSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(url)
     }
 }
 
@@ -170,5 +266,10 @@ private struct AppearancePicker: View {
 }
 
 #Preview {
+    let works = WorkStore()
     SettingsView()
+        .environmentObject(LibraryStore(works: works))
+        .environmentObject(HistoryStore(works: works))
+        .environmentObject(works)
+        .environmentObject(UpdateStateStore(works: works))
 }

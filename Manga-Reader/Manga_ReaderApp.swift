@@ -25,6 +25,7 @@ struct Manga_ReaderApp: App {
     /// deliberately **not** put in the environment: it publishes nothing, so a view that
     /// could reach it could only misuse it (ADR-0010).
     @StateObject private var queue: MetadataUpgradeQueue
+    @StateObject private var updates: UpdateStateStore
     /// Observable, and injected into the environment for the Settings account section.
     @StateObject private var account: MALAccountStore
 
@@ -37,6 +38,9 @@ struct Manga_ReaderApp: App {
     /// app's lifetime because the drain is its own serial task, and a rebuilt coordinator
     /// would be a second one.
     private let malProgress: MALProgressCoordinator
+    private let refresh: LibraryRefreshCoordinator
+    private let notifier: UpdateNotifier
+    private let scheduler: UpdateScheduler
 
     /// The graph itself lives in `AppComposition`, where it can be built against temp
     /// storage and asserted on. This initializer does nothing but adopt what it built.
@@ -46,6 +50,9 @@ struct Manga_ReaderApp: App {
         // has signed in. `#if DEBUG` so no release build can be talked out of its account.
         var ephemeralCredentials: MALCredentialStore?
         var ephemeralPreferences: MALAccountPreferenceStore?
+        var defaults = UserDefaults.standard
+        var directory = WorkStore.applicationSupportDirectory()
+        var updateRegistry: SourceRegistry?
 #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uitest-mal-signed-out") {
             (ephemeralCredentials, ephemeralPreferences) = AppComposition.ephemeralMALAccount()
@@ -54,19 +61,37 @@ struct Manga_ReaderApp: App {
             // reason: a screenshot of "signed in" must not be of the real account.
             (ephemeralCredentials, ephemeralPreferences) = AppComposition.seededMALAccount(state)
         }
+        if let updateState = UpdatesUITestFixture.state {
+            let storage = UpdatesUITestFixture.freshStorage(for: updateState)
+            defaults = storage.defaults
+            directory = storage.directory
+            updateRegistry = SourceRegistry(sources: [UpdatesUITestSource()])
+        }
 #endif
-        let composed = AppComposition(malCredentials: ephemeralCredentials,
-                                      malPreferences: ephemeralPreferences)
+        let composed = AppComposition(defaults: defaults, directory: directory,
+                                      malCredentials: ephemeralCredentials,
+                                      malPreferences: ephemeralPreferences,
+                                      registry: updateRegistry)
+#if DEBUG
+        if let updateState = UpdatesUITestFixture.state {
+            UpdatesUITestFixture.seed(updateState, in: composed)
+        }
+#endif
         self.vocabularyStore = composed.vocabularyStore
         self.poolStore = composed.poolStore
         self.malProgress = composed.malProgress
+        self.refresh = composed.refresh
+        self.notifier = composed.notifier
+        self.scheduler = composed.scheduler
         _library = StateObject(wrappedValue: composed.library)
         _history = StateObject(wrappedValue: composed.history)
         _taste = StateObject(wrappedValue: composed.taste)
         _works = StateObject(wrappedValue: composed.works)
         _queue = StateObject(wrappedValue: composed.queue)
+        _updates = StateObject(wrappedValue: composed.updates)
         _engine = StateObject(wrappedValue: composed.engine)
         _account = StateObject(wrappedValue: composed.account)
+        scheduler.register()
     }
 
 #if DEBUG
@@ -92,6 +117,7 @@ struct Manga_ReaderApp: App {
                 .environmentObject(history)
                 .environmentObject(taste)
                 .environmentObject(works)
+                .environmentObject(updates)
                 .environmentObject(engine)
                 .environmentObject(account)
                 .preferredColorScheme(appearance.colorScheme)
@@ -99,7 +125,19 @@ struct Manga_ReaderApp: App {
                 // own start. `start()` is idempotent, so the `.active` case below
                 // arriving first, later, or not at all is all the same.
                 .task {
+#if DEBUG
+                    if UpdatesUITestFixture.state == nil {
+                        queue.start()
+                        refresh.startForeground { [notifier] events in
+                            await notifier.schedule(events)
+                        }
+                    }
+#else
                     queue.start()
+                    refresh.startForeground { [notifier] events in
+                        await notifier.schedule(events)
+                    }
+#endif
                     // Rebuilds the account from disk before anything asks whether the user
                     // is signed in, then drains whatever a previous session left queued.
                     account.restore()
@@ -126,18 +164,33 @@ struct Manga_ReaderApp: App {
                     // `Caches/` eviction mid-session, and `refreshIfNeeded` is idempotent,
                     // so both firing is a no-op. Fire-and-forget, so it never blocks Home —
                     // the concern `TagVocabularyStore.cachedVocabulary` is written against.
+#if DEBUG
+                    if UpdatesUITestFixture.state == nil {
+                        await vocabularyStore.refreshIfNeeded()
+                    }
+#else
                     await vocabularyStore.refreshIfNeeded()
+#endif
                 }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .active:
+#if DEBUG
+                guard UpdatesUITestFixture.state == nil else { break }
+#endif
                 queue.start()
                 malProgress.start()
+                refresh.startForeground { [notifier] events in
+                    await notifier.schedule(events)
+                }
             case .background:
                 // Stop before flushing: cancellation is what guarantees no attempt
                 // record is written after `queue.flush()` has already run.
                 queue.stop()
+                // Stop before flushing for the same reason as the metadata queue: no
+                // completed request may dirty update state after its final persistence.
+                refresh.stopForeground()
                 // Same order, same reason: the drain is stopped before the outbox is
                 // flushed, so no attempt can be written after the flush has run.
                 malProgress.stop()
@@ -146,11 +199,13 @@ struct Manga_ReaderApp: App {
                 // lose whatever the pending timer hadn't written yet (ADR-0007).
                 works.flush()
                 queue.flush()
+                updates.flush()
                 // Same reason, one layer up: reading position is throttled while scrolling,
                 // and a webtoon session that ends by backgrounding would lose the last
                 // couple of seconds of it (ADR-0014).
                 history.flush()
                 malProgress.flush()
+                scheduler.scheduleNext(from: Date())
             default:
                 // `.inactive` is NOT a stop signal (ADR-0010). It arrives for a
                 // notification banner or the app switcher, and tearing the pass down
@@ -160,3 +215,72 @@ struct Manga_ReaderApp: App {
         }
     }
 }
+
+#if DEBUG
+/// Launch-only data for the ADR-0021 UI evidence. It uses the real stores and refresh
+/// coordinator with a local source, so an XCUITest never treats live source availability as
+/// an update signal and never inherits the seeded simulator's library or permissions.
+enum UpdatesUITestFixture {
+    enum State: String {
+        case empty
+        case notChecked = "not-checked"
+        case refreshComplete = "refresh-complete"
+        case updatesFilter = "updates-filter"
+    }
+
+    static var state: State? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-uitest-updates-state"),
+              arguments.indices.contains(index + 1) else { return nil }
+        return State(rawValue: arguments[index + 1])
+    }
+
+    static func freshStorage(for state: State) -> (defaults: UserDefaults, directory: URL) {
+        let suite = "updates-ui-test.\(state.rawValue)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("MangaReader-UpdatesUITest-\(state.rawValue)", isDirectory: true)
+        try? FileManager.default.removeItem(at: directory)
+        return (defaults, directory)
+    }
+
+    @MainActor
+    static func seed(_ state: State, in composition: AppComposition) {
+        guard state != .empty else { return }
+        let manga = Manga(id: "update-fixture", sourceId: UpdatesUITestSource.sourceID,
+                          title: "Fixture Update Title", description: "", status: "ongoing",
+                          year: nil, coverURL: nil, malId: nil)
+        composition.library.toggle(manga)
+        let workId = composition.works.mint(from: manga)
+        let listing = ListingKey(manga)
+
+        switch state {
+        case .empty, .notChecked, .refreshComplete:
+            break
+        case .updatesFilter:
+            _ = composition.updates.absorb(workId: workId, listing: listing,
+                                           rawNumbers: ["1"], now: .now)
+            _ = composition.updates.absorb(workId: workId, listing: listing,
+                                           rawNumbers: ["1", "2"], now: .now)
+        }
+    }
+}
+
+struct UpdatesUITestSource: MangaSource {
+    static let sourceID = "updates-ui-test"
+
+    let id = sourceID
+    let name = "Update Fixture"
+
+    func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+    func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+    func mangaDetail(id: String) async throws -> MangaDetail {
+        MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+    }
+    func chapters(mangaId: String) async throws -> [Chapter] {
+        [Chapter(id: "fixture-chapter", number: "1", title: nil)]
+    }
+    func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+}
+#endif

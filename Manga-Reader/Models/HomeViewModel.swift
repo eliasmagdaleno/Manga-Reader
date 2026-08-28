@@ -28,6 +28,12 @@ final class HomeViewModel: ObservableObject {
     private var loadTask: Task<Void, Never>?
 
     init(source: MangaSource? = nil) {
+#if DEBUG
+        if source == nil, UpdatesUITestFixture.state != nil {
+            self.sourceOverride = UpdatesUITestSource()
+            return
+        }
+#endif
         self.sourceOverride = source
     }
 

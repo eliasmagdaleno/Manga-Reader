@@ -11,6 +11,7 @@ struct MangaDetailView: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
     @EnvironmentObject private var works: WorkStore
+    @EnvironmentObject private var updates: UpdateStateStore
     @EnvironmentObject private var engine: RecommendationEngine
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .title) private var coverWidth: CGFloat = 132
@@ -31,6 +32,11 @@ struct MangaDetailView: View {
 
     private var mangaWebURL: URL? {
         mangaSource?.webURL(forManga: manga.id)
+    }
+
+    private func clearNewlyDiscovered() {
+        guard let workId = works.workId(for: ListingKey(manga)) else { return }
+        updates.clearNewlyDiscovered(workId: workId)
     }
 
     /// Whether this title has been *refused* a catalog match, so the empty "More Like This"
@@ -76,6 +82,7 @@ struct MangaDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { vm.load() }
         .task { await moreLikeThis.load(for: manga) }
+        .task { clearNewlyDiscovered() }
         .onChange(of: vm.detailTags) { _, tags in
             // Ungated: every source has tags, and this is what makes non-MangaDex
             // reading count (ADR-0007 slice 3). Never mints — see `noteListingTags`.

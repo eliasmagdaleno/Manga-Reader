@@ -90,6 +90,7 @@ final class LibraryStore: ObservableObject {
     /// Resolves each saved item's own source during `refresh()`. Injectable so tests can
     /// register stub sources; the app uses the shared registry.
     private let registryOverride: SourceRegistry?
+    private weak var refreshCoordinator: LibraryRefreshCoordinator?
     private var registry: SourceRegistry { registryOverride ?? .shared }
 
     init(defaults: UserDefaults = .standard, works: WorkStore? = nil, registry: SourceRegistry? = nil) {
@@ -272,6 +273,10 @@ final class LibraryStore: ObservableObject {
 
     // MARK: - Refreshing
 
+    func configureRefreshCoordinator(_ coordinator: LibraryRefreshCoordinator) {
+        refreshCoordinator = coordinator
+    }
+
     /// Refresh every saved manga's full chapter-number list concurrently. Best-effort:
     /// per-item failures leave that item's existing `chapterNumbers` untouched.
     func refresh() async {
@@ -279,14 +284,18 @@ final class LibraryStore: ObservableObject {
         isRefreshing = true
         defer { isRefreshing = false }
 
+        if let refreshCoordinator {
+            await refreshCoordinator.refreshLibrary()
+            return
+        }
+
         // Pair each item with the source it was saved from, up front on the main actor:
         // asking the active browse source for every id sends e.g. a WeebCentral slug to
         // MangaDex. A nil `sourceId` predates multi-source and means MangaDex (as everywhere
         // else); only an unregistered source id falls through to the active source.
         let registry = self.registry
-        let fallback = registry.source(id: MangaDexSource.sourceID) ?? registry.active
         let current: [(item: LibraryItem, source: MangaSource)] = items.map { item in
-            (item, item.sourceId.flatMap { registry.source(id: $0) } ?? fallback)
+            (item, registry.sourceForRefresh(sourceId: item.sourceId))
         }
         let maxConcurrent = 4
         let results: [(String, [String])] = await withTaskGroup(
@@ -317,6 +326,17 @@ final class LibraryStore: ObservableObject {
         for (id, numbers) in results {
             guard let idx = updated.firstIndex(where: { $0.id == id }) else { continue }
             updated[idx].chapterNumbers = numbers
+        }
+        items = updated
+        saveItems()
+    }
+
+    func applyRefreshedChapterNumbers(_ numbers: [ListingKey: [String]]) {
+        var updated = items
+        for index in updated.indices {
+            let key = ListingKey(sourceId: updated[index].sourceId ?? MangaDexSource.sourceID,
+                                 mangaId: updated[index].id)
+            if let chapterNumbers = numbers[key] { updated[index].chapterNumbers = chapterNumbers }
         }
         items = updated
         saveItems()
