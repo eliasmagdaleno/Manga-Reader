@@ -196,7 +196,8 @@ of this decision. Doing both at once would make the golden diff unattributable.
 queue," which is restated as: **one owner of the rate *limiter*.**
 
 `AniListTagCandidateProvider` is a third `CandidateProvider` inside `CompositeCandidateProvider`,
-calling `AniListAPI` through the shared `AniListRateLimiter`.
+calling `AniListAPI` through the shared `AniListRateLimiter`. (It shipped as
+**`AniListCandidateProvider`** — see Amendment, 2026-08-28.)
 
 The original rule was written when every AniList call was per-Work, so an unbounded caller could
 starve the queue. Generation is O(pairs) per *cache miss*, not per Work. What the rule protected —
@@ -884,3 +885,22 @@ depends on a sleep is the flake the no-ties invariant exists to avoid.
 - If a second consumer needs the tag vocabulary (a browse-by-tag screen, a taste debug view), the
   `Caches/` placement is what to reopen — a user-facing vocabulary is no longer "lose nothing but
   time."
+
+## Amendment 2026-08-28 — the provider shipped under a shorter name
+
+The decision above names the new provider `AniListTagCandidateProvider`. **No such type exists.** It
+shipped as **`AniListCandidateProvider`** (`Manga-Reader/Models/AniListCandidateProvider.swift:26`).
+
+The decision is otherwise accurate as written, which is why this is a note and not a revision: it is
+a third `CandidateProvider`, it occupies the `ani` slot of `CompositeCandidateProvider`
+(`CandidateProvider.swift:192`, wired at `AppComposition.swift:243-251`), and it reaches `AniListAPI`
+through the shared `AniListRateLimiter`. Only the name is wrong, and only here — the codebase is
+consistent with itself.
+
+Recorded because this ADR is Accepted and not superseded, so it reads as a description of current
+architecture; a reader grepping for the name in it finds nothing and has no way to tell whether the
+provider was renamed or never built.
+
+Found by a voice audit of ADRs 0011–0014, checking which backticked identifiers no longer exist in
+the tree and whether each sits in *proposal* voice (a name suggested, possibly never adopted) or
+*fact* voice (a claim about code that exists). This was the only fact-voice miss across the four.
