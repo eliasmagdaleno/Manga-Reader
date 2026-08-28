@@ -33,6 +33,7 @@ Three PRs, all merged, all chosen specifically to avoid the ADR-0021 work in fli
 | #96 | `5c3290b` | `scripts/mal_live_write.py` — read-before/restore-after harness |
 | #97 | `8368c18` | ADR-0010 Amendment 1 — a cited file no longer exists |
 | #98 | `b7e2bc9` | `scripts/mal_oauth_token.py` — mints the token #96 needs |
+| #100 | open | ADR-0011 note — its new provider shipped under a different name |
 
 ### The harness (#96)
 
@@ -63,6 +64,28 @@ three-consecutive-failure breaker (`MetadataUpgradeQueue.swift:63,317`), the 14-
 attempt-memory TTL (`UpgradeAttemptMemory.swift:46`), AniList's measured 30/min
 (`AniListRateLimiter.swift:6`).
 
+### The ADR voice audit (#100)
+
+Separated *proposal voice* from *fact voice* across ADRs 0011–0014 — the follow-up #97's grep
+could not do. Two kinds of missing identifier are harmless: a name proposed and then implemented
+differently is history, and a name in a Context section describes the world before the change.
+
+**One fact-voice miss.** ADR-0011 names `AniListTagCandidateProvider`; it shipped as
+`AniListCandidateProvider` (`AniListCandidateProvider.swift:26`). Everything else that sentence
+claims is true of the code — third provider, `ani` slot of `CompositeCandidateProvider`
+(`CandidateProvider.swift:192`, wired at `AppComposition.swift:243-251`), shared limiter — so #100
+appends a note rather than revising the decision. It matters because ADR-0011 is Accepted and not
+superseded, so it reads as current architecture.
+
+**The other three are clean.** 0012 and 0013 carry `amended by ADR-0013` / `amended by ADR-0014`
+headers, framing their Context sections correctly; 0014's misses are in `Beat:` (rejected
+alternative) passages and struck text; several names were never ours (`ScrollPosition.scrollTo`,
+`onGeometryChange`, `TaskGroup`, `ModelActor`); and `reverseResolveViaSearch` was already
+discharged by ADR-0011's own 2026-08-04 amendment.
+
+**Conclusion:** ADRs 0011–0014 are trustworthy as current references, with the one exception fixed.
+Nothing further is owed there — don't re-run this audit.
+
 ## Gotchas
 
 - **`Secrets.xcconfig` is gitignored, so it exists only in the main checkout.** A worktree has
@@ -80,11 +103,7 @@ attempt-memory TTL (`UpgradeAttemptMemory.swift:46`), AniList's measured 30/min
 
 - **#90 (VoiceOver traversal)** — parked deliberately. It touches the same target as the
   in-flight ADR-0021 work. Start it once #92 lands, with the `ios-accessibility` skill.
-- **ADR voice audit** — the rot pass found ~40 identifiers in ADRs 0011–0014 that do not exist
-  in the tree (`loadNextChapter`, `initialPage`, `furthestPage`, …). Left alone: ADRs record
-  proposals, and a name proposed then implemented differently is history, not rot. Separating
-  proposal-voice from fact-voice needs a read of each ADR rather than a grep. Worth doing if
-  those ADRs are ever to be trusted as current references.
+- **ADR voice audit** — *done*, in #100. See below.
 - **CLAUDE.md's "Current state"** still says refresh is manual and "nothing polls for new
   chapters." ADR-0021 invalidates that; the line belongs to whoever lands #92.
 
