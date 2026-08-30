@@ -26,6 +26,14 @@ One non-obvious requirement applies to **every** `xcodebuild` invocation here:
 - **Use parallel testing.** This repository now runs on an M5 MacBook with enough overhead for
   Xcode's cloned simulator instances. Leave parallel testing enabled (the default), or pass
   `-parallel-testing-enabled YES` when an explicit setting is useful.
+- **CI's toolchain is a major version behind this machine's.** The workflow pins `macos-15`,
+  which builds with Xcode 16.4 / Swift 6.0; local development is on Xcode 26.x / Swift 6.2. So a
+  green local build proves nothing about CI when the change uses newer language syntax. This has
+  already cost one red run: `extension BGTask: @MainActor BGTaskLike {}` — an SE-0470 *isolated
+  conformance*, Swift 6.2 only — compiled locally and failed on CI with `error: unknown attribute
+  'MainActor'` (fixed in #101 by boxing `BGTask` in a `@MainActor` wrapper instead). Treat
+  isolated conformances, `nonisolated(nonsending)`, `@concurrent`, and `Task.immediate` as
+  unavailable, and expect the failure to appear only after pushing.
 
 Run a single test class or method (Swift Testing / XCTest via `xcodebuild`):
 
