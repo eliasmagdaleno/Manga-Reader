@@ -144,3 +144,50 @@ struct ReaderPresentation: Equatable {
         }
     }
 }
+
+// MARK: - What the reader says out loud
+
+/// The reader's spoken strings, apart from the view that shows them.
+///
+/// Issue #90, checklist rows 6.4 / 6.5 / 6.7 / 6.10. The reader was built to be read with
+/// the eyes: its page indicator is `"4 · 20"`, its chapter end is `"END · 20 PAGES"`, and
+/// its pages were bare images with no label at all. A middle dot is not a word and an
+/// unlabelled image is not a destination, so VoiceOver had no way to say where in a
+/// chapter it was — in the paged mode, the pages may not have been reachable at all.
+///
+/// These are pure functions of the same numbers the view already has, so what VoiceOver
+/// says is testable without standing up a reader.
+///
+/// **Page numbers are always 1-based and always carry the total.** The right-to-left mode
+/// reverses the *pager's* order (a reversed sequence, never a mirror transform), so the
+/// only thing that keeps a swipe comprehensible is hearing which page of how many you
+/// landed on.
+enum ReaderAccessibility {
+
+    /// A single page, paged or vertical. `index` is 0-based, as the view holds it.
+    static func pageLabel(index: Int, pageCount: Int) -> String {
+        guard pageCount > 0 else { return "Page \(index + 1)" }
+        return "Page \(index + 1) of \(pageCount)"
+    }
+
+    /// The floating indicator. Says the same sentence as the page it describes rather than
+    /// the typography it renders.
+    static func pageIndicatorLabel(currentPage: Int, pageCount: Int) -> String {
+        let clamped = min(max(currentPage + 1, 1), max(pageCount, 1))
+        return "Page \(clamped) of \(pageCount)"
+    }
+
+    /// The end-of-chapter mark. "END · 20 PAGES" spoken as a sentence.
+    static func endMarkLabel(pageCount: Int) -> String {
+        "End of chapter. \(pageCount) \(pageCount == 1 ? "page" : "pages")"
+    }
+
+    /// The interstitial the pager shows either side of a chapter boundary — and, when it
+    /// is a load trigger, the only thing on screen during the fetch.
+    static func interstitialLabel(chapter: Chapter, isNext: Bool, isLoading: Bool) -> String {
+        var parts = [isNext ? "Next chapter" : "Previous chapter", "Chapter \(chapter.number)"]
+        if let title = chapter.title, !title.isEmpty { parts.append(title) }
+        if isLoading { parts.append("Fetching pages") }
+        return parts.joined(separator: ", ")
+    }
+}

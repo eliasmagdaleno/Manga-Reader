@@ -273,12 +273,20 @@ final class Manga_ReaderUITests: XCTestCase {
         sleep(8)
     }
 
+    // The indicator renders "4 · 20" but now *speaks* "Page 4 of 20" (issue #90): the
+    // middle dot is typography, and XCUITest reads the accessibility label, not the glyphs.
+    // Both helpers parse the spoken form, which is the one an assertion should depend on
+    // anyway — the visual string is free to change again.
     private static func indicatorCurrent(_ label: String) -> Int? {
-        Int(label.split(separator: "·").first?.trimmingCharacters(in: .whitespaces) ?? "")
+        indicatorNumbers(label).first
     }
 
     private static func indicatorTotal(_ label: String) -> Int? {
-        Int(label.split(separator: "·").last?.trimmingCharacters(in: .whitespaces) ?? "")
+        indicatorNumbers(label).last
+    }
+
+    private static func indicatorNumbers(_ label: String) -> [Int] {
+        label.split(whereSeparator: { !$0.isNumber }).compactMap { Int($0) }
     }
 
     private func attach(_ app: XCUIApplication, name: String) {
@@ -491,15 +499,20 @@ final class Manga_ReaderUITests: XCTestCase {
                       || app.navigationBars["Chapters"].waitForExistence(timeout: 8),
                       "the full chapter-list screen should open")
 
-        let newest = app.buttons["NEWEST"]
-        if newest.waitForExistence(timeout: 5) {
-            newest.tap()
-            XCTAssertTrue(app.buttons["OLDEST"].waitForExistence(timeout: 5),
-                          "the sort toggle should flip to OLDEST")
+        // Queried by accessibility label, which is now a word rather than the tracked
+        // uppercase typography the button draws (issue #90). The sort control keeps one
+        // label and reports the order as its *value*, so the flip is a value change.
+        let sort = app.buttons["Sort order"]
+        if sort.waitForExistence(timeout: 5) {
+            let before = sort.value as? String
+            sort.tap()
+            XCTAssertNotEqual(sort.value as? String, before,
+                              "the sort toggle should flip its announced order")
         }
 
-        let select = app.buttons["SELECT"]
-        XCTAssertTrue(select.waitForExistence(timeout: 5), "SELECT should be available on the full list")
+        let select = app.buttons["Select chapters"]
+        XCTAssertTrue(select.waitForExistence(timeout: 5),
+                      "the select control should be available on the full list")
         select.tap()
         XCTAssertTrue(app.buttons["Select All"].waitForExistence(timeout: 5),
                       "entering select mode should reveal the batch-action bar")
