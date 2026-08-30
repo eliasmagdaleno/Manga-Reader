@@ -1,4 +1,12 @@
-# ADR-0021 Tasks 1–7 implemented; Task 8 next
+# Handoff — ADR-0021 Tasks 1–7 implemented; Task 8 next
+
+> **STATUS 2026-08-30: fully consumed. Historical record — do not work from it.** Task 8 was
+> already implemented when this was next picked up, so the resume instructions below were
+> verified rather than executed. All of ADR-0021 Tasks 1–8 shipped as **PR #101** (squashed to
+> `a24c3fd`), which closed issue **#92**. The one thing that did not survive CI: the scheduler's
+> `extension BGTask: @MainActor BGTaskLike {}` is an SE-0470 isolated conformance, Swift 6.2
+> only, and CI's Xcode 16.4 rejected it with `error: unknown attribute 'MainActor'` — replaced
+> with a `@MainActor BGTaskBox` wrapper. That toolchain gap is now recorded in `CLAUDE.md`.
 
 Date: 2026-08-28  
 Repository: `/Users/eliasmagdaleno/Manga-Reader`  
@@ -6,12 +14,12 @@ Issue: GitHub #92
 Plan: `docs/superpowers/plans/2026-08-24-adr-0021-background-refresh.md`  
 Spec: `docs/superpowers/specs/2026-08-24-adr-0021-background-refresh-design.md`
 
-## Status: consumed 2026-08-28
+## Task 8 verification (2026-08-28)
 
 Task 8 is implemented and verified. `Manga-ReaderUITests/UpdatesUITests.swift` plus the DEBUG-only
 `UpdatesUITestFixture` / `UpdatesUITestSource` in `Manga_ReaderApp.swift` cover all five surfaces;
 5/5 UI tests pass on iPhone 17 Pro with screenshot attachments, the full `Manga-ReaderTests` run is
-green, and strict SwiftLint reports zero violations. Nothing is committed yet.
+green, and strict SwiftLint reports zero violations. Committed and merged as PR #101.
 
 ## Original resume instructions (done)
 
@@ -139,7 +147,7 @@ testing on the M5 MacBook.
   unit test exist; do not introduce an unconditional launch prompt.
 - Notifications route to the Work/detail surface, never directly to a chapter.
 - `newlyDiscovered` clearing must never mark chapters read.
-- No commit, PR, merge, or issue close has been authorized yet.
+- ~~No commit, PR, merge, or issue close has been authorized yet.~~ Done: PR #101 merged, #92 closed.
 
 ## Orca handoff status
 
