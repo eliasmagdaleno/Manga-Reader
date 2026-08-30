@@ -1,5 +1,12 @@
 # Handoff — ADR-0021 merged; docs and memory reconciled
 
+> **STATUS 2026-08-30: consumed. Historical record — do not work from it.** Its "pick up from
+> GitHub Issues" instruction was followed: the backlog held exactly one open issue, **#90**
+> (manual VoiceOver traversal), and the session that picked this up built the checklist for it
+> and fixed the code defects that checklist surfaced. See
+> `2026-08-30-voiceover-accessibility-labels-handoff.md`. Everything below about ADR-0021 and
+> the CI toolchain gap remains accurate.
+
 Date: 2026-08-30
 Repository: `/Users/eliasmagdaleno/Manga-Reader`
 Branch: `main` (clean, pushed)
