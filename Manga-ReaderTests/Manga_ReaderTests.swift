@@ -3353,5 +3353,35 @@ final class Manga_ReaderTests: XCTestCase {
                                  sourceId: "mangadex", fraction: 0)
         XCTAssertNil(entry.asManga.malId)
     }
+
+    // MARK: - What a history row says (issue #90)
+
+    /// The row draws "CH·5 · page 3/20" — a stamp abbreviation, two middle dots and a
+    /// slash, none of which is a word. The label says it in words instead.
+    func testHistoryRowLabelSpeaksTheChapterAndPage() {
+        let entry = ReadingEntry(id: UUID(), mangaId: "m", mangaTitle: "Blood and Ink",
+                                 coverURL: nil, chapterId: "c", chapterNumber: "5",
+                                 page: 2, pageCount: 20, updatedAt: Date())
+        XCTAssertEqual(entry.accessibilityLabel(relativeTime: "2 hours ago"),
+                       "Blood and Ink, Chapter 5, page 3 of 20, 2 hours ago")
+    }
+
+    func testHistoryRowLabelCarriesNoTypography() {
+        let entry = sampleEntry(page: 2, pageCount: 20)
+        let label = entry.accessibilityLabel(relativeTime: "yesterday")
+        XCTAssertFalse(label.contains("\u{00B7}"), label)
+        XCTAssertFalse(label.contains("/"), label)
+        XCTAssertFalse(label.contains("CH"), label)
+    }
+
+    /// The row widens the total to the current page when the count is missing or stale —
+    /// the same `max` it draws with, so the sentence never reads "page 4 of 0".
+    func testHistoryRowLabelNeverSaysAPageBeyondTheTotal() {
+        for pageCount in [0, 1, 5, 40] {
+            let entry = sampleEntry(page: 3, pageCount: pageCount)
+            let label = entry.accessibilityLabel(relativeTime: "now")
+            XCTAssertTrue(label.contains("page 4 of \(max(pageCount, 4))"), label)
+        }
+    }
     // This legacy integration suite remains a single file to avoid project-file-only churn.
 } // swiftlint:disable:this file_length

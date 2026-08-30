@@ -95,6 +95,9 @@ struct HistoryView: View {
             }
             .padding(.vertical, 4)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(entry.accessibilityLabel(
+            relativeTime: entry.updatedAt.formatted(.relative(presentation: .named))))
         .listRowBackground(Ink.background)
         .contextMenu {
             NavigationLink {
@@ -156,6 +159,17 @@ extension ReadingEntry {
     }
     var asChapter: Chapter {
         Chapter(id: chapterId, number: chapterNumber, title: nil)
+    }
+
+    /// The history row as one spoken sentence (issue #90).
+    ///
+    /// The row draws "CH·5 · page 3/20", which is three separate pieces of typography —
+    /// a stamp abbreviation, two middle dots, and a slash — and none of them is a word.
+    /// `relativeTime` is passed in already formatted because the row renders it that way
+    /// and the phrasing is the formatter's job, not this one's.
+    func accessibilityLabel(relativeTime: String) -> String {
+        let total = max(pageCount, page + 1)
+        return "\(mangaTitle), Chapter \(chapterNumber), page \(page + 1) of \(total), \(relativeTime)"
     }
 }
 
