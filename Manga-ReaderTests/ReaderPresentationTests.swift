@@ -202,4 +202,82 @@ final class ReaderPresentationTests: XCTestCase {
         struct Mystery: Error {}
         XCTAssertEqual(readerFailureMessage(Mystery()), Mystery().localizedDescription)
     }
+
+    // MARK: - What the reader says out loud (issue #90)
+
+    /// The load-bearing one: wherever the reader shows a page, it must be able to say
+    /// which page of how many. Right-to-left reverses the pager's order, so a swipe that
+    /// announces nothing leaves no way to tell forward from backward.
+    func testEveryPageSaysWhichPageOfHowMany() {
+        for pageCount in 1...5 {
+            for index in 0..<pageCount {
+                let label = ReaderAccessibility.pageLabel(index: index, pageCount: pageCount)
+                XCTAssertEqual(label, "Page \(index + 1) of \(pageCount)")
+            }
+        }
+    }
+
+    /// Page numbers are 1-based to the ear even though the view holds them 0-based.
+    func testPageLabelIsOneBased() {
+        XCTAssertEqual(ReaderAccessibility.pageLabel(index: 0, pageCount: 20), "Page 1 of 20")
+    }
+
+    /// A page can exist before the count does — the label degrades rather than saying "of 0".
+    func testPageLabelWithoutACountOmitsTheTotal() {
+        XCTAssertEqual(ReaderAccessibility.pageLabel(index: 3, pageCount: 0), "Page 4")
+    }
+
+    func testIndicatorSaysTheSameSentenceAsThePage() {
+        XCTAssertEqual(ReaderAccessibility.pageIndicatorLabel(currentPage: 3, pageCount: 20),
+                       ReaderAccessibility.pageLabel(index: 3, pageCount: 20))
+    }
+
+    /// The pager's extra indices (chapter-advance triggers) fall outside the page range,
+    /// exactly as the visible indicator already clamps them.
+    func testIndicatorClampsOutOfRangePages() {
+        XCTAssertEqual(ReaderAccessibility.pageIndicatorLabel(currentPage: -3, pageCount: 20),
+                       "Page 1 of 20")
+        XCTAssertEqual(ReaderAccessibility.pageIndicatorLabel(currentPage: 40, pageCount: 20),
+                       "Page 20 of 20")
+    }
+
+    /// None of the spoken strings may carry the typography they replace.
+    func testNoSpokenStringContainsTheMiddleDot() {
+        let chapter = Chapter(id: "c", number: "12", title: "Blood and Ink", date: nil)
+        let strings = [ReaderAccessibility.pageLabel(index: 3, pageCount: 20),
+                       ReaderAccessibility.pageIndicatorLabel(currentPage: 3, pageCount: 20),
+                       ReaderAccessibility.endMarkLabel(pageCount: 20),
+                       ReaderAccessibility.interstitialLabel(chapter: chapter, isNext: true,
+                                                             isLoading: false)]
+        for string in strings {
+            XCTAssertFalse(string.contains("\u{00B7}"), string)
+        }
+    }
+
+    func testEndMarkReadsAsASentence() {
+        XCTAssertEqual(ReaderAccessibility.endMarkLabel(pageCount: 20), "End of chapter. 20 pages")
+    }
+
+    func testEndMarkSingularPage() {
+        XCTAssertEqual(ReaderAccessibility.endMarkLabel(pageCount: 1), "End of chapter. 1 page")
+    }
+
+    func testInterstitialNamesTheDirectionAndTheChapter() {
+        let chapter = Chapter(id: "c", number: "13", title: "Blood and Ink", date: nil)
+        XCTAssertEqual(ReaderAccessibility.interstitialLabel(chapter: chapter, isNext: true,
+                                                             isLoading: false),
+                       "Next chapter, Chapter 13, Blood and Ink")
+        XCTAssertEqual(ReaderAccessibility.interstitialLabel(chapter: chapter, isNext: false,
+                                                             isLoading: false),
+                       "Previous chapter, Chapter 13, Blood and Ink")
+    }
+
+    /// While it is a load trigger the interstitial is the whole screen, so the fetch has
+    /// to be audible — otherwise the wait is silent (checklist 6.7).
+    func testInterstitialAnnouncesAnInFlightFetch() {
+        let chapter = Chapter(id: "c", number: "13", title: nil, date: nil)
+        XCTAssertEqual(ReaderAccessibility.interstitialLabel(chapter: chapter, isNext: true,
+                                                             isLoading: true),
+                       "Next chapter, Chapter 13, Fetching pages")
+    }
 }

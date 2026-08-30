@@ -461,7 +461,7 @@ struct ReaderView: View {
                         .tag(index)
                 } else if index >= 0, index < vm.pages.count {
                     ZoomablePage(url: vm.pages[index], index: index, currentIndex: currentPage,
-                                 onTap: toggleChrome)
+                                 pageCount: vm.pages.count, onTap: toggleChrome)
                         .tag(index)
                 } else if index == vm.pages.count, let next = vm.nextChapter {
                     InterstitialPage(chapter: next, isNext: true)
@@ -520,7 +520,7 @@ struct ReaderView: View {
                     // position — resuming a full viewport ahead (ADR-0014 decision 7). In
                     // vertical mode the viewport top is the only position feed.
                     ForEach(Array(vm.pages.enumerated()), id: \.offset) { index, url in
-                        WebtoonPage(url: url, index: index)
+                        WebtoonPage(url: url, index: index, pageCount: vm.pages.count)
                             .id(index)
                     }
                     if !vm.pages.isEmpty && !vm.isLoading {
@@ -662,6 +662,9 @@ struct ReaderView: View {
             // Matching this by its " · " text alone is ambiguous — the end-of-chapter marker
             // reads "END · N PAGES" and a chapter row can carry a middle dot too.
             .accessibilityIdentifier("readerPageIndicator")
+            // The middle dot is typography, not speech (issue #90, checklist 6.4).
+            .accessibilityLabel(ReaderAccessibility.pageIndicatorLabel(currentPage: currentPage,
+                                                                      pageCount: vm.pages.count))
     }
 
     private var loadingState: some View {
@@ -689,6 +692,8 @@ struct ReaderView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 36)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ReaderAccessibility.endMarkLabel(pageCount: vm.pages.count))
     }
 }
 
@@ -703,6 +708,7 @@ private struct ZoomablePage: View {
     let url: URL
     let index: Int
     let currentIndex: Int
+    let pageCount: Int
     let onTap: () -> Void
 
     @State private var reloadToken = 0
@@ -731,6 +737,11 @@ private struct ZoomablePage: View {
             }
             .id(reloadToken)
         }
+        // A bare image is not a destination: without this the pager had nothing for
+        // VoiceOver to land on, and no way to say where in the chapter it was — which
+        // right-to-left, a *reversed* page order, makes worse (issue #90, checklist 6.5).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ReaderAccessibility.pageLabel(index: index, pageCount: pageCount))
     }
 }
 
@@ -746,6 +757,7 @@ private struct ZoomablePage: View {
 private struct WebtoonPage: View {
     let url: URL
     let index: Int
+    let pageCount: Int
 
     @State private var reloadToken = 0
 
@@ -756,6 +768,10 @@ private struct WebtoonPage: View {
                 .overlay(anchorGrid)
         }
         .id(reloadToken)
+        // Same reason as `ZoomablePage`: an unlabelled strip is nothing to land on. The
+        // anchor grid underneath is layout machinery and stays out of the way (issue #90).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ReaderAccessibility.pageLabel(index: index, pageCount: pageCount))
     }
 
     /// The addressable slices of this strip. The `VStack` inherits the strip's measured
@@ -875,6 +891,9 @@ private struct InterstitialPage: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(ReaderAccessibility.interstitialLabel(chapter: chapter, isNext: isNext,
+                                                                  isLoading: isLoading))
         .background(Ink.background)
     }
 }

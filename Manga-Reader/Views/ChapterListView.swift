@@ -104,6 +104,9 @@ struct ChapterListView: View {
                             .tracking(0.5)
                             .foregroundStyle(Ink.seal)
                     }
+                    // Uppercase with letter tracking is a typographic choice; spelled out
+                    // letter by letter it is not a word (issue #90, checklist 5.2).
+                    .accessibilityLabel("Cancel")
                 } else {
                     HStack(spacing: 16) {
                         Button {
@@ -114,6 +117,8 @@ struct ChapterListView: View {
                                 .tracking(0.5)
                                 .foregroundStyle(Ink.seal)
                         }
+                        .accessibilityLabel("Select chapters")
+                        .accessibilityHint("Choose several chapters to mark read or unread")
                         Button {
                             withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { descending.toggle() }
                         } label: {
@@ -125,6 +130,11 @@ struct ChapterListView: View {
                             .tracking(0.5)
                             .foregroundStyle(Ink.seal)
                         }
+                        // The glyph pair reads as "arrow up arrow down" and the word as
+                        // initials; neither says what the control does (checklist 5.8).
+                        .accessibilityLabel("Sort order")
+                        .accessibilityValue(descending ? "Newest first" : "Oldest first")
+                        .accessibilityHint("Reverses the chapter order")
                     }
                 }
             }
