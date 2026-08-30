@@ -19,11 +19,15 @@ struct ChapterRow: View {
         // Show a resume marker only while a chapter is genuinely mid-read; that
         // chapter stays highlighted (your current spot). Finished/opened
         // chapters that aren't mid-read are dimmed.
+        //
+        // The dimming and what VoiceOver says come from one value, so they cannot
+        // disagree — this row used to dim silently, which is state by colour alone
+        // (issue #90, DESIGN.md "Focus / State").
         let progress = history.entry(forChapter: chapter.id)
-        // `pageCount > 0` is not redundant with `!isComplete`: an entry recorded before any
-        // page loaded has a count of 0, which is neither finished nor mid-read.
-        let inProgress = progress.map { $0.pageCount > 0 && !$0.isComplete } ?? false
-        let dimmed = history.isRead(chapterId: chapter.id) && !inProgress
+        let presentation = ChapterRowPresentation(chapter: chapter, progress: progress,
+                                                  isRead: history.isRead(chapterId: chapter.id))
+        let inProgress = presentation.isInProgress
+        let dimmed = presentation.isDimmed
 
         return HStack(spacing: 14) {
             if selecting {
@@ -66,5 +70,13 @@ struct ChapterRow: View {
         .padding(.horizontal, Gutter.page)
         .padding(.vertical, 14)
         .contentShape(Rectangle())
+        // `.ignore` rather than `.combine`: the children read as three focus stops of
+        // typographic fragments (the stamp, a bare date), and none of them says the one
+        // thing that matters. The sentence replaces them wholesale.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(presentation.accessibilityLabel)
+        .accessibilityValue(presentation.accessibilityValue(selecting: selecting,
+                                                            selected: selected) ?? "")
+        .accessibilityAddTraits(selecting && selected ? [.isSelected] : [])
     }
 }
