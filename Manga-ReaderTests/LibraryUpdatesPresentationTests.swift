@@ -88,6 +88,60 @@ struct LibraryUpdatesPresentationTests {
         let after = try encoder.encode(fixture.summaries(now: now))
         #expect(before == after)
     }
+
+    // MARK: - What the row says (issue #90, checklist 2.3)
+
+    /// The "NEW" badge is the one thing the row exists to show, and the spoken label used
+    /// to be the one place it did not appear.
+    @Test("A newly discovered chapter is spoken, not just badged")
+    func newlyDiscoveredIsSpoken() {
+        let summary = Self.summary(unread: 3, newlyDiscovered: 2)
+        #expect(summary.accessibilityLabel == "Blood and Ink, 3 unread chapters, 2 new chapters")
+    }
+
+    @Test("A single new chapter is singular")
+    func singleNewChapterIsSingular() {
+        #expect(Self.summary(unread: 1, newlyDiscovered: 1).accessibilityLabel
+                == "Blood and Ink, 1 unread chapter, 1 new chapter")
+    }
+
+    /// Nothing new means nothing extra said — the label must not imply a badge that the
+    /// row is not drawing.
+    @Test("Nothing new adds nothing to the sentence")
+    func nothingNewSaysNothingExtra() {
+        #expect(Self.summary(unread: 4, newlyDiscovered: 0).accessibilityLabel
+                == "Blood and Ink, 4 unread chapters")
+    }
+
+    @Test("Muted is spoken too")
+    func mutedIsSpoken() {
+        #expect(Self.summary(unread: 2, newlyDiscovered: 0, isMuted: true).accessibilityLabel
+                == "Blood and Ink, 2 unread chapters, Muted")
+    }
+
+    /// The sentence and the visible subtitle come from one string, so they cannot drift.
+    @Test("The spoken label contains the subtitle the row draws")
+    func labelContainsTheSubtitle() {
+        let summary = Self.summary(unread: 3, newlyDiscovered: 2)
+        #expect(summary.accessibilityLabel.contains(summary.unreadChapterText))
+    }
+
+    private static func summary(unread: Int, newlyDiscovered: Int,
+                                isMuted: Bool = false) -> WorkUpdateSummary {
+        WorkUpdateSummary(
+            id: WorkID(),
+            displayManga: Manga(id: "m1", sourceId: "mangadex", title: "Blood and Ink",
+                                description: "", status: "ongoing", year: nil,
+                                coverURL: nil, malId: nil),
+            unreadChapterCount: unread,
+            newlyDiscoveredCount: newlyDiscovered,
+            newestDiscoveryAt: nil,
+            lastSuccessfulCheck: nil,
+            freshness: .fresh,
+            recoverySummaries: [],
+            isMuted: isMuted
+        )
+    }
 }
 
 @MainActor

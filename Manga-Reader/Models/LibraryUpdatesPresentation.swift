@@ -20,6 +20,30 @@ struct WorkUpdateSummary: Codable, Identifiable, Equatable {
     let isMuted: Bool
 }
 
+extension WorkUpdateSummary {
+    /// The row as one spoken sentence (issue #90).
+    ///
+    /// The "NEW" badge is a capsule of tracked uppercase, and the row's label used to omit
+    /// it entirely — so the one thing the badge exists to say was the one thing VoiceOver
+    /// did not. Muted is the same kind of state: visible in the row, previously silent.
+    var accessibilityLabel: String {
+        var parts = [displayManga.title, unreadChapterText]
+        if newlyDiscoveredCount > 0 {
+            parts.append(newlyDiscoveredCount == 1
+                         ? "1 new chapter"
+                         : "\(newlyDiscoveredCount) new chapters")
+        }
+        if isMuted { parts.append("Muted") }
+        return parts.joined(separator: ", ")
+    }
+
+    /// The unread count as the row draws it, shared so the sentence and the subtitle
+    /// cannot drift apart.
+    var unreadChapterText: String {
+        unreadChapterCount == 1 ? "1 unread chapter" : "\(unreadChapterCount) unread chapters"
+    }
+}
+
 enum LibraryUpdatesPresentation {
     @MainActor
     static func summaries(works: WorkStore,

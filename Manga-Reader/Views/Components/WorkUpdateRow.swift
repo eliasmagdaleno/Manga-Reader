@@ -45,12 +45,9 @@ struct WorkUpdateRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(summary.displayManga.title), \(chapterText)")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(summary.accessibilityLabel)
     }
 
-    private var chapterText: String {
-        summary.unreadChapterCount == 1
-            ? "1 unread chapter"
-            : "\(summary.unreadChapterCount) unread chapters"
-    }
+    private var chapterText: String { summary.unreadChapterText }
 }
