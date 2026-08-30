@@ -150,11 +150,16 @@ The app builds and the core reading loop is implemented.
   records an entry, which is what mints the Work and what makes the vertical reader record
   anything at all; but an opened-and-abandoned chapter is *not* read, so it still counts
   toward the unread badge.
+- **Background refresh:** ADR-0021 shipped 2026-08-30 (PR #101, issue #92). The library now
+  polls for new chapters on its own — `LibraryRefreshCoordinator` runs the pipeline,
+  `UpdateScheduler` drives it from `BGTaskScheduler` plus foreground activation, and
+  `UpdateNotifier` posts authorization-gated new-chapter notifications. Update state persists
+  in `updates.json` (`UpdateStateStore`); "newly discovered" is tracked separately from
+  `isRead` and clearing it never marks anything read.
 - Design/spec/plan for shipped work live in `docs/superpowers/{specs,plans}/`.
 
-Still minimal: no cross-device sync; refreshing *content* is manual (pull-to-refresh only,
-nothing polls for new chapters) — though `MetadataUpgradeQueue` does run on its own on
-`scenePhase` becoming active.
+Still minimal: no cross-device sync. Content refresh is no longer manual-only (see above);
+`MetadataUpgradeQueue` also runs on its own on `scenePhase` becoming active.
 
 ## Agent skills
 
