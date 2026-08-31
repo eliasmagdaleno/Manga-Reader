@@ -4,10 +4,18 @@ Date: 2026-08-30
 Repository: `/Users/eliasmagdaleno/Manga-Reader`
 Branch: `main`
 
+> **CORRECTION 2026-08-31: #90 is closed.** It was closed manually (by the repo owner, at
+> 2026-08-30 20:28 UTC — no linked commit; every PR below used `Refs #90`, which does not
+> close). This document was merged saying the opposite, so read the "What is actually owed"
+> section as **unfinished work that no longer has an issue tracking it**, not as an open gate.
+> The manual pass was never run. If you want that work tracked again, reopen #90 or file a
+> fresh issue pointing at the checklist.
+
 ## State
 
-Issue **#90** (manual VoiceOver traversal) is still **open, and should be** — see "What is
-actually owed" below. What shipped is everything a code change *can* do for it: the script for
+Issue **#90** (manual VoiceOver traversal) is **closed** — see the correction above; when this
+was written it was open, and the reasoning in "What is actually owed" below still stands on
+its merits. What shipped is everything a code change *can* do for it: the script for
 the manual pass, plus fixes for all six accessibility-label defects that writing the script
 surfaced.
 
@@ -16,10 +24,10 @@ surfaced.
 | **#102** | `docs/accessibility/voiceover-manual-checklist.md` — the manual pass, ~50 numbered rows | merged `846b3a6` |
 | **#103** | `ChapterRowPresentation` — chapter rows | merged `1b31432` |
 | **#104** | `ReaderAccessibility` — reader pages, indicators, chapter-list toolbar | merged `31d12c6` |
-| **#105** | History row + `WorkUpdateSummary.accessibilityLabel` | auto-merge armed on green |
+| **#105** | History row + `WorkUpdateSummary.accessibilityLabel` | merged `6a67230` |
+| **#106** | this handoff | merged `8bd9219` |
 
-If **#105** is not on `main` when you pick this up, check it: `gh pr view 105`. Nothing else
-is in flight.
+All six are on `main`. Nothing is in flight.
 
 ## What was wrong, in one sentence
 
@@ -67,13 +75,14 @@ to change again.
 
 ## What is actually owed
 
-**#90 is a human gate and none of this closes it.** Every change above makes the app *say* the
-right thing. Only a person driving VoiceOver on-device can confirm traversal order, focus
+**The manual pass is a human gate and none of this clears it** — closing the issue did not
+either. Every change above makes the app *say* the right thing. Only a person driving VoiceOver on-device can confirm traversal order, focus
 restoration, and that the reader pages are actually reachable — which is precisely what the
 automated evidence from PR #89 could not establish either.
 
-Work the checklist at `docs/accessibility/voiceover-manual-checklist.md`, record a verdict per
-row, and close #90 when every row has one — **not** when every defect is fixed. Rows 4.3 (are
+Work the checklist at `docs/accessibility/voiceover-manual-checklist.md` and record a verdict
+per row. The checklist's own closing instruction — close the issue when every row has a
+verdict, **not** when every defect is fixed — was not what happened here. Rows 4.3 (are
 the custom read actions still reachable now that the row is one element?) and 6.5 (are the
 pages reachable at all?) are the ones this session's changes most need confirmed, since both
 were reasoned from the code rather than observed.
@@ -85,6 +94,6 @@ fix was needed.
 
 ## Suggested next work
 
-The backlog is `gh issue list`, which after this holds only #90. Nothing else is owed. If you
+The backlog is `gh issue list`, and as of 2026-08-31 it is **empty**. Nothing is owed. If you
 want adjacent work, the checklist's §7 cross-cutting rows (rotor headings, live-loading rails,
 AX text sizes) are unexamined and would likely produce real issues.
