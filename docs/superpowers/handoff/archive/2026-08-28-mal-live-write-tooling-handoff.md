@@ -112,6 +112,6 @@ Nothing further is owed there — don't re-run this audit.
 At the time of writing, the main checkout is on `main` at `a97d0b8` — **four commits behind
 origin** — and carries the uncommitted ADR-0021 (#92) implementation, Tasks 1–7 done and Task 8
 (seeded-simulator UI verification) next per
-`docs/superpowers/handoff/2026-08-28-adr-0021-task-8-next-handoff.md`. Nothing this session
+`docs/superpowers/handoff/archive/2026-08-28-adr-0021-task-8-next-handoff.md`. Nothing this session
 touched `Manga-Reader/` source, so merging `main` in should be clean: two scripts, a
 `.gitignore` line, an ADR, and a comment-only edit to `Manga_ReaderUITests.swift`.

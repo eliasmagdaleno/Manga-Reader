@@ -9,7 +9,7 @@ building ADR-0021.
 - Branch: `main`
 - HEAD: `13b8846` — `Verify MAL progress lifecycle on device (#85)`
 - Existing user-owned untracked file:
-  `docs/superpowers/handoff/2026-08-24-mal-oauth-progress-complete-handoff.md`. Preserve it.
+  `docs/superpowers/handoff/archive/2026-08-24-mal-oauth-progress-complete-handoff.md`. Preserve it.
 - This session created or changed:
   - `PRODUCT.md`
   - `.impeccable/config.json`

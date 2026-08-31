@@ -175,7 +175,7 @@ and rejected in the ADR (a zero weight still moves the golden via reasons and po
   Completed reviews start with `# agy review — <SHA> — <TIMESTAMP>` and end with
   `# agy review complete — exit 0`; **a missing footer means the run aborted** and the contents
   belong to an older commit. It targets `iPhone 17`, matching `CLAUDE.md`. The failure modes that
-  prompted the rewrite are in `docs/superpowers/handoff/2026-08-03-agy-hook-issues.md` — still worth
+  prompted the rewrite are in `docs/superpowers/handoff/archive/2026-08-03-agy-hook-issues.md` — still worth
   reading, because it documents *why* the sentinels exist.
 - **Slice 2 was reviewed and passed.** The verdict arrived late, from the pre-rewrite hook (no
   sentinels, ran on `iPhone 17 Pro`, conversational preamble still at the top of the file — a live

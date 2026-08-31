@@ -16,8 +16,8 @@ Session of 2026-08-24 (late evening). Continues
 The worktree is clean except for two pre-existing, untracked handoffs that were deliberately
 excluded from both PRs:
 
-- `docs/superpowers/handoff/2026-08-24-mal-oauth-progress-complete-handoff.md`
-- `docs/superpowers/handoff/2026-08-24-task-12-verified-claude-priorities-handoff.md`
+- `docs/superpowers/handoff/archive/2026-08-24-mal-oauth-progress-complete-handoff.md`
+- `docs/superpowers/handoff/archive/2026-08-24-task-12-verified-claude-priorities-handoff.md`
 
 Preserve those files. They belong to earlier work.
 
