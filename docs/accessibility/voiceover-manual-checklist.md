@@ -12,6 +12,13 @@ below names a real element and, where it matters, the line that produces it.
   double-tap = activate, two-finger swipe up = read from top, rotor (two-finger twist) →
   **Actions** then swipe up/down = custom actions, then double-tap to run.
 
+**To run it:** `./scripts/voiceover-pass.sh` from the repo root walks these rows one at
+a time, so you can read your phone instead of scrolling this table. It parses the rows
+below at runtime — this file stays the source of truth — records verdicts in
+`docs/accessibility/voiceover-results-<date>.md`, and resumes where you stopped, since a
+55-row pass is long enough that quitting halfway is a normal way to use it. Editing this
+table by hand works too.
+
 Record for each row: **pass / fail / note**. A "suspected" row is a place the code already
 looks wrong — confirm the symptom before filing, and file it as its own issue.
 
