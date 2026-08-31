@@ -90,6 +90,17 @@ struct InkSectionHeader: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, Gutter.page)
+        // One stop, not two, and a stop the Headings rotor can find. The eyebrow is the
+        // value rather than part of the label: see `SectionHeaderPresentation` for the
+        // four XCUITests that depend on the label being the title verbatim.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(presentation.accessibilityLabel)
+        .accessibilityValue(presentation.accessibilityValue ?? "")
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    private var presentation: SectionHeaderPresentation {
+        SectionHeaderPresentation(title: title, eyebrow: eyebrow)
     }
 }
 
