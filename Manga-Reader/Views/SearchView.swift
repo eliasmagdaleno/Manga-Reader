@@ -88,7 +88,7 @@ private struct SearchResults: View {
             }
             .padding(.horizontal, Gutter.page)
         } else if loader.items.isEmpty && loader.isLoading {
-            ProgressView().tint(Ink.seal)
+            InkLoading("Searching \(sourceName)")
                 .frame(maxWidth: .infinity)
                 .padding(.top, 80)
         } else if loader.items.isEmpty {

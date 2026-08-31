@@ -261,6 +261,12 @@ struct HomeView: View {
     }
 
     // Skeleton rail shown on first load.
+    //
+    // The four tiles are one visual device, not four things (issue #109, checklist 7.3).
+    // Left alone they became four consecutive silent focus stops under a heading that said
+    // only "Loading" — a reader who cannot see the empty covers swiped through four
+    // elements that announced nothing to learn nothing. Hidden, the rail is one sentence
+    // naming what is loading and from where.
     private var loadingRail: some View {
         VStack(alignment: .leading, spacing: 14) {
             InkSectionHeader("Loading", eyebrow: vm.source.name)
@@ -274,6 +280,8 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, Gutter.page)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Loading titles from \(vm.source.name)")
         }
     }
 }

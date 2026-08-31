@@ -668,15 +668,9 @@ struct ReaderView: View {
     }
 
     private var loadingState: some View {
-        VStack(spacing: 10) {
-            ProgressView().tint(Ink.seal)
-            Text("Fetching pages")
-                .font(.inkMono(11, weight: .medium))
-                .tracking(1)
-                .foregroundStyle(Ink.tertiary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        InkLoading("Fetching pages", caption: "Fetching pages")
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 40)
     }
 
     // A quiet end-of-chapter marker: a seal tick and a monospaced label.

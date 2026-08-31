@@ -188,6 +188,12 @@ struct MangaDetailView: View {
                 .frame(maxWidth: .infinity, minHeight: 50)
                 .foregroundStyle(Ink.tertiary)
                 .background(RoundedRectangle(cornerRadius: 12).fill(Ink.sealSoft.opacity(0.5)))
+                // Issue #109. This is a placeholder holding the layout still, not the
+                // button — it is not tappable and there is nothing yet to start. Speaking
+                // the drawn "Start Reading" would announce a control that is not there,
+                // which is worse than silence because it is wrong.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Loading chapters")
                 libraryToggle
             } else {
                 // No readable chapters — the library toggle gets its words back.

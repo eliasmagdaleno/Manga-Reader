@@ -99,7 +99,7 @@ struct CategoryGridView: View {
         .padding(.bottom, 32)
         .overlay(alignment: .bottom) {
             if initialItems.isEmpty {
-                ProgressView().tint(Ink.seal)
+                InkLoading("Loading \(title)")
                     .padding(.vertical, 40)
             }
         }

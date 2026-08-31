@@ -37,6 +37,44 @@ struct Screentone: View {
     }
 }
 
+/// A spinner that cannot be silent.
+///
+/// Issue #109, checklist row 7.3. Every loading indicator in the app used to be a bare
+/// `ProgressView()`, which reaches VoiceOver as a focus stop that says nothing — not what
+/// is loading, not what will be there when it finishes. Seven of them.
+///
+/// The label is a required initialiser argument, so the fix is structural rather than a
+/// sweep that has to be repeated: an unlabelled spinner is now the thing you have to go
+/// out of your way to write. Say what is loading and from where — "Searching MangaDex",
+/// not "Loading" — because a reader who cannot see the empty screen has only this
+/// sentence to tell them the app is working rather than stuck.
+///
+/// `caption` is the visible text where a site already drew one; it is spoken through the
+/// label like everything else, so the two cannot drift.
+struct InkLoading: View {
+    let label: String
+    var caption: String?
+
+    init(_ label: String, caption: String? = nil) {
+        self.label = label
+        self.caption = caption
+    }
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ProgressView().tint(Ink.seal)
+            if let caption {
+                Text(caption)
+                    .font(.inkMono(11, weight: .medium))
+                    .tracking(1)
+                    .foregroundStyle(Ink.tertiary)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+    }
+}
+
 /// A cover-shaped placeholder: screentone with a centered seal tick.
 struct CoverPlaceholder: View {
     var showsSpinner = false
