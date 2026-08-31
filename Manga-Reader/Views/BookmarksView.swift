@@ -114,6 +114,9 @@ struct BookmarksView: View {
                         Capsule()
                             .strokeBorder(Ink.hairline, lineWidth: 1)
                     )
+                    // One stop, not a silent spinner beside its own message (issue #109).
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(message)
                     .padding(.top, 8)
                     .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
                 }

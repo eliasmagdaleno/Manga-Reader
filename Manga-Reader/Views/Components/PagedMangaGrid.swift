@@ -35,7 +35,10 @@ struct PagedMangaGrid: View {
         .padding(.horizontal, Gutter.page)
 
         if loader.isLoadingMore {
-            ProgressView().tint(Ink.seal)
+            // Named, because this one *appears* — a reader who has just reached the end
+            // of the grid otherwise cannot tell more results are coming from the list
+            // having ended.
+            InkLoading("Loading more titles")
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
         }
