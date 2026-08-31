@@ -68,7 +68,7 @@ protection) is set up and waiting, but no agent has started it. Everything is st
 - `Secrets.xcconfig` already symlinked in (without it every build fails);
 - `TASK-4-BRIEF.md` at the worktree root, and git-excluded so `git add -A` cannot sweep it
   into a commit. The same brief is committed at
-  `docs/superpowers/handoff/2026-08-21-codex-task-4-brief.md` on this branch.
+  `docs/superpowers/handoff/archive/2026-08-21-codex-task-4-brief.md` on this branch.
 
 The `codex` plugin (`openai-codex` marketplace) was installed at the end of the session and
 `/codex:setup` reports ready: Codex CLI 0.149.0, ChatGPT auth verified, review gate off. So

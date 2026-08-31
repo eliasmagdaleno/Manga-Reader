@@ -177,3 +177,20 @@ The five canonical roles, each label string equal to its name (`needs-triage`, `
 
 Single-context. The glossary is `docs/glossary.md` — **not** `CONTEXT.md`, which does not exist
 here — and decisions are the numbered ADRs in `docs/adr/`. See `docs/agents/domain.md`.
+
+### Handoffs
+
+`docs/superpowers/handoff/` holds **exactly one file: the live one.** Everything else lives in
+`archive/` and is a historical record — never work from it.
+
+Writing a new handoff means `git mv`-ing the current one into `archive/` first, and **carrying
+anything still owed into the new document.** A handoff is the complete picture of what is
+outstanding, not the newest slice; if the previous session left work unfinished, that work is
+now yours to restate, not to leave behind in a file nobody will open.
+
+This replaced a convention of banner-marking each file "consumed" by hand. Sixty of sixty-six
+carried no marker, which is what a rule that depends on remembering is worth. Currency is now a
+fact about location. The cost of forgetting is visible in one `ls`.
+
+The rot this prevents has hit this repository five times; the fifth changed what an agent *did*
+rather than merely what a document said. See `docs/superpowers/handoff/archive/README.md`.

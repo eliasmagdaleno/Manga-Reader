@@ -17,8 +17,8 @@ reconstruct from the repo.
 
 - Branch: `main` at **`b9a9a5c`**
 - Working tree clean except two intentionally untracked handoffs (preserve them):
-  - `docs/superpowers/handoff/2026-08-24-mal-oauth-progress-complete-handoff.md`
-  - `docs/superpowers/handoff/2026-08-24-task-12-verified-claude-priorities-handoff.md`
+  - `docs/superpowers/handoff/archive/2026-08-24-mal-oauth-progress-complete-handoff.md`
+  - `docs/superpowers/handoff/archive/2026-08-24-task-12-verified-claude-priorities-handoff.md`
 - No open PRs.
 
 Three merges tonight:
