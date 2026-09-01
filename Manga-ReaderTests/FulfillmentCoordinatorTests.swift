@@ -52,11 +52,87 @@ final class FulfillmentCoordinatorTests: XCTestCase {
         counts.record(40, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
         counts.record(120, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
 
-        let coordinator = FulfillmentCoordinator(works: works, registry: registry,
-                                                 counts: counts)
+        let coordinator = FulfillmentCoordinator(
+            works: works, registry: registry, counts: counts,
+            preferences: SourcePreferenceStore(
+                defaults: UserDefaults(suiteName: UUID().uuidString)!))
 
         XCTAssertEqual(coordinator.candidates(for: workID).map(\.key.sourceId),
                        ["weebcentral", "mangadex"])
+    }
+
+    // MARK: - Preferences
+
+    private func coordinator(_ works: WorkStore,
+                             _ registry: SourceRegistry,
+                             _ counts: ListingCountCache,
+                             _ preferences: SourcePreferenceStore) -> FulfillmentCoordinator {
+        FulfillmentCoordinator(works: works, registry: registry, counts: counts,
+                               preferences: preferences)
+    }
+
+    private func standardSetup() -> (WorkStore, SourceRegistry, ListingCountCache,
+                                     SourcePreferenceStore, WorkID) {
+        let works = WorkStore(directory: directory)
+        let registry = SourceRegistry(sources: [StubCountingSource(id: "mangadex"),
+                                                StubCountingSource(id: "weebcentral")])
+        let counts = ListingCountCache(directory: directory)
+        let preferences = SourcePreferenceStore(
+            defaults: UserDefaults(suiteName: UUID().uuidString)!)
+        return (works, registry, counts, preferences, workWithBothListings(works))
+    }
+
+    /// The reader's primary source settles the tie, in place of MangaDex.
+    func testThePrimarySourceDecidesTiesInTheRanking() {
+        let (works, registry, counts, preferences, workID) = standardSetup()
+        counts.record(120, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
+        counts.record(120, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
+        preferences.primarySourceId = "weebcentral"
+
+        let coordinator = coordinator(works, registry, counts, preferences)
+
+        XCTAssertEqual(coordinator.candidates(for: workID).first?.key.sourceId,
+                       "weebcentral")
+    }
+
+    /// A per-title pick beats the ranking outright. The reader looked at this manga
+    /// and chose; the app must not talk them out of it because a count moved.
+    func testAPerWorkChoiceDecidesWhatOpensEvenWhenRankedLower() {
+        let (works, registry, counts, preferences, workID) = standardSetup()
+        counts.record(400, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
+        counts.record(10, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
+
+        let chosen = ListingKey(sourceId: "weebcentral", mangaId: "one-piece")
+        preferences.choose(chosen, for: workID)
+
+        XCTAssertEqual(coordinator(works, registry, counts, preferences)
+            .chosenListing(for: workID), chosen)
+    }
+
+    /// Without a pick, the ranking decides — the ordinary case.
+    func testWithoutAChoiceTheRankingDecidesWhatOpens() {
+        let (works, registry, counts, preferences, workID) = standardSetup()
+        counts.record(400, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
+        counts.record(10, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
+
+        XCTAssertEqual(coordinator(works, registry, counts, preferences)
+            .chosenListing(for: workID)?.sourceId, "mangadex")
+    }
+
+    /// A pinned Listing whose source is gone — the reader deleted the extension, or
+    /// adult gating hid it — must not strand the Work on a dead end. The ranking
+    /// takes over, and the pin is left alone in case the source comes back.
+    func testAChoiceOnAnUnregisteredSourceFallsBackToTheRanking() {
+        let (works, _, counts, preferences, workID) = standardSetup()
+        let mangaDexOnly = SourceRegistry(sources: [StubCountingSource(id: "mangadex")])
+        counts.record(400, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
+        preferences.choose(ListingKey(sourceId: "weebcentral", mangaId: "one-piece"),
+                           for: workID)
+
+        let chosen = coordinator(works, mangaDexOnly, counts, preferences)
+            .chosenListing(for: workID)
+
+        XCTAssertEqual(chosen?.sourceId, "mangadex")
     }
 
     /// The reconcile half: counts every Listing nobody has counted, caches the
@@ -69,8 +145,10 @@ final class FulfillmentCoordinatorTests: XCTestCase {
             StubCountingSource(id: "weebcentral", chapterNumbers: ["1", "2", "3", "4"])
         ])
         let workID = workWithBothListings(works)
-        let coordinator = FulfillmentCoordinator(works: works, registry: registry,
-                                                 counts: counts)
+        let coordinator = FulfillmentCoordinator(
+            works: works, registry: registry, counts: counts,
+            preferences: SourcePreferenceStore(
+                defaults: UserDefaults(suiteName: UUID().uuidString)!))
 
         await coordinator.reconcile(workID)
 
@@ -92,8 +170,10 @@ final class FulfillmentCoordinatorTests: XCTestCase {
 
         counts.record(2, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
 
-        let coordinator = FulfillmentCoordinator(works: works, registry: registry,
-                                                 counts: counts)
+        let coordinator = FulfillmentCoordinator(
+            works: works, registry: registry, counts: counts,
+            preferences: SourcePreferenceStore(
+                defaults: UserDefaults(suiteName: UUID().uuidString)!))
         await coordinator.reconcile(workID)
 
         let askedMangaDex = await mangadex.asked.ids
@@ -113,8 +193,10 @@ final class FulfillmentCoordinatorTests: XCTestCase {
             StubCountingSource(id: "weebcentral", chapterNumbers: ["1", "2", "3"])
         ])
         let workID = workWithBothListings(works)
-        let coordinator = FulfillmentCoordinator(works: works, registry: registry,
-                                                 counts: counts)
+        let coordinator = FulfillmentCoordinator(
+            works: works, registry: registry, counts: counts,
+            preferences: SourcePreferenceStore(
+                defaults: UserDefaults(suiteName: UUID().uuidString)!))
 
         await coordinator.reconcile(workID)
 

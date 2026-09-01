@@ -3,7 +3,8 @@
 //  Manga-Reader
 //
 //  ADR-0004 — once a Work has several Listings (ADR-0001), opening it must choose
-//  one. Rank by English chapter completeness; MangaDex breaks ties.
+//  one. Rank by English chapter completeness; the reader's primary source breaks
+//  ties, and MangaDex is that default until they choose one.
 //
 //  Pure and synchronous on purpose: the counts it ranks on are fetched and cached
 //  elsewhere, so first paint never blocks on N sources.
@@ -25,13 +26,16 @@ struct ListingCandidate: Equatable {
 enum FulfillmentRouter {
 
     /// Ranks a Work's Listings best-first.
+    /// - Parameter preferredSourceId: the reader's chosen primary source. `nil`
+    ///   means they have not chosen one, and MangaDex's built-in preference stands.
     static func rank(_ candidates: [ListingCandidate],
-                     referenceTotal: Int?) -> [ListingCandidate] {
+                     referenceTotal: Int?,
+                     preferredSourceId: String? = nil) -> [ListingCandidate] {
         candidates.sorted { lhs, rhs in
             let left = evidenceRank(lhs, referenceTotal: referenceTotal)
             let right = evidenceRank(rhs, referenceTotal: referenceTotal)
             if left != right { return left > right }
-            return preferenceRank(lhs) < preferenceRank(rhs)
+            return preferenceRank(lhs, preferredSourceId) < preferenceRank(rhs, preferredSourceId)
         }
     }
 
@@ -50,6 +54,7 @@ enum FulfillmentRouter {
     /// Tier 2 sitting *below* tier 1 is the optimistic-render trade ADR-0004 makes
     /// explicit — we pick from the evidence we have, reconcile in the background,
     /// and a briefly-stale pick costs the user a tap rather than a bug.
+    ///
     /// A known `referenceTotal` caps the count rather than dividing by it: at 100%
     /// a Listing has every chapter there is, and anything beyond the total is
     /// padding (duplicate uploads, split parts, extras) rather than more manga.
@@ -86,12 +91,21 @@ enum FulfillmentRouter {
         return frontier.known.count
     }
 
-    /// The tiebreak at equal completeness: MangaDex, then registration order.
-    /// MangaDex-first is a **quality** preference (better scans, better metadata,
-    /// no ads), not an availability one — which is why it never outranks a source
-    /// that simply has more chapters.
-    private static func preferenceRank(_ candidate: ListingCandidate) -> (Int, Int) {
-        (candidate.key.sourceId == MangaDexSource.sourceID ? 0 : 1,
-         candidate.registrationIndex)
+    /// The tiebreak at equal completeness: the reader's primary source, else
+    /// MangaDex, then registration order.
+    ///
+    /// This is a **quality** preference (better scans, better metadata, no ads),
+    /// not an availability one — which is why it never outranks a source that
+    /// simply has more chapters. That holds for a reader's own choice too: picking
+    /// a primary source says which scans they prefer, not that it carries chapters
+    /// it does not have.
+    ///
+    /// MangaDex is the default rather than the rule. A reader who has chosen has
+    /// said something more specific than the app's built-in guess.
+    private static func preferenceRank(_ candidate: ListingCandidate,
+                                       _ preferredSourceId: String?) -> (Int, Int) {
+        let preferred = preferredSourceId ?? MangaDexSource.sourceID
+        return (candidate.key.sourceId == preferred ? 0 : 1,
+                candidate.registrationIndex)
     }
 }

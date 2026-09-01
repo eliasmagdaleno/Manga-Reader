@@ -22,11 +22,33 @@ final class FulfillmentCoordinator: ObservableObject {
     private let works: WorkStore
     private let registry: SourceRegistry
     private let counts: ListingCountCache
+    private let preferences: SourcePreferenceStore
 
-    init(works: WorkStore, registry: SourceRegistry, counts: ListingCountCache) {
+    init(works: WorkStore,
+         registry: SourceRegistry,
+         counts: ListingCountCache,
+         preferences: SourcePreferenceStore) {
         self.works = works
         self.registry = registry
         self.counts = counts
+        self.preferences = preferences
+    }
+
+    /// The Listing to open: the reader's pick for this Work when they made one, and
+    /// the top of the ranking otherwise.
+    ///
+    /// A pick whose source is no longer registered — extension removed, adult gating
+    /// switched off — falls back to the ranking rather than stranding the Work on a
+    /// dead end. The pin is deliberately **left in place**: the source may come back,
+    /// and silently discarding a stated preference because something was temporarily
+    /// unavailable is how an app loses a user's settings.
+    func chosenListing(for workID: WorkID, now: Date = Date()) -> ListingKey? {
+        let ranked = candidates(for: workID, now: now)
+        if let pinned = preferences.choice(for: workID),
+           ranked.contains(where: { $0.key == pinned }) {
+            return pinned
+        }
+        return ranked.first?.key
     }
 
     /// A Work's Listings, best first. **Cache-only and synchronous** — this is the
@@ -45,7 +67,9 @@ final class FulfillmentCoordinator: ObservableObject {
                                     registrationIndex: index)
         }
 
-        return FulfillmentRouter.rank(candidates, referenceTotal: referenceTotal(for: work))
+        return FulfillmentRouter.rank(candidates,
+                                      referenceTotal: referenceTotal(for: work),
+                                      preferredSourceId: preferences.primarySourceId)
     }
 
     /// Counts every Listing the cache has no current answer for, and records what

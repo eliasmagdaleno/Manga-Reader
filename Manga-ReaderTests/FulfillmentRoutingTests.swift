@@ -94,6 +94,30 @@ final class FulfillmentRoutingTests: XCTestCase {
         XCTAssertEqual(ranked.map(\.key.sourceId), ["weebcentral", "mangadex"])
     }
 
+    /// MangaDex-first is a *default*, not a law. A reader who has chosen a primary
+    /// source has told us which scans they prefer, and that preference decides ties
+    /// in place of the built-in one.
+    func testTheChosenPrimarySourceBreaksTiesInsteadOfMangaDex() {
+        let ranked = FulfillmentRouter.rank([
+            candidate("mangadex", count: 120, order: 0),
+            candidate("weebcentral", count: 120, order: 1)
+        ], referenceTotal: nil, preferredSourceId: "weebcentral")
+
+        XCTAssertEqual(ranked.map(\.key.sourceId), ["weebcentral", "mangadex"])
+    }
+
+    /// A preference still only settles *ties*. Choosing a primary source is a
+    /// statement about scan quality, not a claim that it has chapters it lacks — so
+    /// it must not drag a less complete Listing above a more complete one.
+    func testAPrimarySourceStillDoesNotBeatMoreChapters() {
+        let ranked = FulfillmentRouter.rank([
+            candidate("mangadex", count: 400, order: 0),
+            candidate("weebcentral", count: 120, order: 1)
+        ], referenceTotal: nil, preferredSourceId: "weebcentral")
+
+        XCTAssertEqual(ranked.map(\.key.sourceId), ["mangadex", "weebcentral"])
+    }
+
     // MARK: - Counting
 
     private func chapter(_ number: String) -> Chapter {
