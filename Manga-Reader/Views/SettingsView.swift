@@ -133,13 +133,20 @@ struct SettingsView: View {
                         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Ink.hairline, lineWidth: 1))
                         .padding(.horizontal, Gutter.page)
 
-                        Toggle("Show adult sources", isOn: $showAdultSources)
-                            .font(.subheadline)
-                            .tint(Ink.seal)
-                            .padding(.horizontal, Gutter.page)
-                            .onChange(of: showAdultSources) { _, newValue in
-                                registry.enforceAdultGating(includeAdult: newValue)
-                            }
+                        // Hidden when nothing is registered for it to gate — a switch that
+                        // changes nothing invites a hunt for the behaviour it is supposed to
+                        // control. The stored preference is left alone, so this reappears
+                        // with its previous value if an adult source is ever registered.
+                        // See ADR-0022.
+                        if registry.hasAdultSource {
+                            Toggle("Show adult sources", isOn: $showAdultSources)
+                                .font(.subheadline)
+                                .tint(Ink.seal)
+                                .padding(.horizontal, Gutter.page)
+                                .onChange(of: showAdultSources) { _, newValue in
+                                    registry.enforceAdultGating(includeAdult: newValue)
+                                }
+                        }
 
                         PreferredSourcePicker(sources: registry.visibleSources(
                             includeAdult: showAdultSources))
