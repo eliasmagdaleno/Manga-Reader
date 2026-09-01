@@ -33,6 +33,8 @@ struct Manga_ReaderApp: App {
     /// in the environment rather than staying inside the composition.
     @StateObject private var sourcePreferences: SourcePreferenceStore
     @StateObject private var fulfillment: FulfillmentCoordinator
+    /// The graph's registry, so views resolve sources from the same one the services do.
+    @StateObject private var registry: SourceRegistry
 
     /// Plain properties rather than `@StateObject` — neither publishes anything, so a view
     /// that could reach one could only misuse it (ADR-0010). See `AppComposition` for why
@@ -70,7 +72,11 @@ struct Manga_ReaderApp: App {
             let storage = UpdatesUITestFixture.freshStorage(for: updateState)
             defaults = storage.defaults
             directory = storage.directory
-            updateRegistry = SourceRegistry(sources: [UpdatesUITestSource()])
+            // The picker only exists when two sources are registered, so this state is
+            // the one that registers a second.
+            updateRegistry = updateState == .twoListings
+                ? SourceRegistry(sources: [UpdatesUITestSource(), UpdatesUITestAltSource()])
+                : SourceRegistry(sources: [UpdatesUITestSource()])
         }
 #endif
         let composed = AppComposition(defaults: defaults, directory: directory,
@@ -98,6 +104,7 @@ struct Manga_ReaderApp: App {
         _account = StateObject(wrappedValue: composed.account)
         _sourcePreferences = StateObject(wrappedValue: composed.sourcePreferences)
         _fulfillment = StateObject(wrappedValue: composed.fulfillment)
+        _registry = StateObject(wrappedValue: composed.registry)
         scheduler.register()
     }
 
@@ -129,6 +136,7 @@ struct Manga_ReaderApp: App {
                 .environmentObject(account)
                 .environmentObject(sourcePreferences)
                 .environmentObject(fulfillment)
+                .environmentObject(registry)
                 .preferredColorScheme(appearance.colorScheme)
                 // `onChange` does not fire for the initial value, so launch needs its
                 // own start. `start()` is idempotent, so the `.active` case below
@@ -235,6 +243,11 @@ enum UpdatesUITestFixture {
         case notChecked = "not-checked"
         case refreshComplete = "refresh-complete"
         case updatesFilter = "updates-filter"
+        /// One Work carrying two Listings, for the detail-page source picker (ADR-0004).
+        /// Reached through the same `-uitest-updates-state` argument: the flag's name
+        /// predates its second use, and one seeding path with isolated storage is worth
+        /// more than a tidier spelling.
+        case twoListings = "two-listings"
     }
 
     static var state: State? {
@@ -272,6 +285,15 @@ enum UpdatesUITestFixture {
                                            rawNumbers: ["1"], now: .now)
             _ = composition.updates.absorb(workId: workId, listing: listing,
                                            rawNumbers: ["1", "2"], now: .now)
+        case .twoListings:
+            // A second source's copy of the same manga, merged onto the same Work — which
+            // is the shape entity resolution leaves behind when two sources converge, and
+            // the only shape in which the picker has anything to offer.
+            let alternate = Manga(id: "alt-fixture", sourceId: UpdatesUITestAltSource.sourceID,
+                                  title: "Fixture Update Title", description: "",
+                                  status: "ongoing", year: nil, coverURL: nil, malId: nil)
+            let alternateWork = composition.works.mint(from: alternate)
+            composition.works.merge(alternateWork, into: workId)
         }
     }
 }
@@ -289,6 +311,26 @@ struct UpdatesUITestSource: MangaSource {
     }
     func chapters(mangaId: String) async throws -> [Chapter] {
         [Chapter(id: "fixture-chapter", number: "1", title: nil)]
+    }
+    func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
+}
+
+/// The second source behind the two-listing fixture. It carries **more** chapters than
+/// `UpdatesUITestSource` on purpose: the ranking then has a real winner, so a picker that
+/// silently ignored the counts would still look right and this fixture would prove nothing.
+struct UpdatesUITestAltSource: MangaSource {
+    static let sourceID = "updates-ui-test-alt"
+
+    let id = sourceID
+    let name = "Alt Fixture"
+
+    func search(title: String, limit: Int, offset: Int) async throws -> [Manga] { [] }
+    func popular(limit: Int, offset: Int) async throws -> [Manga] { [] }
+    func mangaDetail(id: String) async throws -> MangaDetail {
+        MangaDetail(description: "", authors: [], tags: [], contentRating: nil)
+    }
+    func chapters(mangaId: String) async throws -> [Chapter] {
+        (1...3).map { Chapter(id: "alt-chapter-\($0)", number: "\($0)", title: nil) }
     }
     func pageURLs(chapterId: String, preferDataSaver: Bool) async throws -> [URL] { [] }
 }

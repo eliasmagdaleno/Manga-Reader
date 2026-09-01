@@ -55,11 +55,50 @@ final class SourcePreferenceUITests: XCTestCase {
         attach(app, name: "02-preferred-source-chosen")
     }
 
-    private func launch() -> XCUIApplication {
+    /// The detail-page picker, on a Work that genuinely has two Listings. Until this
+    /// fixture existed the picker had no device-level evidence at all: its logic was unit
+    /// tested and the wiring compiled, but nothing had ever drawn the menu.
+    func testDetailPageOffersTheWorksOtherListing() throws {
+        let app = launch(state: "two-listings")
+
+        app.tabBars.buttons["Library"].tap()
+        let title = app.staticTexts["Fixture Update Title"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 10),
+                      "the two-listing fixture should be saved to the library")
+        title.tap()
+
+        let picker = app.buttons["sourcePicker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 10),
+                      "a Work with two Listings should offer a source picker")
+        attach(app, name: "03-detail-source-picker")
+    }
+
+    /// Opening the menu shows both Listings and says what each carries. The counts are the
+    /// whole reason the picker is worth opening — they are what the ranking decided on.
+    func testThePickerNamesBothSourcesAndTheirChapterCounts() throws {
+        let app = launch(state: "two-listings")
+
+        app.tabBars.buttons["Library"].tap()
+        let title = app.staticTexts["Fixture Update Title"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 10))
+        title.tap()
+
+        let picker = app.buttons["sourcePicker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 10))
+        picker.tap()
+
+        XCTAssertTrue(app.buttons["Alt Fixture · 3 chapters"].waitForExistence(timeout: 10),
+                      "the menu should name the other Listing and its chapter count")
+        XCTAssertTrue(app.buttons["Update Fixture · 1 chapter"].exists,
+                      "a one-chapter Listing should read as singular")
+        attach(app, name: "04-detail-source-picker-open")
+    }
+
+    private func launch(state: String = "not-checked") -> XCUIApplication {
         let app = XCUIApplication()
         // Reuses the deterministic fixture the update tests launch with, so this never
         // depends on a live source request.
-        app.launchArguments += ["-uitest-updates-state", "not-checked"]
+        app.launchArguments += ["-uitest-updates-state", state]
         app.launch()
         return app
     }
