@@ -156,6 +156,16 @@ The app builds and the core reading loop is implemented.
   `UpdateNotifier` posts authorization-gated new-chapter notifications. Update state persists
   in `updates.json` (`UpdateStateStore`); "newly discovered" is tracked separately from
   `isRead` and clearing it never marks anything read.
+- **Fulfillment:** ADR-0004 shipped 2026-08-31 (PRs #116, #118). A Work with more than one
+  Listing is served by a ranked choice, not by whichever source was seen first —
+  `FulfillmentRouter` ranks, `ListingCountCache` supplies the chapter counts ranking needs (24h
+  TTL), and `FulfillmentCoordinator` ties the two to the registry. Two user controls override it:
+  a **primary source** in Settings, which settles *ties only*, and a **per-Work pin** on the
+  detail page, which beats the ranking outright and persists (`SourcePreferenceStore`).
+  Switching genuinely re-fetches — `MangaDetailViewModel.retarget(to:using:)` moves fulfillment
+  while the displayed `Manga` stays put, because ADR-0001 makes the Work the identity and a
+  Listing only one source's copy. A `nil` chapter count means **unknown, never zero**; see
+  ADR-0004 and its amendments for the evidence tiers and the reasoning behind each control.
 - Design/spec/plan for shipped work live in `docs/superpowers/{specs,plans}/`.
 
 Still minimal: no cross-device sync. Content refresh is no longer manual-only (see above);
@@ -194,3 +204,39 @@ fact about location. The cost of forgetting is visible in one `ls`.
 
 The rot this prevents has hit this repository five times; the fifth changed what an agent *did*
 rather than merely what a document said. See `docs/superpowers/handoff/archive/README.md`.
+
+### Document ownership
+
+**Every fact about this project has exactly one owning document. Non-owners link; they never
+restate.**
+
+| Owner | Owns |
+|---|---|
+| `docs/adr/` | Decisions and their reasoning. **Amend, never correct.** |
+| `docs/glossary.md` | Terms. What a word means here. |
+| `CLAUDE.md` | Build and agent conventions, and current implementation state. |
+| `PRODUCT.md` | Intent, users, positioning, and open product questions. |
+| `DESIGN.md` | The visual system — tokens, components, do's and don'ts. |
+| `README.md` | A stranger's first sixty seconds: what this is, a screenshot, how to run it. |
+| `docs/superpowers/handoff/` | What is outstanding *right now* (see "Handoffs" above). |
+
+The failure this prevents is not a document going stale — it is the *same fact stated twice* and
+the two copies diverging, which is three of the five known instances of rot here. A duplicate
+cannot be kept true by diligence; both copies need updating by someone who remembers both exist,
+and the archive convention above records what a rule like that is worth.
+
+So the fix for a stale claim is usually **deletion plus a link**, not a correction. Before adding
+a fact to a document, ask whether that document owns it. If it does not, the fact belongs in the
+owner and this document gets a pointer — or nothing at all.
+
+Two consequences worth stating outright:
+
+- **`README.md` carries no shipped/next/deferred roadmap and no architecture breakdown.** Both
+  were duplicates — of the live handoff and of `CLAUDE.md`'s "Architecture" and "Current state"
+  — and both were wrong when the rule was written: the README still called the extension system
+  "shelved" after it had become the critical path, and still gave build commands for the wrong
+  simulator. Its Features list stays, because *what the app does* is what a stranger came for;
+  it is a description, not an inventory of what has landed.
+- **A decision that lives only in a handoff is not recorded.** Handoffs get archived, and
+  archived handoffs are explicitly never to be worked from. Promote it to an ADR — or to an
+  amendment, if it revises one — while the handoff is still live.

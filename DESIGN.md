@@ -189,6 +189,14 @@ A recessed paper field with restrained halftone dots stands in for unavailable o
 
 Cover art is the primary visual element, framed with a hairline and a soft physical shadow. A two-line serif title maintains rhythm, while optional metadata and unread badges use the stamp and seal vocabulary.
 
+### Source Stamp
+
+An uppercase monospaced stamp names the source currently serving a title, and doubles as the
+control for changing it. It stays stamp-sized while its tappable region grows to the 44-point
+baseline, so the accessible target is larger than the drawn mark. Selection inside its menu is
+carried by a checkmark, never by colour alone. A pinned source is stated in words rather than
+by a change of tint, because a pin is a fact a reader must be able to hear.
+
 ## Do's and Don'ts
 
 ### Do:

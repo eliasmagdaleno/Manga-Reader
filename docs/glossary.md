@@ -192,8 +192,17 @@ WebAssembly VM. Not the extension, and not the API — just what executes it.
 storage). A forever-contract: once extensions exist in the wild, breaking it breaks them all.
 
 **Fulfillment** — choosing *which* Listing to actually read a Work from, when several sources
-have it. Ranked by English chapter completeness, MangaDex breaking ties — see
-[ADR-0004](adr/0004-fulfillment-routing.md).
+have it. Ranked by English chapter completeness; ties go to the reader's **primary source**, and
+to MangaDex when none is set — see [ADR-0004](adr/0004-fulfillment-routing.md).
+
+**Primary source** — the reader's named preference, set in Settings, that settles fulfillment
+**ties only**. Preferring a source's scans is not a claim that it has chapters it lacks, so it
+cannot promote a Listing over a more complete one.
+
+**Pin** — a per-Work choice of Listing, made on the detail page, that beats the ranking outright
+and persists until changed. Distinct from the primary source in both scope and force. A pin whose
+source is no longer registered falls back to the ranking but is **not** deleted, because an
+uninstalled extension is usually temporary and the reader's choice is not.
 
 **Count cache** — the evictable `(sourceId, mangaId) → (English chapter count, fetchedAt)` cache
 that fulfillment ranks on. **Disposable by design**: deleting it costs one default route until the
