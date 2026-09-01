@@ -146,6 +146,16 @@ Carried forward; re-verify any that becomes load-bearing rather than trusting th
   `["Updates"]`). Grep the UI tests before touching any label.
 - **CI is a major version behind local** — `macos-15` → Xcode 16.4 / Swift 6.0 vs local 26.x /
   6.2. Green locally is not evidence for CI on new syntax or newer concurrency inference.
+- **CI's SwiftLint is not this machine's either.** A five-member tuple in a test failed CI on
+  `large_tuple` while local SwiftLint **0.65.0** passed the same file with the same config and
+  exit 0. So a clean local `swiftlint lint` is not evidence for the CI lint job, and the failure
+  arrives only after pushing — same shape as the Swift-version gap, different tool.
+- **A wedged simulator looks exactly like a failing suite.** Three consecutive full-suite runs
+  reported `** TEST FAILED **` with no failing test: the real error was
+  `Application failed preflight checks` / `Busy` from `FBSOpenApplicationServiceErrorDomain`.
+  `xcrun simctl boot "iPhone 17 Pro"` and re-running fixed it. **Do not erase the simulator** to
+  clear this — it holds the seeded fixture, and erasing has already destroyed `works.json` once
+  (see the `sim-data-is-a-fixture` memory).
 - **`project.pbxproj` churns under you** whenever Xcode has the project open. Every `xcp add-file`
   this session produced ~46 lines of unrelated churn; `git checkout` the file and re-run `xcp`,
   which gave a clean 4-line insert each time. Check `git diff --stat` immediately before `git add`.
