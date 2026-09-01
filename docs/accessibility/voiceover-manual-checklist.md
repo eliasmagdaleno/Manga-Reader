@@ -164,16 +164,18 @@ carried by more than one source — the seeded fixture has one (`-uitest-updates
 | 8.5 | Menu rows | Each row reads "<name> · <detail>", and the **current** row announces *selected*. The trait is verified by UI test, so a failure here means VoiceOver is not speaking a selection it can see — worth reporting precisely that way |
 | 8.6 | Choose a different source | The change is announced or the stamp's new label is discoverable without sight; the chapter list re-fetches and the new state is not silent |
 | 8.7 | Dismiss the menu without choosing | Focus returns to the stamp, not to the top of the page |
-| 8.8 | Settings → browse-source list | Each row announces its name **and whether it is the active source** |
-| 8.9 | Settings → preferred-source list | Rows read "<title>, <detail>", carry the button trait, and the selected one announces selected state (`SettingsView.swift:316-321`) |
+| 8.8 | Settings → browse-source list | Each row announces its name **and whether it is the active source** (`SettingsView.swift:135-141`) |
+| 8.9 | Settings → preferred-source list | Rows read "<title>, <detail>", carry the button trait, and the selected one announces selected state (`SettingsView.swift:335-340`) |
 | 8.10 | "No preference" row | Present, reachable, and distinguishable from a named source. It is a real selected row, not an absence — without hearing it there is no way back to the default |
 | 8.11 | Telling the two Settings lists apart | With both lists on screen, their headings make clear which is "switch what I'm browsing" and which is "settle ties". Try reaching each list by the Headings rotor |
 
-**Suspected (8.8):** the browse-source rows are a bare `Button` wrapping an `HStack` with a
-checkmark `Image` and no accessibility treatment at all (`SettingsView.swift:113-129`) — no
-label, no `.isSelected` trait, no identifier — while the preferred-source rows directly below
-have all three. Expect the active source to be indistinguishable by ear, and expect the
-checkmark to read as nothing or as "checkmark".
+**Fixed (8.8), before the pass ran:** the browse-source rows were a bare `Button` around an
+`HStack` — no label, no `.isSelected` trait, no identifier — while the preferred-source rows
+directly below had all three, so the active source was carried by a checkmark image alone and a
+query for a source name matched whichever list came first. Fixed in #123 and covered by
+`testTheBrowseSourceListSaysWhichSourceIsActive`, which was confirmed red beforehand. The row
+stays: the trait is now present, and whether VoiceOver *speaks* it is what this pass decides.
+
 **Resolved (8.5), before the pass ran:** the concern was that the menu's checkmark was
 decoration. It is not — SwiftUI's `Menu` renders `Label(_:systemImage: "checkmark")` as a
 *selected* menu element and supplies the trait itself, confirmed by
