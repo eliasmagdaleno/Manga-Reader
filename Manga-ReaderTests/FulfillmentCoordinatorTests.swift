@@ -71,66 +71,77 @@ final class FulfillmentCoordinatorTests: XCTestCase {
                                preferences: preferences)
     }
 
-    private func standardSetup() -> (WorkStore, SourceRegistry, ListingCountCache,
-                                     SourcePreferenceStore, WorkID) {
+    /// The pieces a preference test needs, as a named bag rather than a tuple --
+    /// five members is past the point where positional destructuring reads.
+    private struct Setup {
+        let works: WorkStore
+        let registry: SourceRegistry
+        let counts: ListingCountCache
+        let preferences: SourcePreferenceStore
+        let workID: WorkID
+    }
+
+    private func standardSetup() -> Setup {
         let works = WorkStore(directory: directory)
         let registry = SourceRegistry(sources: [StubCountingSource(id: "mangadex"),
                                                 StubCountingSource(id: "weebcentral")])
-        let counts = ListingCountCache(directory: directory)
-        let preferences = SourcePreferenceStore(
-            defaults: UserDefaults(suiteName: UUID().uuidString)!)
-        return (works, registry, counts, preferences, workWithBothListings(works))
+        return Setup(works: works,
+                     registry: registry,
+                     counts: ListingCountCache(directory: directory),
+                     preferences: SourcePreferenceStore(
+                        defaults: UserDefaults(suiteName: UUID().uuidString)!),
+                     workID: workWithBothListings(works))
     }
 
     /// The reader's primary source settles the tie, in place of MangaDex.
     func testThePrimarySourceDecidesTiesInTheRanking() {
-        let (works, registry, counts, preferences, workID) = standardSetup()
-        counts.record(120, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
-        counts.record(120, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
-        preferences.primarySourceId = "weebcentral"
+        let setup = standardSetup()
+        setup.counts.record(120, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
+        setup.counts.record(120, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
+        setup.preferences.primarySourceId = "weebcentral"
 
-        let coordinator = coordinator(works, registry, counts, preferences)
+        let coordinator = coordinator(setup.works, setup.registry, setup.counts, setup.preferences)
 
-        XCTAssertEqual(coordinator.candidates(for: workID).first?.key.sourceId,
+        XCTAssertEqual(coordinator.candidates(for: setup.workID).first?.key.sourceId,
                        "weebcentral")
     }
 
     /// A per-title pick beats the ranking outright. The reader looked at this manga
     /// and chose; the app must not talk them out of it because a count moved.
     func testAPerWorkChoiceDecidesWhatOpensEvenWhenRankedLower() {
-        let (works, registry, counts, preferences, workID) = standardSetup()
-        counts.record(400, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
-        counts.record(10, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
+        let setup = standardSetup()
+        setup.counts.record(400, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
+        setup.counts.record(10, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
 
         let chosen = ListingKey(sourceId: "weebcentral", mangaId: "one-piece")
-        preferences.choose(chosen, for: workID)
+        setup.preferences.choose(chosen, for: setup.workID)
 
-        XCTAssertEqual(coordinator(works, registry, counts, preferences)
-            .chosenListing(for: workID), chosen)
+        XCTAssertEqual(coordinator(setup.works, setup.registry, setup.counts, setup.preferences)
+            .chosenListing(for: setup.workID), chosen)
     }
 
     /// Without a pick, the ranking decides — the ordinary case.
     func testWithoutAChoiceTheRankingDecidesWhatOpens() {
-        let (works, registry, counts, preferences, workID) = standardSetup()
-        counts.record(400, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
-        counts.record(10, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
+        let setup = standardSetup()
+        setup.counts.record(400, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
+        setup.counts.record(10, for: ListingKey(sourceId: "weebcentral", mangaId: "one-piece"))
 
-        XCTAssertEqual(coordinator(works, registry, counts, preferences)
-            .chosenListing(for: workID)?.sourceId, "mangadex")
+        XCTAssertEqual(coordinator(setup.works, setup.registry, setup.counts, setup.preferences)
+            .chosenListing(for: setup.workID)?.sourceId, "mangadex")
     }
 
     /// A pinned Listing whose source is gone — the reader deleted the extension, or
     /// adult gating hid it — must not strand the Work on a dead end. The ranking
     /// takes over, and the pin is left alone in case the source comes back.
     func testAChoiceOnAnUnregisteredSourceFallsBackToTheRanking() {
-        let (works, _, counts, preferences, workID) = standardSetup()
+        let setup = standardSetup()
         let mangaDexOnly = SourceRegistry(sources: [StubCountingSource(id: "mangadex")])
-        counts.record(400, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
-        preferences.choose(ListingKey(sourceId: "weebcentral", mangaId: "one-piece"),
-                           for: workID)
+        setup.counts.record(400, for: ListingKey(sourceId: "mangadex", mangaId: "op"))
+        setup.preferences.choose(ListingKey(sourceId: "weebcentral", mangaId: "one-piece"),
+                           for: setup.workID)
 
-        let chosen = coordinator(works, mangaDexOnly, counts, preferences)
-            .chosenListing(for: workID)
+        let chosen = coordinator(setup.works, mangaDexOnly, setup.counts, setup.preferences)
+            .chosenListing(for: setup.workID)
 
         XCTAssertEqual(chosen?.sourceId, "mangadex")
     }
