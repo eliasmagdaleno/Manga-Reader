@@ -48,6 +48,13 @@ struct AppComposition {
     let sourcePreferences: SourcePreferenceStore
     let fulfillment: FulfillmentCoordinator
 
+    /// The registry this graph was built with — `SourceRegistry.shared` in production, an
+    /// injected one under a UI-test fixture. Exposed because views were reaching for the
+    /// singleton directly, which is correct in production and silently wrong whenever the
+    /// graph was built with a different registry: source lookups missed, names fell back to
+    /// raw ids, and the detail page resolved a source it could not reach.
+    let registry: SourceRegistry
+
     /// The AniList pool's two caches (ADR-0011). Held here, not built inside `makeProvider`,
     /// because both are **actors whose state must outlive a rail build**: `AniListPoolStore`
     /// holds the in-flight refresh and the superseded-seeds guard, and a fresh instance per
@@ -314,8 +321,9 @@ struct AppComposition {
         self.account = accountStore
         self.malProgress = malProgress
         self.malOutbox = outbox
+        self.registry = registry ?? .shared
         (self.listingCounts, self.sourcePreferences, self.fulfillment) =
-            Self.makeFulfillment(works: wk, registry: registry ?? .shared, defaults: defaults)
+            Self.makeFulfillment(works: wk, registry: self.registry, defaults: defaults)
     }
 
     /// Fulfillment's three pieces (ADR-0004). Extracted from `init` only because it had

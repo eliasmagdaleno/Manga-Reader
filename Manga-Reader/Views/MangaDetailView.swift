@@ -15,6 +15,10 @@ struct MangaDetailView: View {
     @EnvironmentObject private var engine: RecommendationEngine
     @EnvironmentObject private var fulfillment: FulfillmentCoordinator
     @EnvironmentObject private var sourcePreferences: SourcePreferenceStore
+    /// The graph's registry, not the singleton. They are the same object in production and
+    /// different ones under a UI-test fixture, and reading the wrong one made every source
+    /// lookup on this page miss.
+    @EnvironmentObject private var registry: SourceRegistry
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .title) private var coverWidth: CGFloat = 132
     @ScaledMetric(relativeTo: .title) private var coverHeight: CGFloat = 188
@@ -29,7 +33,7 @@ struct MangaDetailView: View {
 
     /// The registered source this manga came from (nil if its source was unregistered).
     private var mangaSource: MangaSource? {
-        SourceRegistry.shared.source(id: manga.sourceId)
+        registry.source(id: manga.sourceId)
     }
 
     private var mangaWebURL: URL? {
@@ -51,9 +55,7 @@ struct MangaDetailView: View {
         return SourcePickerPresentation(
             candidates: candidates,
             current: vm.activeListing,
-            names: Dictionary(uniqueKeysWithValues: SourceRegistry.shared.sources.map {
-                ($0.id, $0.name)
-            }))
+            names: Dictionary(uniqueKeysWithValues: registry.sources.map { ($0.id, $0.name) }))
     }
 
     /// Opens the page on the Listing the reader pinned, if they pinned one.
@@ -63,11 +65,16 @@ struct MangaDetailView: View {
     /// would be surprising. A pin is the reader having said otherwise, on this title, on
     /// purpose (ADR-0004 Amendment 1).
     private func applyPinnedSource() {
+        // Re-resolve the page's own Listing against the graph's registry first. The view
+        // model resolves a source in `init`, which runs before the environment exists, so
+        // it can only reach the singleton there — right in production, wrong under a
+        // fixture, and the failure mode is a detail page that cannot load its chapters.
+        vm.retarget(to: vm.activeListing, using: registry)
         guard let workID,
               let pinned = sourcePreferences.choice(for: workID),
               pinned != vm.activeListing,
-              SourceRegistry.shared.source(id: pinned.sourceId) != nil else { return }
-        vm.retarget(to: pinned)
+              registry.source(id: pinned.sourceId) != nil else { return }
+        vm.retarget(to: pinned, using: registry)
     }
 
     /// Counts the Work's uncounted Listings in the background, so the picker can say how
@@ -88,13 +95,13 @@ struct MangaDetailView: View {
                 isPinned: sourcePreferences.choice(for: workID) != nil,
                 select: { listing in
                     sourcePreferences.choose(listing, for: workID)
-                    vm.retarget(to: listing)
+                    vm.retarget(to: listing, using: registry)
                     vm.load()
                 },
                 useBestAvailable: {
                     sourcePreferences.clearChoice(for: workID)
                     if let best = fulfillment.chosenListing(for: workID) {
-                        vm.retarget(to: best)
+                        vm.retarget(to: best, using: registry)
                         vm.load()
                     }
                 })

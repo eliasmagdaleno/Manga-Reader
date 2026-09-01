@@ -174,6 +174,7 @@ struct SourcePickerStamp: View {
         } label: {
             stamp
         }
+        .accessibilityIdentifier("sourcePicker")
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Choose which source to read this from")
     }
