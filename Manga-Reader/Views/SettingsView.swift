@@ -89,6 +89,21 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 14) {
                         InkSectionHeader("Sources", eyebrow: "Content")
+                        // Labelled because there are now two lists of source names in this
+                        // section. Leaving the first one bare made it the ambiguous one the
+                        // moment the second gained a heading.
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Browse source")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Ink.primary)
+                            Text("Which source Home and Search show.")
+                                .font(.footnote)
+                                .foregroundStyle(Ink.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, Gutter.page)
+
                         VStack(spacing: 0) {
                             let visible = registry.visibleSources(includeAdult: showAdultSources)
                             ForEach(Array(visible.enumerated()), id: \.element.id) { idx, source in
@@ -125,6 +140,9 @@ struct SettingsView: View {
                             .onChange(of: showAdultSources) { _, newValue in
                                 registry.enforceAdultGating(includeAdult: newValue)
                             }
+
+                        PreferredSourcePicker(sources: registry.visibleSources(
+                            includeAdult: showAdultSources))
                     }
 
                     MALAccountSettingsView()
@@ -228,6 +246,82 @@ struct SettingsView: View {
 
 /// Three seal-highlighted cards: System / Light / Dark. The signature control
 /// for the dark-mode feature.
+/// The fulfillment preference (ADR-0004 Amendment 1), which is **not** the browse source
+/// above it. Browsing is "whose feed am I looking at"; this is "when several sources have
+/// the same manga, whose scans do I want". Two lists of source names one after another
+/// would be confusing without the caption saying which question each answers.
+private struct PreferredSourcePicker: View {
+    let sources: [MangaSource]
+    @EnvironmentObject private var preferences: SourcePreferenceStore
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Preferred source")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Ink.primary)
+            Text("When several sources carry the same manga, read it from this one. "
+                 + "It only settles ties — a source with more chapters still wins.")
+                .font(.footnote)
+                .foregroundStyle(Ink.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(spacing: 0) {
+                // "No preference" is a real row rather than an absent selection. Without it
+                // there is no way back to the automatic behaviour once a source is picked,
+                // and the default would be indistinguishable from a deliberate choice.
+                row(title: "No preference", detail: "Prefer MangaDex", isSelected: preferences.primarySourceId == nil) {
+                    preferences.primarySourceId = nil
+                }
+                ForEach(sources, id: \.id) { source in
+                    Divider().overlay(Ink.hairline).padding(.leading, Gutter.page)
+                    row(title: source.name, detail: nil,
+                        isSelected: preferences.primarySourceId == source.id) {
+                        preferences.primarySourceId = source.id
+                    }
+                }
+            }
+            .background(RoundedRectangle(cornerRadius: 14).fill(Ink.surface))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Ink.hairline, lineWidth: 1))
+        }
+        .padding(.horizontal, Gutter.page)
+        .padding(.top, 6)
+    }
+
+    private func row(title: String, detail: String?, isSelected: Bool,
+                     select: @escaping () -> Void) -> some View {
+        Button(action: select) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline)
+                        .foregroundStyle(Ink.primary)
+                    if let detail {
+                        Text(detail)
+                            .font(.caption)
+                            .foregroundStyle(Ink.secondary)
+                    }
+                }
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark").foregroundStyle(Ink.seal)
+                }
+            }
+            .contentShape(Rectangle())
+            .padding(.horizontal, Gutter.page)
+            .padding(.vertical, 15)
+        }
+        .buttonStyle(.plain)
+        // One element, one sentence. Left to itself the row reads as two separate texts
+        // plus a bare checkmark, and the checkmark is the half that carries the state.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(detail.map { "\(title), \($0)" } ?? title)
+        // Namespaced because Settings shows two lists of source names — the browse source
+        // above, this preference below — and a bare name matches the wrong one.
+        .accessibilityIdentifier("preferredSource.\(title)")
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
+    }
+}
+
 private struct AppearancePicker: View {
     @Binding var selection: String
 

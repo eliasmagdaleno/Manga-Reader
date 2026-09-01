@@ -28,6 +28,11 @@ struct Manga_ReaderApp: App {
     @StateObject private var updates: UpdateStateStore
     /// Observable, and injected into the environment for the Settings account section.
     @StateObject private var account: MALAccountStore
+    /// Fulfillment (ADR-0004). Both are observable and both are written from the UI —
+    /// Settings sets the primary source, the detail page pins a Listing — so both belong
+    /// in the environment rather than staying inside the composition.
+    @StateObject private var sourcePreferences: SourcePreferenceStore
+    @StateObject private var fulfillment: FulfillmentCoordinator
 
     /// Plain properties rather than `@StateObject` — neither publishes anything, so a view
     /// that could reach one could only misuse it (ADR-0010). See `AppComposition` for why
@@ -91,6 +96,8 @@ struct Manga_ReaderApp: App {
         _updates = StateObject(wrappedValue: composed.updates)
         _engine = StateObject(wrappedValue: composed.engine)
         _account = StateObject(wrappedValue: composed.account)
+        _sourcePreferences = StateObject(wrappedValue: composed.sourcePreferences)
+        _fulfillment = StateObject(wrappedValue: composed.fulfillment)
         scheduler.register()
     }
 
@@ -120,6 +127,8 @@ struct Manga_ReaderApp: App {
                 .environmentObject(updates)
                 .environmentObject(engine)
                 .environmentObject(account)
+                .environmentObject(sourcePreferences)
+                .environmentObject(fulfillment)
                 .preferredColorScheme(appearance.colorScheme)
                 // `onChange` does not fire for the initial value, so launch needs its
                 // own start. `start()` is idempotent, so the `.active` case below
