@@ -33,6 +33,33 @@ final class SourcePreferenceUITests: XCTestCase {
         attach(app, name: "01-preferred-source-unset")
     }
 
+    /// The *browse*-source list, above the preference. It shipped with no accessibility
+    /// treatment at all while the list below it had all three — so which source you were
+    /// browsing was carried only by a bare checkmark image, and a query for a source name
+    /// matched whichever list came first. Both halves are asserted here because a label
+    /// without the selected trait would still leave the state inaudible.
+    func testTheBrowseSourceListSaysWhichSourceIsActive() throws {
+        let app = launch()
+
+        app.tabBars.buttons["Settings"].tap()
+        let heading = app.staticTexts["Browse source"]
+        XCTAssertTrue(heading.waitForExistence(timeout: 10),
+                      "Settings should offer a browse source")
+        heading.scrollToVisible(in: app)
+
+        let mangaDex = app.buttons["browseSource.MangaDex"]
+        XCTAssertTrue(mangaDex.exists,
+                      "the browse-source list should be reachable by a namespaced identifier")
+        mangaDex.tap()
+        XCTAssertTrue(mangaDex.isSelected,
+                      "the active browse source should report itself selected to assistive tech")
+
+        // The two lists must stay distinguishable: same name, different question.
+        XCTAssertFalse(app.buttons["preferredSource.MangaDex"].isSelected,
+                       "choosing a browse source must not move the fulfillment preference")
+        attach(app, name: "05-browse-source-active")
+    }
+
     /// Choosing one moves the selection, and the copy keeps saying which question this list
     /// answers — Settings shows two lists of source names, and the one above this is the
     /// browse source, which is a different thing entirely.
