@@ -13,6 +13,8 @@ struct MangaDetailView: View {
     @EnvironmentObject private var works: WorkStore
     @EnvironmentObject private var updates: UpdateStateStore
     @EnvironmentObject private var engine: RecommendationEngine
+    @EnvironmentObject private var fulfillment: FulfillmentCoordinator
+    @EnvironmentObject private var sourcePreferences: SourcePreferenceStore
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .title) private var coverWidth: CGFloat = 132
     @ScaledMetric(relativeTo: .title) private var coverHeight: CGFloat = 188
@@ -32,6 +34,74 @@ struct MangaDetailView: View {
 
     private var mangaWebURL: URL? {
         mangaSource?.webURL(forManga: manga.id)
+    }
+
+    // MARK: - Source (ADR-0004)
+
+    /// This manga's Work, once it has one. A Work is minted at a commitment point, so a
+    /// title merely being browsed legitimately has none — and with no Work there are no
+    /// other Listings to offer.
+    private var workID: WorkID? {
+        works.workId(for: ListingKey(manga))
+    }
+
+    private var sourcePicker: SourcePickerPresentation? {
+        guard let workID else { return nil }
+        let candidates = fulfillment.candidates(for: workID)
+        return SourcePickerPresentation(
+            candidates: candidates,
+            current: vm.activeListing,
+            names: Dictionary(uniqueKeysWithValues: SourceRegistry.shared.sources.map {
+                ($0.id, $0.name)
+            }))
+    }
+
+    /// Opens the page on the Listing the reader pinned, if they pinned one.
+    ///
+    /// Only a **pin** redirects, never the ranking. Arriving here means tapping a specific
+    /// card, and silently serving a different source's chapters than the one just tapped
+    /// would be surprising. A pin is the reader having said otherwise, on this title, on
+    /// purpose (ADR-0004 Amendment 1).
+    private func applyPinnedSource() {
+        guard let workID,
+              let pinned = sourcePreferences.choice(for: workID),
+              pinned != vm.activeListing,
+              SourceRegistry.shared.source(id: pinned.sourceId) != nil else { return }
+        vm.retarget(to: pinned)
+    }
+
+    /// Counts the Work's uncounted Listings in the background, so the picker can say how
+    /// many chapters each has. Runs on the detail page and nowhere else: counting the whole
+    /// library eagerly is the strategy ADR-0004 rejects.
+    private func reconcileListingCounts() async {
+        guard let workID else { return }
+        await fulfillment.reconcile(workID)
+    }
+
+    /// The stamp, which becomes a picker only when there is somewhere else to read from.
+    /// One Listing is not a choice, so it renders exactly as it always has.
+    @ViewBuilder
+    private var sourceControl: some View {
+        if let sourcePicker, sourcePicker.offersAChoice, let workID {
+            SourcePickerStamp(
+                presentation: sourcePicker,
+                isPinned: sourcePreferences.choice(for: workID) != nil,
+                select: { listing in
+                    sourcePreferences.choose(listing, for: workID)
+                    vm.retarget(to: listing)
+                    vm.load()
+                },
+                useBestAvailable: {
+                    sourcePreferences.clearChoice(for: workID)
+                    if let best = fulfillment.chosenListing(for: workID) {
+                        vm.retarget(to: best)
+                        vm.load()
+                    }
+                })
+        } else {
+            SourceStamp(sourceID: manga.sourceId,
+                        name: mangaSource?.name ?? manga.sourceId)
+        }
     }
 
     private func clearNewlyDiscovered() {
@@ -80,7 +150,11 @@ struct MangaDetailView: View {
         }
         .background(Ink.background)
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { vm.load() }
+        .onAppear {
+            applyPinnedSource()
+            vm.load()
+        }
+        .task { await reconcileListingCounts() }
         .task { await moreLikeThis.load(for: manga) }
         .task { clearNewlyDiscovered() }
         .onChange(of: vm.detailTags) { _, tags in
@@ -148,8 +222,7 @@ struct MangaDetailView: View {
                 // to the screen edge, matching the genre row below.
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
-                        SourceStamp(sourceID: manga.sourceId,
-                                    name: mangaSource?.name ?? manga.sourceId)
+                        sourceControl
                         if let year = manga.year {
                             InkStamp(text: String(year))
                         }

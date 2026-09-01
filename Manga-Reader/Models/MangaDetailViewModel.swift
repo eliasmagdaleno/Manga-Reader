@@ -11,9 +11,14 @@ final class MangaDetailViewModel: ObservableObject {
 
     let manga: Manga
 
-    /// The source this manga came from. Defaults to the registry's resolution by
-    /// `manga.sourceId`; injectable for tests.
-    private let source: MangaSource
+    /// The source currently being fulfilled from. Starts as this manga's own source and
+    /// moves when the reader picks another (ADR-0004); injectable for tests.
+    private var source: MangaSource
+
+    /// Which Listing chapters are being loaded from. Distinct from `manga`, which stays put:
+    /// ADR-0001 makes the **Work** the manga and a Listing only one source's copy of it, so
+    /// switching source changes where chapters come from, not what the reader is looking at.
+    @Published private(set) var activeListing: ListingKey
 
     @Published var authors: [String] = []
     @Published var description: String = ""
@@ -27,6 +32,18 @@ final class MangaDetailViewModel: ObservableObject {
     init(manga: Manga, source: MangaSource? = nil) {
         self.manga = manga
         self.source = source ?? SourceRegistry.shared.source(for: manga)
+        self.activeListing = ListingKey(manga)
+    }
+
+    /// Points this page at another of the Work's Listings. The caller reloads.
+    ///
+    /// An unregistered source is **refused rather than half-applied**: pointing the page at
+    /// a source it cannot reach would empty the chapter list, which reads as the manga
+    /// having no chapters rather than as the source being unavailable.
+    func retarget(to listing: ListingKey, using registry: SourceRegistry = .shared) {
+        guard let source = registry.source(id: listing.sourceId) else { return }
+        self.source = source
+        self.activeListing = listing
     }
 
     func load() {
@@ -41,14 +58,14 @@ final class MangaDetailViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         do {
-            let detail = try await source.mangaDetail(id: manga.id)
+            let detail = try await source.mangaDetail(id: activeListing.mangaId)
             self.description = detail.description
             self.authors = detail.authors
             self.detailTags = detail.tags
             self.tags = detail.tags.map(\.name)
             self.contentRating = detail.contentRating
 
-            self.chapters = try await source.chapters(mangaId: manga.id)
+            self.chapters = try await source.chapters(mangaId: activeListing.mangaId)
         } catch {
             self.errorMessage = error.localizedDescription
         }

@@ -39,6 +39,15 @@ struct AppComposition {
     /// instance is exactly the kind of thing a test needs to reach to prove the sharing.
     let attempts: UpgradeAttemptMemory
 
+    /// Fulfillment (ADR-0004): which Listing a Work opens with. The count cache is held
+    /// here rather than inside the coordinator for the same reason the limiter and the
+    /// attempt memory are — "one owner of the counts" is only true by construction if there
+    /// is one instance to point at. The preference store is observable and belongs in the
+    /// environment, because both Settings and the detail page write to it.
+    let listingCounts: ListingCountCache
+    let sourcePreferences: SourcePreferenceStore
+    let fulfillment: FulfillmentCoordinator
+
     /// The AniList pool's two caches (ADR-0011). Held here, not built inside `makeProvider`,
     /// because both are **actors whose state must outlive a rail build**: `AniListPoolStore`
     /// holds the in-flight refresh and the superseded-seeds guard, and a fresh instance per
@@ -305,6 +314,25 @@ struct AppComposition {
         self.account = accountStore
         self.malProgress = malProgress
         self.malOutbox = outbox
+        (self.listingCounts, self.sourcePreferences, self.fulfillment) =
+            Self.makeFulfillment(works: wk, registry: registry ?? .shared, defaults: defaults)
+    }
+
+    /// Fulfillment's three pieces (ADR-0004). Extracted from `init` only because it had
+    /// grown past the body-length limit; the wiring itself is ordinary.
+    ///
+    /// The count cache takes no `directory`: chapter counts are disposable and belong in
+    /// `Caches/` rather than beside the authoritative stores, so it keeps its own default.
+    private static func makeFulfillment(
+        works: WorkStore,
+        registry: SourceRegistry,
+        defaults: UserDefaults
+    ) -> (ListingCountCache, SourcePreferenceStore, FulfillmentCoordinator) {
+        let counts = ListingCountCache()
+        let preferences = SourcePreferenceStore(defaults: defaults)
+        return (counts, preferences,
+                FulfillmentCoordinator(works: works, registry: registry,
+                                       counts: counts, preferences: preferences))
     }
 }
 
