@@ -2,6 +2,7 @@
 
 **Date:** 2026-09-01
 **Status:** Research input, not a design
+**Verified against:** `4f6e140`
 
 This document inventories the source-facing behavior present in the code. It does not choose a
 JavaScript API, extension format, compatibility policy, or final capability surface. The substrate
@@ -338,7 +339,7 @@ Each item below is intentionally a question, not a proposed answer.
     for refresh, while a missing per-Work pinned Source falls back without deleting the pin
     (`Manga-Reader/Models/MangaSource.swift:19-20`,
     `Manga-Reader/Services/SourceRegistry.swift:67-82`,
-    `docs/glossary.md:17-18`, `docs/glossary.md:31-34`, `docs/glossary.md:202-205`). Who allocates and
+    [glossary](../../glossary.md) terms **Listing**, **Listing key**, and **Pin**). Who allocates and
     validates ids, what prevents two installed Extensions from claiming the same one, may an update
     rename it, and how do disablement, uninstall, reinstall, or repository replacement affect
     existing Listings and pins?
