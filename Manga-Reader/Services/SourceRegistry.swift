@@ -87,6 +87,13 @@ final class SourceRegistry: ObservableObject {
         sources.filter { includeAdult || !$0.isNSFW }
     }
 
+    /// Whether any registered source serves adult content, and therefore whether the
+    /// "show adult sources" control has anything to gate. False in the release build by
+    /// ADR-0022 — the adult source is never merged — which is what hides that control.
+    var hasAdultSource: Bool {
+        sources.contains(where: \.isNSFW)
+    }
+
     /// Enforce adult gating: if adult sources are now hidden but the active browse source is
     /// adult, fall back to the first non-adult source. Call when the "show adult" flag changes.
     func enforceAdultGating(includeAdult: Bool) {

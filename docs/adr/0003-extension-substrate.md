@@ -1,7 +1,9 @@
 # ADR-0003 — Extensions are JavaScript: JavaScriptCore for logic, WKWebView for fetching
 
-- **Status:** Accepted in principle (2026-07-24); host API undesigned
-- **Related:** ADR-0001, ADR-0002, ADR-0004
+- **Status:** Accepted in principle (2026-07-24); host API undesigned. **Amendment 1 below
+  narrows "ship zero built-in aggregator sources": MangaDex stays built in as the resolution
+  bridge, and extensions are additive.**
+- **Related:** ADR-0001, ADR-0002, ADR-0004, ADR-0016, ADR-0022
 
 ## Context
 
@@ -67,3 +69,30 @@ This ADR is **third** in the build order, deliberately. Per ADR-0001 and ADR-000
 identity is buildable today against the two existing sources, and the extension system exists to
 make that identity *pay off at scale*. Building extensions first, before Works exist, means every
 new source multiplies duplicate entries with nothing to reconcile them.
+
+## Amendment 1 — MangaDex stays built in (2026-08-31)
+
+"Ship zero built-in aggregator sources" above is **narrowed**: the app ships with MangaDex
+registered, and the empty-reader posture applies to every *other* source.
+
+The reason is not convenience. ADR-0016 makes MangaDex the **resolution bridge** — it is the one
+source whose entries carry `links.mal`, which is what lets the app know that a title here and a
+title there are the same manga. For You, More Like This and MyAnimeList progress sync are all
+built on top of that bridge. An install with no MangaDex is not an empty reader; it is a reader
+with recommendations that silently return nothing and a MAL list that never moves, and the reader
+has no way to know that installing one particular extension is what would fix it.
+
+The original consequence was reasoned from a takedown argument — copyright complaints being the
+likelier vector for reader apps than guideline 2.5.2. That argument still stands, and this
+amendment does not weaken it: MangaDex is an API with public documentation and a required
+attribution, which the app carries, and it is the source the app is already named around in its
+own README.
+
+So **extensions are additive**. The built-in set is the bridge and nothing more; everything a
+reader adds, they add themselves. If the bridge is ever replaced — a metadata provider that does
+not need a chapter source attached — this narrowing should be revisited rather than inherited.
+
+This was decided during the fulfillment work and recorded only in a session handoff, which under
+`CLAUDE.md`'s document-ownership rule is not a record at all: handoffs are archived, and archived
+handoffs are explicitly never to be worked from. Phase 2's host API design will amend this ADR
+again, and that amendment should assume MangaDex is present.
