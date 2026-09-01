@@ -2,7 +2,7 @@
 
 Date: 2026-08-31 (late)
 Repository: `/Users/eliasmagdaleno/Manga-Reader`
-Branches: `feature/fulfillment-routing` (PR #116, open) and `docs/handoff-source-picker` (this).
+Branch: `docs/handoff-source-picker`, off `main` at `a89a072`.
 
 **This is the live handoff, and it is the whole of what is outstanding.** Writing a new one means
 `git mv`-ing this into `archive/` first and carrying forward whatever below is still true
@@ -30,7 +30,7 @@ extension that takes *configuration*, not one-extension-per-site.
 
 **PR #115, merged** (`57b2ec5`) — the launch roadmap.
 
-**PR #116, open** — the source picker's entire logic layer, TDD'd, six commits:
+**PR #116, merged** (`a89a072`) — the source picker's entire logic layer, TDD'd, seven commits:
 
 | Type | Role |
 |---|---|
@@ -168,8 +168,7 @@ Carried forward; re-verify any that becomes load-bearing rather than trusting th
 
 ## Repository state
 
-- `main` at `57b2ec5`. `feature/fulfillment-routing` is six commits ahead of `bf3ac42`
-  (PR #116, CI pending at the time of writing). This branch carries only the handoff.
+- `main` at `a89a072`, with both this session's PRs merged. This branch carries only the handoff.
 - `gh issue list`: **#90 only**.
 - Unit suite: **638 pass, 0 failures**, 2 skipped.
 - `docs/superpowers/handoff/` holds this file and `archive/` (69 archived handoffs plus its
