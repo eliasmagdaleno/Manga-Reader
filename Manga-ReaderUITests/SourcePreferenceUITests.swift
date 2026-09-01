@@ -121,6 +121,36 @@ final class SourcePreferenceUITests: XCTestCase {
         attach(app, name: "04-detail-source-picker-open")
     }
 
+    /// Which row you are already reading from is drawn as a checkmark image, and the
+    /// question was whether that glyph reaches assistive tech at all. It does: SwiftUI's
+    /// `Menu` renders `Label(_:systemImage: "checkmark")` as a *selected* menu element and
+    /// supplies the trait itself, so no explicit `.accessibilityAddTraits` is needed — this
+    /// was checked by adding one and finding the test green without it.
+    ///
+    /// The test stays, because that is a framework behaviour nothing in this repo controls:
+    /// if a future SwiftUI stops supplying it, or someone swaps the `Label` for a `Text` and
+    /// a hand-drawn image, the checkmark silently becomes decoration. Exactly one row may
+    /// claim the trait — two would be worse than none.
+    func testThePickerMenuSaysWhichSourceIsAlreadyInUse() throws {
+        let app = launch(state: "two-listings")
+
+        app.tabBars.buttons["Library"].tap()
+        let title = app.staticTexts["Fixture Update Title"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 10))
+        title.tap()
+
+        let picker = app.buttons["sourcePicker"]
+        XCTAssertTrue(picker.waitForExistence(timeout: 10))
+        picker.tap()
+
+        let rows = [app.buttons["Alt Fixture · 3 chapters"],
+                    app.buttons["Update Fixture · 1 chapter"]]
+        XCTAssertTrue(rows[0].waitForExistence(timeout: 10))
+        XCTAssertEqual(rows.filter(\.isSelected).count, 1,
+                       "exactly one menu row should report itself selected")
+        attach(app, name: "06-picker-menu-selection")
+    }
+
     private func launch(state: String = "not-checked") -> XCUIApplication {
         let app = XCUIApplication()
         // Reuses the deterministic fixture the update tests launch with, so this never
