@@ -161,7 +161,7 @@ carried by more than one source — the seeded fixture has one (`-uitest-updates
 | 8.2 | The source stamp, pinned | The same label ends in "pinned". A pin must be *audible*, not conveyed by tint alone (`SourceBranding.swift:209`) |
 | 8.3 | Stamp target size | The stamp is drawn at ~22pt but claims 44pt. Focus it and confirm the VoiceOver cursor frame is the taller region, not the drawn mark (`SourceBranding.swift:203`) |
 | 8.4 | Open the menu | Focus moves into the menu; the "Read from" section header is announced, not skipped |
-| 8.5 | Menu rows | Each row reads "<name> · <detail>". The **current** row is distinguished audibly — the checkmark must reach VoiceOver, since `Label(_:systemImage:)` is the only thing separating it (`SourceBranding.swift:160-162`) |
+| 8.5 | Menu rows | Each row reads "<name> · <detail>", and the **current** row announces *selected*. The trait is verified by UI test, so a failure here means VoiceOver is not speaking a selection it can see — worth reporting precisely that way |
 | 8.6 | Choose a different source | The change is announced or the stamp's new label is discoverable without sight; the chapter list re-fetches and the new state is not silent |
 | 8.7 | Dismiss the menu without choosing | Focus returns to the stamp, not to the top of the page |
 | 8.8 | Settings → browse-source list | Each row announces its name **and whether it is the active source** |
@@ -174,7 +174,12 @@ checkmark `Image` and no accessibility treatment at all (`SettingsView.swift:113
 label, no `.isSelected` trait, no identifier — while the preferred-source rows directly below
 have all three. Expect the active source to be indistinguishable by ear, and expect the
 checkmark to read as nothing or as "checkmark".
-**Suspected (8.5):** the same checkmark-only pattern, in the menu.
+**Resolved (8.5), before the pass ran:** the concern was that the menu's checkmark was
+decoration. It is not — SwiftUI's `Menu` renders `Label(_:systemImage: "checkmark")` as a
+*selected* menu element and supplies the trait itself, confirmed by
+`testThePickerMenuSaysWhichSourceIsAlreadyInUse`. Adding an explicit `.accessibilityAddTraits`
+changed nothing, so none was kept. The row stays because a trait being present is not the same
+as VoiceOver speaking it, and that is what a device pass is for.
 
 ---
 
