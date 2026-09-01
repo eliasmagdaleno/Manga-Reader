@@ -23,8 +23,9 @@ The product unifies multiple chapter sources around source-independent Works whi
 - Readers browse personalized and source-specific feeds, search within a selected source, inspect a title, and read chapters in left-to-right, right-to-left, or continuous vertical modes.
 - Readers save manga to an on-device library, use unread indicators to notice new chapters, and resume from reading history at the last recorded page.
 - Readers may switch between registered content sources. Adult sources are hidden unless explicitly enabled in Settings.
+- When more than one source carries the same manga, the product chooses one on the reader's behalf rather than asking, and explains which. Readers may name a primary source that settles otherwise-equal choices, or pin a single title to a single source, which holds until they change it. A source that cannot be counted is never treated as a source that carries nothing.
 - MyAnimeList sign-in and reading-progress synchronization are optional.
-- Content refresh is currently user-initiated. The intended public product will refresh the Library in the background at a reasonable cadence and notify readers when saved manga receive new chapters; the delivery mechanism and freshness guarantee remain open decisions.
+- The Library refreshes in the background at a system-scheduled cadence and on foreground activation, and readers may opt in to notifications when saved manga receive new chapters. Newly discovered chapters are tracked separately from read state, so clearing the indication never marks anything read.
 - Home is a deliberate blend: actionable personal updates take precedence when present, followed by personalized recommendations and then source-wide discovery feeds.
 
 ## Capabilities and Constraints
