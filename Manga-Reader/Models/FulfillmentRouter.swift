@@ -69,6 +69,23 @@ enum FulfillmentRouter {
         }
     }
 
+    /// The ADR's step 1: how many *distinct* chapters a Listing actually carries.
+    ///
+    /// Deduplication is `ChapterOrdinal`'s, not a second implementation — several
+    /// scanlation groups upload the same chapter, and sources relabel `"07"` as
+    /// `"7"`; only the numeric value is identity, so both collapse to one chapter.
+    /// Counting rows would hand every comparison to the most duplicated source.
+    ///
+    /// Unnumbered entries ("Oneshot", "Extra") are deliberately excluded. They are
+    /// readable chapters, but they are not *comparable* ones: one site's "Oneshot"
+    /// is another's "Chapter 0", and counting free-text labels would make
+    /// completeness depend on labelling style rather than on availability.
+    static func distinctChapterCount(_ chapters: [Chapter]) -> Int {
+        var frontier = ChapterFrontier()
+        frontier.seed(chapters.map(\.number))
+        return frontier.known.count
+    }
+
     /// The tiebreak at equal completeness: MangaDex, then registration order.
     /// MangaDex-first is a **quality** preference (better scans, better metadata,
     /// no ads), not an availability one — which is why it never outranks a source

@@ -93,4 +93,35 @@ final class FulfillmentRoutingTests: XCTestCase {
 
         XCTAssertEqual(ranked.map(\.key.sourceId), ["weebcentral", "mangadex"])
     }
+
+    // MARK: - Counting
+
+    private func chapter(_ number: String) -> Chapter {
+        Chapter(id: UUID().uuidString, number: number, title: nil, date: nil)
+    }
+
+    /// The ADR's step 1 says *distinct* chapters, and a chapter list is full of
+    /// duplicates: multiple scanlation groups upload the same chapter, and sources
+    /// relabel `"07"` as `"7"`. Counting rows instead of chapters would let the
+    /// most duplicated source win every comparison.
+    func testCountsDistinctChaptersNotRows() {
+        let count = FulfillmentRouter.distinctChapterCount([
+            chapter("7"), chapter("07"), chapter("7"), chapter("8")
+        ])
+
+        XCTAssertEqual(count, 2)
+    }
+
+    /// Unnumbered entries — "Oneshot", "Extra", "Special" — are readable chapters
+    /// but they are **not comparable across sources**: one site's "Oneshot" is
+    /// another's "Chapter 0", and free-text labels never line up. Counting them
+    /// would make the completeness comparison depend on labelling style, so the
+    /// count is of numbered chapters only.
+    func testUnnumberedEntriesDoNotCountTowardCompleteness() {
+        let count = FulfillmentRouter.distinctChapterCount([
+            chapter("1"), chapter("Oneshot"), chapter("Extra")
+        ])
+
+        XCTAssertEqual(count, 1)
+    }
 }
