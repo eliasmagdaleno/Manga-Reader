@@ -110,6 +110,7 @@ struct SettingsView: View {
                                 if idx > 0 {
                                     Divider().overlay(Ink.hairline).padding(.leading, Gutter.page)
                                 }
+                                let isActive = source.id == registry.activeSourceID
                                 Button {
                                     registry.activeSourceID = source.id
                                 } label: {
@@ -118,7 +119,7 @@ struct SettingsView: View {
                                             .font(.subheadline)
                                             .foregroundStyle(Ink.primary)
                                         Spacer()
-                                        if source.id == registry.activeSourceID {
+                                        if isActive {
                                             Image(systemName: "checkmark").foregroundStyle(Ink.seal)
                                         }
                                     }
@@ -127,6 +128,17 @@ struct SettingsView: View {
                                     .padding(.vertical, 15)
                                 }
                                 .buttonStyle(.plain)
+                                // Same treatment as the preferred-source rows below, which
+                                // had it from the start. Left bare, this row reads as a name
+                                // and a stray checkmark — and the checkmark is the half
+                                // carrying which source you are actually browsing.
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(source.name)
+                                // Namespaced for the same reason the list below is: two lists
+                                // of the same source names, and a bare name matches whichever
+                                // comes first.
+                                .accessibilityIdentifier("browseSource.\(source.name)")
+                                .accessibilityAddTraits(isActive ? [.isSelected, .isButton] : .isButton)
                             }
                         }
                         .background(RoundedRectangle(cornerRadius: 14).fill(Ink.surface))
