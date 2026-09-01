@@ -162,5 +162,6 @@ Carried forward; re-verify any that becomes load-bearing rather than trusting th
   (PR #116, CI pending at the time of writing). This branch carries only the handoff.
 - `gh issue list`: **#90 only**.
 - Unit suite: **638 pass, 0 failures**, 2 skipped.
-- `docs/superpowers/handoff/` holds this file and `archive/` (69 files). Two `.md` files here
+- `docs/superpowers/handoff/` holds this file and `archive/` (69 archived handoffs plus its
+  README). Two `.md` files here
   means someone skipped the rule.
