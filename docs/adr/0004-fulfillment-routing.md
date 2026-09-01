@@ -1,6 +1,9 @@
 # ADR-0004 — Fulfillment: most complete English chapter run wins; MangaDex breaks ties
 
-- **Status:** Accepted, with a required fallback (2026-07-24)
+- **Status:** Accepted, with a required fallback (2026-07-24). **Amended 2026-08-31 —
+  Amendment 1 below replaces the MangaDex tiebreak with a reader-chosen primary source, and makes
+  the per-Work override sticky.** The ranking itself is unchanged; read Amendment 1 for the
+  tiebreak
 - **Related:** ADR-0001 (Work vs Listing), ADR-0002 (catalog), ADR-0005 (manual link override),
   ADR-0007 (Work shape — the cached counts this ADR ranks on live in a separate, evictable store;
   a missing count means *unknown*, never zero)
@@ -90,3 +93,56 @@ The provider total therefore *refines* the ranking when available; it is never r
   be considered. Routing quality is bounded by resolution quality.
 - The chosen Listing should be **visible and overridable in the UI**. An automatic choice the
   user cannot see or change is indistinguishable from a bug when it picks badly.
+
+---
+
+## Amendment 1 — the tiebreak is the reader's, and their override sticks (2026-08-31)
+
+The original text above stands in full except for the tiebreak, which this replaces. Nothing about
+completeness ranking changes: step 1 and step 2 are exactly as written.
+
+### What prompted it
+
+This ADR already said the chosen Listing "should be **visible and overridable in the UI** — an
+automatic choice the user cannot see or change is indistinguishable from a bug when it picks
+badly." Building that raised the question the original left open: **does an override survive the
+visit?**
+
+Transient overriding satisfies the letter of the sentence above and is cheaper. It was rejected.
+A reader who deliberately switches to WeebCentral because they prefer those scans, and finds the
+app back on MangaDex tomorrow because a count moved, experiences that as breakage rather than as
+policy — which is the exact failure the original sentence set out to prevent.
+
+Paperback is the reference point here, and the reason its model works is that it separates two
+different statements a reader can make.
+
+### Decision
+
+**Two preferences, composing, both beating the built-in default and neither beating completeness.**
+
+1. **A primary source** — "when several sources have a manga, prefer this one." It replaces
+   MangaDex in step 3. MangaDex remains the default *until a reader chooses*, because a reader who
+   has chosen has said something more specific than the app's built-in guess.
+2. **A per-Work choice** — "for *this* manga, read it here." It beats the ranking outright, and it
+   persists.
+
+The quality/availability split from the original decision governs both. Preferring a source's
+scans is not a claim that it carries chapters it does not have, so **a primary source settles ties
+only** and never lifts a less complete Listing above a more complete one. A per-Work choice is
+different in kind: it is the reader looking at *this* title and deciding, so it outranks the
+ranking rather than tiebreaking within it.
+
+### Consequences
+
+- **A pin whose source is no longer registered falls back to the ranking, but is not deleted.**
+  An extension can be removed and adult gating can be switched off; both are reversible. Silently
+  discarding a stated preference because something was temporarily unavailable is how an app loses
+  a user's settings.
+- **Clearing a choice clears it** rather than pinning the ranking's current answer. A reader
+  switching back is saying "stop overriding", and the two readings diverge the moment a better
+  Listing appears.
+- **The store holds no default.** `primarySourceId` is `nil` until chosen; the fallback to MangaDex
+  lives in the router alone, because naming the same default in two places is two places to drift.
+- **The learned-reliability idea in the original consequences is now cheaper to build, not
+  harder.** Per-Work pins are exactly the "switch events" that section wanted to learn from, and
+  they are now durable rather than lost at dismissal. Still unbuilt, still optional.
