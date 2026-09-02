@@ -96,3 +96,101 @@ This was decided during the fulfillment work and recorded only in a session hand
 `CLAUDE.md`'s document-ownership rule is not a record at all: handoffs are archived, and archived
 handoffs are explicitly never to be worked from. Phase 2's host API design will amend this ADR
 again, and that amendment should assume MangaDex is present.
+
+## Amendment 2 — the Host API is declarative, capability-based, and configuration-first (2026-09-02)
+
+The substrate decision above stands. This amendment settles the architectural boundary that the
+original ADR deliberately left undesigned. The versioned wire contract is specified in the
+[Phase 2 Host API design](../superpowers/specs/2026-09-02-host-api-design.md); this amendment owns
+the decisions and their reasons.
+
+### Context
+
+The first extension cannot define the architecture by accident. Paperback's catalog evidence shows
+that most sources are instances of reusable site themes: 55 generic-theme sites and 23 bespoke
+ones, with Madara alone accounting for 29 sites. A design in which every installed Source must be a
+separate hand-written program would make configuration masquerade as code, multiply review and
+update work, and prevent a theme fix from repairing every site that uses it.
+
+The existing Swift seam also cannot simply be exported. It mixes discovery metadata, UI copy,
+optional behavior inferred in several ways, Foundation values, source-specific pagination, and an
+unbounded `throws` channel. `SourceContext` exposes no plain HTTP capability, while its WebView
+capability accepts a Swift metatype and returns a decoded Swift value. Those are useful internal
+seams, not a stable cross-runtime contract.
+
+### Decision
+
+**An Extension is an engine; a Source is a manifest-declared, configured instance of that engine.**
+One installed bundle may declare many Sources and may apply one executable theme engine to many
+configuration records. Source identity, display metadata, adult classification, supported
+operations, language behavior, allowed origins, and presentation hints are declarative. The host
+can therefore inspect, gate, and register a Source without executing untrusted code. Executable
+entry points implement only the operations declared for that Source and receive its immutable
+configuration as invocation context.
+
+**The Host API is a versioned message boundary, not a projection of `MangaSource`.** Requests,
+results, and failures cross as JSON-compatible values validated by the host. The host owns mapping
+to Swift domain types, source-id stamping, input validation, URL policy, and user-facing error
+copy. Optional behavior is declared, never discovered by calling code and waiting for an
+unsupported error. Compatibility is negotiated from an Extension-declared Host API range; no
+best-effort execution occurs when the ranges do not intersect.
+
+**Host services are explicit capabilities with least authority.** Version 1 exposes plain HTTP,
+browser extraction, bounded key/value storage, and redacted structured logging. Network access is
+restricted to manifest-declared HTTPS origins. Browser identity and cookies are host-owned and
+partitioned by Source plus origin; an Extension cannot set the browser user agent or access another
+Source's browser state. Secrets and arbitrary filesystem access are not part of version 1.
+
+**The host schedules and bounds all work.** Extensions may not create detached host operations.
+Cancellation ends the invocation and invalidates later callbacks. HTTP concurrency, origin rate,
+response size, browser occupancy, script time, and image prefetch width are host-enforced budgets;
+manifest values are requests within host clamps, not authority. Exact numeric defaults are tuning
+policy and require measurement, so they are not frozen into this ADR.
+
+**Interactive browser work is foreground-only.** A background invocation that encounters a
+challenge returns a distinct interaction-required outcome without presenting UI. A foreground
+caller may retry and the host identifies the Source and origin before showing the browser. Decline,
+timeout, cancellation, and background deferral remain distinct outcomes.
+
+**Stable Source ids are repository-qualified and immutable.** The installer derives the installed
+identity from repository identity plus the manifest's local Source id and rejects collisions.
+Updates cannot rename that identity. Disablement or uninstall makes the Source unavailable without
+rewriting Listings or pins; reinstalling the same qualified identity reconnects them. Replacement
+by an unrelated repository is a different identity even if it uses the same local id.
+
+**Adult classification is mandatory, declarative, and fail-closed.** A missing or invalid
+classification prevents Source registration. Repository review may strengthen a declaration but
+cannot weaken it; the host may also elevate a specific Listing when validated output marks it
+adult. The trust and signing policy by which repositories earn review status belongs to the later
+repository-format design and remains open until that evidence exists.
+
+### Alternatives rejected
+
+- **One program per Source.** Rejected because it duplicates generic-theme logic and makes one
+  site configuration the unit of executable maintenance.
+- **Export `MangaSource` directly.** Rejected because Swift defaults, metatypes, Foundation URLs,
+  unconstrained errors, and source-specific paging do not form a stable language-neutral ABI.
+- **Infer capabilities from exported functions or failures.** Rejected because the host must know
+  what it may display and schedule before running extension code, and failure is not discovery.
+- **Give extension code a general network/browser/filesystem object.** Rejected because origin,
+  privacy, resource, and lifecycle policy would become unenforceable or depend on author
+  cooperation.
+- **Share one browser identity across Sources.** Rejected because cookies can carry authentication
+  or tracking state and must not become an undeclared cross-extension communication channel.
+- **Permit best-effort version mismatches.** Rejected because silent semantic drift is harder to
+  diagnose and less safe than refusing an incompatible Extension with an actionable reason.
+- **Trust `adult: false` as an optional author hint.** Rejected because that value controls source
+  visibility and notification disclosure; absence cannot safely mean non-adult.
+
+### Consequences
+
+- Theme engines and their configurations can evolve independently: one engine fix can repair many
+  Sources without inventing a new Host API operation.
+- The runtime adapter will be deeper than a JavaScriptCore wrapper around `MangaSource`; it needs
+  manifest validation, message validation, capability brokers, scheduling, and domain mapping.
+- Existing compiled Sources remain internal adapters. MangaDex remains built in under Amendment 1;
+  the WeebCentral port is the first conformance test for the external contract.
+- Repository installation must establish repository identity, validate Source-id uniqueness, and
+  define review/signing metadata. That work is deliberately sequenced after the Host API contract.
+- Version 1 omits credentials and arbitrary cache files. Adding either later requires a new
+  optional Host API capability rather than widening storage or network authority implicitly.
