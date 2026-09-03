@@ -21,16 +21,38 @@ final class SearchViewModel: ObservableObject {
     /// prompt from a genuine "no results".
     @Published private(set) var hasSearched = false
 
-    /// Injected source for tests; nil means "resolve through the registry".
-    private let sourceOverride: MangaSource?
+    /// Where `source` comes from. Mirrors `HomeViewModel.SourceBinding`, and for the same
+    /// reason: a singleton fallback is silently wrong whenever the graph was built with an
+    /// injected registry.
+    private enum SourceBinding {
+        /// A fixed source, injected by a test.
+        case fixed(MangaSource)
+        /// The graph's registry, read at access time.
+        case registry(SourceRegistry)
+    }
+
+    private let binding: SourceBinding
     private let debounce: Duration
     private var debounceTask: Task<Void, Never>?
     private var lastQuery = ""
 
-    init(source: MangaSource? = nil,
-         debounce: Duration = .milliseconds(350),
-         pageSize: Int = 24) {
-        self.sourceOverride = source
+    /// A fixed source. Tests use this; nothing in the app does.
+    convenience init(source: MangaSource,
+                     debounce: Duration = .milliseconds(350),
+                     pageSize: Int = 24) {
+        self.init(binding: .fixed(source), debounce: debounce, pageSize: pageSize)
+    }
+
+    /// The graph's registry, handed over from the environment by `SearchView`. See
+    /// `HomeViewModel.init(registry:)` for why the singleton is not an acceptable default.
+    convenience init(registry: SourceRegistry,
+                     debounce: Duration = .milliseconds(350),
+                     pageSize: Int = 24) {
+        self.init(binding: .registry(registry), debounce: debounce, pageSize: pageSize)
+    }
+
+    private init(binding: SourceBinding, debounce: Duration, pageSize: Int) {
+        self.binding = binding
         self.debounce = debounce
         self.loader = PagedMangaLoader(pageSize: pageSize)
     }
@@ -38,9 +60,12 @@ final class SearchViewModel: ObservableObject {
     /// The source these results come from — resolved at read time so a chip switch
     /// or a Settings source change is reflected on the next search.
     var source: MangaSource {
-        sourceOverride
-            ?? selectedSourceID.flatMap { SourceRegistry.shared.source(id: $0) }
-            ?? SourceRegistry.shared.active
+        switch binding {
+        case .fixed(let source):
+            return source
+        case .registry(let registry):
+            return selectedSourceID.flatMap { registry.source(id: $0) } ?? registry.active
+        }
     }
 
     /// Called on every keystroke from `.searchable`. Debounces, then searches.

@@ -5,9 +5,25 @@
 
 import SwiftUI
 
+/// The same two-step as `HomeView`, for the same reason: a `@StateObject` built in `init`
+/// cannot see the environment, so the registry is read here and passed down as a value.
 struct SearchView: View {
-    @StateObject private var vm = SearchViewModel()
-    @ObservedObject private var registry = SourceRegistry.shared
+    @EnvironmentObject private var registry: SourceRegistry
+
+    var body: some View {
+        SearchScreen(registry: registry)
+    }
+}
+
+private struct SearchScreen: View {
+    @StateObject private var vm: SearchViewModel
+    @ObservedObject private var registry: SourceRegistry
+
+    init(registry: SourceRegistry) {
+        _registry = ObservedObject(wrappedValue: registry)
+        _vm = StateObject(wrappedValue: SearchViewModel(registry: registry))
+    }
+
     @AppStorage("settings.showAdultSources") private var showAdultSources = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var query = ""
@@ -109,4 +125,5 @@ private struct SearchResults: View {
 
 #Preview {
     SearchView()
+        .environmentObject(SourceRegistry.shared)
 }

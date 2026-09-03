@@ -10,7 +10,9 @@ struct SettingsView: View {
     @AppStorage(appearanceStorageKey) private var appearanceRaw = AppearanceMode.system.rawValue
     @AppStorage("settings.showAdultSources") private var showAdultSources = false
     @AppStorage(UpdateNotifier.notificationsEnabledKey) private var notificationsEnabled = true
-    @ObservedObject private var registry = SourceRegistry.shared
+    /// The graph's registry, not the singleton — the same object the services resolve
+    /// through. See `MangaDetailView` for what reading the wrong one costs.
+    @EnvironmentObject private var registry: SourceRegistry
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
     @EnvironmentObject private var works: WorkStore

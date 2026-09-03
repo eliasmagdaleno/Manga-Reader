@@ -117,13 +117,19 @@ struct ReaderView: View {
 
     @StateObject private var vm: ReaderViewModel
 
-    init(manga: Manga, chapter: Chapter, initialPosition: ReadingPosition? = nil,
+    /// - Parameter source: where pages come from. Passed in rather than resolved here,
+    ///   because this `init` builds a `@StateObject` and so runs before the environment
+    ///   exists — the only registry it could reach itself is the singleton, which is not
+    ///   always the graph's. Every caller reads `SourceRegistry` from the environment.
+    init(manga: Manga, chapter: Chapter, source: MangaSource,
+         initialPosition: ReadingPosition? = nil,
          chapters: [Chapter] = []) {
         self.manga = manga
         _vm = StateObject(wrappedValue: ReaderViewModel(manga: manga, chapter: chapter,
                                                        chapters: chapters,
                                                        initialPosition: initialPosition
-                                                           ?? ReadingPosition(page: 0)))
+                                                           ?? ReadingPosition(page: 0),
+                                                       source: source))
         _progressChapterID = State(initialValue: chapter.id)
     }
 

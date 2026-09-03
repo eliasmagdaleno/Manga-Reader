@@ -10,6 +10,9 @@ import SwiftUI
 
 struct HistoryView: View {
     @EnvironmentObject private var history: HistoryStore
+    /// The graph's registry, so the reader opens on the same source the rest of the app
+    /// resolves through — not whatever `SourceRegistry.shared` happens to hold.
+    @EnvironmentObject private var registry: SourceRegistry
     @Environment(\.selectAppTab) private var selectAppTab
 
     @State private var showingClearConfirmation = false
@@ -67,6 +70,7 @@ struct HistoryView: View {
     private func row(_ entry: ReadingEntry) -> some View {
         NavigationLink {
             ReaderView(manga: entry.asManga, chapter: entry.asChapter,
+                       source: registry.source(for: entry.asManga),
                        initialPosition: entry.position)
         } label: {
             HStack(spacing: 12) {

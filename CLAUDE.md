@@ -56,7 +56,12 @@ adapters calls `MangaDexAPI` directly.
   bridge. `newTitles`/`latestUpdates` are optional capabilities whose default impls throw
   `SourceError.unsupported`.
 - **`Services/SourceRegistry.swift`** — owns the registered sources and the active browse
-  source. ViewModels/Services fetch through this, **never** `MangaDexAPI`.
+  source. ViewModels/Services fetch through this, **never** `MangaDexAPI`. The registry is
+  **injected, not reached for**: `AppComposition.registry` is the graph's one, it is in the
+  environment, and views take it from there. `SourceRegistry.shared` survives only as that
+  composition's production default and in `#Preview` blocks — a view or view model reading
+  it directly is the bug fixed on 2026-09-02, where an injected registry and the singleton
+  were different objects and every source lookup on the detail page missed.
 - **`Services/WebViewService.swift`** + **`Services/SourceContext.swift`** — the host
   capability layer for HTML-scraping sources. The shared off-screen `WKWebView` uses a
   **persistent** data store so Cloudflare's `cf_clearance` survives, plus a **pinned UA**;

@@ -71,13 +71,13 @@ final class ReaderViewModel: ObservableObject {
     private let prefetch: ([URL], Int) -> Void
 
     init(manga: Manga, chapter: Chapter, chapters: [Chapter], initialPosition: ReadingPosition,
-         source: MangaSource? = nil,
+         source: MangaSource,
          prefetch: (([URL], Int) -> Void)? = nil) {
         self.manga = manga
         self.currentChapter = chapter
         self.chapters = chapters
         self.initialPosition = initialPosition
-        self.source = source ?? SourceRegistry.shared.source(for: manga)
+        self.source = source
         self.prefetch = prefetch ?? { urls, width in
             ImageCache.shared.prefetch(urls, maxConcurrent: width)
         }

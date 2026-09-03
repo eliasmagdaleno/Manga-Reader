@@ -5,10 +5,30 @@
 
 import SwiftUI
 
+/// Home, minus one thing it cannot do for itself: a `@StateObject` is built in `init`,
+/// which runs before the environment exists, so `HomeScreen` below cannot read the graph's
+/// registry there. This wrapper reads it — in a `body`, where the environment does exist —
+/// and hands it over as a plain argument. Without it the view model could only reach
+/// `SourceRegistry.shared`, which is the graph's registry in production and a different
+/// object under a UI-test fixture.
 struct HomeView: View {
+    @EnvironmentObject private var registry: SourceRegistry
+
+    var body: some View {
+        HomeScreen(registry: registry)
+    }
+}
+
+private struct HomeScreen: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @StateObject private var vm = HomeViewModel()
-    @ObservedObject private var registry = SourceRegistry.shared
+    @StateObject private var vm: HomeViewModel
+    @ObservedObject private var registry: SourceRegistry
+
+    init(registry: SourceRegistry) {
+        _registry = ObservedObject(wrappedValue: registry)
+        _vm = StateObject(wrappedValue: HomeViewModel(registry: registry))
+    }
+
     @EnvironmentObject private var engine: RecommendationEngine
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var history: HistoryStore
@@ -312,6 +332,7 @@ struct InkNotice: View {
     let taste = TasteProfileStore()
     let works = WorkStore()
     return HomeView()
+        .environmentObject(SourceRegistry.shared)
         .environmentObject(library)
         .environmentObject(history)
         .environmentObject(taste)
