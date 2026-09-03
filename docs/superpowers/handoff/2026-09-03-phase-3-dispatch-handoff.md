@@ -90,7 +90,8 @@ open in the S3 worktree at an unconfirmed launch prompt; it cannot act, but two 
 one worktree is confusing to walk into cold.
 
 **What is owed here is verification, not dispatch.** A `worker_done` is not a merge — check the
-branch. Wave 2 (S4, S5) cannot start until S2 lands.
+branch. Wave 2 (S4, S5) cannot start until S2 lands, and per "Dispatch mechanics" it must run one
+worker on Claude and one on Codex rather than both on either.
 
 ### 2. The UI test suites are failing on `main` — issue #134, new this session
 
@@ -212,6 +213,17 @@ Each of these cost real time when it was learned:
   and reported `status: live` with 91 insertions uncommitted. `worker-read` shows the transcript,
   `git -C <worktree> diff --stat` shows whether it did anything; a `terminal send` nudge resumed it.
 - **Start every independent worker before the first wait**, or the work serializes.
+- **Split every parallel wave across providers.** Wave 1 put S1 and S3 on Claude and S2 on Codex;
+  Claude's session limit hit mid-implementation and **both** Claude workers stopped with
+  uncommitted work **while still reporting `liveness: live`**. The Codex worker was untouched and
+  finished. A wave on one provider shares one failure domain, and the failure is silent — nothing
+  resumed until a human looked hours later. After any wave goes quiet, check
+  `git -C <worktree> status` and the terminal preview; the dispatch status lies.
+- **Default `--model` to something cheap and make Opus high earn its place.** `claude-sonnet-5` or
+  `gpt-5.6-sol` is the default; spend Opus high only on real research risk or deep cross-cutting
+  design, and say why. **Fable is not available on this account** — a worker dispatched on
+  `claude-fable-5-1` parks at an unconfirmed launch prompt instead of failing, so it looks dispatched
+  and is not. The per-slice choices are in the Phase 3 plan's model-and-provider section.
 - Set `--model`/`--effort` at start time; changing effort mid-flight discards work.
 - **A `worker_done` is not a merge.** Verify the claim by grepping the branch.
 - **`--setup skip` is rejected outright when the worktree already exists** —
