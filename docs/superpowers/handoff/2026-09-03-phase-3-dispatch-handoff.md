@@ -1,9 +1,9 @@
-# Handoff — the app is MangaCarta; Phase 3 is planned and ready to dispatch
+# Handoff — the app is MangaCarta; Phase 3 Wave 1 is dispatched and running
 
 Date: 2026-09-03 (afternoon)
 Repository: `/Users/eliasmagdaleno/Manga-Reader` (directory unchanged; GitHub is now
 `eliasmagdaleno/MangaCarta`)
-Branch: `docs/handoff-2026-09-03-phase-3`, off `main` at `9394faa`.
+Branch: `docs/dispatch-mechanics-wave-1`, off `main` at `be983c6` (#135 merged this document).
 
 **This is the live handoff, and it is the whole of what is outstanding.** Writing a new one means
 `git mv`-ing this into `archive/` first and carrying forward whatever below is still true
@@ -16,8 +16,8 @@ Six phases, ~8–9 weeks. The reasoning and the Paperback catalog research are i
 
 1. **Finish what is nearly done** — *two device tasks remain; no code is owed.*
 2. **Host API design** — ✅ done (#130).
-3. **JavaScriptCore runtime + WeebCentral port** (~2w) — **planned, briefs written, ready to
-   dispatch. This is the next thing to build.**
+3. **JavaScriptCore runtime + WeebCentral port** (~2w) — **in progress; Wave 1 (S1, S2, S3) is
+   dispatched and running.**
 4. **Repo format + installer** (~1–1.5w).
 5. **Theme engines** (~1w for Madara, then days each) — Madara alone is 29 sites.
 6. **Launch prep** (~1w).
@@ -70,10 +70,27 @@ It runs in Wave 1 rather than when S5 needs it, because a bad answer changes wha
 
 ## What is owed
 
-### 1. Dispatch Wave 1 — the immediate next action
+### 1. Wave 1 is dispatched — S1, S2 and S3 are running
 
-`main` is clean and the rename has landed, so Phase 3 branches can be cut. Nothing blocks S1, S2 or
-S3. Dispatch mechanics and their hard-won gotchas are near the bottom of this document.
+Dispatched 2026-09-03 as Run `run_566c5d5e67b1`, coordinator handle
+`term_15c0eb64-b03c-4606-add4-e337286e7ea7`. **Record that handle** — after a runtime restart every
+orchestration command needs it. All three worktrees are off `main` at `be983c6` with
+`Secrets.xcconfig` copied in:
+
+| Slice | Worktree | Agent | Dispatch |
+|---|---|---|---|
+| S1 manifest validation | `phase3-s1-manifest` | Claude Opus 5, high | `ctx_122ecc2647b2` |
+| S2 wire schemas | `phase3-s2-schemas` | Codex gpt-5.6-sol, high | `ctx_dfaf26250d78` |
+| S3 WebKit spike | `phase3-s3-webkit-spike` | Claude Opus 5, high | `ctx_5ac03fc50e05` |
+
+**S3 was planned for Fable and is not running on it** — that account has no Fable access. It was
+swapped to Opus 5 before the worker had done anything, so nothing was lost; the sequence that
+worked is in "Dispatch mechanics" below. A fenced Fable terminal (`term_2cae2ba4`) may still be
+open in the S3 worktree at an unconfirmed launch prompt; it cannot act, but two agent terminals in
+one worktree is confusing to walk into cold.
+
+**What is owed here is verification, not dispatch.** A `worker_done` is not a merge — check the
+branch. Wave 2 (S4, S5) cannot start until S2 lands.
 
 ### 2. The UI test suites are failing on `main` — issue #134, new this session
 
@@ -119,12 +136,31 @@ Close #90 when every row has a verdict, **not** when every defect is fixed.
 Items 3 and 4 both want a device in hand; doing them in one sitting is worth more than doing them
 well apart.
 
-### 5. Nobody has read PR #130's diff
+### 5. PR #130 has now been read — five contract gaps, none fixed in the spec yet
 
-Still true, carried forward. It auto-merged overnight on CI plus its own author's verification.
-Given it is the forever contract for Phases 3–5, **a careful read before building against it is
-cheap insurance** — the same kind of read found two real defects in #127. Ideally before S1 and S2
-land code against it.
+Read 2026-09-03 before Wave 1 was dispatched. The design holds up: the 18 questions really are all
+answered and the v1 semantic boundary is sound. But five gaps are the kind a validator hits on day
+one, and **all five are still open in the spec** — each was written into the relevant worker brief
+with instructions to implement a reading, state it in the PR body, and flag it rather than silently
+pick. **Amend the spec once Wave 1 reports**, since it is the forever contract for Phases 3–5.
+
+1. **§1.2's canonical declaration example omits `hostAPI`**, which §7 calls required — and since
+   unknown keys outside `configuration` fail installation, the validator needs the complete key
+   set. The spec's own example is not a valid declaration. (S1)
+2. **`hostAPI` version strings have no grammar.** `"1.0"`/`"2.0"` appear; patch components,
+   comparison, and invalid-string handling are undefined. (S1)
+3. **The `warnings` channel exists only on `Page<T>`.** §3 gives `chapters` `{items:[Chapter]}`,
+   `pages` `{items:[Page]}` and `detail` a bare `Detail` — no warnings slot — yet §2.3 and §2.4
+   both drop items "with warnings". Those warnings have nowhere to go, which makes **acceptance
+   criterion 3 untestable for three of the five types.** This is the most consequential of the
+   five. (S2)
+4. **The cover-URL rule can let one bad card reject a whole feed.** §10 splits *malformed* cover
+   URLs (drop the field) from *policy-invalid* ones (reject the operation) without drawing the
+   line — a well-formed `http://` cover, or one off `assetOrigins`, is policy-invalid, defeating
+   §2.1's partial-success rule. (S2)
+5. **§4.2's `interaction` parameter names only its default**, `"allowForeground"`, while §9 and
+   criterion 8 require a background mode that presents no UI. The enum is missing. (S3, which has
+   the evidence to settle it.)
 
 ### 6. Naming debt, small and deliberate
 
@@ -152,10 +188,10 @@ third unrelated state appears.
 ## Dispatch mechanics
 
 ```sh
-orca orchestration run-create --objective "<objective>" --json     # record the coordinator handle
-orca orchestration task-create --spec "<full brief>" --json
-orca orchestration worker-start --task <id> --worktree id:<repo-id>::<path> \
-  --agent <codex|claude> --model <id> --effort high --setup skip --json
+orca orchestration run-create --from <coordinator handle> --objective "<objective>" --json
+orca orchestration task-create --from <coordinator handle> --spec "<full brief>" --json
+orca orchestration worker-start --from <coordinator handle> --task <id> \
+  --worktree id:<repo-id>::<path> --agent <codex|claude> --model <id> --effort high --json
 orca orchestration check --wait --types worker_done,escalation,question --timeout-ms 900000 --json
 ```
 
@@ -163,8 +199,11 @@ Each of these cost real time when it was learned:
 
 - Selectors need an `id:` prefix — `--repo id:<uuid>`, `--worktree id:<repo-id>::<path>`. The error
   names neither the flag nor the fix.
-- After the first `worker-start`, later ones fail `consumer_fenced` until you pass
-  `--from <coordinator handle>`. Neither `run-use` nor a fresh Run clears it.
+- **`--from <coordinator handle>` is needed from the very first command, not just after the first
+  `worker-start`.** Run outside a live Orca terminal, `run-create` itself fails
+  `no_active_sender_terminal`; later `worker-start`s fail `consumer_fenced` for the same reason.
+  Neither `run-use` nor a fresh Run clears it. Get the handle from `orca terminal list --json` —
+  any terminal whose `worktreePath` is the main repo will do.
 - If the Orca runtime restarts, every command needs `--terminal <coordinator handle>` or it fails
   `no_active_terminal`. Record that handle at `run-create`; `run-show` reports it afterwards.
 - `check --wait` ending in `runtime_unavailable` is the app restarting, not a worker failure — the
@@ -175,7 +214,24 @@ Each of these cost real time when it was learned:
 - **Start every independent worker before the first wait**, or the work serializes.
 - Set `--model`/`--effort` at start time; changing effort mid-flight discards work.
 - **A `worker_done` is not a merge.** Verify the claim by grepping the branch.
-- `--setup skip` is correct — the configured hook is `pnpm install`, meaningless in a Swift repo.
+- **`--setup skip` is rejected outright when the worktree already exists** —
+  `invalid_argument: Creation and setup options apply only to new-child or new-top-level
+  worktrees`. It is correct only on a worktree `worker-start` creates itself, where it skips the
+  configured `pnpm install` hook, meaningless in a Swift repo. If you made the worktree first with
+  `orca worktree create --setup skip`, **omit the flag at `worker-start`** rather than repeating it.
+- **Changing a worker's model means abandon, not stop.** `worker-stop` cannot settle a dispatch
+  whose terminal is `user_owned` — it returns `state: stop_unknown` and closes nothing — and the
+  task then refuses `ready` with `cannot move to ready while Dispatch <id> is active`. The sequence
+  that works is `worker-abandon --dispatch <id>` → `task-update --from <coordinator> --id <task>
+  --status ready` → a fresh `worker-start`. Note the flag spellings differ per subcommand:
+  `worker-stop`/`worker-read`/`worker-abandon` take `--dispatch` and reject `--from`, while
+  `task-update` takes `--id`, not `--task`.
+- **A launched worker may sit at a confirmation prompt without ever starting.** One reported
+  `state: ready` and `liveness: live` while its terminal showed `Enter to confirm · Esc to cancel`
+  and its transcript held only the seed message. That is the cheap moment to swap a model — nothing
+  is lost — but only if you look. `orca terminal list --json` and the terminal `preview` field show
+  it; the dispatch status does not. A fenced terminal also stays open at that prompt, so a swapped
+  worktree ends up with two agent terminals and only one of them real.
 
 ## Gotchas
 
