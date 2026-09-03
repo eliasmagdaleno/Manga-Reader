@@ -166,6 +166,7 @@ struct TasteProfile {
                             description: manga.description, status: manga.status,
                             year: manga.year, coverURL: manga.coverURL, malId: malId)
         stamped.altTitles = manga.altTitles
+        stamped.contentRating = manga.contentRating
         return stamped
     }
 

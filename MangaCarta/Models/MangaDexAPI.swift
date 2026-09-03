@@ -39,6 +39,9 @@ struct Manga: Identifiable, Codable, Equatable {    // Conform to Identifiable s
     //     existing construction sites compiling untouched.
     // Read it as `altTitles ?? []`; nil and empty mean the same thing to every consumer.
     var altTitles: [String]?
+    /// Host API classification for this Listing. Missing means unknown, never safe.
+    /// Optional keeps persisted `Manga` values from before extension support decodable.
+    var contentRating: String?
 }
 
 /// A small item representing “latest updates” (which chapter just arrived for a manga).
@@ -222,11 +225,12 @@ extension ChapterAttributes {                       // Convert raw chapter attri
     }
 }
 
-/// A MangaDex tag with its stable id and grouping (genre / theme / format / content).
+/// A source tag. Compiled MangaDex tags carry both fields; extension-backed HTML
+/// sources may have neither stable ids nor groups under the Host API v1 contract.
 struct Tag: Codable, Hashable {
-    let id: String
+    let id: String?
     let name: String
-    let group: String
+    let group: String?
 }
 
 /// Enriched manga metadata shown on the detail screen.
