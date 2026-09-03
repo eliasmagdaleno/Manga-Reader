@@ -15,13 +15,13 @@ test* rather than asserted in a PR body.
 
 | # | Slice | Owns criteria | Depends on | Wave | Agent |
 |---|---|---|---|---|---|
-| S1 | Manifest & declaration validation | 2, 9 | — | 1 | Claude/Codex |
-| S2 | Domain wire schemas + adapters | 3, 4 | — | 1 | Claude/Codex |
-| S3 | WebKit isolation spike (gate 2) | 6 (cookies), 8 | — | 1 | **Fable** |
-| S4 | JSC runtime core + invocation bridge | 7 | S2 | 2 | **Fable** |
-| S5 | Host capabilities: http, storage, log | 5, 6 (storage), 11 | S4 (thin) | 2 | Claude/Codex |
+| S1 | Manifest & declaration validation | 2, 9 | — | 1 | Sonnet or Codex |
+| S2 | Domain wire schemas + adapters | 3, 4 | — | 1 | Sonnet or Codex |
+| S3 | WebKit isolation spike (gate 2) | 6 (cookies), 8 | — | 1 | **Opus high** (research risk) |
+| S4 | JSC runtime core + invocation bridge | 7 | S2 | 2 | **Opus high** (deep bridge design) |
+| S5 | Host capabilities: http, storage, log | 5, 6 (storage), 11 | S4 (thin) | 2 | Sonnet or Codex |
 | S6 | WeebCentral port + engine/config proof | 1, 12 | S1, S2, S4, S5 | 3 | strongest + review |
-| S7 | Identity lifecycle | 10 | S1 | 3 | Claude/Codex |
+| S7 | Identity lifecycle | 10 | S1 | 3 | Sonnet or Codex |
 
 Three of the seven — S1, S2 and S3 — are **independent of each other and of the runtime core**,
 which is what makes Wave 1 genuinely parallel. S1 and S2 are pure functions over JSON with no
@@ -32,6 +32,23 @@ and if its answer is bad it changes what Wave 2 builds. Discovering that late is
 outcome.
 
 Waves 2 and 3 run at most two wide, because their slices touch overlapping core types.
+
+## Choosing a model and a provider for each slice
+
+Two rules, both learned from Wave 1 rather than reasoned about in advance.
+
+**Default to a cheaper model; make Opus high earn its place.** `claude-sonnet-5` or
+`gpt-5.6-sol` is the default for a dispatched worker. Spend Opus high on a slice with genuine
+research risk or deep cross-cutting design — S3 and S4 qualify; a pure JSON validator does not —
+and state in one line why. The table above marks the two that earned it. **Fable is not an option:
+this account has no access**, and a worker dispatched on it silently parks at an unconfirmed launch
+prompt rather than failing.
+
+**Never put a whole wave on one provider.** Wave 1 put S1 and S3 on Claude and S2 on Codex.
+Claude's session limit hit mid-implementation and *both* Claude workers stopped with uncommitted
+work while still reporting `liveness: live`; the Codex worker was untouched and finished. A wave on
+one provider shares one failure domain and the failure is silent, so split any parallel wave across
+`--agent claude` and `--agent codex`. Wave 2 is two slices: run one of each.
 
 ## Sequencing note
 
