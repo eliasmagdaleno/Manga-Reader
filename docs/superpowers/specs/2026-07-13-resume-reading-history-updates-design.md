@@ -44,7 +44,7 @@ app-wide as `@EnvironmentObject` (mirroring the existing `LibraryStore`):
 
 ### Component 1 — `HistoryStore` (new)
 
-New file `Manga-Reader/Services/HistoryStore.swift`. `Services/` is an Xcode 16
+New file `MangaCarta/Services/HistoryStore.swift`. `Services/` is an Xcode 16
 synchronized root group, so the file compiles automatically (no `pbxproj` edit).
 
 ```swift
@@ -162,7 +162,7 @@ button in the section header (e.g. an `arrow.up.arrow.down` stamp reading
 
 ### Component 4 — History tab (`HistoryView`)
 
-New file `Manga-Reader/Views/HistoryView.swift`. **`Views/` is NOT a synchronized
+New file `MangaCarta/Views/HistoryView.swift`. **`Views/` is NOT a synchronized
 group** — this file must be added to `project.pbxproj` in all four places
 (`PBXFileReference`, `PBXBuildFile`, the `Views` `PBXGroup` child list, and the
 target's `Sources` build phase), mirroring an existing `Views` file.
@@ -233,7 +233,7 @@ previously-saved libraries and silently wipe them):
 - Cover cards with `newChapterCount > 0` show a tinted stamp "NEW · N" using
   `MangaCoverCard`'s existing `stamp` / `stampTinted` parameters.
 
-**App wiring:** `Manga_ReaderApp` creates `@StateObject private var history =
+**App wiring:** `MangaCartaApp` creates `@StateObject private var history =
 HistoryStore()` and injects `.environmentObject(history)` alongside the existing
 `library`.
 
@@ -267,7 +267,7 @@ Library refresh
 
 ## Testing
 
-Unit tests (`Manga-ReaderTests`, Swift Testing) for the pure logic:
+Unit tests (`MangaCartaTests`, Swift Testing) for the pure logic:
 - `HistoryStore.record`: same-session update-in-place vs. new entry on chapter
   change; most-recent-first ordering; 500-cap eviction.
 - Resume-target selection: no-history → first chapter; mid-chapter → exact page;

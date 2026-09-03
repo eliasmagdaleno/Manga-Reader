@@ -38,7 +38,7 @@ distinct works sharing a title exactly — the collision ADR-0008's ambiguity gu
 
 ## Method
 
-`Manga-ReaderUITests/Manga_ReaderUITests.testADR0018WindBreakerAcquiresMalIdThroughSearch`, run
+`MangaCartaUITests/MangaCartaUITests.testADR0018WindBreakerAcquiresMalIdThroughSearch`, run
 once by hand. Not a CI test: it asserts against one simulator's seeded state and stops being
 meaningful when the refusals age out of their fourteen-day TTL (~2026-08-23).
 

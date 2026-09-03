@@ -32,7 +32,7 @@ Full design context: `docs/superpowers/specs/2026-07-20-mal-client-design.md`.
 ### Task 1: Wire `Secrets.xcconfig` into the Xcode build settings
 
 **Files:**
-- Modify: `Manga-Reader.xcodeproj/project.pbxproj`
+- Modify: `MangaCarta.xcodeproj/project.pbxproj`
 
 **Interfaces:**
 - Produces: an Info.plist key `MALClientID`, readable at runtime via
@@ -41,7 +41,7 @@ Full design context: `docs/superpowers/specs/2026-07-20-mal-client-design.md`.
 
 - [ ] **Step 1: Add a `PBXFileReference` for `Secrets.xcconfig`**
 
-In `Manga-Reader.xcodeproj/project.pbxproj`, find the end of the `PBXFileReference`
+In `MangaCarta.xcodeproj/project.pbxproj`, find the end of the `PBXFileReference`
 section:
 
 ```
@@ -65,9 +65,9 @@ Find:
 		ADE549182C0A9CCA007AE172 = {
 			isa = PBXGroup;
 			children = (
-				ADE549232C0A9CCA007AE172 /* Manga-Reader */,
-				ADE549342C0A9CCD007AE172 /* Manga-ReaderTests */,
-				ADE5493E2C0A9CCD007AE172 /* Manga-ReaderUITests */,
+				ADE549232C0A9CCA007AE172 /* MangaCarta */,
+				ADE549342C0A9CCD007AE172 /* MangaCartaTests */,
+				ADE5493E2C0A9CCD007AE172 /* MangaCartaUITests */,
 				ADE549222C0A9CCA007AE172 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -80,10 +80,10 @@ Replace with:
 		ADE549182C0A9CCA007AE172 = {
 			isa = PBXGroup;
 			children = (
-				ADE549232C0A9CCA007AE172 /* Manga-Reader */,
+				ADE549232C0A9CCA007AE172 /* MangaCarta */,
 				AD1157092EA0000300CF2434 /* Secrets.xcconfig */,
-				ADE549342C0A9CCD007AE172 /* Manga-ReaderTests */,
-				ADE5493E2C0A9CCD007AE172 /* Manga-ReaderUITests */,
+				ADE549342C0A9CCD007AE172 /* MangaCartaTests */,
+				ADE5493E2C0A9CCD007AE172 /* MangaCartaUITests */,
 				ADE549222C0A9CCA007AE172 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -105,7 +105,7 @@ Replace with:
 
 - [ ] **Step 3: Create a minimal `Info.plist` carrying the custom key**
 
-Create `Manga-Reader/Info.plist`:
+Create `MangaCarta/Info.plist`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -118,7 +118,7 @@ Create `Manga-Reader/Info.plist`:
 </plist>
 ```
 
-- [ ] **Step 4: Add a `PBXFileReference` for `Manga-Reader/Info.plist` and list it in the `Manga-Reader` group**
+- [ ] **Step 4: Add a `PBXFileReference` for `MangaCarta/Info.plist` and list it in the `MangaCarta` group**
 
 In the `PBXFileReference` section, add (anywhere in the section is fine; e.g. right
 after the `Secrets.xcconfig` entry added in Step 1):
@@ -127,7 +127,7 @@ after the `Secrets.xcconfig` entry added in Step 1):
 		AD1157092EA0000600CF2434 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 ```
 
-In the `ADE549232C0A9CCA007AE172 /* Manga-Reader */` group's `children`, add it (e.g.
+In the `ADE549232C0A9CCA007AE172 /* MangaCarta */` group's `children`, add it (e.g.
 right after `ADE549262C0A9CCA007AE172 /* ContentView.swift */,`):
 
 ```
@@ -149,7 +149,7 @@ Find the block starting with `ADE549462C0A9CCD007AE172 /* Debug */ = {` (this is
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Manga-Reader/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"MangaCarta/Preview Content\"";
 				DEVELOPMENT_TEAM = V2BG9SHQYS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -184,11 +184,11 @@ Replace with (adds `baseConfigurationReference` and `INFOPLIST_FILE`):
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"Manga-Reader/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"MangaCarta/Preview Content\"";
 				DEVELOPMENT_TEAM = V2BG9SHQYS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "Manga-Reader/Info.plist";
+				INFOPLIST_FILE = "MangaCarta/Info.plist";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -215,7 +215,7 @@ Find the block starting with `ADE549472C0A9CCD007AE172 /* Release */ = {` (the a
 target's Release config — same field set as Debug above, `name = Release;`) and apply
 the identical two additions: `baseConfigurationReference = AD1157092EA0000300CF2434 /* Secrets.xcconfig */;`
 right after `isa = XCBuildConfiguration;`, and
-`INFOPLIST_FILE = "Manga-Reader/Info.plist";` inside `buildSettings`, alongside
+`INFOPLIST_FILE = "MangaCarta/Info.plist";` inside `buildSettings`, alongside
 `GENERATE_INFOPLIST_FILE`.
 
 - [ ] **Step 7: Verify the build settings resolve correctly**
@@ -223,7 +223,7 @@ right after `isa = XCBuildConfiguration;`, and
 Run:
 
 ```bash
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO build
 ```
 
@@ -237,9 +237,9 @@ directory for the same project from earlier builds, and an unqualified `find …
 can silently pick a stale one):
 
 ```bash
-BUILT_DIR=$(xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+BUILT_DIR=$(xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
   -showBuildSettings 2>/dev/null | awk -F' = ' '/ TARGET_BUILD_DIR /{print $2; exit}')
-/usr/libexec/PlistBuddy -c "Print :MALClientID" "$BUILT_DIR/Manga-Reader.app/Info.plist"
+/usr/libexec/PlistBuddy -c "Print :MALClientID" "$BUILT_DIR/MangaCarta.app/Info.plist"
 ```
 
 Expected: prints a non-empty string matching the value in your local
@@ -259,7 +259,7 @@ Expected: `git status` shows no `Secrets.xcconfig` entry; `check-ignore` prints 
 - [ ] **Step 10: Commit**
 
 ```bash
-git add Manga-Reader.xcodeproj/project.pbxproj Manga-Reader/Info.plist
+git add MangaCarta.xcodeproj/project.pbxproj MangaCarta/Info.plist
 git commit -m "Wire Secrets.xcconfig into build settings for MAL_CLIENT_ID"
 ```
 
@@ -268,9 +268,9 @@ git commit -m "Wire Secrets.xcconfig into build settings for MAL_CLIENT_ID"
 ### Task 2: MAL DTOs + error type, with fixture-decode tests
 
 **Files:**
-- Create: `Manga-Reader/Models/MyAnimeListAPI.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append methods to the
-  `Manga_ReaderTests` class, immediately before its closing `}` — currently the last
+- Create: `MangaCarta/Models/MyAnimeListAPI.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append methods to the
+  `MangaCartaTests` class, immediately before its closing `}` — currently the last
   line of the file)
 
 **Interfaces:**
@@ -291,7 +291,7 @@ ones across files, and the whole point of this task is a decode test that exerci
 
 - [ ] **Step 1: Write the failing decode tests**
 
-Append to `Manga-ReaderTests/Manga_ReaderTests.swift`, right before the class's final
+Append to `MangaCartaTests/MangaCartaTests.swift`, right before the class's final
 closing `}`:
 
 ```swift
@@ -399,20 +399,20 @@ closing `}`:
 - [ ] **Step 2: Run the tests to verify they fail**
 
 ```bash
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO test \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMyAnimeListErrorDescriptions
+  -only-testing:MangaCartaTests/MangaCartaTests/testMyAnimeListErrorDescriptions
 ```
 
 Expected: **build failure** — `MyAnimeListManga`/`MyAnimeListMangaDetail`/
 `MyAnimeListSearchResponse`/`MyAnimeListError` are not defined yet.
 
-- [ ] **Step 3: Create `Manga-Reader/Models/MyAnimeListAPI.swift` with the DTOs and error type**
+- [ ] **Step 3: Create `MangaCarta/Models/MyAnimeListAPI.swift` with the DTOs and error type**
 
 ```swift
 //
 //  MyAnimeListAPI.swift
-//  Manga-Reader
+//  MangaCarta
 //
 
 import Foundation
@@ -480,7 +480,7 @@ struct MyAnimeListMangaDetail: Decodable {
 }
 
 /// MAL wraps referenced manga in a `{node: {...}}` envelope for search results.
-/// Internal (not private): the decode test in Manga_ReaderTests exercises this
+/// Internal (not private): the decode test in MangaCartaTests exercises this
 /// unwrapping directly via `@testable import`, which only elevates `internal` symbols.
 struct MyAnimeListSearchResponse: Decodable {
     struct Entry: Decodable {
@@ -493,12 +493,12 @@ struct MyAnimeListSearchResponse: Decodable {
 - [ ] **Step 4: Run the tests to verify they pass**
 
 ```bash
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO test \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMyAnimeListSearchResponseDecodesAndUnwrapsNode \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMyAnimeListMangaDetailDecodesRelatedAndRecommendations \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMyAnimeListMangaDetailDecodesWithoutOptionalRelations \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMyAnimeListErrorDescriptions
+  -only-testing:MangaCartaTests/MangaCartaTests/testMyAnimeListSearchResponseDecodesAndUnwrapsNode \
+  -only-testing:MangaCartaTests/MangaCartaTests/testMyAnimeListMangaDetailDecodesRelatedAndRecommendations \
+  -only-testing:MangaCartaTests/MangaCartaTests/testMyAnimeListMangaDetailDecodesWithoutOptionalRelations \
+  -only-testing:MangaCartaTests/MangaCartaTests/testMyAnimeListErrorDescriptions
 ```
 
 Expected: `** TEST SUCCEEDED **`, all four tests pass.
@@ -506,7 +506,7 @@ Expected: `** TEST SUCCEEDED **`, all four tests pass.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Models/MyAnimeListAPI.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Models/MyAnimeListAPI.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add MyAnimeList DTOs + error type with fixture-decode tests"
 ```
 
@@ -515,10 +515,10 @@ git commit -m "Add MyAnimeList DTOs + error type with fixture-decode tests"
 ### Task 3: `MyAnimeListAPI` networking + temporary debug screen
 
 **Files:**
-- Modify: `Manga-Reader/Models/MyAnimeListAPI.swift`
-- Create: `Manga-Reader/Views/MyAnimeListDebugView.swift`
-- Modify: `Manga-Reader/Views/SettingsView.swift`
-- Modify: `Manga-Reader.xcodeproj/project.pbxproj`
+- Modify: `MangaCarta/Models/MyAnimeListAPI.swift`
+- Create: `MangaCarta/Views/MyAnimeListDebugView.swift`
+- Modify: `MangaCarta/Views/SettingsView.swift`
+- Modify: `MangaCarta.xcodeproj/project.pbxproj`
 
 **Interfaces:**
 - Consumes: `MyAnimeListManga`, `MyAnimeListMangaDetail`, `MyAnimeListSearchResponse`,
@@ -616,7 +616,7 @@ struct MyAnimeListAPI {                              // Namespace-style struct f
 - [ ] **Step 2: Build to confirm the networking code compiles**
 
 ```bash
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO build
 ```
 
@@ -624,12 +624,12 @@ Expected: `** BUILD SUCCEEDED **`.
 
 - [ ] **Step 3: Create the throwaway debug screen**
 
-Create `Manga-Reader/Views/MyAnimeListDebugView.swift`:
+Create `MangaCarta/Views/MyAnimeListDebugView.swift`:
 
 ```swift
 //
 //  MyAnimeListDebugView.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Throwaway verification screen for the read-only MAL client. Delete once the real
 //  "More Like This" UI (a later spec) ships.
@@ -733,7 +733,7 @@ struct MyAnimeListDebugView: View {
 
 - [ ] **Step 4: Add a `#if DEBUG` row in Settings to reach it**
 
-In `Manga-Reader/Views/SettingsView.swift`, find the "About" section block and the
+In `MangaCarta/Views/SettingsView.swift`, find the "About" section block and the
 outer `VStack`'s closing brace right after it:
 
 ```swift
@@ -870,7 +870,7 @@ Replace with:
 				ADE549272C0A9CCA007AE172 /* ContentView.swift in Sources */,
 				ADEF83D42E8F32B300CF2434 /* SettingsView.swift in Sources */,
 				ADEF83D02E8F329200CF2434 /* BookmarksView.swift in Sources */,
-				ADE549252C0A9CCA007AE172 /* Manga_ReaderApp.swift in Sources */,
+				ADE549252C0A9CCA007AE172 /* MangaCartaApp.swift in Sources */,
 				ADDACC8C2EC6AC370026FBAE /* MangaDetailView.swift in Sources */,
 				ADDACC9B2EC6AC370026FBAE /* ReaderView.swift in Sources */,
 				AD1157092EA0000200CF2434 /* HistoryView.swift in Sources */,
@@ -892,7 +892,7 @@ Replace with:
 				ADE549272C0A9CCA007AE172 /* ContentView.swift in Sources */,
 				ADEF83D42E8F32B300CF2434 /* SettingsView.swift in Sources */,
 				ADEF83D02E8F329200CF2434 /* BookmarksView.swift in Sources */,
-				ADE549252C0A9CCA007AE172 /* Manga_ReaderApp.swift in Sources */,
+				ADE549252C0A9CCA007AE172 /* MangaCartaApp.swift in Sources */,
 				ADDACC8C2EC6AC370026FBAE /* MangaDetailView.swift in Sources */,
 				ADDACC9B2EC6AC370026FBAE /* ReaderView.swift in Sources */,
 				AD1157092EA0000200CF2434 /* HistoryView.swift in Sources */,
@@ -906,7 +906,7 @@ Replace with:
 - [ ] **Step 6: Build for the simulator**
 
 ```bash
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO build
 ```
 
@@ -933,8 +933,8 @@ Expected: `** BUILD SUCCEEDED **`.
 - [ ] **Step 8: Commit**
 
 ```bash
-git add Manga-Reader/Models/MyAnimeListAPI.swift Manga-Reader/Views/MyAnimeListDebugView.swift \
-  Manga-Reader/Views/SettingsView.swift Manga-Reader.xcodeproj/project.pbxproj
+git add MangaCarta/Models/MyAnimeListAPI.swift MangaCarta/Views/MyAnimeListDebugView.swift \
+  MangaCarta/Views/SettingsView.swift MangaCarta.xcodeproj/project.pbxproj
 git commit -m "Add MAL networking + throwaway debug screen for live verification"
 ```
 

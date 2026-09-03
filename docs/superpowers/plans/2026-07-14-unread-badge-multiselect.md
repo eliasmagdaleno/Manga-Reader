@@ -13,9 +13,9 @@
 - iOS 17.5 deployment target; no `#available(iOS 18, *)` APIs unless guarded (this plan uses none).
 - No third-party dependencies or package manager — pure SwiftUI + Foundation only.
 - `Models/` and `Services/` are Xcode synchronized groups — new files there are picked up automatically. `Views/` is **not** synchronized — this plan adds no new files anywhere, only edits existing ones, so no `project.pbxproj` changes are needed.
-- Build: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build`
-- Test: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test`
-- Single test: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/<testMethod>`
+- Build: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build`
+- Test: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test`
+- Single test: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests/MangaCartaTests/<testMethod>`
 - Spec: `docs/superpowers/specs/2026-07-14-unread-badge-multiselect-design.md`
 
 ---
@@ -23,18 +23,18 @@
 ## Task 1: Live unread-count badge (`LibraryItem` model + `LibraryStore.refresh` + call sites)
 
 **Files:**
-- Modify: `Manga-Reader/Services/LibraryStore.swift:12-19` (struct), `:47-96` (refresh/markCaughtUp)
-- Modify: `Manga-Reader/Views/BookmarksView.swift:29-40` (grid item), `:47`, `:54` (refresh call sites)
-- Modify: `Manga-Reader/Views/ReaderView.swift:59` (env object), `:95-104` (loadAndBegin)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift:245-252` (update), new tests appended near there
+- Modify: `MangaCarta/Services/LibraryStore.swift:12-19` (struct), `:47-96` (refresh/markCaughtUp)
+- Modify: `MangaCarta/Views/BookmarksView.swift:29-40` (grid item), `:47`, `:54` (refresh call sites)
+- Modify: `MangaCarta/Views/ReaderView.swift:59` (env object), `:95-104` (loadAndBegin)
+- Test: `MangaCartaTests/MangaCartaTests.swift:245-252` (update), new tests appended near there
 
 **Interfaces:**
 - Produces: `LibraryItem.chapterNumbers: [String]?`, `LibraryItem.unreadCount(readNumbers: Set<String>) -> Int`, `LibraryStore.refresh() async` (no `history:` parameter).
-- Consumes: `MangaDexAPI.fetchChapters(mangaId: String) async throws -> [Chapter]` (existing, `Manga-Reader/Models/MangaDexAPI.swift:446`), `HistoryStore.readChapterNumbers(forManga:) -> Set<String>` (existing).
+- Consumes: `MangaDexAPI.fetchChapters(mangaId: String) async throws -> [Chapter]` (existing, `MangaCarta/Models/MangaDexAPI.swift:446`), `HistoryStore.readChapterNumbers(forManga:) -> Set<String>` (existing).
 
 - [ ] **Step 1: Write the failing tests for `LibraryItem.unreadCount`**
 
-Add to `Manga-ReaderTests/Manga_ReaderTests.swift`, right after the `// MARK: - Library updates` comment (currently line 144, just before `testNewChapterCountCountsNewerDistinct` — leave that existing test in place for now, Task 2 removes it):
+Add to `MangaCartaTests/MangaCartaTests.swift`, right after the `// MARK: - Library updates` comment (currently line 144, just before `testNewChapterCountCountsNewerDistinct` — leave that existing test in place for now, Task 2 removes it):
 
 ```swift
     func testUnreadCountNilChapterNumbersIsZero() {
@@ -73,12 +73,12 @@ Also replace the now-stale legacy-decode assertions in the same file (currently 
 
 - [ ] **Step 2: Run the new tests to verify they fail to compile**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testUnreadCountWithNoneReadCountsAll`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests/MangaCartaTests/testUnreadCountWithNoneReadCountsAll`
 Expected: FAIL — `LibraryItem` has no member `chapterNumbers` / no `unreadCount` method yet.
 
 - [ ] **Step 3: Rewrite `LibraryItem` and add `unreadCount`**
 
-In `Manga-Reader/Services/LibraryStore.swift`, replace lines 12-19:
+In `MangaCarta/Services/LibraryStore.swift`, replace lines 12-19:
 
 ```swift
 /// A saved manga snapshot. Kept small and Codable for on-device persistence.
@@ -101,7 +101,7 @@ extension LibraryItem {
 
 - [ ] **Step 4: Rewrite `refresh()` to fetch full chapter lists and drop `markCaughtUp`**
 
-In `Manga-Reader/Services/LibraryStore.swift`, replace the `refresh(history:)` method and `markCaughtUp(_:)` method (originally lines 47-96) with:
+In `MangaCarta/Services/LibraryStore.swift`, replace the `refresh(history:)` method and `markCaughtUp(_:)` method (originally lines 47-96) with:
 
 ```swift
     /// Refresh every saved manga's full chapter-number list concurrently. Best-effort:
@@ -140,7 +140,7 @@ The existing `toggle(_:)` method's call site (`LibraryItem(id: manga.id, title: 
 
 - [ ] **Step 5: Fix `BookmarksView` call sites and badge display**
 
-In `Manga-Reader/Views/BookmarksView.swift`, replace the `ForEach` body (originally lines 29-40):
+In `MangaCarta/Views/BookmarksView.swift`, replace the `ForEach` body (originally lines 29-40):
 
 ```swift
                             ForEach(library.items) { item in
@@ -170,7 +170,7 @@ And update both refresh call sites (originally lines 47 and 54) from `library.re
 
 - [ ] **Step 6: Remove the now-obsolete caught-up call site in `ReaderView`**
 
-In `Manga-Reader/Views/ReaderView.swift`, delete the `@EnvironmentObject private var library: LibraryStore` line (originally line 59).
+In `MangaCarta/Views/ReaderView.swift`, delete the `@EnvironmentObject private var library: LibraryStore` line (originally line 59).
 
 Replace `loadAndBegin()` (originally lines 95-104):
 
@@ -188,18 +188,18 @@ Replace `loadAndBegin()` (originally lines 95-104):
 
 - [ ] **Step 7: Run the full unit test target**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests`
-Expected: PASS for all `Manga_ReaderTests` methods except the three `testNewChapterCount*` tests, which still reference the (still-present, untouched-until-Task-2) `RecentChapter`/`newChapterCount` symbols and continue to pass unchanged at this point.
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests`
+Expected: PASS for all `MangaCartaTests` methods except the three `testNewChapterCount*` tests, which still reference the (still-present, untouched-until-Task-2) `RecentChapter`/`newChapterCount` symbols and continue to pass unchanged at this point.
 
 - [ ] **Step 8: Build the app target to confirm no other call sites broke**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build`
 Expected: BUILD SUCCEEDED
 
 - [ ] **Step 9: Commit**
 
 ```bash
-git add Manga-Reader/Services/LibraryStore.swift Manga-Reader/Views/BookmarksView.swift Manga-Reader/Views/ReaderView.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/LibraryStore.swift MangaCarta/Views/BookmarksView.swift MangaCarta/Views/ReaderView.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Replace new-since-baseline badge with live unread chapter count"
 ```
 
@@ -208,8 +208,8 @@ git commit -m "Replace new-since-baseline badge with live unread chapter count"
 ## Task 2: Remove dead "new since baseline" code
 
 **Files:**
-- Modify: `Manga-Reader/Models/MangaDexAPI.swift:128-150` (`RecentChapter`, `newChapterCount`), `:473-486` (`recentChapters`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift:146-174` (delete three tests)
+- Modify: `MangaCarta/Models/MangaDexAPI.swift:128-150` (`RecentChapter`, `newChapterCount`), `:473-486` (`recentChapters`)
+- Test: `MangaCartaTests/MangaCartaTests.swift:146-174` (delete three tests)
 
 **Interfaces:**
 - Consumes: nothing new.
@@ -217,30 +217,30 @@ git commit -m "Replace new-since-baseline badge with live unread chapter count"
 
 - [ ] **Step 1: Delete the three obsolete tests**
 
-In `Manga-ReaderTests/Manga_ReaderTests.swift`, delete `testNewChapterCountCountsNewerDistinct`, `testNewChapterCountNilBaselineCountsAllDistinct`, and `testNewChapterCountExcludesReadNumbers` (originally lines 146-174, everything between the `// MARK: - Library updates` comment and `testReadChapterNumbersForManga`). The `// MARK: - Library updates` comment can stay (it now precedes `testReadChapterNumbersForManga`).
+In `MangaCartaTests/MangaCartaTests.swift`, delete `testNewChapterCountCountsNewerDistinct`, `testNewChapterCountNilBaselineCountsAllDistinct`, and `testNewChapterCountExcludesReadNumbers` (originally lines 146-174, everything between the `// MARK: - Library updates` comment and `testReadChapterNumbersForManga`). The `// MARK: - Library updates` comment can stay (it now precedes `testReadChapterNumbersForManga`).
 
 - [ ] **Step 2: Delete `RecentChapter` and the free `newChapterCount` function**
 
-In `Manga-Reader/Models/MangaDexAPI.swift`, delete lines 128-150 (the `RecentChapter` struct and the `newChapterCount(_:since:excludingNumbers:)` function, including their doc comments), leaving the `ChapterAttributes` struct directly followed by the `// MARK: - Reading (at-home) payloads` section.
+In `MangaCarta/Models/MangaDexAPI.swift`, delete lines 128-150 (the `RecentChapter` struct and the `newChapterCount(_:since:excludingNumbers:)` function, including their doc comments), leaving the `ChapterAttributes` struct directly followed by the `// MARK: - Reading (at-home) payloads` section.
 
 - [ ] **Step 3: Delete `MangaDexAPI.recentChapters(mangaId:)`**
 
-In `Manga-Reader/Models/MangaDexAPI.swift`, delete the `recentChapters(mangaId:)` static method (originally lines 473-486, the doc comment plus function body) from the `MangaDexAPI` struct.
+In `MangaCarta/Models/MangaDexAPI.swift`, delete the `recentChapters(mangaId:)` static method (originally lines 473-486, the doc comment plus function body) from the `MangaDexAPI` struct.
 
 - [ ] **Step 4: Run the full test suite**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests`
 Expected: PASS — no test references the deleted symbols anymore.
 
 - [ ] **Step 5: Build**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build`
 Expected: BUILD SUCCEEDED
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Manga-Reader/Models/MangaDexAPI.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Models/MangaDexAPI.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Remove dead new-since-baseline chapter tracking code"
 ```
 
@@ -249,8 +249,8 @@ git commit -m "Remove dead new-since-baseline chapter tracking code"
 ## Task 3: Batch mark-read / mark-unread API on `HistoryStore`
 
 **Files:**
-- Modify: `Manga-Reader/Services/HistoryStore.swift:117-123` (insert after `toggleRead`, before `delete`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append near existing read/unread tests, originally ending at line 233 with `testToggleReadRoundTrips`)
+- Modify: `MangaCarta/Services/HistoryStore.swift:117-123` (insert after `toggleRead`, before `delete`)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append near existing read/unread tests, originally ending at line 233 with `testToggleReadRoundTrips`)
 
 **Interfaces:**
 - Consumes: `Manga`, `Chapter` (existing types), `HistoryStore.readMarks: [ReadMark]`, `HistoryStore.entries: [ReadingEntry]`, `HistoryStore.save()` (existing private method), `HistoryStore.isRead(chapterId:)`, `HistoryStore.readChapterNumbers(forManga:)` (existing).
@@ -258,7 +258,7 @@ git commit -m "Remove dead new-since-baseline chapter tracking code"
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `Manga-ReaderTests/Manga_ReaderTests.swift`, after `testToggleReadRoundTrips` (originally ending at line 233) and before `testReadMarksPersistAcrossReload`:
+Append to `MangaCartaTests/MangaCartaTests.swift`, after `testToggleReadRoundTrips` (originally ending at line 233) and before `testReadMarksPersistAcrossReload`:
 
 ```swift
     @MainActor func testMarkReadBatchMarksAllGivenChapters() throws {
@@ -299,12 +299,12 @@ Append to `Manga-ReaderTests/Manga_ReaderTests.swift`, after `testToggleReadRoun
 
 - [ ] **Step 2: Run the new tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMarkReadBatchMarksAllGivenChapters`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests/MangaCartaTests/testMarkReadBatchMarksAllGivenChapters`
 Expected: FAIL — `HistoryStore` has no member `markRead(manga:chapters:)`.
 
 - [ ] **Step 3: Implement the batch methods**
 
-In `Manga-Reader/Services/HistoryStore.swift`, insert after `toggleRead(manga:chapter:)` (originally lines 117-123) and before `delete(_:)` (originally line 125):
+In `MangaCarta/Services/HistoryStore.swift`, insert after `toggleRead(manga:chapter:)` (originally lines 117-123) and before `delete(_:)` (originally line 125):
 
 ```swift
     /// Mark multiple chapters read in one save. Skips chapters already marked
@@ -330,18 +330,18 @@ In `Manga-Reader/Services/HistoryStore.swift`, insert after `toggleRead(manga:ch
 
 - [ ] **Step 4: Run the new tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMarkReadBatchMarksAllGivenChapters,Manga-ReaderTests/Manga_ReaderTests/testMarkReadBatchIsIdempotent,Manga-ReaderTests/Manga_ReaderTests/testMarkUnreadBatchClearsOnlyGivenChapters`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests/MangaCartaTests/testMarkReadBatchMarksAllGivenChapters,MangaCartaTests/MangaCartaTests/testMarkReadBatchIsIdempotent,MangaCartaTests/MangaCartaTests/testMarkUnreadBatchClearsOnlyGivenChapters`
 Expected: PASS
 
 - [ ] **Step 5: Run the full unit test target**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests`
 Expected: PASS
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Manga-Reader/Services/HistoryStore.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/HistoryStore.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add batch mark-read/unread API to HistoryStore"
 ```
 
@@ -350,7 +350,7 @@ git commit -m "Add batch mark-read/unread API to HistoryStore"
 ## Task 4: Chapter list multiselect in `MangaDetailView`
 
 **Files:**
-- Modify: `Manga-Reader/Views/MangaDetailView.swift:14` (new `@State`), `:225-277` (`chapters` section), `:279-316` (`chapterRow`), `:21-36` (`body`, to attach the selection toolbar)
+- Modify: `MangaCarta/Views/MangaDetailView.swift:14` (new `@State`), `:225-277` (`chapters` section), `:279-316` (`chapterRow`), `:21-36` (`body`, to attach the selection toolbar)
 
 **Interfaces:**
 - Consumes: `HistoryStore.markRead(manga: Manga, chapters: [Chapter])`, `HistoryStore.markUnread(manga: Manga, chapters: [Chapter])` (from Task 3), `sortChapters(_:descending:)` (existing free function), `Chapter` (existing).
@@ -358,7 +358,7 @@ git commit -m "Add batch mark-read/unread API to HistoryStore"
 
 - [ ] **Step 1: Add selection state**
 
-In `Manga-Reader/Views/MangaDetailView.swift`, after `@State private var chaptersDescending = true` (originally line 14):
+In `MangaCarta/Views/MangaDetailView.swift`, after `@State private var chaptersDescending = true` (originally line 14):
 
 ```swift
     @State private var isSelecting = false
@@ -563,18 +563,18 @@ Then attach the bottom toolbar to `body`. Replace the `.onAppear { vm.load() }` 
 
 - [ ] **Step 6: Build**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build`
 Expected: BUILD SUCCEEDED
 
 - [ ] **Step 7: Run the full unit test target**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests`
 Expected: PASS (no unit tests target `MangaDetailView` directly, so this confirms no regressions elsewhere)
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add Manga-Reader/Views/MangaDetailView.swift
+git add MangaCarta/Views/MangaDetailView.swift
 git commit -m "Add chapter list multiselect with select-all mark read/unread"
 ```
 
@@ -588,9 +588,9 @@ git commit -m "Add chapter list multiselect with select-all mark read/unread"
 
 ```bash
 xcrun simctl boot "iPhone 17" 2>/dev/null || true
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build
-xcrun simctl install "iPhone 17" $(find ~/Library/Developer/Xcode/DerivedData -name "Manga-Reader.app" -path "*Debug-iphonesimulator*" | head -1)
-xcrun simctl launch "iPhone 17" $(defaults read $(find ~/Library/Developer/Xcode/DerivedData -name "Info.plist" -path "*Manga-Reader.app*" | head -1) CFBundleIdentifier)
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build
+xcrun simctl install "iPhone 17" $(find ~/Library/Developer/Xcode/DerivedData -name "MangaCarta.app" -path "*Debug-iphonesimulator*" | head -1)
+xcrun simctl launch "iPhone 17" $(defaults read $(find ~/Library/Developer/Xcode/DerivedData -name "Info.plist" -path "*MangaCarta.app*" | head -1) CFBundleIdentifier)
 ```
 
 - [ ] **Step 2: Verify the unread badge**
@@ -598,7 +598,7 @@ xcrun simctl launch "iPhone 17" $(defaults read $(find ~/Library/Developer/Xcode
 In the running app: Search tab → search any manga → open its detail → "Add to Library". Go to the Library tab and pull to refresh. Confirm the card shows an `UNREAD · N` stamp where N equals the manga's total chapter count (nothing has been read yet). Capture a screenshot:
 
 ```bash
-xcrun simctl io "iPhone 17" screenshot /private/tmp/claude-501/-Users-eliasmagdaleno-xcode-Manga-Reader/*/scratchpad/library-badge.png
+xcrun simctl io "iPhone 17" screenshot /private/tmp/claude-501/-Users-eliasmagdaleno-xcode-MangaCarta/*/scratchpad/library-badge.png
 ```
 
 - [ ] **Step 3: Verify the badge decrements on read**

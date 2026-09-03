@@ -14,12 +14,12 @@
 
 - **Pure SwiftUI + Foundation + system frameworks (WebKit is fine). NO third-party deps, no SPM/CocoaPods.**
 - Deployment target iOS 17.5; branch `feature/extension-system-phase-2`.
-- New files ONLY in `Manga-Reader/Services/`, `Manga-Reader/Models/`, `Manga-Reader/Views/Components/` (Xcode synchronized groups — auto-compiled, **no pbxproj edits**). `Views/` itself and the test target are NOT synchronized — modify existing files there only (`ContentView.swift`, `Manga-ReaderTests/Manga_ReaderTests.swift`).
-- Build: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build`
+- New files ONLY in `MangaCarta/Services/`, `MangaCarta/Models/`, `MangaCarta/Views/Components/` (Xcode synchronized groups — auto-compiled, **no pbxproj edits**). `Views/` itself and the test target are NOT synchronized — modify existing files there only (`ContentView.swift`, `MangaCartaTests/MangaCartaTests.swift`).
+- Build: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build`
 - Unit tests (UI-test runner is flaky — always scope to the unit target):
-  `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests`
+  `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests`
   Builds/tests take a few minutes; be patient — don't chain short sleeps.
-- After any build, if `git status` shows a cosmetic `project.pbxproj` reshuffle: `git checkout -- Manga-Reader.xcodeproj/project.pbxproj`.
+- After any build, if `git status` shows a cosmetic `project.pbxproj` reshuffle: `git checkout -- MangaCarta.xcodeproj/project.pbxproj`.
 - Every commit ends with the trailer: `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`
 - DOM selectors are ported from the reference extension (`inkdex/general-extensions`, branch `0.9/stable`, `src/WeebCentral/{parsers,network,main}.ts`) — **technique only, never copy code or match their API**. Selectors are the most volatile part; Task 5 verifies them against live HTML.
 
@@ -36,9 +36,9 @@
 The seam every later task depends on. The `WebViewExtracting` protocol lives with `SourceContext` (sources depend on the abstraction; `Services/WebViewService.swift` in Task 2 holds only the implementation — deliberate small deviation from the spec's file sketch).
 
 **Files:**
-- Modify: `Manga-Reader/Models/MangaSource.swift` (the `SourceError` enum, currently lines 43–53)
-- Create: `Manga-Reader/Services/SourceContext.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+- Modify: `MangaCarta/Models/MangaSource.swift` (the `SourceError` enum, currently lines 43–53)
+- Create: `MangaCarta/Services/SourceContext.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append)
 
 **Interfaces:**
 - Consumes: existing `SourceError` enum.
@@ -49,7 +49,7 @@ The seam every later task depends on. The `WebViewExtracting` protocol lives wit
 
 - [ ] **Step 1: Write the failing test**
 
-Append to the end of the `Manga_ReaderTests` class in `Manga-ReaderTests/Manga_ReaderTests.swift`:
+Append to the end of the `MangaCartaTests` class in `MangaCartaTests/MangaCartaTests.swift`:
 
 ```swift
     // MARK: - Source-layer contract (Phase 2)
@@ -66,12 +66,12 @@ Append to the end of the `Manga_ReaderTests` class in `Manga-ReaderTests/Manga_R
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: **build failure** — `type 'SourceError' has no member 'cloudflareUnsolved'`.
 
 - [ ] **Step 3: Implement**
 
-In `Manga-Reader/Models/MangaSource.swift`, replace the `SourceError` enum with:
+In `MangaCarta/Models/MangaSource.swift`, replace the `SourceError` enum with:
 
 ```swift
 /// Errors common to the source layer (distinct from a source's own transport errors).
@@ -100,12 +100,12 @@ enum SourceError: LocalizedError {
 }
 ```
 
-Create `Manga-Reader/Services/SourceContext.swift`:
+Create `MangaCarta/Services/SourceContext.swift`:
 
 ```swift
 //
 //  SourceContext.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  The host-capability bundle handed to every `MangaSource` at construction. Sources
 //  that scrape HTML sites call `webView.extract(...)`; API-backed sources (MangaDex)
@@ -130,14 +130,14 @@ struct SourceContext {
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: `** TEST SUCCEEDED **` (all existing tests + the new one).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git checkout -- Manga-Reader.xcodeproj/project.pbxproj 2>/dev/null || true
-git add Manga-Reader/Models/MangaSource.swift Manga-Reader/Services/SourceContext.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git checkout -- MangaCarta.xcodeproj/project.pbxproj 2>/dev/null || true
+git add MangaCarta/Models/MangaSource.swift MangaCarta/Services/SourceContext.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add WebViewExtracting/SourceContext seam + webview SourceError cases
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -150,9 +150,9 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 The Phase-2 spine and the hardest task. The code below is a complete reference implementation; the implementer owns making it actually work (WKWebView delegate edge cases are subtle — think through double-resume, challenge sub-navigations, and dismissal races; adjust as reality demands but keep the public surface exactly as specified).
 
 **Files:**
-- Create: `Manga-Reader/Services/WebViewService.swift`
-- Create: `Manga-Reader/Views/Components/CloudflareChallengeView.swift`
-- Modify: `Manga-Reader/ContentView.swift` (attach the challenge sheet)
+- Create: `MangaCarta/Services/WebViewService.swift`
+- Create: `MangaCarta/Views/Components/CloudflareChallengeView.swift`
+- Modify: `MangaCarta/ContentView.swift` (attach the challenge sheet)
 - Test: none (verified live in Task 5 — real browser + network + Cloudflare can't be unit-tested meaningfully)
 
 **Interfaces:**
@@ -169,12 +169,12 @@ The Phase-2 spine and the hardest task. The code below is a complete reference i
 - User dismissing the sheet, or 120 s elapsing → `SourceError.cloudflareUnsolved`. Page-load timeout 30 s → `SourceError.navigationFailed`.
 - `evaluateJavaScript` — use the **completion-handler variant wrapped in a continuation** (the async overload traps when JS returns nil).
 
-- [ ] **Step 1: Write `Manga-Reader/Services/WebViewService.swift`**
+- [ ] **Step 1: Write `MangaCarta/Services/WebViewService.swift`**
 
 ```swift
 //
 //  WebViewService.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  The Cloudflare-clearing HTML-extraction engine behind WebView-based sources
 //  (WeebCentral now; more sources in later phases). Loads a page in a shared
@@ -359,12 +359,12 @@ Implementer notes (verify these while building — they are the sharp edges):
 - **Double-resume:** every path funnels through `resumeLoad`/`resumeChallenge` which nil-check-and-clear. Keep it that way.
 - The sheet's `onDismiss` calls `cancelChallenge()` even after success — harmless because the continuation is already nil.
 
-- [ ] **Step 2: Write `Manga-Reader/Views/Components/CloudflareChallengeView.swift`**
+- [ ] **Step 2: Write `MangaCarta/Views/Components/CloudflareChallengeView.swift`**
 
 ```swift
 //
 //  CloudflareChallengeView.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Sheet content that puts WebViewService's shared browser on screen while a
 //  Cloudflare interactive challenge needs a human tap. Purely presentational:
@@ -396,7 +396,7 @@ private struct ChallengeWebViewHost: UIViewRepresentable {
 }
 ```
 
-- [ ] **Step 3: Wire the sheet into `Manga-Reader/ContentView.swift`**
+- [ ] **Step 3: Wire the sheet into `MangaCarta/ContentView.swift`**
 
 Add the state object and wrap the existing `if #available` in a `Group` so one sheet covers both branches. The `body` becomes:
 
@@ -435,19 +435,19 @@ Only the `Group { ... }` wrapper, the `@StateObject` line, and the `.sheet` modi
 
 - [ ] **Step 4: Build**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build 2>&1 | tail -5`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build 2>&1 | tail -5`
 Expected: `** BUILD SUCCEEDED **`
 
 - [ ] **Step 5: Run existing unit tests (regression only — no new tests this task)**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -5`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -5`
 Expected: `** TEST SUCCEEDED **`
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git checkout -- Manga-Reader.xcodeproj/project.pbxproj 2>/dev/null || true
-git add Manga-Reader/Services/WebViewService.swift Manga-Reader/Views/Components/CloudflareChallengeView.swift Manga-Reader/ContentView.swift
+git checkout -- MangaCarta.xcodeproj/project.pbxproj 2>/dev/null || true
+git add MangaCarta/Services/WebViewService.swift MangaCarta/Views/Components/CloudflareChallengeView.swift MangaCarta/ContentView.swift
 git commit -m "Add WebViewService: Cloudflare-clearing WKWebView JS extraction + challenge sheet
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -460,8 +460,8 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 All URL construction and DTO→domain mapping under unit test via a `MockWebView`. JS scripts are data here (their DOM correctness is verified live in Task 5).
 
 **Files:**
-- Create: `Manga-Reader/Models/WeebCentralSource.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append — the test target is NOT a synchronized group; do not create new test files)
+- Create: `MangaCarta/Models/WeebCentralSource.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append — the test target is NOT a synchronized group; do not create new test files)
 
 **Interfaces:**
 - Consumes: `WebViewExtracting` + `SourceContext` (Task 1); domain types `Manga`, `MangaUpdate`, `MangaDetail`, `Chapter` (memberwise inits, see test code); `MangaSource` protocol.
@@ -483,7 +483,7 @@ All URL construction and DTO→domain mapping under unit test via a `MockWebView
 
 - [ ] **Step 1: Write the failing tests**
 
-Append to `Manga-ReaderTests/Manga_ReaderTests.swift`, inside the `Manga_ReaderTests` class:
+Append to `MangaCartaTests/MangaCartaTests.swift`, inside the `MangaCartaTests` class:
 
 ```swift
     // MARK: - WeebCentralSource (Phase 2)
@@ -608,15 +608,15 @@ Append to `Manga-ReaderTests/Manga_ReaderTests.swift`, inside the `Manga_ReaderT
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: **build failure** — `cannot find 'WeebCentralSource' in scope`.
 
-- [ ] **Step 3: Implement `Manga-Reader/Models/WeebCentralSource.swift`**
+- [ ] **Step 3: Implement `MangaCarta/Models/WeebCentralSource.swift`**
 
 ```swift
 //
 //  WeebCentralSource.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  WeebCentral (weebcentral.com) as source #2 — a server-rendered HTML site behind
 //  Cloudflare, with no JSON API. Every method loads a page through the context's
@@ -876,14 +876,14 @@ private extension WeebCentralSource {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: `** TEST SUCCEEDED **` — all new `testWeebCentral*` tests plus every pre-existing test.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git checkout -- Manga-Reader.xcodeproj/project.pbxproj 2>/dev/null || true
-git add Manga-Reader/Models/WeebCentralSource.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git checkout -- MangaCarta.xcodeproj/project.pbxproj 2>/dev/null || true
+git add MangaCarta/Models/WeebCentralSource.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add WeebCentralSource: HTML-extraction source #2 with mock-WebView tests
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -896,8 +896,8 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 Wire the real `WebViewService` into a shared `SourceContext` and register WeebCentral as a default source. The Phase-1 Settings picker then shows both sources with zero UI changes.
 
 **Files:**
-- Modify: `Manga-Reader/Services/SourceRegistry.swift` (the `init`, currently lines 29–37)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+- Modify: `MangaCarta/Services/SourceRegistry.swift` (the `init`, currently lines 29–37)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append)
 
 **Interfaces:**
 - Consumes: `WebViewService.shared` (Task 2), `WeebCentralSource(context:)` (Task 3), `SourceContext` (Task 1).
@@ -905,7 +905,7 @@ Wire the real `WebViewService` into a shared `SourceContext` and register WeebCe
 
 - [ ] **Step 1: Write the failing test**
 
-Append inside the `Manga_ReaderTests` class:
+Append inside the `MangaCartaTests` class:
 
 ```swift
     // MARK: - Default source registration (Phase 2)
@@ -921,12 +921,12 @@ Append inside the `Manga_ReaderTests` class:
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: `testDefaultRegistryContainsMangaDexAndWeebCentral` FAILS — `["mangadex"] is not equal to ["mangadex", "weebcentral"]`. (It builds; the default registry just lacks WeebCentral.)
 
 - [ ] **Step 3: Implement**
 
-In `Manga-Reader/Services/SourceRegistry.swift`, replace the `init` (and its doc comment) with:
+In `MangaCarta/Services/SourceRegistry.swift`, replace the `init` (and its doc comment) with:
 
 ```swift
     /// - Parameter sources: Sources to register, or `nil` for the app's built-in set
@@ -952,14 +952,14 @@ In `Manga-Reader/Services/SourceRegistry.swift`, replace the `init` (and its doc
 
 - [ ] **Step 4: Run the full unit suite**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: `** TEST SUCCEEDED **` — the new registration test AND all Phase-1 registry/picker tests (they inject explicit source arrays, so the signature change is compatible).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git checkout -- Manga-Reader.xcodeproj/project.pbxproj 2>/dev/null || true
-git add Manga-Reader/Services/SourceRegistry.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git checkout -- MangaCarta.xcodeproj/project.pbxproj 2>/dev/null || true
+git add MangaCarta/Services/SourceRegistry.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Register WeebCentralSource as a built-in source (shared WebView context)
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -992,9 +992,9 @@ If `cf-mitigated: challenge` comes back, curl can't see the HTML — skip to Ste
 - [ ] **Step 2: Build and install on the simulator**
 
 ```bash
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build 2>&1 | tail -3
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build 2>&1 | tail -3
 xcrun simctl boot "iPhone 17" 2>/dev/null || true
-APP=$(find ~/Library/Developer/Xcode/DerivedData -path "*Build/Products/Debug-iphonesimulator/Manga-Reader.app" -newer /tmp -print -quit 2>/dev/null || find ~/Library/Developer/Xcode/DerivedData -path "*Debug-iphonesimulator/Manga-Reader.app" -print -quit)
+APP=$(find ~/Library/Developer/Xcode/DerivedData -path "*Build/Products/Debug-iphonesimulator/MangaCarta.app" -newer /tmp -print -quit 2>/dev/null || find ~/Library/Developer/Xcode/DerivedData -path "*Debug-iphonesimulator/MangaCarta.app" -print -quit)
 xcrun simctl install booted "$APP"
 xcrun simctl launch booted Elias-Magdaleno.Manga-Reader
 ```
@@ -1017,8 +1017,8 @@ Fix any failures (selector tweaks in the scripts, challenge-flow adjustments in 
 - [ ] **Step 4: Final full test run + clean tree**
 
 ```bash
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -5
-git checkout -- Manga-Reader.xcodeproj/project.pbxproj 2>/dev/null || true
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -5
+git checkout -- MangaCarta.xcodeproj/project.pbxproj 2>/dev/null || true
 git status --short
 ```
 
@@ -1027,7 +1027,7 @@ Expected: `** TEST SUCCEEDED **`; working tree clean except intentionally-modifi
 - [ ] **Step 5: Commit any live-verification fixes**
 
 ```bash
-git add -u Manga-Reader/
+git add -u MangaCarta/
 git commit -m "Fix WeebCentral selectors/challenge flow after live verification
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -1044,15 +1044,15 @@ Checkpoint results: pages ✓, details ✓, switching works but Home only re-sou
 ### Task 6: Home re-sources immediately when the active source changes
 
 **Files:**
-- Modify: `Manga-Reader/Models/HomeViewModel.swift`
-- Modify: `Manga-Reader/Views/HomeView.swift` (lines 9 and 51)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+- Modify: `MangaCarta/Models/HomeViewModel.swift`
+- Modify: `MangaCarta/Views/HomeView.swift` (lines 9 and 51)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append)
 
 **Interfaces:**
 - Consumes: `SourceRegistry.shared` (`@Published var activeSourceID: String`, `var active: MangaSource`).
 - Produces: `HomeViewModel.init(source: MangaSource? = nil)` (same signature as today), `var source: MangaSource` now resolves the registry's active source dynamically when no override was injected.
 
-- [ ] **Step 1: Write the failing test** (append inside the `Manga_ReaderTests` class):
+- [ ] **Step 1: Write the failing test** (append inside the `MangaCartaTests` class):
 
 ```swift
     // MARK: - Home source switching (Phase 2 addendum)
@@ -1114,12 +1114,12 @@ Note: `MockSource` already exists in the test file (~line 320). Do NOT mutate `S
 In `HomeView`: add `@ObservedObject private var registry = SourceRegistry.shared` under the `@StateObject` line, and change `.task { vm.loadHome() }` to `.task(id: registry.activeSourceID) { vm.loadHome() }`.
 
 - [ ] **Step 4: Run the unit suite** (green) and build.
-- [ ] **Step 5: Commit** `Manga-Reader/Models/HomeViewModel.swift Manga-Reader/Views/HomeView.swift Manga-ReaderTests/Manga_ReaderTests.swift` — message: `Re-source Home immediately when the active source changes` + trailer.
+- [ ] **Step 5: Commit** `MangaCarta/Models/HomeViewModel.swift MangaCarta/Views/HomeView.swift MangaCartaTests/MangaCartaTests.swift` — message: `Re-source Home immediately when the active source changes` + trailer.
 
 ### Task 7: Reader zoom must not reset on its own
 
 **Files:**
-- Modify: `Manga-Reader/Views/ReaderView.swift` (the `ZoomablePage` struct, lines ~279-374)
+- Modify: `MangaCarta/Views/ReaderView.swift` (the `ZoomablePage` struct, lines ~279-374)
 - Test: none (gesture behavior — build + manual verification; describe your manual reasoning in the report)
 
 **Symptom (user report):** after double-tap-to-zoom or pinch-to-zoom, the page zooms back out by itself.
@@ -1135,17 +1135,17 @@ Keep the fix minimal and inside `ZoomablePage` (plus its call site if the select
 - [ ] **Step 1:** Read `ZoomablePage` and its call site; confirm which suspect(s) actually cause the reset (reason it through; note SwiftUI TabView page lifecycle).
 - [ ] **Step 2:** Implement the minimal fix.
 - [ ] **Step 3:** Build (`** BUILD SUCCEEDED **`) and run the unit suite (green — no reader tests exist, this is regression only).
-- [ ] **Step 4: Commit** `Manga-Reader/Views/ReaderView.swift` — message: `Keep reader zoom until the user zooms out` + trailer.
+- [ ] **Step 4: Commit** `MangaCarta/Views/ReaderView.swift` — message: `Keep reader zoom until the user zooms out` + trailer.
 
 ### Task 8: Detail page shows the manga's source + opens its page in an in-app browser
 
 **Files:**
-- Modify: `Manga-Reader/Models/MangaSource.swift` (protocol + default impl)
-- Modify: `Manga-Reader/Models/MangaDexSource.swift`
-- Modify: `Manga-Reader/Models/WeebCentralSource.swift`
-- Create: `Manga-Reader/Views/Components/SafariView.swift`
-- Modify: `Manga-Reader/Views/MangaDetailView.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+- Modify: `MangaCarta/Models/MangaSource.swift` (protocol + default impl)
+- Modify: `MangaCarta/Models/MangaDexSource.swift`
+- Modify: `MangaCarta/Models/WeebCentralSource.swift`
+- Create: `MangaCarta/Views/Components/SafariView.swift`
+- Modify: `MangaCarta/Views/MangaDetailView.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append)
 
 **Interfaces:**
 - Produces: `MangaSource.webURL(forManga id: String) -> URL?` — optional capability, default `nil` (same pattern as `newTitles`); `struct SafariView: UIViewControllerRepresentable` with `let url: URL`.
@@ -1203,7 +1203,7 @@ and to the optional-capabilities extension:
 ```swift
 //
 //  SafariView.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  In-app Safari (SFSafariViewController) presented as a sheet — used by the manga
 //  detail screen's "open on web" action so users never leave the app.
@@ -1269,8 +1269,8 @@ struct SafariView: UIViewControllerRepresentable {
 **Diagnosis:** SwiftUI `DragGesture`/`MagnificationGesture` state-updates can't match UIScrollView physics (no velocity/deceleration/rubber-band, and the pan fights the TabView pager); the pan translation is also read inside the un-mirrored coordinate space while rendering passes through the RTL double-flip, inverting x.
 
 **Files:**
-- Modify: `Manga-Reader/Views/ReaderView.swift` (replace `ZoomablePage`'s gesture stack)
-- Create: `Manga-Reader/Views/Components/ZoomableContainer.swift` (UIViewRepresentable)
+- Modify: `MangaCarta/Views/ReaderView.swift` (replace `ZoomablePage`'s gesture stack)
+- Create: `MangaCarta/Views/Components/ZoomableContainer.swift` (UIViewRepresentable)
 - Test: none (gesture feel — build + unit-suite regression + human verification)
 
 **Approach (implementer owns the details):** wrap each paged page's content in a `UIScrollView` via a `ZoomableContainer<Content: View>: UIViewRepresentable` hosting the SwiftUI content (`UIHostingController`, view pinned to `contentLayoutGuide`, sized to `frameLayoutGuide`):

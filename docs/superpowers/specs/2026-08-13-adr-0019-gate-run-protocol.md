@@ -69,7 +69,7 @@ silently absent.
    about closing a cohort.
 3. Drain via `xcrun simctl launch` with `SIMCTL_CHILD_ADR0019_BRIDGE_LOG=<container>/gate-run.log`
    rather than another `xcodebuild test` — a reinstall moves the data container, and the log path is
-   fixed at launch. The queue starts on `.active` (`Manga_ReaderApp.swift:67`).
+   fixed at launch. The queue starts on `.active` (`MangaCartaApp.swift:67`).
 4. Resolve the container path immediately before launching; **its UUID changes on every install**
    even though the data migrates.
 5. Read `gate-run.log`, `upgrade-attempts.json` and `works.json` afterwards.

@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-08-24T00:00:00-07:00",
-  "title": "Design System: Manga Reader — Ink & Seal",
+  "title": "Design System: MangaCarta — Ink & Seal",
   "extensions": {
     "colorMeta": {
       "paper": { "role": "neutral", "displayName": "Warm Paper", "canonical": "#FBFAF8", "tonalRamp": ["#201E1B", "#3D3934", "#5F5951", "#837B70", "#A9A196", "#CDC7BE", "#EAE6E0", "#FBFAF8"] },

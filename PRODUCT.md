@@ -12,7 +12,7 @@ The primary user is an individual iPhone or iPad manga reader who wants to disco
 
 ## Product Purpose
 
-Manga Reader provides a native reading loop for discovering manga, saving favorites, tracking reading progress, resuming where the reader stopped, and learning when saved titles receive new chapters. Success means readers can move from discovery to reading and return for new releases without manually reconciling titles and progress across sources.
+MangaCarta provides a native reading loop for discovering manga, saving favorites, tracking reading progress, resuming where the reader stopped, and learning when saved titles receive new chapters. Success means readers can move from discovery to reading and return for new releases without manually reconciling titles and progress across sources.
 
 ## Positioning
 
@@ -42,14 +42,14 @@ The product unifies multiple chapter sources around source-independent Works whi
 
 ## Brand Commitments
 
-- Product name: Manga Reader.
+- Product name: MangaCarta.
 - Existing voice is concise, calm, and reader-focused.
 - The established identity is called “Ink & Seal.” Its visual details belong in design-system documentation rather than this product record.
 - MangaDex attribution is required, and the product must not claim affiliation with or endorsement by MangaDex.
 
 ## Evidence on Hand
 
-- The working application implements Home, Library, History, Search, Settings, manga details, and the reader under `Manga-Reader/`.
+- The working application implements Home, Library, History, Search, Settings, manga details, and the reader under `MangaCarta/`.
 - Existing product and architecture documentation is in `README.md`, `CLAUDE.md`, `docs/glossary.md`, and numbered ADRs under `docs/adr/`.
 - Shipped-feature specifications and implementation plans are under `docs/superpowers/`.
 - Current light- and dark-mode screenshots are under `docs/screenshots/`.

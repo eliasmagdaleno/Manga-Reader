@@ -1,4 +1,4 @@
-# Manga Reader
+# MangaCarta
 
 A native iOS manga reader built with SwiftUI, powered by the [MangaDex](https://mangadex.org) API. No third-party dependencies — pure SwiftUI and Foundation.
 
@@ -39,18 +39,18 @@ restate them.
 
 ## Getting started
 
-Open `Manga-Reader.xcodeproj` in Xcode and run the `Manga-Reader` scheme (⌘R).
+Open `MangaCarta.xcodeproj` in Xcode and run the `MangaCarta` scheme (⌘R).
 
 Or build from the command line:
 
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 ```
 
 Run the test suite:
 
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17 Pro' test
 ```
 
 ## Project status

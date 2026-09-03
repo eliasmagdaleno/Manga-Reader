@@ -2,7 +2,7 @@
 
 ## Job and audience
 
-A returning reader opens Manga Reader after time away and needs to answer one question immediately:
+A returning reader opens MangaCarta after time away and needs to answer one question immediately:
 “What changed in titles I follow?” The surface operates as a calm personal dashboard before it
 becomes a discovery catalog. New readers and readers with no updates still receive useful
 recommendations and source-wide browsing without seeing an empty updates shell.

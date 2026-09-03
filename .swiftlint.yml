@@ -1,13 +1,13 @@
-# SwiftLint configuration for Manga-Reader.
+# SwiftLint configuration for MangaCarta.
 # A linter config is this project's coding conventions, made machine-checkable.
 # Rules that clash with deliberate style choices are relaxed here; rules that
 # catch genuine bugs or sloppiness are kept.
 
 # Only lint our own source — not build output or dependencies.
 included:
-  - Manga-Reader
-  - Manga-ReaderTests
-  - Manga-ReaderUITests
+  - MangaCarta
+  - MangaCartaTests
+  - MangaCartaUITests
 
 # Rules turned off because they fight intentional, established style in this codebase:
 disabled_rules:
@@ -16,7 +16,6 @@ disabled_rules:
   - implicit_optional_initialization  # explicit `= nil` is used deliberately in places
   - non_optional_string_data_conversion  # existing String(data:encoding:) usage; revisit later
   - todo                         # don't fail CI on TODO/FIXME comments
-  - type_name                    # Xcode's target names are forced to underscores (Manga_ReaderApp) — unavoidable
 
 # Relax length limits: SwiftUI view bodies and descriptive lines run long here.
 line_length:

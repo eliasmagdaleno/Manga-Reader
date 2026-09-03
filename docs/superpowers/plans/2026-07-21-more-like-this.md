@@ -20,28 +20,28 @@
 - **Tests run on the iPhone 17 simulator with `-parallel-testing-enabled NO`** (no iPhone 16 sim on this machine; parallel test clones are unwanted). Expect SourceKit/LSP "Cannot find X in scope" / "No such module 'XCTest'" false alarms from the standalone indexer — judge correctness by the `xcodebuild test` run, not the indexer.
 - **Frequent commits** — one per task, after its tests pass.
 
-Reference paths (all relative to repo root `/Users/eliasmagdaleno/xcode/Manga-Reader`):
-- Source root: `Manga-Reader/` (note: the app sources live under `Manga-Reader/Manga-Reader/…`)
-- Unit tests: `Manga-ReaderTests/Manga_ReaderTests.swift` (single class `Manga_ReaderTests: XCTestCase`)
-- UI tests: `Manga-ReaderUITests/Manga_ReaderUITests.swift` (single class `Manga_ReaderUITests: XCTestCase`)
+Reference paths (all relative to repo root `/Users/eliasmagdaleno/xcode/MangaCarta`):
+- Source root: `MangaCarta/` (note: the app sources live under `MangaCarta/MangaCarta/…`)
+- Unit tests: `MangaCartaTests/MangaCartaTests.swift` (single class `MangaCartaTests: XCTestCase`)
+- UI tests: `MangaCartaUITests/MangaCartaUITests.swift` (single class `MangaCartaUITests: XCTestCase`)
 
 ---
 
 ## File Structure
 
 **New files:**
-- `Manga-Reader/Services/MoreLikeThis.swift` — the pure, network-free reverse-match helper (`enum MoreLikeThis` with `pickMatch(...)`).
-- `Manga-Reader/Services/MoreLikeThisProvider.swift` — `@MainActor` orchestration service + a pure `topRecommendations(_:limit:)` static.
-- `Manga-Reader/Models/MoreLikeThisViewModel.swift` — `@MainActor ObservableObject` the detail rail binds to.
+- `MangaCarta/Services/MoreLikeThis.swift` — the pure, network-free reverse-match helper (`enum MoreLikeThis` with `pickMatch(...)`).
+- `MangaCarta/Services/MoreLikeThisProvider.swift` — `@MainActor` orchestration service + a pure `topRecommendations(_:limit:)` static.
+- `MangaCarta/Models/MoreLikeThisViewModel.swift` — `@MainActor ObservableObject` the detail rail binds to.
 
 **Modified files:**
-- `Manga-Reader/Services/MALTitleMatcher.swift` — add generic `bestMatch<ID>(...)`; `decide(...)` delegates to it.
-- `Manga-Reader/Services/EntityResolutionStore.swift` — add `ReverseResolution` enum, `reverseCache` map + accessors, and `static let shared`.
-- `Manga-Reader/Models/MangaDexAPI.swift` — change `fetchMangaByIdsWithCovers(ids:)` from `private static` to `static` (internal).
-- `Manga-Reader/Views/MangaDetailView.swift` — add the `moreLikeThis` view model, the bottom rail section, and a `.task` to load it.
-- `Manga-Reader/Views/MyAnimeListDebugView.swift` — add a "More Like This" probe field (throwaway; retired with the debug screen later).
-- `Manga-ReaderTests/Manga_ReaderTests.swift` — append unit tests.
-- `Manga-ReaderUITests/Manga_ReaderUITests.swift` — append two live UI tests.
+- `MangaCarta/Services/MALTitleMatcher.swift` — add generic `bestMatch<ID>(...)`; `decide(...)` delegates to it.
+- `MangaCarta/Services/EntityResolutionStore.swift` — add `ReverseResolution` enum, `reverseCache` map + accessors, and `static let shared`.
+- `MangaCarta/Models/MangaDexAPI.swift` — change `fetchMangaByIdsWithCovers(ids:)` from `private static` to `static` (internal).
+- `MangaCarta/Views/MangaDetailView.swift` — add the `moreLikeThis` view model, the bottom rail section, and a `.task` to load it.
+- `MangaCarta/Views/MyAnimeListDebugView.swift` — add a "More Like This" probe field (throwaway; retired with the debug screen later).
+- `MangaCartaTests/MangaCartaTests.swift` — append unit tests.
+- `MangaCartaUITests/MangaCartaUITests.swift` — append two live UI tests.
 
 ---
 
@@ -50,8 +50,8 @@ Reference paths (all relative to repo root `/Users/eliasmagdaleno/xcode/Manga-Re
 Extract the normalize+score+threshold+ambiguity-guard core of `decide` into a generic static over the id type, so both the forward (→ MAL id) and reverse (→ MangaDex id) paths share one implementation. `decide` delegates to it. The existing 7 matcher tests are the refactor's safety net; one new test proves genericity over a non-`Int` id.
 
 **Files:**
-- Modify: `Manga-Reader/Services/MALTitleMatcher.swift:76-95` (replace the `decide` body; add `bestMatch`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append near the existing `// MARK: - MALTitleMatcher` block, ~line 1846)
+- Modify: `MangaCarta/Services/MALTitleMatcher.swift:76-95` (replace the `decide` body; add `bestMatch`)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append near the existing `// MARK: - MALTitleMatcher` block, ~line 1846)
 
 **Interfaces:**
 - Consumes: existing `MALTitleMatcher.normalize`, `MALTitleMatcher.similarity`, `acceptanceThreshold`, `ambiguityMargin`, `MALCandidate`, `MALMatchDecision`.
@@ -59,7 +59,7 @@ Extract the normalize+score+threshold+ambiguity-guard core of `decide` into a ge
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `Manga-ReaderTests/Manga_ReaderTests.swift` (inside `final class Manga_ReaderTests`, after the last matcher test near line 1846):
+Append to `MangaCartaTests/MangaCartaTests.swift` (inside `final class MangaCartaTests`, after the last matcher test near line 1846):
 
 ```swift
     func testMALBestMatchIsGenericOverStringId() {
@@ -92,16 +92,16 @@ Append to `Manga-ReaderTests/Manga_ReaderTests.swift` (inside `final class Manga
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
-  test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALBestMatchIsGenericOverStringId
+  test -only-testing:MangaCartaTests/MangaCartaTests/testMALBestMatchIsGenericOverStringId
 ```
 Expected: FAIL to compile — "value of type 'MALTitleMatcher' has no member 'bestMatch'".
 
 - [ ] **Step 3: Write the minimal implementation**
 
-In `Manga-Reader/Services/MALTitleMatcher.swift`, replace the current `decide(sourceTitle:candidates:)` method (lines 76-95) with the generic core plus a thin delegating `decide`:
+In `MangaCarta/Services/MALTitleMatcher.swift`, replace the current `decide(sourceTitle:candidates:)` method (lines 76-95) with the generic core plus a thin delegating `decide`:
 
 ```swift
     /// The id of the best-matching candidate for `sourceTitle`, or nil if no candidate
@@ -143,21 +143,21 @@ In `Manga-Reader/Services/MALTitleMatcher.swift`, replace the current `decide(so
 
 Run (the two new tests plus the whole existing matcher suite as the refactor's safety net):
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
   test \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALBestMatchIsGenericOverStringId \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALBestMatchRejectsAmbiguousAndBelowThreshold \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALDecideMatchesViaAlternativeTitle \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALDecideEmptyInputsAreNoMatch
+  -only-testing:MangaCartaTests/MangaCartaTests/testMALBestMatchIsGenericOverStringId \
+  -only-testing:MangaCartaTests/MangaCartaTests/testMALBestMatchRejectsAmbiguousAndBelowThreshold \
+  -only-testing:MangaCartaTests/MangaCartaTests/testMALDecideMatchesViaAlternativeTitle \
+  -only-testing:MangaCartaTests/MangaCartaTests/testMALDecideEmptyInputsAreNoMatch
 ```
 Expected: PASS — all four. (The delegation keeps `decide`'s behavior identical; the existing `testMALDecide*` tests must stay green.)
 
 - [ ] **Step 5: Commit**
 
 ```sh
-git add Manga-Reader/Services/MALTitleMatcher.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/MALTitleMatcher.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Refactor MALTitleMatcher: extract generic bestMatch<ID>, decide delegates
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -170,8 +170,8 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 The testable core of reverse resolution: given a MAL recommendation (its id + title) and the MangaDex search results for that title, pick the confident MangaDex `Manga` — or `nil`. Precise first (a candidate whose `malId == target` is a confirmed match), fuzzy title fallback via `bestMatch`, `nil` when neither is confident.
 
 **Files:**
-- Create: `Manga-Reader/Services/MoreLikeThis.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+- Create: `MangaCarta/Services/MoreLikeThis.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append)
 
 **Interfaces:**
 - Consumes: `Manga` (fields `id: String`, `malId: Int?`, `title: String`), `MALTitleMatcher.bestMatch` (Task 1).
@@ -179,13 +179,13 @@ The testable core of reverse resolution: given a MAL recommendation (its id + ti
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `Manga-ReaderTests/Manga_ReaderTests.swift` (inside `final class Manga_ReaderTests`; a small `Manga`-builder keeps the cases readable):
+Append to `MangaCartaTests/MangaCartaTests.swift` (inside `final class MangaCartaTests`; a small `Manga`-builder keeps the cases readable):
 
 ```swift
     // MARK: - MoreLikeThis.pickMatch
 
     /// Minimal `Manga` for pure MoreLikeThis tests. `Manga`'s memberwise init is internal,
-    /// reachable here via `@testable import Manga_Reader`.
+    /// reachable here via `@testable import MangaCarta`.
     private func mlManga(id: String, title: String, malId: Int?) -> Manga {
         Manga(id: id, sourceId: "mangadex", title: title, description: "",
               status: "unknown", year: nil, coverURL: nil, malId: malId)
@@ -232,21 +232,21 @@ Append to `Manga-ReaderTests/Manga_ReaderTests.swift` (inside `final class Manga
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
-  test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testPickMatchPrefersExactMalIdOverCloserTitle
+  test -only-testing:MangaCartaTests/MangaCartaTests/testPickMatchPrefersExactMalIdOverCloserTitle
 ```
 Expected: FAIL to compile — "cannot find 'MoreLikeThis' in scope".
 
 - [ ] **Step 3: Write the minimal implementation**
 
-Create `Manga-Reader/Services/MoreLikeThis.swift`:
+Create `MangaCarta/Services/MoreLikeThis.swift`:
 
 ```swift
 //
 //  MoreLikeThis.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Pure, network-free core of "More Like This" reverse resolution: turn one MAL
 //  recommendation (its id + title) plus the MangaDex search results for that title into
@@ -279,21 +279,21 @@ enum MoreLikeThis {
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
   test \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testPickMatchPrefersExactMalIdOverCloserTitle \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testPickMatchFallsBackToFuzzyTitleWhenNoCandidateCarriesId \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testPickMatchReturnsNilWhenAmbiguousOrBelowThreshold \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testPickMatchReturnsNilForEmptyCandidates
+  -only-testing:MangaCartaTests/MangaCartaTests/testPickMatchPrefersExactMalIdOverCloserTitle \
+  -only-testing:MangaCartaTests/MangaCartaTests/testPickMatchFallsBackToFuzzyTitleWhenNoCandidateCarriesId \
+  -only-testing:MangaCartaTests/MangaCartaTests/testPickMatchReturnsNilWhenAmbiguousOrBelowThreshold \
+  -only-testing:MangaCartaTests/MangaCartaTests/testPickMatchReturnsNilForEmptyCandidates
 ```
 Expected: PASS — all four.
 
 - [ ] **Step 5: Commit**
 
 ```sh
-git add Manga-Reader/Services/MoreLikeThis.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/MoreLikeThis.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add MoreLikeThis.pickMatch: pure reverse-resolution core
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -306,8 +306,8 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 Add a second, parallel map for the reverse direction (MAL id → MangaDex manga id), keyed by `String(malId)`, persisted under its own UserDefaults key with the same 14-day miss TTL. Add an app-wide `static let shared` so the cache persists across detail-page opens.
 
 **Files:**
-- Modify: `Manga-Reader/Services/EntityResolutionStore.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append near the existing `// MARK: - EntityResolutionStore` block, ~line 1847)
+- Modify: `MangaCarta/Services/EntityResolutionStore.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append near the existing `// MARK: - EntityResolutionStore` block, ~line 1847)
 
 **Interfaces:**
 - Consumes: existing `EntityResolutionStore` shape (`init(defaults:)`, `missTTL`, `save`/`load` pattern), `MALResolution.isFresh` (as the shape to mirror).
@@ -320,7 +320,7 @@ Add a second, parallel map for the reverse direction (MAL id → MangaDex manga 
 
 - [ ] **Step 1: Write the failing test**
 
-Append to `Manga-ReaderTests/Manga_ReaderTests.swift`:
+Append to `MangaCartaTests/MangaCartaTests.swift`:
 
 ```swift
     // MARK: - EntityResolutionStore reverse cache
@@ -365,16 +365,16 @@ Append to `Manga-ReaderTests/Manga_ReaderTests.swift`:
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
-  test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testReverseCacheRoundTripsAndKeysByMalId
+  test -only-testing:MangaCartaTests/MangaCartaTests/testReverseCacheRoundTripsAndKeysByMalId
 ```
 Expected: FAIL to compile — "cannot find 'ReverseResolution' in scope" / no member `recordReverse`.
 
 - [ ] **Step 3: Write the minimal implementation**
 
-In `Manga-Reader/Services/EntityResolutionStore.swift`:
+In `MangaCarta/Services/EntityResolutionStore.swift`:
 
 (a) Add the `ReverseResolution` enum after the existing `MALResolution` enum (after line 29):
 
@@ -451,21 +451,21 @@ Extend `save()` and `load()` (lines 60-69) to persist/restore the reverse map al
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
   test \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testReverseCacheRoundTripsAndKeysByMalId \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testReverseCacheDoesNotCollideWithForwardCache \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testReverseResolutionIsFreshHonorsMissTTL \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testReverseCachePersistsAcrossInstances
+  -only-testing:MangaCartaTests/MangaCartaTests/testReverseCacheRoundTripsAndKeysByMalId \
+  -only-testing:MangaCartaTests/MangaCartaTests/testReverseCacheDoesNotCollideWithForwardCache \
+  -only-testing:MangaCartaTests/MangaCartaTests/testReverseResolutionIsFreshHonorsMissTTL \
+  -only-testing:MangaCartaTests/MangaCartaTests/testReverseCachePersistsAcrossInstances
 ```
 Expected: PASS — all four.
 
 - [ ] **Step 5: Commit**
 
 ```sh
-git add Manga-Reader/Services/EntityResolutionStore.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/EntityResolutionStore.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add reverse cache (MAL id -> MangaDex id) + shared store to EntityResolutionStore
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -478,9 +478,9 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 The `@MainActor` service that turns a `Manga` into openable MangaDex recommendations. Also exposes `MangaDexAPI.fetchMangaByIdsWithCovers` (internal) and adds a pure `topRecommendations` static (unit-tested). The network orchestration is thin and live-verified in Task 6 (no network-mock harness in this codebase).
 
 **Files:**
-- Modify: `Manga-Reader/Models/MangaDexAPI.swift:527` (`private static` → `static`)
-- Create: `Manga-Reader/Services/MoreLikeThisProvider.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append — pure `topRecommendations` only)
+- Modify: `MangaCarta/Models/MangaDexAPI.swift:527` (`private static` → `static`)
+- Create: `MangaCarta/Services/MoreLikeThisProvider.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append — pure `topRecommendations` only)
 
 **Interfaces:**
 - Consumes: `MALEntityResolver.malId(for:)`, `MyAnimeListAPI.mangaDetail(id:)` → `MyAnimeListMangaDetail` (`.recommendations: [Recommendation]?`, `Recommendation { let node: MyAnimeListManga; let numRecommendations: Int }`, `MyAnimeListManga { let id: Int; let title: String }`), `MangaDexAPI.searchManga(title:)` → `[Manga]`, `MangaDexAPI.fetchMangaByIdsWithCovers(ids:)` → `[Manga]`, `MoreLikeThis.pickMatch` (Task 2), `EntityResolutionStore.shared`/`reverseResolution`/`recordReverse`/`ReverseResolution` (Task 3), `MALTitleMatcher` (Task 1).
@@ -491,13 +491,13 @@ The `@MainActor` service that turns a `Manga` into openable MangaDex recommendat
 
 - [ ] **Step 1: Write the failing test (pure `topRecommendations`)**
 
-Append to `Manga-ReaderTests/Manga_ReaderTests.swift`:
+Append to `MangaCartaTests/MangaCartaTests.swift`:
 
 ```swift
     // MARK: - MoreLikeThisProvider.topRecommendations (pure)
 
     /// Minimal `Recommendation` builder — the MAL DTO memberwise inits are internal,
-    /// reachable via `@testable import Manga_Reader`.
+    /// reachable via `@testable import MangaCarta`.
     private func mlRec(malId: Int, weight: Int) -> MyAnimeListMangaDetail.Recommendation {
         MyAnimeListMangaDetail.Recommendation(
             node: MyAnimeListManga(id: malId, title: "T\(malId)",
@@ -522,16 +522,16 @@ Append to `Manga-ReaderTests/Manga_ReaderTests.swift`:
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
-  test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testTopRecommendationsSortsByWeightDescendingAndCaps
+  test -only-testing:MangaCartaTests/MangaCartaTests/testTopRecommendationsSortsByWeightDescendingAndCaps
 ```
 Expected: FAIL to compile — "cannot find 'MoreLikeThisProvider' in scope".
 
 - [ ] **Step 3a: Expose the batch fetch**
 
-In `Manga-Reader/Models/MangaDexAPI.swift`, line 527, change the access level (no behavior change):
+In `MangaCarta/Models/MangaDexAPI.swift`, line 527, change the access level (no behavior change):
 
 ```swift
     static func fetchMangaByIdsWithCovers(ids: [String]) async throws -> [Manga] {
@@ -539,12 +539,12 @@ In `Manga-Reader/Models/MangaDexAPI.swift`, line 527, change the access level (n
 
 - [ ] **Step 3b: Write the provider**
 
-Create `Manga-Reader/Services/MoreLikeThisProvider.swift`:
+Create `MangaCarta/Services/MoreLikeThisProvider.swift`:
 
 ```swift
 //
 //  MoreLikeThisProvider.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Turns a Manga into a list of openable MangaDex "More Like This" titles, sourced from
 //  MyAnimeList's per-title recommendations. Orchestration only: forward-resolve → MAL
@@ -686,19 +686,19 @@ final class MoreLikeThisProvider {
 
 Run the pure tests:
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
   test \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testTopRecommendationsSortsByWeightDescendingAndCaps \
-  -only-testing:Manga-ReaderTests/Manga_ReaderTests/testTopRecommendationsHandlesEmptyAndUndercount
+  -only-testing:MangaCartaTests/MangaCartaTests/testTopRecommendationsSortsByWeightDescendingAndCaps \
+  -only-testing:MangaCartaTests/MangaCartaTests/testTopRecommendationsHandlesEmptyAndUndercount
 ```
 Expected: PASS — both. (This also proves the whole provider + `withTaskGroup` orchestration compiles, since the test target links it. Watch specifically for Sendable/actor-isolation warnings on the `withTaskGroup` closures — `Manga`, `MyAnimeListManga`, and `MALTitleMatcher` are all value types with Sendable stored properties, so the off-actor tasks are legal; the `store.recordReverse` calls happen after the group completes, back on the MainActor.)
 
 - [ ] **Step 5: Commit**
 
 ```sh
-git add Manga-Reader/Models/MangaDexAPI.swift Manga-Reader/Services/MoreLikeThisProvider.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Models/MangaDexAPI.swift MangaCarta/Services/MoreLikeThisProvider.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add MoreLikeThisProvider: MAL recs -> MangaDex reverse resolution
 
 Expose MangaDexAPI.fetchMangaByIdsWithCovers (internal) for cache-hit batch render.
@@ -713,8 +713,8 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 The view model the rail binds to, plus the bottom-of-page rail section in `MangaDetailView` (reuses `MangaRail`, loads async via `.task`, hidden when empty). Verified by building the app and, at the branch's end, by the live UI test in Task 6.
 
 **Files:**
-- Create: `Manga-Reader/Models/MoreLikeThisViewModel.swift`
-- Modify: `Manga-Reader/Views/MangaDetailView.swift` (add `@StateObject`, rail section, `.task`, the `moreLikeThisRail` view)
+- Create: `MangaCarta/Models/MoreLikeThisViewModel.swift`
+- Modify: `MangaCarta/Views/MangaDetailView.swift` (add `@StateObject`, rail section, `.task`, the `moreLikeThisRail` view)
 
 **Interfaces:**
 - Consumes: `MoreLikeThisProvider` (Task 4), `Manga`, `MangaRail(items:)`, `InkSectionHeader(_:eyebrow:)`.
@@ -722,12 +722,12 @@ The view model the rail binds to, plus the bottom-of-page rail section in `Manga
 
 - [ ] **Step 1: Create the view model**
 
-Create `Manga-Reader/Models/MoreLikeThisViewModel.swift`:
+Create `MangaCarta/Models/MoreLikeThisViewModel.swift`:
 
 ```swift
 //
 //  MoreLikeThisViewModel.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Backs the detail-page "More Like This" rail. Loads once per manga via
 //  MoreLikeThisProvider; publishes the resolved MangaDex titles for MangaRail. Empty
@@ -762,7 +762,7 @@ final class MoreLikeThisViewModel: ObservableObject {
 
 - [ ] **Step 2: Wire the rail into `MangaDetailView`**
 
-In `Manga-Reader/Views/MangaDetailView.swift`:
+In `MangaCarta/Views/MangaDetailView.swift`:
 
 (a) Add the state object next to the other `@StateObject`/state (after line 13, `@EnvironmentObject private var tasteProfile`):
 
@@ -815,7 +815,7 @@ to:
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 Expected: `** BUILD SUCCEEDED **`. (Ignore any standalone SourceKit/LSP "Cannot find X in scope" noise — trust the `xcodebuild` result.)
@@ -823,7 +823,7 @@ Expected: `** BUILD SUCCEEDED **`. (Ignore any standalone SourceKit/LSP "Cannot 
 - [ ] **Step 4: Commit**
 
 ```sh
-git add Manga-Reader/Models/MoreLikeThisViewModel.swift Manga-Reader/Views/MangaDetailView.swift
+git add MangaCarta/Models/MoreLikeThisViewModel.swift MangaCarta/Views/MangaDetailView.swift
 git commit -m "Add More Like This rail to detail page + MoreLikeThisViewModel
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -836,8 +836,8 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 Extend the throwaway `MyAnimeListDebugView` with a "More Like This" probe (types a title → runs the provider → lists resolved MangaDex titles), then add two live UI tests against the real MAL + MangaDex APIs: the probe, and the real detail-page rail. This is the codebase's established technique for verifying network code with no mocking harness. The probe field + its UI test are throwaway (deleted when the debug screen is retired in a later cleanup); the detail-page rail test is permanent.
 
 **Files:**
-- Modify: `Manga-Reader/Views/MyAnimeListDebugView.swift` (add the probe field + action)
-- Modify: `Manga-ReaderUITests/Manga_ReaderUITests.swift` (append two live tests)
+- Modify: `MangaCarta/Views/MyAnimeListDebugView.swift` (add the probe field + action)
+- Modify: `MangaCartaUITests/MangaCartaUITests.swift` (append two live tests)
 
 **Interfaces:**
 - Consumes: `MoreLikeThisProvider().recommendations(for:)` (Task 4), the detail-page rail (Task 5, `accessibilityIdentifier("moreLikeThisSection")` + `MangaRail`'s `"mangaCoverCard"` cards), existing debug-screen nav (`malClientRow` → `malSearchField`), existing Home→Detail nav (`mangaCoverCard`).
@@ -845,7 +845,7 @@ Extend the throwaway `MyAnimeListDebugView` with a "More Like This" probe (types
 
 - [ ] **Step 1: Add the probe to `MyAnimeListDebugView`**
 
-In `Manga-Reader/Views/MyAnimeListDebugView.swift`:
+In `MangaCarta/Views/MyAnimeListDebugView.swift`:
 
 (a) Add state next to the existing `@State` (after line 18, `@State private var resolvedText`):
 
@@ -892,7 +892,7 @@ In `Manga-Reader/Views/MyAnimeListDebugView.swift`:
 
 - [ ] **Step 2: Add the two live UI tests**
 
-Append to `Manga-ReaderUITests/Manga_ReaderUITests.swift` (inside `final class Manga_ReaderUITests`):
+Append to `MangaCartaUITests/MangaCartaUITests.swift` (inside `final class MangaCartaUITests`):
 
 ```swift
     /// Throwaway live-verification for the More Like This provider via the debug screen:
@@ -997,12 +997,12 @@ Append to `Manga-ReaderUITests/Manga_ReaderUITests.swift` (inside `final class M
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
   test \
-  -only-testing:Manga-ReaderUITests/Manga_ReaderUITests/testMoreLikeThisDebugProbeLiveVerification \
-  -only-testing:Manga-ReaderUITests/Manga_ReaderUITests/testMoreLikeThisDetailRailLiveVerification
+  -only-testing:MangaCartaUITests/MangaCartaUITests/testMoreLikeThisDebugProbeLiveVerification \
+  -only-testing:MangaCartaUITests/MangaCartaUITests/testMoreLikeThisDetailRailLiveVerification
 ```
 Expected: PASS — both, against the live APIs. Notes:
 - These are network-dependent and slow; MAL soft-rate-limits (HTTP 429 with `Retry-After`), which the app retries once. If a run flakes on rate-limiting, re-run after a pause — a flake here is an API-availability issue, not a logic failure.
@@ -1011,7 +1011,7 @@ Expected: PASS — both, against the live APIs. Notes:
 - [ ] **Step 4: Commit**
 
 ```sh
-git add Manga-Reader/Views/MyAnimeListDebugView.swift Manga-ReaderUITests/Manga_ReaderUITests.swift
+git add MangaCarta/Views/MyAnimeListDebugView.swift MangaCartaUITests/MangaCartaUITests.swift
 git commit -m "Add More Like This debug probe + live UI verification (probe + detail rail)
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -1024,10 +1024,10 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 - [ ] **Run the full unit-test suite** (all pure tests must pass together, proving no regressions in the matcher/store refactors):
 
 ```sh
-xcodebuild -scheme Manga-Reader \
+xcodebuild -scheme MangaCarta \
   -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO \
-  test -only-testing:Manga-ReaderTests
+  test -only-testing:MangaCartaTests
 ```
 Expected: PASS — the full unit suite (144 pre-existing + the new pure tests).
 

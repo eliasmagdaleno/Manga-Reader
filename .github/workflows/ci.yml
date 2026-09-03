@@ -79,7 +79,7 @@ jobs:
       - name: Build & run unit tests
         run: |
           xcodebuild \
-            -scheme Manga-Reader \
+            -scheme MangaCarta \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
             -parallel-testing-enabled NO \
-            test -only-testing:Manga-ReaderTests
+            test -only-testing:MangaCartaTests

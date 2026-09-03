@@ -18,10 +18,10 @@
 ## Global Constraints
 
 - **No third-party dependencies.** Pure SwiftUI + Foundation.
-- **Repo layout:** work from `/Users/eliasmagdaleno/xcode/Manga-Reader`; app sources are under `Manga-Reader/…` from there (e.g. `Manga-Reader/Models/CandidateProvider.swift`). `Models/` and `Services/` are synchronized groups — **no `project.pbxproj` edits** for this feature (all files already exist or land in synchronized groups).
+- **Repo layout:** work from `/Users/eliasmagdaleno/xcode/MangaCarta`; app sources are under `MangaCarta/…` from there (e.g. `MangaCarta/Models/CandidateProvider.swift`). `Models/` and `Services/` are synchronized groups — **no `project.pbxproj` edits** for this feature (all files already exist or land in synchronized groups).
 - **Branch protection is on `main`:** all work lands via a PR that passes both CI checks (`Build & unit tests`, `SwiftLint`). Do not push to `main` directly.
 - **Build/test on the iPhone 17 simulator** with **`-parallel-testing-enabled NO`**.
-- **Unit tests use XCTest** (`Manga_ReaderTests` is `XCTestCase` — use `func test…()` + `XCTAssert…`, not Swift Testing).
+- **Unit tests use XCTest** (`MangaCartaTests` is `XCTestCase` — use `func test…()` + `XCTAssert…`, not Swift Testing).
 - **SourceKit/LSP false alarms** ("No such module 'XCTest'", "Cannot find type 'Manga'/'Tag' in scope") are indexer noise — judge correctness ONLY by `xcodebuild`.
 - **Tuning constants** (name them, don't inline magic numbers): `W_TAG = 1.0`, `W_MAL = 0.85`, `OVERLAP_BONUS = 0.25`, seed cap `= 5`, per-seed MAL limit `= 8`.
 - **`MoreLikeThisProvider` is `@MainActor`;** the injectable seam protocol must be `@MainActor` to conform cleanly (see Task 2).
@@ -53,16 +53,16 @@ func recommendations(for manga: Manga, limit: Int = 8) async -> [Manga]   // MAL
 Give `TasteProfile` the top-N seed manga (materialized `Manga` + weight) the MAL provider will use. Pure value logic — unit-tested with no network.
 
 **Files:**
-- Modify: `Manga-Reader/Models/TasteProfile.swift`
-- Modify: `Manga-Reader/Models/RecommendationEngine.swift` (pass `libraryItems` into `build`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Modify: `MangaCarta/Models/TasteProfile.swift`
+- Modify: `MangaCarta/Models/RecommendationEngine.swift` (pass `libraryItems` into `build`)
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Produces: `struct SeedManga { let manga: Manga; let weight: Double }`; `TasteProfile.seeds: [SeedManga]`; `TasteProfile.build(…, libraryItems: [Manga] = [], seedLimit: Int = 5)` now also returns `seeds`.
 
 - [ ] **Step 1: Write the failing test**
 
-Add to `Manga-ReaderTests/Manga_ReaderTests.swift` (XCTest). Helper to build a tagged history entry + tags:
+Add to `MangaCartaTests/MangaCartaTests.swift` (XCTest). Helper to build a tagged history entry + tags:
 
 ```swift
     private func seedEntry(_ id: String, title: String, updated: Date) -> ReadingEntry {
@@ -98,12 +98,12 @@ Add to `Manga-ReaderTests/Manga_ReaderTests.swift` (XCTest). Helper to build a t
 
 - [ ] **Step 2: Run it — expect failure**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests`
 Expected: FAIL — `seeds` / `SeedManga` / the `libraryItems` param don't exist.
 
 - [ ] **Step 3: Implement**
 
-In `Manga-Reader/Models/TasteProfile.swift`:
+In `MangaCarta/Models/TasteProfile.swift`:
 
 (a) Add the seed type above `struct TasteProfile`:
 ```swift
@@ -196,7 +196,7 @@ struct SeedManga {
 
 - [ ] **Step 4: Update the caller**
 
-In `Manga-Reader/Models/RecommendationEngine.swift`, `profileAndExclusions()` calls `TasteProfile.build`. Pass the library items so seeds can prefer saved `Manga`. Change:
+In `MangaCarta/Models/RecommendationEngine.swift`, `profileAndExclusions()` calls `TasteProfile.build`. Pass the library items so seeds can prefer saved `Manga`. Change:
 ```swift
         let profile = TasteProfile.build(history: history.entries,
                                          savedIds: savedIds,
@@ -216,11 +216,11 @@ to:
 
 - [ ] **Step 5: Run tests — expect pass**
 
-Run the same `-only-testing:Manga-ReaderTests` command. Expected: `** TEST SUCCEEDED **` (new test + existing suite; existing `build` callers/tests compile because the new params are defaulted).
+Run the same `-only-testing:MangaCartaTests` command. Expected: `** TEST SUCCEEDED **` (new test + existing suite; existing `build` callers/tests compile because the new params are defaulted).
 
 - [ ] **Step 6: Commit**
 ```sh
-git add Manga-Reader/Models/TasteProfile.swift Manga-Reader/Models/RecommendationEngine.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Models/TasteProfile.swift MangaCarta/Models/RecommendationEngine.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add SeedManga + seed materialization to TasteProfile
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -233,9 +233,9 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 The collaborative half: turn seeds into scored candidates via per-seed MAL recommendations. Introduce a `@MainActor` protocol so `MoreLikeThisProvider` can be stubbed in tests.
 
 **Files:**
-- Modify: `Manga-Reader/Services/MoreLikeThisProvider.swift` (conform to the new protocol)
-- Modify: `Manga-Reader/Models/CandidateProvider.swift` (protocol + `MALCandidateProvider`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Modify: `MangaCarta/Services/MoreLikeThisProvider.swift` (conform to the new protocol)
+- Modify: `MangaCarta/Models/CandidateProvider.swift` (protocol + `MALCandidateProvider`)
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Produces: `@MainActor protocol SimilarTitlesProviding { func recommendations(for manga: Manga, limit: Int) async -> [Manga] }`; `struct MALCandidateProvider: CandidateProvider`.
@@ -243,7 +243,7 @@ The collaborative half: turn seeds into scored candidates via per-seed MAL recom
 
 - [ ] **Step 1: Write the failing test**
 
-Add to `Manga-ReaderTests/Manga_ReaderTests.swift`. A stub that returns fixed recs per seed id:
+Add to `MangaCartaTests/MangaCartaTests.swift`. A stub that returns fixed recs per seed id:
 ```swift
     @MainActor
     private final class StubSimilar: SimilarTitlesProviding {
@@ -284,11 +284,11 @@ Add to `Manga-ReaderTests/Manga_ReaderTests.swift`. A stub that returns fixed re
 
 - [ ] **Step 2: Run it — expect failure**
 
-Run the `-only-testing:Manga-ReaderTests` command. Expected: FAIL — `SimilarTitlesProviding` / `MALCandidateProvider` undefined.
+Run the `-only-testing:MangaCartaTests` command. Expected: FAIL — `SimilarTitlesProviding` / `MALCandidateProvider` undefined.
 
 - [ ] **Step 3: Conform `MoreLikeThisProvider` to the seam**
 
-In `Manga-Reader/Services/MoreLikeThisProvider.swift`, add (below the class, same file) the protocol and conformance. `MoreLikeThisProvider.recommendations(for:limit:)` already matches:
+In `MangaCarta/Services/MoreLikeThisProvider.swift`, add (below the class, same file) the protocol and conformance. `MoreLikeThisProvider.recommendations(for:limit:)` already matches:
 ```swift
 /// The one capability MALCandidateProvider needs — injectable so tests can stub it.
 @MainActor
@@ -301,7 +301,7 @@ extension MoreLikeThisProvider: SimilarTitlesProviding {}
 
 - [ ] **Step 4: Implement `MALCandidateProvider`**
 
-In `Manga-Reader/Models/CandidateProvider.swift`, append:
+In `MangaCarta/Models/CandidateProvider.swift`, append:
 ```swift
 /// Collaborative candidates: for each of the profile's seeds, fetch MAL "more like this"
 /// (already reverse-resolved to openable MangaDex titles) and score each result by
@@ -360,11 +360,11 @@ struct MALCandidateProvider: CandidateProvider {
 
 - [ ] **Step 5: Run tests — expect pass**
 
-Run the `-only-testing:Manga-ReaderTests` command. Expected: `** TEST SUCCEEDED **`. If the build flags actor-isolation on the `SimilarTitlesProviding` conformance, confirm the protocol is `@MainActor` (it must be, since `MoreLikeThisProvider` is).
+Run the `-only-testing:MangaCartaTests` command. Expected: `** TEST SUCCEEDED **`. If the build flags actor-isolation on the `SimilarTitlesProviding` conformance, confirm the protocol is `@MainActor` (it must be, since `MoreLikeThisProvider` is).
 
 - [ ] **Step 6: Commit**
 ```sh
-git add Manga-Reader/Services/MoreLikeThisProvider.swift Manga-Reader/Models/CandidateProvider.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/MoreLikeThisProvider.swift MangaCarta/Models/CandidateProvider.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add SimilarTitlesProviding seam + MALCandidateProvider
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -377,15 +377,15 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 Merge tag + MAL pools: normalize each to [0,1], weighted add, gold-star overlap bonus. Pure logic (stub children) — fully unit-tested.
 
 **Files:**
-- Modify: `Manga-Reader/Models/CandidateProvider.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Modify: `MangaCarta/Models/CandidateProvider.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Produces: `struct CompositeCandidateProvider: CandidateProvider` with `init(tag: CandidateProvider, mal: CandidateProvider)`.
 
 - [ ] **Step 1: Write the failing test**
 
-Add to `Manga-ReaderTests/Manga_ReaderTests.swift`. A stub provider returning fixed candidates:
+Add to `MangaCartaTests/MangaCartaTests.swift`. A stub provider returning fixed candidates:
 ```swift
     private struct StubProvider: CandidateProvider {
         let out: [ScoredManga]
@@ -427,11 +427,11 @@ Add to `Manga-ReaderTests/Manga_ReaderTests.swift`. A stub provider returning fi
 
 - [ ] **Step 2: Run it — expect failure**
 
-Run the `-only-testing:Manga-ReaderTests` command. Expected: FAIL — `CompositeCandidateProvider` undefined.
+Run the `-only-testing:MangaCartaTests` command. Expected: FAIL — `CompositeCandidateProvider` undefined.
 
 - [ ] **Step 3: Implement**
 
-In `Manga-Reader/Models/CandidateProvider.swift`, append:
+In `MangaCarta/Models/CandidateProvider.swift`, append:
 ```swift
 /// Blends two candidate pools (tag + MAL). Each pool is normalized to [0, 1] (÷ its own
 /// max) so the two signals are comparable, then combined `W_TAG·tag + W_MAL·mal`; a title
@@ -494,11 +494,11 @@ struct CompositeCandidateProvider: CandidateProvider {
 
 - [ ] **Step 4: Run tests — expect pass**
 
-Run the `-only-testing:Manga-ReaderTests` command. Expected: `** TEST SUCCEEDED **`.
+Run the `-only-testing:MangaCartaTests` command. Expected: `** TEST SUCCEEDED **`.
 
 - [ ] **Step 5: Commit**
 ```sh
-git add Manga-Reader/Models/CandidateProvider.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Models/CandidateProvider.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add CompositeCandidateProvider: normalize + blend + overlap boost
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -511,15 +511,15 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 Swap the engine's default provider to the composite and verify the rail still populates end-to-end.
 
 **Files:**
-- Modify: `Manga-Reader/Models/RecommendationEngine.swift`
-- Test: `Manga-ReaderUITests/Manga_ReaderUITests.swift`
+- Modify: `MangaCarta/Models/RecommendationEngine.swift`
+- Test: `MangaCartaUITests/MangaCartaUITests.swift`
 
 **Interfaces:**
 - Consumes: `CompositeCandidateProvider`, `MALCandidateProvider`, `TagCandidateProvider`, `MoreLikeThisProvider`.
 
 - [ ] **Step 1: Change the default provider**
 
-In `Manga-Reader/Models/RecommendationEngine.swift`, the init parameter default is:
+In `MangaCarta/Models/RecommendationEngine.swift`, the init parameter default is:
 ```swift
          makeProvider: @escaping (MangaSource) -> CandidateProvider = { TagCandidateProvider(source: $0) },
 ```
@@ -534,17 +534,17 @@ Change it to build the composite. `MoreLikeThisProvider()` is `@MainActor`; it's
 
 - [ ] **Step 2: Build**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build`
 Expected: `** BUILD SUCCEEDED **`. If the closure default trips main-actor isolation on `MoreLikeThisProvider()`, wrap construction so it evaluates in the closure body (it already does) — do not move it to a stored property initializer.
 
 - [ ] **Step 3: Full unit-suite regression**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests`
 Expected: PASS (existing recommendation/tag tests still green — engine tests inject their own `makeProvider`, so the new default only affects production).
 
 - [ ] **Step 4: Add a live UI test that the rail still populates**
 
-Append inside `final class Manga_ReaderUITests` in `Manga-ReaderUITests/Manga_ReaderUITests.swift`:
+Append inside `final class MangaCartaUITests` in `MangaCartaUITests/MangaCartaUITests.swift`:
 ```swift
     /// The "For You" rail still populates end-to-end with the composite (tag + MAL)
     /// provider wired in. Network-dependent: a flake is API/seed availability, not a
@@ -570,12 +570,12 @@ Append inside `final class Manga_ReaderUITests` in `Manga-ReaderUITests/Manga_Re
 
 - [ ] **Step 5: Run the live UI test**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderUITests/Manga_ReaderUITests/testForYouRailPopulatesWithCompositeProvider`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaUITests/MangaCartaUITests/testForYouRailPopulatesWithCompositeProvider`
 Expected: PASS. Network-dependent; re-run after a pause on a flake.
 
 - [ ] **Step 6: Commit**
 ```sh
-git add Manga-Reader/Models/RecommendationEngine.swift Manga-ReaderUITests/Manga_ReaderUITests.swift
+git add MangaCarta/Models/RecommendationEngine.swift MangaCartaUITests/MangaCartaUITests.swift
 git commit -m "Wire CompositeCandidateProvider into RecommendationEngine (For You + MAL)
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -585,7 +585,7 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 ## Final verification (before finishing the branch)
 
-- [ ] **Full unit suite:** `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests` — PASS.
+- [ ] **Full unit suite:** `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests` — PASS.
 - [ ] **SwiftLint clean:** `swiftlint lint` — zero error-severity violations (CI enforces this).
 - [ ] **Whole-branch review**, then open a **PR to `main`**; both CI checks (`Build & unit tests`, `SwiftLint`) must go green, then merge (superpowers:finishing-a-development-branch). Do NOT push to `main` directly — branch protection forbids it.
 

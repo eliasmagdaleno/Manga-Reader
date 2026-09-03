@@ -427,7 +427,7 @@ def stage_score(args):
 def stage_selftest(args):
     """Parity checks for the ported matcher, and a live shape check on each source.
 
-    The matcher cases mirror assertions in Manga_ReaderTests so a drift in the port shows
+    The matcher cases mirror assertions in MangaCartaTests so a drift in the port shows
     up here rather than as a wrong measurement.
     """
     fails = []

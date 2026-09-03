@@ -13,7 +13,7 @@
 - iOS deployment target 17.5; pure SwiftUI + Foundation; **no third-party dependencies or package managers**.
 - New files in `Models/`, `Services/`, `Components/` auto-compile (Xcode synchronized root groups). **`Views/` is NOT synchronized** — do not add new files under `Views/`; the source picker goes **inline in `Views/SettingsView.swift`** to avoid `project.pbxproj` edits.
 - Persistence changes must be **backward-compatible**: new persisted fields are optional (`var x: T? = nil`) so legacy `UserDefaults` JSON still decodes (mirrors the existing `LibraryItem.chapterNumbers` pattern). A `let` with a default value is NOT decoded by synthesized Codable — the field must be a `var` Optional.
-- Run tests with: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests`. The full `test` action's UI-test target is flaky in this environment; scope to `Manga-ReaderTests`.
+- Run tests with: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests`. The full `test` action's UI-test target is flaky in this environment; scope to `MangaCartaTests`.
 - Every commit message ends with these two trailers:
   ```
   Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
@@ -26,8 +26,8 @@
 ### Task 1: `isNSFW` capability on `MangaSource`
 
 **Files:**
-- Modify: `Manga-Reader/Models/MangaSource.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Modify: `MangaCarta/Models/MangaSource.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Consumes: existing `MangaSource` protocol, existing `MockSource`/`MinimalSource` test doubles.
@@ -35,7 +35,7 @@
 
 - [ ] **Step 1: Write the failing test**
 
-Add to `Manga_ReaderTests` (in the "Source abstraction" area):
+Add to `MangaCartaTests` (in the "Source abstraction" area):
 
 ```swift
 func testMangaDexSourceIsNotNSFWByDefault() {
@@ -60,7 +60,7 @@ func testSourceCanDeclareNSFW() {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -30`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -30`
 Expected: FAIL to compile — `value of type 'MangaDexSource' has no member 'isNSFW'`.
 
 - [ ] **Step 3: Add `isNSFW` to the protocol + default**
@@ -80,13 +80,13 @@ And in the `extension MangaSource` (with the other default capabilities), add:
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -5`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -5`
 Expected: `** TEST SUCCEEDED **`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Models/MangaSource.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Models/MangaSource.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add isNSFW capability to MangaSource
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
@@ -98,9 +98,9 @@ Claude-Session: https://claude.ai/code/session_019uB9Pu9FgykTjHDjJt2QDV"
 ### Task 2: `sourceId` on `ReadingEntry`
 
 **Files:**
-- Modify: `Manga-Reader/Services/HistoryStore.swift`
-- Modify: `Manga-Reader/Views/HistoryView.swift:107-110` (`ReadingEntry.asManga`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Modify: `MangaCarta/Services/HistoryStore.swift`
+- Modify: `MangaCarta/Views/HistoryView.swift:107-110` (`ReadingEntry.asManga`)
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Consumes: existing `ReadingEntry`, `HistoryStore.record(manga:chapter:page:pageCount:)`, `Manga.sourceId`, `MangaDexSource.sourceID`.
@@ -108,7 +108,7 @@ Claude-Session: https://claude.ai/code/session_019uB9Pu9FgykTjHDjJt2QDV"
 
 - [ ] **Step 1: Write the failing tests**
 
-Add to `Manga_ReaderTests`:
+Add to `MangaCartaTests`:
 
 ```swift
 @MainActor func testReadingEntryRecordsSourceId() {
@@ -129,7 +129,7 @@ func testReadingEntryDecodesLegacyJSONAsNil() throws {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -30`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -30`
 Expected: FAIL to compile — `value of type 'ReadingEntry' has no member 'sourceId'`.
 
 - [ ] **Step 3: Add the field + persist it**
@@ -165,13 +165,13 @@ private extension ReadingEntry {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -5`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -5`
 Expected: `** TEST SUCCEEDED **`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Services/HistoryStore.swift Manga-Reader/Views/HistoryView.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/HistoryStore.swift MangaCarta/Views/HistoryView.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Persist sourceId on ReadingEntry so history reopens via the right source
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
@@ -183,9 +183,9 @@ Claude-Session: https://claude.ai/code/session_019uB9Pu9FgykTjHDjJt2QDV"
 ### Task 3: `sourceId` on `LibraryItem`
 
 **Files:**
-- Modify: `Manga-Reader/Services/LibraryStore.swift`
-- Modify: `Manga-Reader/Views/BookmarksView.swift:66-70` (`LibraryItem.asManga`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Modify: `MangaCarta/Services/LibraryStore.swift`
+- Modify: `MangaCarta/Views/BookmarksView.swift:66-70` (`LibraryItem.asManga`)
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Consumes: existing `LibraryItem`, `LibraryStore.toggle(_:)`, `Manga.sourceId`, `MangaDexSource.sourceID`.
@@ -193,7 +193,7 @@ Claude-Session: https://claude.ai/code/session_019uB9Pu9FgykTjHDjJt2QDV"
 
 - [ ] **Step 1: Write the failing tests**
 
-Add to `Manga_ReaderTests`:
+Add to `MangaCartaTests`:
 
 ```swift
 @MainActor func testLibraryToggleRecordsSourceId() {
@@ -216,7 +216,7 @@ Note: the existing `testLibraryItemDecodesLegacyJSON` already covers legacy deco
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -30`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -30`
 Expected: FAIL to compile — `extra argument 'sourceId' in call` / `has no member 'sourceId'`.
 
 - [ ] **Step 3: Add the field + persist it**
@@ -251,13 +251,13 @@ private extension LibraryItem {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -5`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -5`
 Expected: `** TEST SUCCEEDED **`.
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Services/LibraryStore.swift Manga-Reader/Views/BookmarksView.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/LibraryStore.swift MangaCarta/Views/BookmarksView.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Persist sourceId on LibraryItem so bookmarks reopen via the right source
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
@@ -269,9 +269,9 @@ Claude-Session: https://claude.ai/code/session_019uB9Pu9FgykTjHDjJt2QDV"
 ### Task 4: Source picker + adult-source gating in Settings
 
 **Files:**
-- Modify: `Manga-Reader/Services/SourceRegistry.swift` (add `visibleSources(includeAdult:)`)
-- Modify: `Manga-Reader/Views/SettingsView.swift` (add a "Sources" section — inline, no new file)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Modify: `MangaCarta/Services/SourceRegistry.swift` (add `visibleSources(includeAdult:)`)
+- Modify: `MangaCarta/Views/SettingsView.swift` (add a "Sources" section — inline, no new file)
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Consumes: `SourceRegistry` (`sources`, `activeSourceID`), `MangaSource.isNSFW` (Task 1).
@@ -279,7 +279,7 @@ Claude-Session: https://claude.ai/code/session_019uB9Pu9FgykTjHDjJt2QDV"
 
 - [ ] **Step 1: Write the failing test**
 
-Add to `Manga_ReaderTests`:
+Add to `MangaCartaTests`:
 
 ```swift
 @MainActor func testVisibleSourcesRespectAdultToggle() {
@@ -303,7 +303,7 @@ Add to `Manga_ReaderTests`:
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -30`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -30`
 Expected: FAIL to compile — `value of type 'SourceRegistry' has no member 'visibleSources'`.
 
 - [ ] **Step 3: Add `visibleSources` to the registry**
@@ -319,7 +319,7 @@ In `Services/SourceRegistry.swift`, add a method to the class (after `source(for
 
 - [ ] **Step 4: Run test to verify it passes**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -5`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -5`
 Expected: `** TEST SUCCEEDED **`.
 
 - [ ] **Step 5: Add the Sources section to Settings**
@@ -374,13 +374,13 @@ Insert this section in the `VStack` **before** the "About" section:
 
 - [ ] **Step 6: Build to verify the view compiles**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build 2>&1 | tail -5`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build 2>&1 | tail -5`
 Expected: `** BUILD SUCCEEDED **`.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add Manga-Reader/Services/SourceRegistry.swift Manga-Reader/Views/SettingsView.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/SourceRegistry.swift MangaCarta/Views/SettingsView.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add source picker + adult-source gating to Settings
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
@@ -391,9 +391,9 @@ Claude-Session: https://claude.ai/code/session_019uB9Pu9FgykTjHDjJt2QDV"
 
 ## Final verification
 
-- [ ] **Full unit suite:** `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -5` → `** TEST SUCCEEDED **`.
+- [ ] **Full unit suite:** `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -5` → `** TEST SUCCEEDED **`.
 - [ ] **Live smoke test:** boot iPhone 17 sim, install + launch, open Settings → confirm a "Sources" section with MangaDex checked and a "Show adult sources" toggle; Home still browses via MangaDex. (Full source-switching becomes visible in Phase 2 when WeebCentral is added.)
-- [ ] **pbxproj clean:** confirm `git status` shows no `project.pbxproj` change (all edits were to existing files / synchronized groups). If Xcode reshuffled it cosmetically, `git checkout -- Manga-Reader.xcodeproj/project.pbxproj`.
+- [ ] **pbxproj clean:** confirm `git status` shows no `project.pbxproj` change (all edits were to existing files / synchronized groups). If Xcode reshuffled it cosmetically, `git checkout -- MangaCarta.xcodeproj/project.pbxproj`.
 
 ## Self-review notes (against the spec)
 

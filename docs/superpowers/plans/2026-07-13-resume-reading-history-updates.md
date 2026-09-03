@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add resume-reading (Continue button), a chronological History tab, and library refresh with new-chapter badges — plus newest-first chapter ordering and a right-to-left reading default — to the Manga-Reader SwiftUI app.
+**Goal:** Add resume-reading (Continue button), a chronological History tab, and library refresh with new-chapter badges — plus newest-first chapter ordering and a right-to-left reading default — to the MangaCarta SwiftUI app.
 
 **Architecture:** MVVM over the stateless `MangaDexAPI`. A new `@MainActor` `HistoryStore` (UserDefaults-backed, injected app-wide) is the reading-progress spine feeding both the Continue button and the History tab; `ReaderView` is widened to report progress. `LibraryStore` is extended with per-item update tracking and a concurrent `refresh()`. Pure logic (chapter ordering, resume-target selection, new-chapter counting) is extracted into free functions in `Models/` for unit testing.
 
@@ -12,7 +12,7 @@
 
 - Deployment target iOS 17.5; keep both `#available(iOS 18.0, *)` and pre-18 `TabView` branches in `ContentView` in sync.
 - No third-party dependencies — pure SwiftUI + Foundation only.
-- `Models/`, `Services/`, `Components/` are Xcode 16 **synchronized root groups** — files dropped in compile automatically. **`Views/` and `Manga-ReaderTests/` are NOT synchronized** — new files there need `project.pbxproj` edits (4 places each). Tests in this plan are appended to the existing `Manga-ReaderTests/Manga_ReaderTests.swift` to avoid pbxproj churn.
+- `Models/`, `Services/`, `Components/` are Xcode 16 **synchronized root groups** — files dropped in compile automatically. **`Views/` and `MangaCartaTests/` are NOT synchronized** — new files there need `project.pbxproj` edits (4 places each). Tests in this plan are appended to the existing `MangaCartaTests/MangaCartaTests.swift` to avoid pbxproj churn.
 - Persisted-model rule: any new field on `LibraryItem` (already saved in UserDefaults) MUST be an `Optional var` — `LibraryStore.load()` uses `try?` decode, so a non-optional new field silently wipes the saved library.
 - Follow the existing "Ink & Seal" tokens (`Ink.*`, `Gutter.*`, `.inkMono`, `.inkDisplay`, `InkStamp`, `InkSectionHeader`, `InkEmptyState`, `InkNotice`).
 - Test/build simulator: use an available device from `xcrun simctl list devices available` (examples below use `iPhone 16`; substitute if absent).
@@ -22,8 +22,8 @@
 ### Task 1: `HistoryStore` + `ReadingEntry`
 
 **Files:**
-- Create: `Manga-Reader/Services/HistoryStore.swift` (synchronized group — auto-compiles)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append methods)
+- Create: `MangaCarta/Services/HistoryStore.swift` (synchronized group — auto-compiles)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append methods)
 
 **Interfaces:**
 - Consumes: `Manga` (id/title/coverURL), `Chapter` (id/number) from `Models/MangaDexAPI.swift`.
@@ -31,7 +31,7 @@
   - `struct ReadingEntry: Codable, Identifiable, Hashable { let id: UUID; let mangaId: String; let mangaTitle: String; let coverURL: URL?; let chapterId: String; let chapterNumber: String; var page: Int; var pageCount: Int; var updatedAt: Date }`
   - `@MainActor final class HistoryStore: ObservableObject` with `@Published private(set) var entries: [ReadingEntry]`, `init(defaults: UserDefaults = .standard)`, `func record(manga: Manga, chapter: Chapter, page: Int, pageCount: Int)`, `func latestEntry(forManga id: String) -> ReadingEntry?`, `func delete(_ entry: ReadingEntry)`, `func clear()`.
 
-- [ ] **Step 1: Write the failing tests** — append to `Manga-ReaderTests/Manga_ReaderTests.swift` (inside the class):
+- [ ] **Step 1: Write the failing tests** — append to `MangaCartaTests/MangaCartaTests.swift` (inside the class):
 
 ```swift
 // MARK: - HistoryStore
@@ -84,15 +84,15 @@ private func sampleManga(_ id: String = "m1") -> Manga {
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testRecordPrependsNewEntry`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:MangaCartaTests/MangaCartaTests/testRecordPrependsNewEntry`
 Expected: FAIL — compile error, `cannot find 'HistoryStore' in scope`.
 
-- [ ] **Step 3: Create `Manga-Reader/Services/HistoryStore.swift`**
+- [ ] **Step 3: Create `MangaCarta/Services/HistoryStore.swift`**
 
 ```swift
 //
 //  HistoryStore.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Chronological reading history + per-manga resume position. Backed by
 //  UserDefaults. Powers both the detail "Continue" button and the History tab.
@@ -179,13 +179,13 @@ final class HistoryStore: ObservableObject {
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testRecordPrependsNewEntry -only-testing:Manga-ReaderTests/Manga_ReaderTests/testRecordSameChapterUpdatesInPlace -only-testing:Manga-ReaderTests/Manga_ReaderTests/testLatestEntryForManga -only-testing:Manga-ReaderTests/Manga_ReaderTests/testDeleteAndClear`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:MangaCartaTests/MangaCartaTests/testRecordPrependsNewEntry -only-testing:MangaCartaTests/MangaCartaTests/testRecordSameChapterUpdatesInPlace -only-testing:MangaCartaTests/MangaCartaTests/testLatestEntryForManga -only-testing:MangaCartaTests/MangaCartaTests/testDeleteAndClear`
 Expected: PASS (4 tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Services/HistoryStore.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/HistoryStore.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add HistoryStore reading-progress spine"
 ```
 
@@ -194,9 +194,9 @@ git commit -m "Add HistoryStore reading-progress spine"
 ### Task 2: Chapter-ordering + resume-target helpers
 
 **Files:**
-- Create: `Manga-Reader/Models/ReadingResume.swift` (synchronized group — auto-compiles)
-- Modify: `Manga-Reader/Models/MangaDexAPI.swift` — add `Equatable` to `Chapter` (line 151: `struct Chapter: Identifiable {` → `struct Chapter: Identifiable, Equatable {`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+- Create: `MangaCarta/Models/ReadingResume.swift` (synchronized group — auto-compiles)
+- Modify: `MangaCarta/Models/MangaDexAPI.swift` — add `Equatable` to `Chapter` (line 151: `struct Chapter: Identifiable {` → `struct Chapter: Identifiable, Equatable {`)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append)
 
 **Interfaces:**
 - Consumes: `Chapter` (now `Equatable`), `ReadingEntry` (Task 1).
@@ -207,7 +207,7 @@ git commit -m "Add HistoryStore reading-progress spine"
   - `enum ResumeAction: Equatable { case start(Chapter); case cont(Chapter, page: Int); case next(Chapter); case reread(Chapter, page: Int) }`
   - `func resumeAction(entry: ReadingEntry?, chapters: [Chapter]) -> ResumeAction?`
 
-- [ ] **Step 1: Write the failing tests** — append to `Manga_ReaderTests.swift`:
+- [ ] **Step 1: Write the failing tests** — append to `MangaCartaTests.swift`:
 
 ```swift
 // MARK: - Chapter ordering & resume
@@ -264,21 +264,21 @@ func testResumeActionFinishedLatestRereads() {
 
 - [ ] **Step 2: Run to verify fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testResumeActionNoHistory`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:MangaCartaTests/MangaCartaTests/testResumeActionNoHistory`
 Expected: FAIL — `cannot find 'resumeAction' in scope`.
 
-- [ ] **Step 3a: Make `Chapter` Equatable** in `Manga-Reader/Models/MangaDexAPI.swift` (line ~151):
+- [ ] **Step 3a: Make `Chapter` Equatable** in `MangaCarta/Models/MangaDexAPI.swift` (line ~151):
 
 ```swift
 struct Chapter: Identifiable, Equatable {          // Identifiable so SwiftUI ForEach works directly.
 ```
 
-- [ ] **Step 3b: Create `Manga-Reader/Models/ReadingResume.swift`**
+- [ ] **Step 3b: Create `MangaCarta/Models/ReadingResume.swift`**
 
 ```swift
 //
 //  ReadingResume.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Pure helpers for numeric chapter ordering and choosing where the "Continue"
 //  button should drop the reader. Kept free of UI / persistence so they unit-test
@@ -345,13 +345,13 @@ func resumeAction(entry: ReadingEntry?, chapters: [Chapter]) -> ResumeAction? {
 
 - [ ] **Step 4: Run to verify pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testNumericChapterValue -only-testing:Manga-ReaderTests/Manga_ReaderTests/testSortChaptersNumeric -only-testing:Manga-ReaderTests/Manga_ReaderTests/testNextChapter -only-testing:Manga-ReaderTests/Manga_ReaderTests/testResumeActionNoHistory -only-testing:Manga-ReaderTests/Manga_ReaderTests/testResumeActionMidChapter -only-testing:Manga-ReaderTests/Manga_ReaderTests/testResumeActionFinishedJumpsToNext -only-testing:Manga-ReaderTests/Manga_ReaderTests/testResumeActionFinishedLatestRereads`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:MangaCartaTests/MangaCartaTests/testNumericChapterValue -only-testing:MangaCartaTests/MangaCartaTests/testSortChaptersNumeric -only-testing:MangaCartaTests/MangaCartaTests/testNextChapter -only-testing:MangaCartaTests/MangaCartaTests/testResumeActionNoHistory -only-testing:MangaCartaTests/MangaCartaTests/testResumeActionMidChapter -only-testing:MangaCartaTests/MangaCartaTests/testResumeActionFinishedJumpsToNext -only-testing:MangaCartaTests/MangaCartaTests/testResumeActionFinishedLatestRereads`
 Expected: PASS (7 tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Models/ReadingResume.swift Manga-Reader/Models/MangaDexAPI.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Models/ReadingResume.swift MangaCarta/Models/MangaDexAPI.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add chapter-ordering and resume-target helpers"
 ```
 
@@ -360,15 +360,15 @@ git commit -m "Add chapter-ordering and resume-target helpers"
 ### Task 3: Widen `ReaderView`, track progress, RTL default, inject `HistoryStore`
 
 **Files:**
-- Modify: `Manga-Reader/Views/ReaderView.swift`
-- Modify: `Manga-Reader/Views/MangaDetailView.swift:198-200` (existing `ReaderView(chapterId:)` call site)
-- Modify: `Manga-Reader/Manga_ReaderApp.swift` (inject `HistoryStore`)
+- Modify: `MangaCarta/Views/ReaderView.swift`
+- Modify: `MangaCarta/Views/MangaDetailView.swift:198-200` (existing `ReaderView(chapterId:)` call site)
+- Modify: `MangaCarta/MangaCartaApp.swift` (inject `HistoryStore`)
 
 **Interfaces:**
 - Consumes: `HistoryStore.record` (Task 1), `Manga`, `Chapter`.
 - Produces: `ReaderView(manga: Manga, chapter: Chapter, initialPage: Int = 0)` — the signature every later call site uses. Reads `HistoryStore` from the environment and records furthest-page progress.
 
-- [ ] **Step 1: Update `ReaderView` initializer & state** — in `Manga-Reader/Views/ReaderView.swift`, replace the struct's stored `let chapterId: String` and the `@AppStorage` mode default, and add progress state. Replace lines 45-55 region:
+- [ ] **Step 1: Update `ReaderView` initializer & state** — in `MangaCarta/Views/ReaderView.swift`, replace the struct's stored `let chapterId: String` and the `@AppStorage` mode default, and add progress state. Replace lines 45-55 region:
 
 ```swift
 struct ReaderView: View {
@@ -452,7 +452,7 @@ Replace the `.task { await load() }` modifier (line ~79) with:
 
 (`verticalPage(url:index:)` body is unchanged.)
 
-- [ ] **Step 5: Update the detail-screen call site** — in `Manga-Reader/Views/MangaDetailView.swift` (chapters section, line ~198-200):
+- [ ] **Step 5: Update the detail-screen call site** — in `MangaCarta/Views/MangaDetailView.swift` (chapters section, line ~198-200):
 
 ```swift
                         NavigationLink {
@@ -460,7 +460,7 @@ Replace the `.task { await load() }` modifier (line ~79) with:
                         } label: {
 ```
 
-- [ ] **Step 6: Inject `HistoryStore`** — in `Manga-Reader/Manga_ReaderApp.swift`, add the store and inject it:
+- [ ] **Step 6: Inject `HistoryStore`** — in `MangaCarta/MangaCartaApp.swift`, add the store and inject it:
 
 ```swift
     @StateObject private var library = LibraryStore()
@@ -477,7 +477,7 @@ Replace the `.task { await load() }` modifier (line ~79) with:
 
 - [ ] **Step 7: Build to verify it compiles**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' build`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' build`
 Expected: `** BUILD SUCCEEDED **`.
 
 - [ ] **Step 8: Manual verification**
@@ -487,7 +487,7 @@ Launch the app (open a manga from Home → open a chapter). Read a few pages, ba
 - [ ] **Step 9: Commit**
 
 ```bash
-git add Manga-Reader/Views/ReaderView.swift Manga-Reader/Views/MangaDetailView.swift Manga-Reader/Manga_ReaderApp.swift
+git add MangaCarta/Views/ReaderView.swift MangaCarta/Views/MangaDetailView.swift MangaCarta/MangaCartaApp.swift
 git commit -m "Widen ReaderView to report progress; default RTL; inject HistoryStore"
 ```
 
@@ -496,7 +496,7 @@ git commit -m "Widen ReaderView to report progress; default RTL; inject HistoryS
 ### Task 4: Resume button + chapter-order toggle in `MangaDetailView`
 
 **Files:**
-- Modify: `Manga-Reader/Views/MangaDetailView.swift`
+- Modify: `MangaCarta/Views/MangaDetailView.swift`
 
 **Interfaces:**
 - Consumes: `resumeAction`, `sortChapters`, `ResumeAction` (Task 2); `HistoryStore.latestEntry` (Task 1); `ReaderView(manga:chapter:initialPage:)` (Task 3).
@@ -624,7 +624,7 @@ And change the loop to sort:
 
 - [ ] **Step 5: Build**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' build`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' build`
 Expected: `** BUILD SUCCEEDED **`.
 
 - [ ] **Step 6: Manual verification**
@@ -634,7 +634,7 @@ Open a manga: chapters list shows newest at top; tap the NEWEST/OLDEST toggle to
 - [ ] **Step 7: Commit**
 
 ```bash
-git add Manga-Reader/Views/MangaDetailView.swift
+git add MangaCarta/Views/MangaDetailView.swift
 git commit -m "Add resume button and chapter-order toggle to detail view"
 ```
 
@@ -643,20 +643,20 @@ git commit -m "Add resume button and chapter-order toggle to detail view"
 ### Task 5: History tab
 
 **Files:**
-- Create: `Manga-Reader/Views/HistoryView.swift`
-- Modify: `Manga-Reader.xcodeproj/project.pbxproj` (4 entries)
-- Modify: `Manga-Reader/ContentView.swift` (both `TabView` branches + `Tabs` enum)
+- Create: `MangaCarta/Views/HistoryView.swift`
+- Modify: `MangaCarta.xcodeproj/project.pbxproj` (4 entries)
+- Modify: `MangaCarta/ContentView.swift` (both `TabView` branches + `Tabs` enum)
 
 **Interfaces:**
 - Consumes: `HistoryStore.entries/delete/clear` (Task 1), `ReadingEntry`, `ReaderView(manga:chapter:initialPage:)` (Task 3), `MangaCoverCard`-style tokens.
 - Produces: `struct HistoryView: View`.
 
-- [ ] **Step 1: Create `Manga-Reader/Views/HistoryView.swift`**
+- [ ] **Step 1: Create `MangaCarta/Views/HistoryView.swift`**
 
 ```swift
 //
 //  HistoryView.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  The "History" tab: a reverse-chronological log of chapters read, grouped by
 //  day. Tapping a row reopens that exact chapter and page.
@@ -776,7 +776,7 @@ private extension ReadingEntry {
 
 - [ ] **Step 2: Register the file in `project.pbxproj`** — first pick two IDs not already present:
 
-Run: `grep -c "AD1157092EA0000100CF2434\|AD1157092EA0000200CF2434" Manga-Reader.xcodeproj/project.pbxproj`
+Run: `grep -c "AD1157092EA0000100CF2434\|AD1157092EA0000200CF2434" MangaCarta.xcodeproj/project.pbxproj`
 Expected: `0` (if not 0, change the last digits until unique).
 
 Make 4 edits mirroring `SearchView.swift`:
@@ -793,7 +793,7 @@ Make 4 edits mirroring `SearchView.swift`:
 ```
 				AD1157092EA0000100CF2434 /* HistoryView.swift */,
 ```
-4. In the `Manga-Reader` target's `Sources` build phase `files` list (near line 300, alongside `SearchView.swift in Sources`), add:
+4. In the `MangaCarta` target's `Sources` build phase `files` list (near line 300, alongside `SearchView.swift in Sources`), add:
 ```
 				AD1157092EA0000200CF2434 /* HistoryView.swift in Sources */,
 ```
@@ -824,7 +824,7 @@ In **each** of the two `TabView` blocks, insert after the `BookmarksView()` tab:
 
 - [ ] **Step 4: Build**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' build`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' build`
 Expected: `** BUILD SUCCEEDED **`. (If the build can't find `HistoryView`, the pbxproj edit is wrong — recheck all four entries.)
 
 - [ ] **Step 5: Manual verification**
@@ -834,7 +834,7 @@ Read a couple of chapters across different manga. Open the History tab: entries 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Manga-Reader/Views/HistoryView.swift Manga-Reader.xcodeproj/project.pbxproj Manga-Reader/ContentView.swift
+git add MangaCarta/Views/HistoryView.swift MangaCarta.xcodeproj/project.pbxproj MangaCarta/ContentView.swift
 git commit -m "Add History tab"
 ```
 
@@ -843,9 +843,9 @@ git commit -m "Add History tab"
 ### Task 6: Library update tracking — API, counting, store
 
 **Files:**
-- Modify: `Manga-Reader/Models/MangaDexAPI.swift` (add `RecentChapter`, `recentChapters`, `newChapterCount`)
-- Modify: `Manga-Reader/Services/LibraryStore.swift` (fields, `refresh()`, `markCaughtUp`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+- Modify: `MangaCarta/Models/MangaDexAPI.swift` (add `RecentChapter`, `recentChapters`, `newChapterCount`)
+- Modify: `MangaCarta/Services/LibraryStore.swift` (fields, `refresh()`, `markCaughtUp`)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append)
 
 **Interfaces:**
 - Consumes: existing `request<T>`, `ChapterListResponse`, `ChapterData` in `MangaDexAPI.swift`.
@@ -856,7 +856,7 @@ git commit -m "Add History tab"
   - `LibraryItem` gains `var lastSeenReadableAt: String?`, `var latestReadableAt: String?`, `var newChapterCount: Int?`
   - `LibraryStore`: `@Published private(set) var isRefreshing`, `func refresh() async`, `func markCaughtUp(_ id: String)`
 
-- [ ] **Step 1: Write the failing tests** — append to `Manga_ReaderTests.swift`:
+- [ ] **Step 1: Write the failing tests** — append to `MangaCartaTests.swift`:
 
 ```swift
 // MARK: - Library updates
@@ -892,10 +892,10 @@ func testLibraryItemDecodesLegacyJSON() throws {
 
 - [ ] **Step 2: Run to verify fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testNewChapterCountCountsNewerDistinct`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:MangaCartaTests/MangaCartaTests/testNewChapterCountCountsNewerDistinct`
 Expected: FAIL — `cannot find 'RecentChapter' in scope`.
 
-- [ ] **Step 3a: Add API + counting** — append to `Manga-Reader/Models/MangaDexAPI.swift` inside the `MangaDexAPI` type (near `fetchChapters`), plus the `RecentChapter` type and `newChapterCount` at file scope:
+- [ ] **Step 3a: Add API + counting** — append to `MangaCarta/Models/MangaDexAPI.swift` inside the `MangaDexAPI` type (near `fetchChapters`), plus the `RecentChapter` type and `newChapterCount` at file scope:
 
 ```swift
 /// A lightweight recent-chapter record for update detection.
@@ -942,7 +942,7 @@ And the API method (inside `extension MangaDexAPI` / the namespace, next to `fet
 
 (Note: `ChapterAttributes` already exposes `chapter` and `readableAt`; verify by reading `MangaDexAPI.swift:120-126`.)
 
-- [ ] **Step 3b: Extend `LibraryItem` + `LibraryStore`** — in `Manga-Reader/Services/LibraryStore.swift`:
+- [ ] **Step 3b: Extend `LibraryItem` + `LibraryStore`** — in `MangaCarta/Services/LibraryStore.swift`:
 
 Replace the struct (lines 12-16):
 ```swift
@@ -1015,13 +1015,13 @@ Add these methods to `LibraryStore` (before `save()`):
 
 - [ ] **Step 4: Run tests to verify pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testNewChapterCountCountsNewerDistinct -only-testing:Manga-ReaderTests/Manga_ReaderTests/testNewChapterCountNilBaselineCountsAllDistinct -only-testing:Manga-ReaderTests/Manga_ReaderTests/testLibraryItemDecodesLegacyJSON`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' test -only-testing:MangaCartaTests/MangaCartaTests/testNewChapterCountCountsNewerDistinct -only-testing:MangaCartaTests/MangaCartaTests/testNewChapterCountNilBaselineCountsAllDistinct -only-testing:MangaCartaTests/MangaCartaTests/testLibraryItemDecodesLegacyJSON`
 Expected: PASS (3 tests).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Models/MangaDexAPI.swift Manga-Reader/Services/LibraryStore.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Models/MangaDexAPI.swift MangaCarta/Services/LibraryStore.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add library refresh + new-chapter counting"
 ```
 
@@ -1030,14 +1030,14 @@ git commit -m "Add library refresh + new-chapter counting"
 ### Task 7: Library refresh UI + badges + clear-on-read
 
 **Files:**
-- Modify: `Manga-Reader/Views/BookmarksView.swift`
-- Modify: `Manga-Reader/Views/ReaderView.swift` (call `markCaughtUp`)
+- Modify: `MangaCarta/Views/BookmarksView.swift`
+- Modify: `MangaCarta/Views/ReaderView.swift` (call `markCaughtUp`)
 
 **Interfaces:**
 - Consumes: `LibraryStore.refresh/isRefreshing/markCaughtUp` (Task 6), `MangaCoverCard(stamp:stampTinted:)`.
 - Produces: (UI only)
 
-- [ ] **Step 1: Pull-to-refresh + toolbar button + badges** — in `Manga-Reader/Views/BookmarksView.swift`, update the populated branch. Add `.refreshable` to the `ScrollView`, pass a stamp to the card, and add a toolbar button.
+- [ ] **Step 1: Pull-to-refresh + toolbar button + badges** — in `MangaCarta/Views/BookmarksView.swift`, update the populated branch. Add `.refreshable` to the `ScrollView`, pass a stamp to the card, and add a toolbar button.
 
 Card call (line ~29-32):
 ```swift
@@ -1071,7 +1071,7 @@ Add a toolbar to the `NavigationStack`'s content (after `.navigationTitle("Libra
             }
 ```
 
-- [ ] **Step 2: Clear badge on read** — in `Manga-Reader/Views/ReaderView.swift`, add the library env object and call `markCaughtUp` once pages load. Add near the other env objects:
+- [ ] **Step 2: Clear badge on read** — in `MangaCarta/Views/ReaderView.swift`, add the library env object and call `markCaughtUp` once pages load. Add near the other env objects:
 ```swift
     @EnvironmentObject private var library: LibraryStore
 ```
@@ -1082,7 +1082,7 @@ In the `.task` (Task 3, step 3), after `advanceProgress(to: start)` add:
 
 - [ ] **Step 3: Build**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' build`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' build`
 Expected: `** BUILD SUCCEEDED **`.
 
 - [ ] **Step 4: Manual verification**
@@ -1092,7 +1092,7 @@ Add a manga to the Library. Pull down on the Library grid (and try the toolbar r
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Views/BookmarksView.swift Manga-Reader/Views/ReaderView.swift
+git add MangaCarta/Views/BookmarksView.swift MangaCarta/Views/ReaderView.swift
 git commit -m "Add library pull-to-refresh, new-chapter badges, clear-on-read"
 ```
 
@@ -1100,13 +1100,13 @@ git commit -m "Add library pull-to-refresh, new-chapter badges, clear-on-read"
 
 ## Final verification
 
-- [ ] Run the full test suite: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' test` → all pass.
-- [ ] Build succeeds: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 16' build` → `** BUILD SUCCEEDED **`.
+- [ ] Run the full test suite: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' test` → all pass.
+- [ ] Build succeeds: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 16' build` → `** BUILD SUCCEEDED **`.
 - [ ] End-to-end manual pass: read → resume (mid-chapter and next-chapter), History tab logs and reopens, Library refresh badges appear and clear, chapter order toggles, reader defaults to right-to-left.
 - [ ] Update `CLAUDE.md` "Current state" section: History tab now exists; Library has refresh + update badges; reader tracks progress. (Small doc edit, commit separately.)
 
 ## Notes on conventions
 
-- Tests use XCTest (existing `Manga_ReaderTests` class), appended in-file to avoid `pbxproj` edits for the non-synchronized test target.
+- Tests use XCTest (existing `MangaCartaTests` class), appended in-file to avoid `pbxproj` edits for the non-synchronized test target.
 - `@MainActor` store tests use `@MainActor func ... ` and an injected `UserDefaults(suiteName:)` so they never touch the real defaults.
 - All new UI uses existing "Ink & Seal" tokens; no new colors or fonts introduced.

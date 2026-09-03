@@ -47,7 +47,7 @@ WRITABLE = [
 ]
 
 TEST = (
-    "Manga-ReaderUITests/Manga_ReaderUITests/"
+    "MangaCartaUITests/MangaCartaUITests/"
     "testLiveHorimiyaCompletionPushesProgress"
 )
 
@@ -150,7 +150,7 @@ def do_fire(manga_id: int) -> int:
     do_snapshot(manga_id)
     command = [
         "xcodebuild",
-        "-scheme", "Manga-Reader",
+        "-scheme", "MangaCarta",
         "-destination", "platform=iOS Simulator,name=iPhone 17 Pro",
         "test",
         f"-only-testing:{TEST}",
