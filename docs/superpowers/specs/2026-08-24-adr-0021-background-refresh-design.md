@@ -15,22 +15,22 @@ code that carries the decision.
 
 What exists to build on:
 
-- `LibraryStore.refresh()` (`Manga-Reader/Services/LibraryStore.swift:277-322`) now routes per-item
+- `LibraryStore.refresh()` (`MangaCarta/Services/LibraryStore.swift:277-322`) now routes per-item
   to the Source named by `LibraryItem.sourceId`, through an injectable `SourceRegistry` seam
   (`registryOverride`, `init(defaults:works:registry:)`), with a MangaDex fallback for `nil`/
   unregistered ids and a bounded `maxConcurrent = 4` task group. PR #86. ADR-0021's "network checks
   remain Listing-specific" is exactly this routing, lifted from `LibraryItem` to `ListingKey`.
-- `WorkStore` (`Manga-Reader/Services/WorkStore.swift`) owns Works, the `ListingKey → WorkID` index,
+- `WorkStore` (`MangaCarta/Services/WorkStore.swift`) owns Works, the `ListingKey → WorkID` index,
   merge aliasing, and a debounced JSON save under Application Support. `Work.listings` is the list of
   `ListingKey`s ADR-0021 says to check.
-- `MetadataUpgradeQueue` (`Manga-Reader/Services/MetadataUpgradeQueue.swift`) is the only
+- `MetadataUpgradeQueue` (`MangaCarta/Services/MetadataUpgradeQueue.swift`) is the only
   self-starting work in the app and the closest precedent worth copying: injected `now`/`sleep`,
   a `DrainStep` enum describing one turn of the loop so the loop is testable without a clock, a
   persisted attempt memory with backoff, `start()`/`stop()`/`flush()` driven from `scenePhase`
-  (`Manga_ReaderApp.swift:132-159`), and construction in `AppComposition`.
+  (`MangaCartaApp.swift:132-159`), and construction in `AppComposition`.
 - The app has **no** `BGTaskScheduler` registration, no `UIBackgroundModes`, no notification
   entitlement, and no `UNUserNotificationCenter` use. `Info.plist` exists and is hand-maintained
-  (`Manga-Reader/Info.plist`) alongside `GENERATE_INFOPLIST_FILE = YES`.
+  (`MangaCarta/Info.plist`) alongside `GENERATE_INFOPLIST_FILE = YES`.
 
 The gap between ADR and code is four things: a **chapter frontier** that survives string chapter
 numbers; a **per-Work update state** that persists baselines; a **coordinator** that folds
@@ -304,7 +304,7 @@ protocol BackgroundTaskScheduling {
 ```
 
 Identifier `Elias-Magdaleno.Manga-Reader.libraryRefresh`. Registration happens in
-`Manga_ReaderApp.init` (before the scene is created — `BGTaskScheduler` requires it), and a request
+`MangaCartaApp.init` (before the scene is created — `BGTaskScheduler` requires it), and a request
 is submitted on `.background` with `earliestBeginDate = now + UpdateTuning.backgroundRequestInterval`,
 re-submitted at the *start* of each handler so the chain never dies. The handler sets
 `expirationHandler` to cancel the coordinator's task, runs `coordinator.run(budget: .background(...))`
@@ -393,7 +393,7 @@ Listing with `consecutiveFailures > 0` → `.partialFailure`; `lastSuccessfulChe
   `UIBackgroundModes` = `fetch`. No entitlement file is needed — local notifications require none.
 - `AppComposition` gains `updates: UpdateStateStore`, `refresh: LibraryRefreshCoordinator`,
   `notifier: UpdateNotifier`, `scheduler: UpdateScheduler`, all injectable for the composition test.
-- `Manga_ReaderApp`: register in `init`; `.active` → `refresh.run(budget: .foreground)` and
+- `MangaCartaApp`: register in `init`; `.active` → `refresh.run(budget: .foreground)` and
   `updates` healing; `.background` → `updates.flush()` and `scheduler.submit(...)`.
 
 ## Data flow
@@ -416,7 +416,7 @@ HistoryStore ─────┘
 
 ## Testing
 
-Unit (Swift Testing, `Manga-ReaderTests`, no network):
+Unit (Swift Testing, `MangaCartaTests`, no network):
 
 - `ChapterFrontierTests` — the ADR's hazard fixtures, each its own case: decimals (`7.5` after `7`
   is a release; `7.5` after `8` is backfill), zero-padding (`07` == `7`), `"7v2"`, `"7-8"`,
@@ -444,7 +444,7 @@ Unit (Swift Testing, `Manga-ReaderTests`, no network):
   order; and a test asserting summaries are unchanged when `SourceRegistry.active` changes.
 - `AppCompositionTests` — the new objects are wired once and shared.
 
-UI (`Manga-ReaderUITests`, iPhone 17 Pro, seeded fixture): the empty state, "Not checked yet",
+UI (`MangaCartaUITests`, iPhone 17 Pro, seeded fixture): the empty state, "Not checked yet",
 a refresh that announces completion, the Updates filter's selected state, and the Settings
 authorization row — each with a screenshot attachment, per the repo's UI-verification convention.
 

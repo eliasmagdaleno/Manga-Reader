@@ -36,7 +36,7 @@ import urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "..", "docs", "superpowers", "measurements", "adr0020-anilist-arm")
-UA = "Manga-Reader-arm-ordering/1.0"
+UA = "MangaCarta-arm-ordering/1.0"
 
 ANILIST_QUERY = """
 query ($ids: [Int]) {

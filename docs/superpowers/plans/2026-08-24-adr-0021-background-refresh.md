@@ -28,18 +28,18 @@ project (no SPM). iOS 17.5 deployment target.
 ## Global Constraints
 
 - **No third-party dependencies.** Pure SwiftUI + Foundation + Apple frameworks only.
-- **App sources live under `Manga-Reader/…` from the repo root** — e.g.
-  `Manga-Reader/Services/UpdateStateStore.swift`. (Older plans in this directory say
-  `Manga-Reader/Manga-Reader/…`; that is stale — verify with `ls` before trusting either.)
+- **App sources live under `MangaCarta/…` from the repo root** — e.g.
+  `MangaCarta/Services/UpdateStateStore.swift`. (Older plans in this directory say
+  `MangaCarta/MangaCarta/…`; that is stale — verify with `ls` before trusting either.)
 - **`Models/`, `Services/`, and `Views/Components/` are Xcode synchronized groups** — new files
-  auto-compile, no `project.pbxproj` edit. **`Views/` and `Manga-ReaderTests/` are NOT** — a new file
+  auto-compile, no `project.pbxproj` edit. **`Views/` and `MangaCartaTests/` are NOT** — a new file
   in either needs the four-part wiring, done with `xcp add-file` (see CLAUDE.md).
 - **`project.pbxproj` can change under you at any moment while Xcode has the project open.** Check
   `git diff --stat` immediately before every `git add`, not right after `xcp`, and
   `git checkout` unrelated churn.
 - **Build/test on the iPhone 17 Pro simulator** with **`-parallel-testing-enabled NO`**:
   ```sh
-  xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
     -parallel-testing-enabled NO test
   ```
   That device holds the seeded fixture (13 MangaDex titles + 1 WeebCentral); another device gets an
@@ -47,7 +47,7 @@ project (no SPM). iOS 17.5 deployment target.
 - **Never erase the simulator.** Its app container is a fixture (`works.json` has been destroyed this
   way before). Check the container before any destructive simulator action.
 - **`BGTaskScheduler.register` must be called before the app finishes launching** — that means
-  `Manga_ReaderApp.init`, not `.task` and not `onChange(of: scenePhase)`.
+  `MangaCartaApp.init`, not `.task` and not `onChange(of: scenePhase)`.
 - **Background code paths cannot show UI.** No interactive Cloudflare challenge, no permission
   prompt, no alert may originate from a background run.
 - **SourceKit/LSP false alarms** ("No such module 'XCTest'", "Cannot find type 'Manga' in scope") are
@@ -59,7 +59,7 @@ project (no SPM). iOS 17.5 deployment target.
 ## File Structure
 
 ```
-Manga-Reader/
+MangaCarta/
   Models/
     ChapterFrontier.swift                  NEW  (synchronized — no pbxproj edit)
     LibraryUpdatesPresentation.swift       NEW  (synchronized)
@@ -79,9 +79,9 @@ Manga-Reader/
     BookmarksView.swift                    MODIFY (Library — Updates filter)
     SettingsView.swift                     MODIFY
     ChapterListView.swift                  MODIFY (clear newlyDiscovered)
-  Manga_ReaderApp.swift                    MODIFY
+  MangaCartaApp.swift                    MODIFY
   Info.plist                               MODIFY
-Manga-ReaderTests/                         NEW files need `xcp add-file`
+MangaCartaTests/                         NEW files need `xcp add-file`
   ChapterFrontierTests.swift
   UpdateStateStoreTests.swift
   LibraryRefreshCoordinatorTests.swift
@@ -100,8 +100,8 @@ The whole feature's correctness sits here, and it needs no stores, no network, a
 Build it first and test it hard. `Models/` is synchronized; the test file is not — use `xcp`.
 
 **Files:**
-- Create: `Manga-Reader/Models/ChapterFrontier.swift`
-- Create: `Manga-ReaderTests/ChapterFrontierTests.swift` (+ `xcp add-file --targets Manga-ReaderTests`)
+- Create: `MangaCarta/Models/ChapterFrontier.swift`
+- Create: `MangaCartaTests/ChapterFrontierTests.swift` (+ `xcp add-file --targets MangaCartaTests`)
 
 **Interfaces:**
 - Produces: `ChapterOrdinal` (`Hashable, Comparable, Codable`, `static func parse(_:) -> Self?`),
@@ -129,7 +129,7 @@ Build it first and test it hard. `Models/` is synchronized; the test file is not
   **`max` never decreases.**
 - [ ] **Step 4: Implement `seed`.** Same folding, discard the return. Explicitly `@discardableResult`-free
   so a caller cannot accidentally treat a first observation as releases.
-- [ ] **Step 5:** `xcodebuild … test -only-testing:Manga-ReaderTests/ChapterFrontierTests`. All green
+- [ ] **Step 5:** `xcodebuild … test -only-testing:MangaCartaTests/ChapterFrontierTests`. All green
   before moving on.
 
 ---
@@ -137,9 +137,9 @@ Build it first and test it hard. `Models/` is synchronized; the test file is not
 ## Task 2: `UpdateStateStore` — persisted baselines, mute, and backoff
 
 **Files:**
-- Create: `Manga-Reader/Services/UpdateStateStore.swift`
-- Create: `Manga-Reader/Services/UpdateTuning.swift`
-- Create: `Manga-ReaderTests/UpdateStateStoreTests.swift` (+ `xcp`)
+- Create: `MangaCarta/Services/UpdateStateStore.swift`
+- Create: `MangaCarta/Services/UpdateTuning.swift`
+- Create: `MangaCartaTests/UpdateStateStoreTests.swift` (+ `xcp`)
 - **Do not modify `WorkStore.swift`.** See Step 7.
 
 **Interfaces:**
@@ -198,8 +198,8 @@ The largest task. It is the piece ADR-0021's "same source-aware refresh pipeline
 the piece PR #86's per-source routing exists to make correct.
 
 **Files:**
-- Create: `Manga-Reader/Services/LibraryRefreshCoordinator.swift`
-- Create: `Manga-ReaderTests/LibraryRefreshCoordinatorTests.swift` (+ `xcp`)
+- Create: `MangaCarta/Services/LibraryRefreshCoordinator.swift`
+- Create: `MangaCartaTests/LibraryRefreshCoordinatorTests.swift` (+ `xcp`)
 
 **Interfaces:**
 - Consumes: `WorkStore` (`allWorkIds()`, `work(_:)`), `LibraryStore` (`items`), `HistoryStore`
@@ -263,8 +263,8 @@ the piece PR #86's per-source routing exists to make correct.
 ## Task 4: `UpdateScheduler` — BackgroundTasks, behind a protocol
 
 **Files:**
-- Create: `Manga-Reader/Services/UpdateScheduler.swift`
-- Modify: `Manga-Reader/Info.plist`
+- Create: `MangaCarta/Services/UpdateScheduler.swift`
+- Modify: `MangaCarta/Info.plist`
 
 **Interfaces:**
 - Consumes: `LibraryRefreshCoordinator` (Task 3), `UpdateNotifier` (Task 5).
@@ -294,8 +294,8 @@ the piece PR #86's per-source routing exists to make correct.
 ## Task 5: `UpdateNotifier` — authorization, copy, grouping, deep link
 
 **Files:**
-- Create: `Manga-Reader/Services/UpdateNotifier.swift`
-- Create: `Manga-ReaderTests/UpdateNotifierTests.swift` (+ `xcp`)
+- Create: `MangaCarta/Services/UpdateNotifier.swift`
+- Create: `MangaCartaTests/UpdateNotifierTests.swift` (+ `xcp`)
 
 **Interfaces:**
 - Consumes: `UpdateEvent` (Task 3), `UpdateStateStore` (Task 2), `SourceRegistry` (for `isNSFW`).
@@ -335,9 +335,9 @@ the piece PR #86's per-source routing exists to make correct.
 ## Task 6: Composition and lifecycle wiring
 
 **Files:**
-- Modify: `Manga-Reader/Services/AppComposition.swift`
-- Modify: `Manga-Reader/Manga_ReaderApp.swift`
-- Modify: `Manga-ReaderTests/AppCompositionTests.swift`
+- Modify: `MangaCarta/Services/AppComposition.swift`
+- Modify: `MangaCarta/MangaCartaApp.swift`
+- Modify: `MangaCartaTests/AppCompositionTests.swift`
 
 - [ ] **Step 1:** Add `updates`, `refresh`, `notifier`, `scheduler` to `AppComposition`, built once and
   shared, storage injectable exactly as the existing stores are — that file exists because wiring
@@ -345,9 +345,9 @@ the piece PR #86's per-source routing exists to make correct.
 - [ ] **Step 2:** Nothing to wire for merges — `LibraryRefreshCoordinator` reconciles them itself
   (Task 3 Step 5). Confirm `WorkStore.swift` is untouched in the diff; if it isn't, Task 2 Step 7 was
   ignored.
-- [ ] **Step 3:** Call `scheduler.register()` in `Manga_ReaderApp.init` — **not** in `.task` or
+- [ ] **Step 3:** Call `scheduler.register()` in `MangaCartaApp.init` — **not** in `.task` or
   `onChange`; `BGTaskScheduler` requires registration before launch completes.
-- [ ] **Step 4:** In `onChange(of: scenePhase)` (`Manga_ReaderApp.swift:132-159`), follow the existing
+- [ ] **Step 4:** In `onChange(of: scenePhase)` (`MangaCartaApp.swift:132-159`), follow the existing
   ordering discipline and its comments:
   - `.active`: start a foreground `refresh.run(budget: .foreground)` alongside `queue.start()`, so
     activation heals skipped and failed work.
@@ -366,10 +366,10 @@ Implements the merged UI contract. `Views/Components/` is synchronized; the two 
 already exist, so no `project.pbxproj` edit is needed for this task.
 
 **Files:**
-- Create: `Manga-Reader/Models/LibraryUpdatesPresentation.swift`
-- Create: `Manga-Reader/Views/Components/UpdatesHeader.swift`, `.../WorkUpdateRow.swift`
-- Create: `Manga-ReaderTests/LibraryUpdatesPresentationTests.swift` (+ `xcp`)
-- Modify: `Manga-Reader/Views/HomeView.swift`, `BookmarksView.swift` (Library), `SettingsView.swift`,
+- Create: `MangaCarta/Models/LibraryUpdatesPresentation.swift`
+- Create: `MangaCarta/Views/Components/UpdatesHeader.swift`, `.../WorkUpdateRow.swift`
+- Create: `MangaCartaTests/LibraryUpdatesPresentationTests.swift` (+ `xcp`)
+- Modify: `MangaCarta/Views/HomeView.swift`, `BookmarksView.swift` (Library), `SettingsView.swift`,
   `ChapterListView.swift`
 
 - [ ] **Step 1: The pure presentation type first**, per spec §Design.6: `UpdateFreshness`,
@@ -411,7 +411,7 @@ There is no tap tool here — drive and verify SwiftUI through XCUITest assertio
 attachments, on the iPhone 17 Pro simulator holding the fixture.
 
 **Files:**
-- Modify: `Manga-ReaderUITests/…` (add an updates UI test class)
+- Modify: `MangaCartaUITests/…` (add an updates UI test class)
 
 - [ ] **Step 1:** Cover, each with a screenshot attachment: the no-saved-Works empty state; "Not
   checked yet"; a foreground refresh that announces completion; the Updates filter's selected state;
@@ -425,9 +425,9 @@ attachments, on the iPhone 17 Pro simulator holding the fixture.
 
 ## Final verification (before finishing the branch)
 
-- [ ] Full suite green: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -parallel-testing-enabled NO test`
+- [ ] Full suite green: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -parallel-testing-enabled NO test`
 - [ ] The PR #86 per-source routing regression test still passes **unmodified**.
-- [ ] `git diff --stat` shows `Manga-Reader/Services/WorkStore.swift` **unchanged**.
+- [ ] `git diff --stat` shows `MangaCarta/Services/WorkStore.swift` **unchanged**.
 - [ ] No threshold literal outside `UpdateTuning.swift` (grep the diff for `60 * 60`).
 - [ ] Grep the whole diff for cadence promises — no user-visible string may say "twice a day",
   "every 12 hours", or name a delivery time.

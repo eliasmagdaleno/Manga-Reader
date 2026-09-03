@@ -245,7 +245,7 @@ The existing read-only `MyAnimeListAPI` and its client-id-only behavior remain u
 entity resolution and recommendations. Authenticated operations live behind the new client
 protocol so a token refresh cannot accidentally become a dependency of read-only discovery.
 
-`Manga_ReaderApp` owns the account store and coordinator for the app lifetime, injects the account
+`MangaCartaApp` owns the account store and coordinator for the app lifetime, injects the account
 store into Settings, starts both queues when active, and stops/flushes both when backgrounded.
 
 ## Verification

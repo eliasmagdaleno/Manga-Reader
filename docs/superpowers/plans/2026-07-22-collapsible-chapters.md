@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - **No third-party dependencies.** Pure SwiftUI + Foundation only.
-- **App sources live under `Manga-Reader/Manga-Reader/…`** (double nesting), e.g. `Manga-Reader/Manga-Reader/Views/ChapterListView.swift`.
+- **App sources live under `MangaCarta/MangaCarta/…`** (double nesting), e.g. `MangaCarta/MangaCarta/Views/ChapterListView.swift`.
 - **`Components/` and `Models/` are Xcode synchronized groups** (new files auto-compile, no `project.pbxproj` edit). **`Views/` is NOT** — a new `Views/` file needs the four-part `project.pbxproj` wiring (see Task 2).
 - **Build/test on the iPhone 17 simulator** (no iPhone 16 on this machine — CLAUDE.md's example is outdated) with **`-parallel-testing-enabled NO`** (user dislikes cloned sim instances).
 - **SourceKit/LSP false alarms:** standalone diagnostics like "No such module 'XCTest'" or "Cannot find type 'Chapter'/'Manga' in scope" fire because the indexer can't resolve module-internal types. **Judge correctness ONLY by the `xcodebuild` run**, never the diagnostics.
@@ -27,8 +27,8 @@
 Lift the private `chapterRow(_:selected:)` from `MangaDetailView` into a standalone, reusable `ChapterRow` view so both the detail-page preview (Task 3) and the full-list screen (Task 2) render identical rows. Pure refactor — no behavior change. `Components/` is a synchronized group, so no `project.pbxproj` edit.
 
 **Files:**
-- Create: `Manga-Reader/Components/ChapterRow.swift`
-- Modify: `Manga-Reader/Views/MangaDetailView.swift` (call `ChapterRow`, delete the private `chapterRow` func)
+- Create: `MangaCarta/Components/ChapterRow.swift`
+- Modify: `MangaCarta/Views/MangaDetailView.swift` (call `ChapterRow`, delete the private `chapterRow` func)
 
 **Interfaces:**
 - Consumes: `Chapter` (`Models/MangaDexAPI.swift`), `HistoryStore` (`func isRead(chapterId:) -> Bool`, `func entry(forChapter:) -> ReadingEntry?`), `Ink`/`Gutter` design tokens.
@@ -36,12 +36,12 @@ Lift the private `chapterRow(_:selected:)` from `MangaDetailView` into a standal
 
 - [ ] **Step 1: Create the shared row**
 
-Create `Manga-Reader/Components/ChapterRow.swift` (this is the exact body currently in `MangaDetailView.chapterRow`, with `isSelecting` replaced by the `selecting` parameter):
+Create `MangaCarta/Components/ChapterRow.swift` (this is the exact body currently in `MangaDetailView.chapterRow`, with `isSelecting` replaced by the `selecting` parameter):
 
 ```swift
 //
 //  ChapterRow.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  One chapter row, shared by the detail-page preview and the full ChapterListView.
 //  Reads read/progress state from HistoryStore. `selecting` shows the selection circle
@@ -111,7 +111,7 @@ struct ChapterRow: View {
 
 - [ ] **Step 2: Point `MangaDetailView` at `ChapterRow`**
 
-In `Manga-Reader/Views/MangaDetailView.swift`, the chapters `ForEach` (currently ~lines 414-441) calls `chapterRow(chapter, selected:)`. Replace both call sites so they build `ChapterRow` instead. Change:
+In `MangaCarta/Views/MangaDetailView.swift`, the chapters `ForEach` (currently ~lines 414-441) calls `chapterRow(chapter, selected:)`. Replace both call sites so they build `ChapterRow` instead. Change:
 
 ```swift
                         if isSelecting {
@@ -148,13 +148,13 @@ to:
 
 - [ ] **Step 3: Delete the now-unused private `chapterRow`**
 
-In `Manga-Reader/Views/MangaDetailView.swift`, delete the entire `private func chapterRow(_ chapter: Chapter, selected: Bool) -> some View { … }` method (currently ~lines 472-524). Nothing else references it after Step 2.
+In `MangaCarta/Views/MangaDetailView.swift`, delete the entire `private func chapterRow(_ chapter: Chapter, selected: Bool) -> some View { … }` method (currently ~lines 472-524). Nothing else references it after Step 2.
 
 - [ ] **Step 4: Build**
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 Expected: `** BUILD SUCCEEDED **`. (Ignore SourceKit "cannot find type" noise.)
 
@@ -162,16 +162,16 @@ Expected: `** BUILD SUCCEEDED **`. (Ignore SourceKit "cannot find type" noise.)
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO test \
-  -only-testing:Manga-ReaderUITests/Manga_ReaderUITests/testHomeAndDetailScreenshots
+  -only-testing:MangaCartaUITests/MangaCartaUITests/testHomeAndDetailScreenshots
 ```
 Expected: `** TEST SUCCEEDED **` (Home → Detail still renders the chapter rows).
 
 - [ ] **Step 6: Commit**
 
 ```sh
-git add Manga-Reader/Components/ChapterRow.swift Manga-Reader/Views/MangaDetailView.swift
+git add MangaCarta/Components/ChapterRow.swift MangaCarta/Views/MangaDetailView.swift
 git commit -m "Extract ChapterRow into Components (shared by preview + full list)
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -184,8 +184,8 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 The dedicated pushed screen that owns the complete chapter list, the newest/oldest sort toggle, and multi-select batch actions (Select All / Mark Read / Mark Unread / Cancel). This lifts the sort + select logic currently in `MangaDetailView` into a standalone screen; Task 3 removes the detail-page copies and links here. New `Views/` file → needs `project.pbxproj` wiring.
 
 **Files:**
-- Create: `Manga-Reader/Views/ChapterListView.swift`
-- Modify: `Manga-Reader.xcodeproj/project.pbxproj` (four-part wiring)
+- Create: `MangaCarta/Views/ChapterListView.swift`
+- Modify: `MangaCarta.xcodeproj/project.pbxproj` (four-part wiring)
 
 **Interfaces:**
 - Consumes: `ChapterRow` (Task 1), `Chapter`, `Manga`, `HistoryStore` (`isRead(chapterId:)`, `toggleRead(manga:chapter:)`, `markRead(manga:chapters:)`, `markUnread(manga:chapters:)`), `ReaderView(manga:chapter:)`, `sortChapters(_:descending:)` (`Models/ReadingResume.swift`), `Ink`/`Gutter` tokens.
@@ -193,12 +193,12 @@ The dedicated pushed screen that owns the complete chapter list, the newest/olde
 
 - [ ] **Step 1: Create the screen**
 
-Create `Manga-Reader/Views/ChapterListView.swift`:
+Create `MangaCarta/Views/ChapterListView.swift`:
 
 ```swift
 //
 //  ChapterListView.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  The full chapter list for a manga: newest/oldest sort toggle + multi-select
 //  batch actions (mark read/unread). Pushed from the detail page's "Show all N
@@ -340,7 +340,7 @@ struct ChapterListView: View {
 
 - [ ] **Step 2: Wire the file into `project.pbxproj`**
 
-`Views/` is not synchronized, so mirror `ReaderView.swift`'s four entries with **two freshly-generated unique 24-character hex IDs** (call them `<BUILD_ID>` for the build file and `<REF_ID>` for the file reference — they must not collide with any existing ID in the file). In `Manga-Reader.xcodeproj/project.pbxproj`:
+`Views/` is not synchronized, so mirror `ReaderView.swift`'s four entries with **two freshly-generated unique 24-character hex IDs** (call them `<BUILD_ID>` for the build file and `<REF_ID>` for the file reference — they must not collide with any existing ID in the file). In `MangaCarta.xcodeproj/project.pbxproj`:
 
 (a) In the `PBXBuildFile` section (near the `ReaderView.swift in Sources` line), add:
 ```
@@ -365,14 +365,14 @@ To generate two IDs: `python3 -c "import uuid;print(uuid.uuid4().hex[:24].upper(
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 Expected: `** BUILD SUCCEEDED **`. If it fails with a project-parse error, the pbxproj edit is malformed (a mistyped/duplicate ID or a missing comma) — re-check the four insertions against `ReaderView.swift`'s entries.
 
 - [ ] **Step 4: Commit**
 
 ```sh
-git add Manga-Reader/Views/ChapterListView.swift Manga-Reader.xcodeproj/project.pbxproj
+git add MangaCarta/Views/ChapterListView.swift MangaCarta.xcodeproj/project.pbxproj
 git commit -m "Add ChapterListView: full chapter list screen (sort + multi-select)
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -385,10 +385,10 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 Add a pure `chapterPreview` helper (newest-first, capped), unit-test it, then convert `MangaDetailView`'s Chapters section into the preview (newest 5 + "Show all N chapters" → `ChapterListView`) and remove the select/sort machinery now living in `ChapterListView`. Verify with the pure test plus two live UI tests.
 
 **Files:**
-- Modify: `Manga-Reader/Models/ReadingResume.swift` (add `chapterPreview`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (unit test for `chapterPreview`)
-- Modify: `Manga-Reader/Views/MangaDetailView.swift` (preview section; remove select/sort state)
-- Test: `Manga-ReaderUITests/Manga_ReaderUITests.swift` (two UI tests)
+- Modify: `MangaCarta/Models/ReadingResume.swift` (add `chapterPreview`)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (unit test for `chapterPreview`)
+- Modify: `MangaCarta/Views/MangaDetailView.swift` (preview section; remove select/sort state)
+- Test: `MangaCartaUITests/MangaCartaUITests.swift` (two UI tests)
 
 **Interfaces:**
 - Consumes: `sortChapters(_:descending:)`, `Chapter`, `ChapterListView(manga:chapters:)` (Task 2), `ChapterRow` (Task 1), `InkSectionHeader`, `Ink`/`Gutter`.
@@ -396,7 +396,7 @@ Add a pure `chapterPreview` helper (newest-first, capped), unit-test it, then co
 
 - [ ] **Step 1: Write the failing unit test for `chapterPreview`**
 
-In `Manga-ReaderTests/Manga_ReaderTests.swift`, add (Swift Testing style — match the file's existing tests; if the file uses XCTest, wrap these as `func test…()` with `XCTAssertEqual`):
+In `MangaCartaTests/MangaCartaTests.swift`, add (Swift Testing style — match the file's existing tests; if the file uses XCTest, wrap these as `func test…()` with `XCTAssertEqual`):
 
 ```swift
     @Test func chapterPreviewReturnsNewestFirstCapped() {
@@ -427,14 +427,14 @@ In `Manga-ReaderTests/Manga_ReaderTests.swift`, add (Swift Testing style — mat
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
-  -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -parallel-testing-enabled NO test -only-testing:MangaCartaTests
 ```
 Expected: FAIL — `chapterPreview` is undefined (compile error / missing symbol).
 
 - [ ] **Step 3: Implement `chapterPreview`**
 
-In `Manga-Reader/Models/ReadingResume.swift`, add after `sortChapters` (after its closing brace, ~line 31):
+In `MangaCarta/Models/ReadingResume.swift`, add after `sortChapters` (after its closing brace, ~line 31):
 
 ```swift
 /// The chapters shown in the detail-page preview: newest-first, capped at `limit`.
@@ -449,14 +449,14 @@ func chapterPreview(_ chapters: [Chapter], limit: Int) -> [Chapter] {
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
-  -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -parallel-testing-enabled NO test -only-testing:MangaCartaTests
 ```
 Expected: `** TEST SUCCEEDED **` (the two new tests plus the existing suite).
 
 - [ ] **Step 5: Convert the Chapters section to a preview**
 
-In `Manga-Reader/Views/MangaDetailView.swift`, replace the entire `private var chapters: some View { … }` computed property (currently ~lines 356-445) with this preview version. It keeps the header, error/empty/loading states, shows the newest 5 rows as read-navigable `ChapterRow`s, and appends the "Show all" row when there are more than 5:
+In `MangaCarta/Views/MangaDetailView.swift`, replace the entire `private var chapters: some View { … }` computed property (currently ~lines 356-445) with this preview version. It keeps the header, error/empty/loading states, shows the newest 5 rows as read-navigable `ChapterRow`s, and appends the "Show all" row when there are more than 5:
 
 ```swift
     private var chapters: some View {
@@ -534,13 +534,13 @@ Leave everything else (`hero`, `actionRow`, `tags`, `description`, `moreLikeThis
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build
 ```
 Expected: `** BUILD SUCCEEDED **`. If the compiler flags an unused `chaptersDescending`/`isSelecting`/`selectedChapterIDs` or a call to a deleted helper, finish removing the reference per Step 6.
 
 - [ ] **Step 8: Add the two UI tests**
 
-Append inside `final class Manga_ReaderUITests` in `Manga-ReaderUITests/Manga_ReaderUITests.swift`:
+Append inside `final class MangaCartaUITests` in `MangaCartaUITests/MangaCartaUITests.swift`:
 
 ```swift
     /// The detail page shows a truncated chapter preview, so the bottom-of-page
@@ -639,18 +639,18 @@ Append inside `final class Manga_ReaderUITests` in `Manga-ReaderUITests/Manga_Re
 
 Run:
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
   -parallel-testing-enabled NO test \
-  -only-testing:Manga-ReaderUITests/Manga_ReaderUITests/testChapterPreviewKeepsRailReachable \
-  -only-testing:Manga-ReaderUITests/Manga_ReaderUITests/testShowAllChaptersOpensFullListWithSortAndSelect
+  -only-testing:MangaCartaUITests/MangaCartaUITests/testChapterPreviewKeepsRailReachable \
+  -only-testing:MangaCartaUITests/MangaCartaUITests/testShowAllChaptersOpensFullListWithSortAndSelect
 ```
 Expected: both PASS. Notes: these are live/network-dependent (Home content + the MAL/MangaDex rail load). A flake is API availability, not a logic bug — re-run after a pause. If the first Home title has ≤ 5 chapters, `testShowAllChapters…` legitimately can't find the row; re-run (popular titles reliably have many chapters).
 
 - [ ] **Step 10: Commit**
 
 ```sh
-git add Manga-Reader/Models/ReadingResume.swift Manga-Reader/Views/MangaDetailView.swift \
-  Manga-ReaderTests/Manga_ReaderTests.swift Manga-ReaderUITests/Manga_ReaderUITests.swift
+git add MangaCarta/Models/ReadingResume.swift MangaCarta/Views/MangaDetailView.swift \
+  MangaCartaTests/MangaCartaTests.swift MangaCartaUITests/MangaCartaUITests.swift
 git commit -m "Truncate detail chapters to a 5-item preview + Show all → ChapterListView
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -662,8 +662,8 @@ Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
 
 - [ ] **Full unit suite** (regression):
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' \
-  -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -parallel-testing-enabled NO test -only-testing:MangaCartaTests
 ```
 Expected: PASS (existing suite + the two `chapterPreview` tests).
 
@@ -672,6 +672,6 @@ Expected: PASS (existing suite + the two `chapterPreview` tests).
 ## Notes for the executor
 
 - **Verification is by `xcodebuild`, not the SourceKit indexer** — "Cannot find type 'Chapter'/'Manga'/'XCTest'" diagnostics are false alarms.
-- **`Manga_ReaderTests.swift` test style:** the snippets use Swift Testing (`@Test` / `#expect`). If the file is XCTest-based, translate to `func test…()` + `XCTAssertEqual` — check the file's existing tests and match them.
+- **`MangaCartaTests.swift` test style:** the snippets use Swift Testing (`@Test` / `#expect`). If the file is XCTest-based, translate to `func test…()` + `XCTAssertEqual` — check the file's existing tests and match them.
 - **The `Views/` pbxproj edit (Task 2) is the one fragile step.** A malformed edit surfaces as a project-parse failure at build; mirror `ReaderView.swift`'s four entries exactly and use fresh unique IDs.
 - **Task order matters:** Task 1 (`ChapterRow`) is consumed by Tasks 2 and 3; Task 3's "Show all" links to Task 2's `ChapterListView`.

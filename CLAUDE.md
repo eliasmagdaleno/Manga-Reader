@@ -12,9 +12,9 @@ instructions, replace the symlink with a real file at that point — not before.
 Native SwiftUI iOS app (a MangaDex reader client). No third-party dependencies or
 package manager — pure SwiftUI + Foundation. Xcode project only (no SPM/CocoaPods).
 
-- Scheme / target: `Manga-Reader`
+- Scheme / target: `MangaCarta`
 - Deployment target: iOS 17.5 (some UI branches on `#available(iOS 18.0, *)`)
-- Test targets: `Manga-ReaderTests` (unit), `Manga-ReaderUITests` (UI)
+- Test targets: `MangaCartaTests` (unit), `MangaCartaUITests` (UI)
 
 ## Commands
 
@@ -38,11 +38,11 @@ One non-obvious requirement applies to **every** `xcodebuild` invocation here:
 Run a single test class or method (Swift Testing / XCTest via `xcodebuild`):
 
 ```sh
-xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  test -only-testing:Manga-ReaderTests/Manga_ReaderTests/<testMethod>
+xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  test -only-testing:MangaCartaTests/MangaCartaTests/<testMethod>
 ```
 
-For interactive work, opening `Manga-Reader.xcodeproj` in Xcode and using ⌘B / ⌘U is
+For interactive work, opening `MangaCarta.xcodeproj` in Xcode and using ⌘B / ⌘U is
 usually faster than the CLI.
 
 ## Architecture
@@ -95,10 +95,10 @@ Key conventions worth preserving:
 `Models/`, `Services/`, and `Components/` are Xcode 16 **synchronized groups**
 (`PBXFileSystemSynchronizedRootGroup`) — new files dropped in them are compiled
 automatically. Note `Components/` is synchronized but lives **nested under `Views/`** on
-disk (`Manga-Reader/Views/Components/`), so a shared UI component goes there and needs no
+disk (`MangaCarta/Views/Components/`), so a shared UI component goes there and needs no
 `project.pbxproj` edit.
 
-**`Views/` and `Manga-ReaderTests/` are NOT synchronized** — they are plain `PBXGroup`s, so
+**`Views/` and `MangaCartaTests/` are NOT synchronized** — they are plain `PBXGroup`s, so
 a new file in either needs four `project.pbxproj` entries: a `PBXFileReference`, a
 `PBXBuildFile`, a child entry in the group, and an entry in the target's `Sources` build
 phase.
@@ -107,12 +107,12 @@ Use **`xcp`** (`brew install xcp` — XcodeProjectCLI) rather than editing by ha
 all four:
 
 ```sh
-xcp add-file "$PWD/Manga-Reader.xcodeproj" \
-  --file "$PWD/Manga-ReaderTests/NewTests.swift" --targets Manga-ReaderTests
+xcp add-file "$PWD/MangaCarta.xcodeproj" \
+  --file "$PWD/MangaCartaTests/NewTests.swift" --targets MangaCartaTests
 ```
 
 `xcp delete-file` reverses it, and **also deletes the file from disk** unless you pass
-`--project-only`. `xcp list-targets Manga-Reader.xcodeproj` is a safe read-only check.
+`--project-only`. `xcp list-targets MangaCarta.xcodeproj` is a safe read-only check.
 Verified 2026-07-26 with xcp 1.2.1: the added file compiled and its test ran.
 
 **Caveat:** any `xcp` write reformats the three `PBXFileSystemSynchronizedRootGroup` entries
@@ -180,7 +180,7 @@ Still minimal: no cross-device sync. Content refresh is no longer manual-only (s
 
 ### Issue tracker
 
-Issues live in GitHub Issues for `eliasmagdaleno/Manga-Reader`, via the `gh` CLI.
+Issues live in GitHub Issues for `eliasmagdaleno/MangaCarta`, via the `gh` CLI.
 See `docs/agents/issue-tracker.md`.
 
 ### Triage labels

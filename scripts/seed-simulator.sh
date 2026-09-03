@@ -1,5 +1,5 @@
 #!/bin/bash
-# Re-seed the Manga-Reader container on the project's simulator with the fixture.
+# Re-seed the MangaCarta container on the project's simulator with the fixture.
 #
 # The simulator's on-device state is a fixture, not scratch data: works.json, the
 # reading history and the upgrade-attempt memory are what the recommender and the
@@ -29,7 +29,7 @@
 set -euo pipefail
 
 BUNDLE_ID="Elias-Magdaleno.Manga-Reader"
-SCHEME="Manga-Reader"
+SCHEME="MangaCarta"
 DEVICE_NAME="${SEED_SIMULATOR_DEVICE:-iPhone 17 Pro}"
 FORCE=0
 
@@ -103,7 +103,7 @@ touch "$MARKER"
 echo "seeding..."
 set +e
 xcodebuild -scheme "$SCHEME" -destination "$DESTINATION" -parallel-testing-enabled NO \
-  test -only-testing:Manga-ReaderTests/SimulatorSeedTests/testSeedTheSimulatorInPlace \
+  test -only-testing:MangaCartaTests/SimulatorSeedTests/testSeedTheSimulatorInPlace \
   2>&1 | tee /tmp/seed-simulator.log | grep -E "^Test Case|seeded |error:"
 STATUS=${PIPESTATUS[0]}
 set -e

@@ -70,7 +70,7 @@ Changes:
 - `RecentChapter`, `MangaDexAPI.recentChapters(mangaId:)`, and the free
   `newChapterCount(_:since:excludingNumbers:)` function in `MangaDexAPI.swift`
   become dead code and are deleted, along with their unit tests in
-  `Manga_ReaderTests.swift`.
+  `MangaCartaTests.swift`.
 - `BookmarksView` computes
   `item.unreadCount(readNumbers: history.readChapterNumbers(forManga: item.id))`
   per card at render time and shows `"UNREAD · N"` (in place of
@@ -151,7 +151,7 @@ overloads for the batch case.
   repeat calls, doesn't touch unrelated chapters/manga.
 - Remove/replace the now-obsolete `newChapterCount(...)` free-function tests
   and the `LibraryItem.newChapterCount` / `lastSeenReadableAt` nil-on-init
-  assertions in `Manga_ReaderTests.swift`.
+  assertions in `MangaCartaTests.swift`.
 - UI test (or manual verification per `docs/superpowers/.../ui-verification`
   convention): enter selection mode, select two chapters, Mark Read, confirm
   checkmarks/dimming update and the library badge count drops by 2; Select

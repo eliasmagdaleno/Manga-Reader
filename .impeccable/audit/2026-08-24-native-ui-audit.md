@@ -1,6 +1,6 @@
 # Native UI Audit — 2026-08-24
 
-Target: `Manga-Reader/Views` and `Manga-Reader/ContentView.swift`
+Target: `MangaCarta/Views` and `MangaCarta/ContentView.swift`
 
 ## Score
 

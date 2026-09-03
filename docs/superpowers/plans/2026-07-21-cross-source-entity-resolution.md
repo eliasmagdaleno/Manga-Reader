@@ -16,8 +16,8 @@
 - **Precision over recall:** never guess. Any doubt → no match → resolver returns `nil`.
 - **Persistence pattern:** stores are `@MainActor final class ... : ObservableObject`, UserDefaults + Codable, `init(defaults: UserDefaults = .standard)`, mirroring `Services/TasteProfileStore.swift`.
 - **New files:** `Services/` is a synchronized group — new files there compile automatically, NO `project.pbxproj` edits. `Views/` is NOT synchronized, but `MyAnimeListDebugView.swift` already exists in it (Task 6 only edits it).
-- **Test command (always):** `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/<method>` — iPhone 17 sim (no iPhone 16 on this machine), parallel testing OFF.
-- Unit tests live in `Manga-ReaderTests/Manga_ReaderTests.swift` (`@testable import Manga_Reader`, XCTest). Live/UI verification lives in `Manga-ReaderUITests/Manga_ReaderUITests.swift`.
+- **Test command (always):** `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/<method>` — iPhone 17 sim (no iPhone 16 on this machine), parallel testing OFF.
+- Unit tests live in `MangaCartaTests/MangaCartaTests.swift` (`@testable import MangaCarta`, XCTest). Live/UI verification lives in `MangaCartaUITests/MangaCartaUITests.swift`.
 
 ---
 
@@ -28,8 +28,8 @@ Widen the existing MAL search DTO to carry alternative titles (already requested
 that entity resolution matches against.
 
 **Files:**
-- Modify: `Manga-Reader/Models/MyAnimeListAPI.swift:33-42` (the `MyAnimeListManga` struct)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (add near the existing MAL DTO tests, ~line 1629)
+- Modify: `MangaCarta/Models/MyAnimeListAPI.swift:33-42` (the `MyAnimeListManga` struct)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (add near the existing MAL DTO tests, ~line 1629)
 
 **Interfaces:**
 - Consumes: nothing new.
@@ -77,12 +77,12 @@ func testMyAnimeListMangaAllTitlesWithoutAlternatives() throws {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMyAnimeListMangaDecodesAlternativeTitlesAndAllTitles`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testMyAnimeListMangaDecodesAlternativeTitlesAndAllTitles`
 Expected: FAIL — `value of type 'MyAnimeListManga' has no member 'alternativeTitles'` (compile error).
 
 - [ ] **Step 3: Add the fields and `allTitles` to `MyAnimeListManga`**
 
-In `Manga-Reader/Models/MyAnimeListAPI.swift`, replace the `MyAnimeListManga` struct (lines 33-42) with:
+In `MangaCarta/Models/MyAnimeListAPI.swift`, replace the `MyAnimeListManga` struct (lines 33-42) with:
 
 ```swift
 struct MyAnimeListManga: Decodable {
@@ -118,13 +118,13 @@ struct MyAnimeListManga: Decodable {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMyAnimeListMangaDecodesAlternativeTitlesAndAllTitles -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMyAnimeListMangaAllTitlesWithoutAlternatives`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testMyAnimeListMangaDecodesAlternativeTitlesAndAllTitles -only-testing:MangaCartaTests/MangaCartaTests/testMyAnimeListMangaAllTitlesWithoutAlternatives`
 Expected: PASS. (The existing `testMyAnimeListSearchResponseDecodesAndUnwrapsNode` and detail tests still pass — `alternativeTitles` is optional and additive.)
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Models/MyAnimeListAPI.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Models/MyAnimeListAPI.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Decode MAL alternative_titles + add allTitles for entity resolution
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -139,12 +139,12 @@ Add the cross-source identity field to `Manga` and populate it for MangaDex from
 pass `nil`.
 
 **Files:**
-- Modify: `Manga-Reader/Models/MangaDexAPI.swift` — `Manga` struct (lines 13-21), `MangaAttributes` (lines 70-104, add `links` + set `malId` in `toManga`)
-- Modify: `Manga-Reader/Models/WeebCentralSource.swift:103-106` (pass `malId: nil`)
-- Modify: `Manga-Reader/Views/BookmarksView.swift:69-70` (pass `malId: nil`)
-- Modify: `Manga-Reader/Views/HistoryView.swift:109` (pass `malId: nil`)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
-- Modify (tests, to keep them compiling): `Manga-ReaderTests/Manga_ReaderTests.swift` — the `sampleManga` helper (line 45-47) and the two literal `Manga(id:...)` inits (the registry test ~line 375 and any other flagged by the compiler)
+- Modify: `MangaCarta/Models/MangaDexAPI.swift` — `Manga` struct (lines 13-21), `MangaAttributes` (lines 70-104, add `links` + set `malId` in `toManga`)
+- Modify: `MangaCarta/Models/WeebCentralSource.swift:103-106` (pass `malId: nil`)
+- Modify: `MangaCarta/Views/BookmarksView.swift:69-70` (pass `malId: nil`)
+- Modify: `MangaCarta/Views/HistoryView.swift:109` (pass `malId: nil`)
+- Test: `MangaCartaTests/MangaCartaTests.swift`
+- Modify (tests, to keep them compiling): `MangaCartaTests/MangaCartaTests.swift` — the `sampleManga` helper (line 45-47) and the two literal `Manga(id:...)` inits (the registry test ~line 375 and any other flagged by the compiler)
 
 **Interfaces:**
 - Consumes: nothing new.
@@ -190,12 +190,12 @@ func testMangaAttributesToMangaMalIdNilWhenAbsentOrNonNumeric() throws {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMangaAttributesToMangaExtractsMalIdFromLinks`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testMangaAttributesToMangaExtractsMalIdFromLinks`
 Expected: FAIL — `value of type 'Manga' has no member 'malId'` (compile error).
 
 - [ ] **Step 3: Add `malId` to `Manga`, `links` to `MangaAttributes`, set it in `toManga`**
 
-In `Manga-Reader/Models/MangaDexAPI.swift`, add the field to `Manga` (after `coverURL`, line 20):
+In `MangaCarta/Models/MangaDexAPI.swift`, add the field to `Manga` (after `coverURL`, line 20):
 
 ```swift
     let coverURL: URL?                              // ✅ Pre-built cover URL (nil if none).
@@ -226,21 +226,21 @@ In `toManga` (lines 94-102), pass `malId`:
 
 - [ ] **Step 4: Update the other `Manga(...)` construction sites to pass `malId: nil`**
 
-`Manga-Reader/Models/WeebCentralSource.swift:104` →
+`MangaCarta/Models/WeebCentralSource.swift:104` →
 
 ```swift
         Manga(id: id, sourceId: Self.sourceID, title: title, description: "",
               status: "unknown", year: nil, coverURL: cover.flatMap(URL.init(string:)), malId: nil)
 ```
 
-`Manga-Reader/Views/BookmarksView.swift:69-70` →
+`MangaCarta/Views/BookmarksView.swift:69-70` →
 
 ```swift
         Manga(id: id, sourceId: sourceId ?? MangaDexSource.sourceID, title: title,
               description: "", status: "unknown", year: nil, coverURL: coverURL, malId: nil)
 ```
 
-`Manga-Reader/Views/HistoryView.swift:109` →
+`MangaCarta/Views/HistoryView.swift:109` →
 
 ```swift
         Manga(id: mangaId, sourceId: sourceId ?? MangaDexSource.sourceID, title: mangaTitle, description: "", status: "unknown", year: nil, coverURL: coverURL, malId: nil)
@@ -248,7 +248,7 @@ In `toManga` (lines 94-102), pass `malId`:
 
 - [ ] **Step 5: Update test construction sites to keep the suite compiling**
 
-`Manga-ReaderTests/Manga_ReaderTests.swift`, `sampleManga` helper (line 46) →
+`MangaCartaTests/MangaCartaTests.swift`, `sampleManga` helper (line 46) →
 
 ```swift
         Manga(id: id, sourceId: sourceId, title: "Title \(id)", description: "", status: "ongoing", year: nil, coverURL: nil, malId: nil)
@@ -264,13 +264,13 @@ These are the only two literal `Manga(...)` inits in the unit-test file (the thi
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMangaAttributesToMangaExtractsMalIdFromLinks -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMangaAttributesToMangaMalIdNilWhenAbsentOrNonNumeric`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testMangaAttributesToMangaExtractsMalIdFromLinks -only-testing:MangaCartaTests/MangaCartaTests/testMangaAttributesToMangaMalIdNilWhenAbsentOrNonNumeric`
 Expected: PASS, and the full suite compiles (no other `Manga(...)` site left un-updated).
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add Manga-Reader Manga-ReaderTests
+git add MangaCarta MangaCartaTests
 git commit -m "Add Manga.malId; MangaDex populates it from attributes.links.mal
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -284,8 +284,8 @@ The one piece with non-trivial logic and the piece that carries the heavy unit t
 network, no store — a source title + candidates in, a decision out.
 
 **Files:**
-- Create: `Manga-Reader/Services/MALTitleMatcher.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Create: `MangaCarta/Services/MALTitleMatcher.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Consumes: nothing (self-contained).
@@ -357,17 +357,17 @@ func testMALDecideEmptyInputsAreNoMatch() {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALDecideMatchesViaAlternativeTitle`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testMALDecideMatchesViaAlternativeTitle`
 Expected: FAIL — `cannot find 'MALTitleMatcher' in scope` (compile error).
 
 - [ ] **Step 3: Implement `MALTitleMatcher.swift`**
 
-Create `Manga-Reader/Services/MALTitleMatcher.swift`:
+Create `MangaCarta/Services/MALTitleMatcher.swift`:
 
 ```swift
 //
 //  MALTitleMatcher.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Pure title-matching core for cross-source entity resolution: given a source manga's
 //  title and MAL search candidates (each with its full title set), decide which MAL id
@@ -464,13 +464,13 @@ struct MALTitleMatcher {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALNormalizeStripsCaseDiacriticsPunctuationAndNoise -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALSimilarityExactAfterNormalizationIsOne -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALDecideMatchesViaAlternativeTitle -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALDecideRejectsBelowThreshold -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALDecideAmbiguityGuardRejectsNearTiedCandidates -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALDecideAcceptsClearWinnerOverWeakRunnerUp -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALDecideEmptyInputsAreNoMatch`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testMALNormalizeStripsCaseDiacriticsPunctuationAndNoise -only-testing:MangaCartaTests/MangaCartaTests/testMALSimilarityExactAfterNormalizationIsOne -only-testing:MangaCartaTests/MangaCartaTests/testMALDecideMatchesViaAlternativeTitle -only-testing:MangaCartaTests/MangaCartaTests/testMALDecideRejectsBelowThreshold -only-testing:MangaCartaTests/MangaCartaTests/testMALDecideAmbiguityGuardRejectsNearTiedCandidates -only-testing:MangaCartaTests/MangaCartaTests/testMALDecideAcceptsClearWinnerOverWeakRunnerUp -only-testing:MangaCartaTests/MangaCartaTests/testMALDecideEmptyInputsAreNoMatch`
 Expected: PASS (all 7).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Services/MALTitleMatcher.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/MALTitleMatcher.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add pure MALTitleMatcher (normalize + Levenshtein + ambiguity guard)
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -484,8 +484,8 @@ Persist resolution outcomes across launches. Hits are cached forever; misses car
 timestamp and are re-attempted after 14 days.
 
 **Files:**
-- Create: `Manga-Reader/Services/EntityResolutionStore.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Create: `MangaCarta/Services/EntityResolutionStore.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Consumes: nothing.
@@ -535,17 +535,17 @@ func testMALResolutionFreshness() {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALResolutionFreshness`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testMALResolutionFreshness`
 Expected: FAIL — `cannot find 'MALResolution' in scope` (compile error).
 
 - [ ] **Step 3: Implement `EntityResolutionStore.swift`**
 
-Create `Manga-Reader/Services/EntityResolutionStore.swift`:
+Create `MangaCarta/Services/EntityResolutionStore.swift`:
 
 ```swift
 //
 //  EntityResolutionStore.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Caches cross-source → MyAnimeList id resolutions so we don't re-run the fuzzy match
 //  (or re-hit MAL) every time a detail page opens. Hits are cached indefinitely — a
@@ -617,13 +617,13 @@ final class EntityResolutionStore: ObservableObject {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testEntityResolutionRecordsAndReadsBack -only-testing:Manga-ReaderTests/Manga_ReaderTests/testEntityResolutionKeysAreSourceQualified -only-testing:Manga-ReaderTests/Manga_ReaderTests/testMALResolutionFreshness -only-testing:Manga-ReaderTests/Manga_ReaderTests/testEntityResolutionPersistsAcrossInstances`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testEntityResolutionRecordsAndReadsBack -only-testing:MangaCartaTests/MangaCartaTests/testEntityResolutionKeysAreSourceQualified -only-testing:MangaCartaTests/MangaCartaTests/testMALResolutionFreshness -only-testing:MangaCartaTests/MangaCartaTests/testEntityResolutionPersistsAcrossInstances`
 Expected: PASS (all 4).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Services/EntityResolutionStore.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/EntityResolutionStore.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add EntityResolutionStore (source-qualified cache, 14-day miss TTL)
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -638,8 +638,8 @@ network path (`searchManga`) is not unit-testable here (no mock harness, per con
 the offline-deterministic paths (fast path, cached hit, fresh cached miss) are.
 
 **Files:**
-- Create: `Manga-Reader/Services/MALEntityResolver.swift`
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift`
+- Create: `MangaCarta/Services/MALEntityResolver.swift`
+- Test: `MangaCartaTests/MangaCartaTests.swift`
 
 **Interfaces:**
 - Consumes: `Manga.malId` (Task 2), `MyAnimeListManga.allTitles` + `MyAnimeListAPI.searchManga` (Task 1), `MALCandidate`/`MALMatchDecision`/`MALTitleMatcher` (Task 3), `EntityResolutionStore`/`MALResolution` (Task 4).
@@ -686,17 +686,17 @@ the offline-deterministic paths (fast path, cached hit, fresh cached miss) are.
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testResolverFastPathReturnsMangaMalIdWithoutTouchingStore`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testResolverFastPathReturnsMangaMalIdWithoutTouchingStore`
 Expected: FAIL — `cannot find 'MALEntityResolver' in scope` (compile error).
 
 - [ ] **Step 3: Implement `MALEntityResolver.swift`**
 
-Create `Manga-Reader/Services/MALEntityResolver.swift`:
+Create `MangaCarta/Services/MALEntityResolver.swift`:
 
 ```swift
 //
 //  MALEntityResolver.swift
-//  Manga-Reader
+//  MangaCarta
 //
 //  Resolves a Manga (any source) to a canonical MyAnimeList id. Fast path: a Manga that
 //  already carries `malId` (MangaDex) returns it for free. Otherwise consult the cache,
@@ -756,13 +756,13 @@ final class MALEntityResolver {
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests/Manga_ReaderTests/testResolverFastPathReturnsMangaMalIdWithoutTouchingStore -only-testing:Manga-ReaderTests/Manga_ReaderTests/testResolverReturnsCachedResolvedHit -only-testing:Manga-ReaderTests/Manga_ReaderTests/testResolverReturnsNilForFreshCachedMiss`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests/MangaCartaTests/testResolverFastPathReturnsMangaMalIdWithoutTouchingStore -only-testing:MangaCartaTests/MangaCartaTests/testResolverReturnsCachedResolvedHit -only-testing:MangaCartaTests/MangaCartaTests/testResolverReturnsNilForFreshCachedMiss`
 Expected: PASS (all 3).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add Manga-Reader/Services/MALEntityResolver.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git add MangaCarta/Services/MALEntityResolver.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add MALEntityResolver (fast path → cache → fuzzy match orchestration)
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"
@@ -777,8 +777,8 @@ live fuzzy path can be eyeballed against the real API, plus a throwaway live UI 
 drives it — mirroring `testMyAnimeListDebugScreenLiveVerification`.
 
 **Files:**
-- Modify: `Manga-Reader/Views/MyAnimeListDebugView.swift`
-- Modify: `Manga-ReaderUITests/Manga_ReaderUITests.swift`
+- Modify: `MangaCarta/Views/MyAnimeListDebugView.swift`
+- Modify: `MangaCartaUITests/MangaCartaUITests.swift`
 
 **Interfaces:**
 - Consumes: `MALEntityResolver`, `EntityResolutionStore`, `MyAnimeListAPI.mangaDetail` (Task 5 + existing client).
@@ -836,12 +836,12 @@ Add this method next to `search()`:
 
 - [ ] **Step 2: Build to verify the debug screen compiles**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build`
 Expected: BUILD SUCCEEDED.
 
 - [ ] **Step 3: Add a throwaway live UI test**
 
-In `Manga-ReaderUITests/Manga_ReaderUITests.swift`, add a method mirroring the
+In `MangaCartaUITests/MangaCartaUITests.swift`, add a method mirroring the
 navigation/retry pattern of `testMyAnimeListDebugScreenLiveVerification` (reuse its
 Settings → `malClientRow` navigation verbatim), then drive the resolve field:
 
@@ -896,18 +896,18 @@ Settings → `malClientRow` navigation verbatim), then drive the resolve field:
 
 - [ ] **Step 4: Run the live UI test**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderUITests/Manga_ReaderUITests/testMALEntityResolutionLiveVerification`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaUITests/MangaCartaUITests/testMALEntityResolutionLiveVerification`
 Expected: PASS — the resolve result label contains "Shingeki no Kyojin". (Slow; MAL rate-limiting can extend it. If it flakes on a 429, re-run once.)
 
 - [ ] **Step 5: Run the full unit suite once to confirm nothing regressed**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:Manga-ReaderTests`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' -parallel-testing-enabled NO test -only-testing:MangaCartaTests`
 Expected: PASS (all existing + new unit tests).
 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add Manga-Reader/Views/MyAnimeListDebugView.swift Manga-ReaderUITests/Manga_ReaderUITests.swift
+git add MangaCarta/Views/MyAnimeListDebugView.swift MangaCartaUITests/MangaCartaUITests.swift
 git commit -m "Add resolve-source-title hook to MAL debug screen + live UI test
 
 Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>"

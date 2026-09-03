@@ -16,7 +16,7 @@ Edit the right-hand column to match whatever vocabulary you actually use.
 
 ## Repo state, checked 2026-08-11
 
-`wontfix` already exists on `eliasmagdaleno/Manga-Reader` — it is one of GitHub's stock labels and
+`wontfix` already exists on `eliasmagdaleno/MangaCarta` — it is one of GitHub's stock labels and
 its name matches the canonical role exactly, so `/triage` applies the existing label rather than
 creating a duplicate. The other four do not exist yet and have no differently-named equivalents
 among the repo's stock labels (`bug`, `documentation`, `duplicate`, `enhancement`,

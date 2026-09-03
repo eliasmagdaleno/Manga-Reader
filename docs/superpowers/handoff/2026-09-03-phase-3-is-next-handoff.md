@@ -1,7 +1,7 @@
 # Handoff — Phase 2 is specified; Phase 3 builds the runtime against it
 
 Date: 2026-09-03
-Repository: `/Users/eliasmagdaleno/Manga-Reader`
+Repository: `/Users/eliasmagdaleno/MangaCarta`
 Branch: `docs/handoff-2026-09-03`, off `main` at `7448a0e`.
 
 **This is the live handoff, and it is the whole of what is outstanding.** Writing a new one means
@@ -90,7 +90,7 @@ chapters from a source that does not serve that manga.
   environment.
 - **Two call sites turned up beyond the eight in the brief:** `retarget`'s default parameter and
   `ReaderViewModel`'s. If you go looking for singleton reads, grep rather than trusting a list.
-- `Manga-ReaderTests/RegistryInjectionTests.swift` (9 tests) uses source ids the app does not
+- `MangaCartaTests/RegistryInjectionTests.swift` (9 tests) uses source ids the app does not
   compile in, so an accidental singleton read cannot pass by coincidence.
 - **Deliberately left:** `AppComposition`'s own `registry ?? .shared` production default, and two
   `#Preview` blocks passing `.environmentObject(SourceRegistry.shared)`. Both are explained in the

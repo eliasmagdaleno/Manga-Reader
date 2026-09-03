@@ -167,7 +167,7 @@ Consistent with the codebase (pure logic → unit tests; end-to-end → one live
   populated by backfill.
 - Modify: `Models/RecommendationEngine.swift` — assemble seeds, default `makeProvider` to
   the composite, extend backfill to cache manga-info.
-- Tests: `Manga-ReaderTests/…` (blend, MAL scoring, seed selection);
-  `Manga-ReaderUITests/…` (rail still populates).
+- Tests: `MangaCartaTests/…` (blend, MAL scoring, seed selection);
+  `MangaCartaUITests/…` (rail still populates).
 - All touched code lives in synchronized groups (`Models/`, `Services/`) — no
   `project.pbxproj` edit.

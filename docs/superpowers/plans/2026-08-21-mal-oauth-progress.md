@@ -18,7 +18,7 @@ the app remains fully functional while signed out or while MAL is unavailable.
 - All production dependencies are composed in `AppComposition`; add no global singleton.
 - Tokens, codes, verifiers, and callback URLs must never be logged.
 - New files under `Models/` and `Services/` compile through synchronized groups. A new file under
-  `Views/` or `Manga-ReaderTests/` must be added with `xcp`; do not hand-edit the project unless
+  `Views/` or `MangaCartaTests/` must be added with `xcp`; do not hand-edit the project unless
   `xcp` is unavailable.
 - Every `xcodebuild test` command uses:
   `-destination 'platform=iOS Simulator,name=iPhone 17 Pro' -parallel-testing-enabled NO`.
@@ -44,7 +44,7 @@ HistoryStore --ChapterCompleted--> MALProgressCoordinator --> MALProgressOutbox
                                 MALCredentialStore (Keychain)
 
 SettingsView <------ observable account + sync summaries
-Manga_ReaderApp ---- start / stop / flush lifecycle
+MangaCartaApp ---- start / stop / flush lifecycle
 ```
 
 ## Task 0: Confirm the native-client boundary
@@ -68,15 +68,15 @@ note; re-confirmed against the live console 2026-08-24, unchanged. App Type `ios
 secret row, `mangareader://oauth/mal` registered verbatim as the sole redirect URI, status
 `PUBLISHED`. The shipped `MAL_CLIENT_ID` was confirmed to be this same app by digest
 comparison, without reproducing either value. The `mangareader` URL type now ships in
-`Manga-Reader/Info.plist` and was verified in the built bundle.
+`MangaCarta/Info.plist` and was verified in the built bundle.
 
 ## Task 1: Add pure progress mapping and completion events
 
 **Files:**
 
-- Add: `Manga-Reader/Models/MALReadingProgress.swift`
-- Modify: `Manga-Reader/Services/HistoryStore.swift`
-- Add test: `Manga-ReaderTests/MALReadingProgressTests.swift` (register with `xcp`)
+- Add: `MangaCarta/Models/MALReadingProgress.swift`
+- Modify: `MangaCarta/Services/HistoryStore.swift`
+- Add test: `MangaCartaTests/MALReadingProgressTests.swift` (register with `xcp`)
 
 **Interfaces:**
 
@@ -103,8 +103,8 @@ comparison, without reproducing either value. The `mangareader` URL type now shi
 
 **Files:**
 
-- Add: `Manga-Reader/Services/MALProgressOutbox.swift`
-- Add test: `Manga-ReaderTests/MALProgressOutboxTests.swift` (register with `xcp`)
+- Add: `MangaCarta/Services/MALProgressOutbox.swift`
+- Add test: `MangaCartaTests/MALProgressOutboxTests.swift` (register with `xcp`)
 
 **Data:** versioned envelope with ready items keyed by `(malUserID, malMangaID)`, deferred items
 keyed by `(malUserID, WorkID)`, and compact skipped/blocked summaries. Ready items contain desired
@@ -125,8 +125,8 @@ progress, first/latest completion dates, retry count, next attempt, and failure 
 
 **Files:**
 
-- Add: `Manga-Reader/Services/MALOAuth.swift`
-- Add test: `Manga-ReaderTests/MALOAuthTests.swift` (register with `xcp`)
+- Add: `MangaCarta/Services/MALOAuth.swift`
+- Add test: `MangaCartaTests/MALOAuthTests.swift` (register with `xcp`)
 
 - [ ] Define authorization request, token request/response, stored credential, and callback error
   values without importing SwiftUI.
@@ -147,8 +147,8 @@ progress, first/latest completion dates, retry count, next attempt, and failure 
 
 **Files:**
 
-- Add: `Manga-Reader/Services/MALCredentialStore.swift`
-- Add test: `Manga-ReaderTests/MALCredentialStoreTests.swift` (register with `xcp`)
+- Add: `MangaCarta/Services/MALCredentialStore.swift`
+- Add test: `MangaCartaTests/MALCredentialStoreTests.swift` (register with `xcp`)
 
 - [ ] Define `MALCredentialStore` with load/save/delete and implement a Keychain-backed production
   adapter plus an in-memory fake.
@@ -167,9 +167,9 @@ progress, first/latest completion dates, retry count, next attempt, and failure 
 
 **Files:**
 
-- Add: `Manga-Reader/Services/MALTokenClient.swift`
-- Add: `Manga-Reader/Services/MALTokenManager.swift`
-- Add test: `Manga-ReaderTests/MALTokenManagerTests.swift` (register with `xcp`)
+- Add: `MangaCarta/Services/MALTokenClient.swift`
+- Add: `MangaCarta/Services/MALTokenManager.swift`
+- Add test: `MangaCartaTests/MALTokenManagerTests.swift` (register with `xcp`)
 
 - [ ] Put URL loading behind a small async transport protocol using `URLRequest -> (Data,
   HTTPURLResponse)` so tests use scripted responses.
@@ -189,8 +189,8 @@ progress, first/latest completion dates, retry count, next attempt, and failure 
 
 **Files:**
 
-- Add: `Manga-Reader/Services/MALAuthenticatedClient.swift`
-- Add test: `Manga-ReaderTests/MALAuthenticatedClientTests.swift` (register with `xcp`)
+- Add: `MangaCarta/Services/MALAuthenticatedClient.swift`
+- Add test: `MangaCartaTests/MALAuthenticatedClientTests.swift` (register with `xcp`)
 
 **Operations:** current user identity; one manga's `my_list_status`; update progress. Do not add a
 whole-list endpoint to the v1 interface.
@@ -211,9 +211,9 @@ whole-list endpoint to the v1 interface.
 
 **Files:**
 
-- Add: `Manga-Reader/Services/MALAccountStore.swift`
-- Add: `Manga-Reader/Services/MALAuthenticationSession.swift`
-- Add test: `Manga-ReaderTests/MALAccountStoreTests.swift` (register with `xcp`)
+- Add: `MangaCarta/Services/MALAccountStore.swift`
+- Add: `MangaCarta/Services/MALAuthenticationSession.swift`
+- Add test: `MangaCartaTests/MALAccountStoreTests.swift` (register with `xcp`)
 
 - [ ] Implement the explicit states from the spec: signed out, authorizing, signed in, refreshing,
   reauthorization required, and recoverable error with a stable fallback.
@@ -233,8 +233,8 @@ whole-list endpoint to the v1 interface.
 
 **Files:**
 
-- Add: `Manga-Reader/Services/MALProgressCoordinator.swift`
-- Add test: `Manga-ReaderTests/MALProgressCoordinatorTests.swift` (register with `xcp`)
+- Add: `MangaCarta/Services/MALProgressCoordinator.swift`
+- Add test: `MangaCartaTests/MALProgressCoordinatorTests.swift` (register with `xcp`)
 
 - [ ] Test the completion sink persists synchronously and never performs network work inline.
 - [ ] Test signed-out and sync-disabled behavior explicitly. Signed-out completions remain local and
@@ -258,11 +258,11 @@ whole-list endpoint to the v1 interface.
 
 **Files:**
 
-- Modify: `Manga-Reader/Services/MetadataUpgradeQueue.swift`
-- Modify: `Manga-Reader/Services/AppComposition.swift`
-- Modify: `Manga-Reader/Manga_ReaderApp.swift`
-- Modify: `Manga-Reader/Services/HistoryStore.swift`
-- Modify: `Manga-ReaderTests/AppCompositionTests.swift`
+- Modify: `MangaCarta/Services/MetadataUpgradeQueue.swift`
+- Modify: `MangaCarta/Services/AppComposition.swift`
+- Modify: `MangaCarta/MangaCartaApp.swift`
+- Modify: `MangaCarta/Services/HistoryStore.swift`
+- Modify: `MangaCartaTests/AppCompositionTests.swift`
 - Modify: relevant existing upgrade/history tests
 
 - [ ] Add an injected, default-no-op `workMetadataChanged(WorkID)` callback after WorkStore learns
@@ -281,8 +281,8 @@ whole-list endpoint to the v1 interface.
 
 **Files:**
 
-- Modify: `Manga-Reader/Views/SettingsView.swift`
-- Add if needed: `Manga-Reader/Views/MALAccountSettingsView.swift` (register with `xcp` because
+- Modify: `MangaCarta/Views/SettingsView.swift`
+- Add if needed: `MangaCarta/Views/MALAccountSettingsView.swift` (register with `xcp` because
   `Views/` is not synchronized)
 - Add UI/unit tests as appropriate; register new test files with `xcp`
 
@@ -333,7 +333,7 @@ is gone. `PUT` was not tested — it would be a second mutation for no decision 
 - [x] Run the complete unit suite (2026-08-24: 571 XCTest + 76 Swift Testing, 2 skipped, 0 failures):
 
   ```sh
-  xcodebuild -scheme Manga-Reader \
+  xcodebuild -scheme MangaCarta \
     -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
     -parallel-testing-enabled NO test
   ```

@@ -13,10 +13,10 @@
 ## Global Constraints
 
 - Pure SwiftUI + Foundation + system frameworks. NO third-party deps.
-- `Models/` is a synchronized Xcode group (auto-compiled, no pbxproj edits). `Views/` and the test target are NOT synchronized — but this plan only MODIFIES existing files there (`MangaDetailView.swift`, `Manga_ReaderTests.swift`), which needs no pbxproj edits.
-- Build: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build`
-- Unit tests (scope to the unit target): `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests` (minutes; be patient).
-- After any build, revert cosmetic pbxproj churn: `git checkout -- Manga-Reader.xcodeproj/project.pbxproj`.
+- `Models/` is a synchronized Xcode group (auto-compiled, no pbxproj edits). `Views/` and the test target are NOT synchronized — but this plan only MODIFIES existing files there (`MangaDetailView.swift`, `MangaCartaTests.swift`), which needs no pbxproj edits.
+- Build: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build`
+- Unit tests (scope to the unit target): `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests` (minutes; be patient).
+- After any build, revert cosmetic pbxproj churn: `git checkout -- MangaCarta.xcodeproj/project.pbxproj`.
 - Every commit ends with the trailer: `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`
 - Date format = the app's existing absolute style: `.formatted(.dateTime.month().day().year())` ("Jul 12, 2026"). Placement: right-aligned in the chapter row, before the chevron (first cut; user may adjust after review).
 - Scope: MangaDex + WeebCentral only. private-source is deferred to its own branch and is NOT part of this plan.
@@ -28,13 +28,13 @@
 Add the model field, the parse helper, and wire MangaDex — the field is only meaningful once a source populates it, so this task delivers all three.
 
 **Files:**
-- Modify: `Manga-Reader/Models/MangaDexAPI.swift` (the `Chapter` struct ~lines 153-157, and `ChapterAttributes.toChapter` ~lines 159-163)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+- Modify: `MangaCarta/Models/MangaDexAPI.swift` (the `Chapter` struct ~lines 153-157, and `ChapterAttributes.toChapter` ~lines 159-163)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append)
 
 **Interfaces:**
 - Produces: `Chapter(id:number:title:date:)` with `date: Date? = nil` defaulted (existing `Chapter(id:number:title:)` calls keep compiling); `static func Chapter.parseISO8601(_ string: String?) -> Date?`; `ChapterAttributes.toChapter(id:)` now sets `date` from `publishAt ?? readableAt`.
 
-- [ ] **Step 1: Write the failing tests** — append inside the `Manga_ReaderTests` class:
+- [ ] **Step 1: Write the failing tests** — append inside the `MangaCartaTests` class:
 
 ```swift
     // MARK: - Chapter date-added (MangaDex)
@@ -73,10 +73,10 @@ Add the model field, the parse helper, and wire MangaDex — the field is only m
 
 - [ ] **Step 2: Run tests to verify they fail**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: build failure — `Chapter has no member 'parseISO8601'` and `extra argument 'date'`.
 
-- [ ] **Step 3: Implement** in `Manga-Reader/Models/MangaDexAPI.swift`.
+- [ ] **Step 3: Implement** in `MangaCarta/Models/MangaDexAPI.swift`.
 
 Replace the `Chapter` struct with the field + defaulted init + parse helper:
 
@@ -123,14 +123,14 @@ extension ChapterAttributes {                       // Convert raw chapter attri
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: `** TEST SUCCEEDED **` — the new tests plus every pre-existing test (existing `Chapter(id:number:title:)` calls still compile via the defaulted init).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git checkout -- Manga-Reader.xcodeproj/project.pbxproj 2>/dev/null || true
-git add Manga-Reader/Models/MangaDexAPI.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git checkout -- MangaCarta.xcodeproj/project.pbxproj 2>/dev/null || true
+git add MangaCarta/Models/MangaDexAPI.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "Add Chapter.date + ISO-8601 helper; MangaDex populates it from publishAt
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -141,14 +141,14 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 2: WeebCentral populates `Chapter.date` from the row `<time>`
 
 **Files:**
-- Modify: `Manga-Reader/Models/WeebCentralSource.swift` (the `chapters(mangaId:)` mapping ~line 71, the `WCChapterItem` DTO ~lines 139-142, and `chaptersScript` ~lines 209-227)
-- Test: `Manga-ReaderTests/Manga_ReaderTests.swift` (append)
+- Modify: `MangaCarta/Models/WeebCentralSource.swift` (the `chapters(mangaId:)` mapping ~line 71, the `WCChapterItem` DTO ~lines 139-142, and `chaptersScript` ~lines 209-227)
+- Test: `MangaCartaTests/MangaCartaTests.swift` (append)
 
 **Interfaces:**
 - Consumes: `Chapter(id:number:title:date:)`, `Chapter.parseISO8601` (Task 1); the existing `MockWebView` test helper.
 - Produces: `WCChapterItem` gains `date: String?`; `chapters(mangaId:)` maps it through `Chapter.parseISO8601`.
 
-- [ ] **Step 1: Write the failing test** — append inside the `Manga_ReaderTests` class:
+- [ ] **Step 1: Write the failing test** — append inside the `MangaCartaTests` class:
 
 ```swift
     // MARK: - Chapter date-added (WeebCentral)
@@ -169,10 +169,10 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: `testWeebCentralChaptersCarryDate` FAILS on the assertion — the current mapping builds `Chapter` without a date (and `WCChapterItem` has no `date` field, so the fixture's `date` key is ignored), so `chapters[0].date` is `nil`, not the parsed date. (Compiles fine; it's an assertion failure.)
 
-- [ ] **Step 3: Implement** in `Manga-Reader/Models/WeebCentralSource.swift`.
+- [ ] **Step 3: Implement** in `MangaCarta/Models/WeebCentralSource.swift`.
 
 Add `date` to the DTO:
 
@@ -221,14 +221,14 @@ Extend `chaptersScript` to read the row's `<time datetime>` (the reference expos
 
 - [ ] **Step 4: Run tests to verify they pass**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -20`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -20`
 Expected: `** TEST SUCCEEDED **` — the new date test, the unchanged existing WeebCentral chapter test, and everything else. (The `<time datetime>` selector is confirmed against live HTML in the branch's live check; the mock test verifies the DTO→`Chapter.date` mapping.)
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git checkout -- Manga-Reader.xcodeproj/project.pbxproj 2>/dev/null || true
-git add Manga-Reader/Models/WeebCentralSource.swift Manga-ReaderTests/Manga_ReaderTests.swift
+git checkout -- MangaCarta.xcodeproj/project.pbxproj 2>/dev/null || true
+git add MangaCarta/Models/WeebCentralSource.swift MangaCartaTests/MangaCartaTests.swift
 git commit -m "WeebCentral: populate Chapter.date from the chapter-row <time datetime>
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -239,7 +239,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 ### Task 3: Detail chapter row shows the date
 
 **Files:**
-- Modify: `Manga-Reader/Views/MangaDetailView.swift` (`chapterRow` ~lines 385-430)
+- Modify: `MangaCarta/Views/MangaDetailView.swift` (`chapterRow` ~lines 385-430)
 - Test: none (visual; build + full unit-suite regression, then human review)
 
 **Interfaces:**
@@ -269,15 +269,15 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 
 - [ ] **Step 3: Build + full unit suite (regression only)**
 
-Run: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' build 2>&1 | tail -3`
-Then: `xcodebuild -scheme Manga-Reader -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:Manga-ReaderTests 2>&1 | tail -5`
+Run: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' build 2>&1 | tail -3`
+Then: `xcodebuild -scheme MangaCarta -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:MangaCartaTests 2>&1 | tail -5`
 Expected: `** BUILD SUCCEEDED **` and `** TEST SUCCEEDED **`.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git checkout -- Manga-Reader.xcodeproj/project.pbxproj 2>/dev/null || true
-git add Manga-Reader/Views/MangaDetailView.swift
+git checkout -- MangaCarta.xcodeproj/project.pbxproj 2>/dev/null || true
+git add MangaCarta/Views/MangaDetailView.swift
 git commit -m "Show chapter added-date in the detail chapter row
 
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
@@ -286,7 +286,7 @@ Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
 - [ ] **Step 5: Build + install for human review**
 
 ```bash
-APP=$(find ~/Library/Developer/Xcode/DerivedData -path "*Build/Products/Debug-iphonesimulator/Manga-Reader.app" -not -path "*Index.noindex*" -print -quit)
+APP=$(find ~/Library/Developer/Xcode/DerivedData -path "*Build/Products/Debug-iphonesimulator/MangaCarta.app" -not -path "*Index.noindex*" -print -quit)
 xcrun simctl boot "iPhone 17" 2>/dev/null || true
 xcrun simctl install booted "$APP" && xcrun simctl launch booted Elias-Magdaleno.Manga-Reader
 ```

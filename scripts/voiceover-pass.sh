@@ -279,7 +279,7 @@ stage "Setup: phone, VoiceOver, and the build under test"
 say "This pass wants a real iPhone. VoiceOver in the simulator behaves differently"
 say "for the rotor and for focus restoration — which is most of what these rows test."
 printf '\n'
-step "Plug the phone in, open Manga-Reader.xcodeproj, pick your device, and press Cmd-R."
+step "Plug the phone in, open MangaCarta.xcodeproj, pick your device, and press Cmd-R."
 step "On the phone: Settings > Accessibility > Accessibility Shortcut > VoiceOver."
 note "Do the shortcut before turning VoiceOver on — triple-click the side button to"
 note "toggle it. Without it, turning VoiceOver off while it fights you is unpleasant."

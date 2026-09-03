@@ -73,7 +73,7 @@ protocol registered "the control resolves" as a named failure mode in advance.
 2. The drain runs under `xcrun simctl launch` with
    `SIMCTL_CHILD_ADR0019_BRIDGE_LOG=<container>/gate-run.log`, **not** another `xcodebuild test`: a
    reinstall moves the data container, and the log path is fixed at launch. The queue starts on
-   `.active` (`Manga_ReaderApp.swift:67`).
+   `.active` (`MangaCartaApp.swift:67`).
 3. `ADR0019_BRIDGE` is left unset — the bridge must be **live**. This run is about who asks.
 
 Reproducing it needs `VerificationSwitches.swift`, which is deleted in the same change as this

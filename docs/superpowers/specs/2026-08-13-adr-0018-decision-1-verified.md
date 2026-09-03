@@ -64,7 +64,7 @@ Berserk was available the whole time. The seeded WeebCentral library unblocked t
 
 ## Method
 
-Three UI tests in `Manga_ReaderUITests`, run one at a time in A→B→C order, each pressing home before
+Three UI tests in `MangaCartaUITests`, run one at a time in A→B→C order, each pressing home before
 returning (`HistoryStore` flushes on `.background`; a run that just ends loses its own evidence).
 They are **instruments, not CI tests** — pinned to the seeded sim and to live network.
 

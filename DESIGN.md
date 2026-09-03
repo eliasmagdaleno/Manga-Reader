@@ -1,5 +1,5 @@
 ---
-name: Manga Reader — Ink & Seal
+name: MangaCarta — Ink & Seal
 description: A native manga-reading system shaped by warm paper, dark ink, and restrained vermilion seals.
 colors:
   paper: "#FBFAF8"
@@ -63,7 +63,7 @@ components:
     padding: "7pt 11pt"
 ---
 
-# Design System: Manga Reader — Ink & Seal
+# Design System: MangaCarta — Ink & Seal
 
 ## Overview
 
