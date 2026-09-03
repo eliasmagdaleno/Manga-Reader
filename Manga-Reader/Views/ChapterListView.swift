@@ -15,6 +15,9 @@ struct ChapterListView: View {
     @EnvironmentObject private var history: HistoryStore
     @EnvironmentObject private var works: WorkStore
     @EnvironmentObject private var updates: UpdateStateStore
+    /// The graph's registry, so the reader opens on the same source the rest of the app
+    /// resolves through — not whatever `SourceRegistry.shared` happens to hold.
+    @EnvironmentObject private var registry: SourceRegistry
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var descending = true
     @State private var isSelecting = false
@@ -37,6 +40,7 @@ struct ChapterListView: View {
                             // The row advertises a saved position (ChapterRow's resume marker),
                             // so tapping it has to honour one — ADR-0014 decision 11.
                             ReaderView(manga: manga, chapter: chapter,
+                                       source: registry.source(for: manga),
                                        initialPosition: history.entry(forChapter: chapter.id)?.position,
                                        chapters: chapters)
                         } label: {

@@ -16,25 +16,49 @@ final class HomeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String? = nil
 
-    /// Injected source for tests; nil means "track the registry's active source".
-    private let sourceOverride: MangaSource?
+    /// Where `source` comes from. Two cases rather than an optional registry with a
+    /// singleton fallback: the fallback was silently wrong whenever the graph was built
+    /// with an injected registry, and it will get worse once sources are installable.
+    private enum SourceBinding {
+        /// A fixed source, injected by a test.
+        case fixed(MangaSource)
+        /// The graph's registry, read at access time.
+        case registry(SourceRegistry)
+    }
+
+    private let binding: SourceBinding
+
     /// The source these browse feeds come from — resolved at read time so a Settings
     /// switch re-sources Home without an app relaunch.
-    var source: MangaSource { sourceOverride ?? SourceRegistry.shared.active }
+    var source: MangaSource {
+        switch binding {
+        case .fixed(let source): return source
+        case .registry(let registry): return registry.active
+        }
+    }
     /// The source id the current feed arrays were loaded from (nil before first load).
     private var loadedSourceID: String?
     /// The in-flight full-home load. Superseded loads are cancelled so a slow fetch from
     /// a previously-active source can never clobber the rails after a source switch.
     private var loadTask: Task<Void, Never>?
 
-    init(source: MangaSource? = nil) {
+    /// A fixed source. Tests use this; nothing in the app does.
+    init(source: MangaSource) {
+        self.binding = .fixed(source)
+    }
+
+    /// The graph's registry — the one `AppComposition` was built with, which the view
+    /// hands over from the environment. It is `SourceRegistry.shared` in production and a
+    /// different object under a UI-test fixture, and reading the singleton instead is the
+    /// bug this initializer exists to make impossible.
+    init(registry: SourceRegistry) {
 #if DEBUG
-        if source == nil, UpdatesUITestFixture.state != nil {
-            self.sourceOverride = UpdatesUITestSource()
+        if UpdatesUITestFixture.state != nil {
+            self.binding = .fixed(UpdatesUITestSource())
             return
         }
 #endif
-        self.sourceOverride = source
+        self.binding = .registry(registry)
     }
 
     func loadHome() {

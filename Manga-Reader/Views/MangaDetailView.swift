@@ -65,11 +65,11 @@ struct MangaDetailView: View {
     /// would be surprising. A pin is the reader having said otherwise, on this title, on
     /// purpose (ADR-0004 Amendment 1).
     private func applyPinnedSource() {
-        // Re-resolve the page's own Listing against the graph's registry first. The view
-        // model resolves a source in `init`, which runs before the environment exists, so
-        // it can only reach the singleton there — right in production, wrong under a
-        // fixture, and the failure mode is a detail page that cannot load its chapters.
-        vm.retarget(to: vm.activeListing, using: registry)
+        // Bind the view model to the graph's registry first. It has no source until this
+        // runs: `init` happens before the environment exists, and the singleton it used to
+        // reach there was right in production and wrong under a fixture — the failure mode
+        // was a detail page that could not load its chapters.
+        vm.adopt(registry: registry)
         guard let workID,
               let pinned = sourcePreferences.choice(for: workID),
               pinned != vm.activeListing,
@@ -329,6 +329,7 @@ struct MangaDetailView: View {
     private func continueLink(_ action: ResumeAction, progress: Double?) -> some View {
         NavigationLink {
             ReaderView(manga: manga, chapter: action.chapter,
+                       source: registry.source(for: manga),
                        initialPosition: action.startPosition, chapters: vm.chapters)
         } label: {
             ZStack {
@@ -539,6 +540,7 @@ struct MangaDetailView: View {
                             // The row advertises a saved position (ChapterRow's resume marker),
                             // so tapping it has to honour one — ADR-0014 decision 11.
                             ReaderView(manga: manga, chapter: chapter,
+                                       source: registry.source(for: manga),
                                        initialPosition: history.entry(forChapter: chapter.id)?.position,
                                        chapters: vm.chapters)
                         } label: {
