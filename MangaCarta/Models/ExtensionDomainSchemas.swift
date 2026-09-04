@@ -52,6 +52,10 @@ enum ExtensionValidationWarningCode: String, Codable, Equatable {
     case missingRequiredField = "missing_required_field"
     case invalidField = "invalid_field"
     case malformedURL = "malformed_url"
+    /// An optional cover URL that parsed but violated the declared asset policy. Distinct
+    /// from `malformedURL` so a Source author can tell a typo from a policy breach — see
+    /// ADR-0024, which is why this drops the field instead of rejecting the operation.
+    case policyInvalidURL = "policy_invalid_url"
 }
 
 struct ExtensionValidationWarning: Codable, Equatable {
@@ -367,7 +371,7 @@ struct ExtensionDomainValidator {
             case .malformed:
                 warnings.append(warning(.malformedURL, itemIndex, "\(path).coverURL"))
             case .policyInvalid:
-                throw invalid("\(path).coverURL", "URL violates the declared asset policy")
+                warnings.append(warning(.policyInvalidURL, itemIndex, "\(path).coverURL"))
             case .valid(let url):
                 coverURL = url
             }
