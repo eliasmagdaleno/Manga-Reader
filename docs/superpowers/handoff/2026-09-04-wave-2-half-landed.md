@@ -80,17 +80,34 @@ Run `run_f1c064acb57c`, coordinator handle `term_15c0eb64-b03c-4606-add4-e337286
 `ctx_296bc5d9671d`. **Record that handle** — after a runtime restart every orchestration command
 needs it.
 
-**`HostJSONValueConverter.swift` was checked 2026-09-04 (16:00) and is fine — keep it.** It is
-the legitimate adapter direction, not the second `JSONValue` conversion path S5 was told not to
-write. The two halves compose with no overlap:
+**`HostJSONValueConverter.swift` — one of its three functions genuinely overlaps S4, and the two
+disagree about what a valid value is. This needs a decision when S5 reports.**
 
-| | signature | owner |
-|---|---|---|
-| `ExtensionJSBridge.jsonValue(from:)` | `JSValue` → Foundation `Any` | S4, merged in #144 |
-| `HostJSONValueConverter.convert(_:)` | Foundation `Any` → `JSONValue` | S5 |
+Checked twice on 2026-09-04. **The first check (16:00) was wrong and is retracted** — it grepped
+only `JSONValue.swift` and concluded no `init?(converting:)` existed. It does exist: S4 declares it
+in an **`extension JSONValue` inside `ExtensionRuntime.swift`**, not in the type's own file. The
+original claim in this handoff was right; #151 "corrected" it into an error, and #153's author
+caught that. **Grep the symbol, not the file you expect it in.**
 
-The file says so itself in its header — *"S4 owns the raw JSValue bridge; this converter
-deliberately starts at Foundation."*
+What is actually there:
+
+| | direction | on failure | owner |
+|---|---|---|---|
+| `JSONValue.init?(converting:)` | Foundation `Any` → `JSONValue` | returns `nil` | S4, `ExtensionRuntime.swift` |
+| `HostJSONValueConverter.convert(_:)` | Foundation `Any` → `JSONValue` | **throws, with a message** | S5 |
+| `HostJSONValueConverter.validate(_:)` | checks a `JSONValue` | throws | S5, no S4 equivalent |
+| `HostJSONValueConverter.foundationValue(_:)` | `JSONValue` → Foundation `Any` | throws | S5, **reverse direction**, no S4 equivalent |
+
+So two thirds of the file is new work with nothing to duplicate. `convert` is the collision, and
+**the collision is not that two functions exist — it is that they accept different values.** S5's
+caps nesting at depth 128, rejects integers outside the ±2^53−1 safe range, and rejects non-finite
+numbers. S4's does none of those: it has no depth limit, and an out-of-range integer silently
+becomes a `.double` rather than failing.
+
+`init?(converting:)` has exactly one caller — `ExtensionInvocationError.details` in
+`ExtensionRuntime.swift`. So consolidating is cheap, and doing nothing means the runtime and the
+host capabilities disagree about which values may cross the boundary. **Do not let S5 merge without
+settling which semantics win.**
 
 Two things were decided for S5 mid-flight and sent as orchestration messages. **Both are now
 recorded in #145's PR body**, because a decision that lives only in a message queue is not
@@ -100,13 +117,10 @@ recorded:
   consumes it and declares no second copy. (An earlier message wrongly told S5 that S4 owned it and
   to read S4's worktree; that was corrected.)
 
-  **Correction, 2026-09-04:** this used to say "S4 extends it with `init?(converting:)`." **It does
-  not.** `JSONValue.swift` on `main` has no such initialiser — S4 shipped `jsonValue(from:)` on
-  `ExtensionJSBridge` instead, returning Foundation rather than `JSONValue`. The claim was written
-  from the dispatch message rather than from merged code, which is the same mistake as reading a
-  strict-grammar rule out of a PR body instead of out of `HostAPIVersion` (gap 2 below). It matters
-  because it was the only reason to suspect S5's converter of being a duplicate: there is nothing
-  for it to duplicate.
+  **S4 does extend it with `init?(converting:)`** — in an `extension JSONValue` inside
+  `ExtensionRuntime.swift`, which is why a grep of `JSONValue.swift` alone misses it. #151 claimed
+  the opposite and was wrong; #154 retracts that. See item 1 for what the overlap with S5's
+  converter actually is, and what still has to be decided about it.
 - **The cover-URL policy changed under S5 while it was writing `URLPolicy`** — see ADR-0024 below.
 
 ### 2. Supervision protocol, unchanged and still load-bearing
