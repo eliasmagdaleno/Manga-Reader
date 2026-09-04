@@ -45,8 +45,9 @@ Unit suite on `main`: **942 tests, 937 passed, 0 failed, 5 skipped.** SwiftLint 
 
 ### 1. S5 is parked mid-implementation on a Codex usage limit — resume it
 
-Codex hit its 5-hour usage limit. **The work is on disk and uncommitted** in
-`~/orca/workspaces/Manga-Reader/phase3-s5-host-capabilities`:
+**Parked twice on 2026-09-04**, both times mid-write, on `gpt-5.6-sol high`. The second stall came
+about **30 minutes after the first limit reset**; the next reset is 20:54 PDT. **The work is on
+disk and uncommitted** in `~/orca/workspaces/Manga-Reader/phase3-s5-host-capabilities`:
 
 ```
  M MangaCarta.xcodeproj/project.pbxproj
@@ -59,6 +60,18 @@ Codex hit its 5-hour usage limit. **The work is on disk and uncommitted** in
 ?? MangaCarta/Services/HostURLPolicy.swift
 ?? MangaCartaTests/HostCapabilityTests.swift
 ```
+
+Plus, from the second stint: `M MangaCarta/ContentView.swift` and
+`?? MangaCarta/Views/Components/ExtensionBrowserChallengeView.swift`. Roughly 1,900 lines across
+the eight original files. **`HostJSONValueConverter.swift` is cleared — see below.**
+
+**Unsticking it needs a human at the keyboard, and this is the part worth knowing.** On a usage
+limit the Codex worker parks at an interactive prompt — *"Approaching rate limits. Switch to
+gpt-5.6-luna for lower credit usage?"* — and **that prompt cannot be answered from the CLI**.
+`orca terminal send` refuses it with `agent_prompt_blocked`, and there is no `worker-resume`. So a
+stalled worker stays stalled until someone presses a key in the Orca terminal, no matter how long
+ago the limit reset. **Answer `2` (keep current model)**, or `3` if the reminder itself should stop
+appearing.
 
 **Nothing may rebase, checkout, or clean that worktree until Codex resumes.** Uncommitted work is
 safe where it sits and nowhere else.
@@ -279,6 +292,10 @@ Each of these cost real time when it was learned.
 - **Default `--model` to something cheap; make Opus high earn its place.** **Fable is not available
   on this account** — a worker dispatched on `claude-fable-5-1` parks at an unconfirmed launch
   prompt instead of failing.
+- **`gpt-5.6-sol high` burns the Codex quota very fast — use it sparingly.** It exhausted the limit
+  **twice in one day** on S5 alone, the second time about 30 minutes after the first reset. Treat
+  it the way Opus high is treated: spent deliberately on a slice with real design risk, not a
+  default. Each exhaustion costs hours, because the resulting prompt needs a human (item 1).
 - **A launched worker may sit at a confirmation prompt without ever starting**, reporting `ready`
   and `live` with only the seed message in its transcript.
 - **A worker can also block on its own question** and report `live` forever. See item 2.
