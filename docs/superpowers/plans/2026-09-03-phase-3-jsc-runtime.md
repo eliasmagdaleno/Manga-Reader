@@ -548,3 +548,298 @@ An identified store **materialises lazily**, so nearly everything about it is tr
 You build the capability brokers. You do **not** build the JSC context or cancellation machinery
 (S4, running beside you), port WeebCentral (S6), or build the installer (Phase 4). Agree
 `context.host`'s shape with S4 early; where you disagree, **the spec decides**.
+
+---
+
+# S6 — WeebCentral port and the engine/configuration proof
+
+*(Prepend the shared preamble verbatim.)*
+
+**Acceptance criteria you own: 1 and 12.**
+**Model: strongest available, reviewed. Depends on: S1, S2, S4, S5. Runs in Wave 3.**
+
+## S5 is not merged yet — read this before doing anything else
+
+The dependency table says you depend on S5, and as of this writing S5 is **parked mid-implementation,
+uncommitted**, not on `main`. Do not guess at its shape. Before you start:
+
+1. Check `docs/superpowers/handoff/` (the one live file — `CLAUDE.md` → "Handoffs" explains why
+   there is only ever one) for S5's current status and where its worktree lives.
+2. If S5 has since merged, read the merged `MangaCarta/Services/Host*.swift` files directly —
+   `HostHTTPClient`, `HostBrowser`, `HostStorage`, `HostLogger`, `HostURLPolicy`,
+   `HostCapabilityTypes`, `HostJSONValueConverter` — for their actual public API. Do not build
+   against a name or signature you have only seen in a plan or handoff; both have already stated
+   things about merged Phase 3 code that turned out false (see "Hard constraints" in your
+   dispatch). If S5 is still unmerged, escalate rather than inventing its interface — this slice
+   cannot be honestly finished without it, because criterion 12 requires equivalent behavior
+   including the browser-backed pages, and browser access only exists through S5's
+   `host.browser` capability.
+3. Confirm which `interaction` mode WeebCentral's port should request. Amendment 3 (below) settled
+   the enum as `allowForeground`/`never`, chosen by the author and intersected with the host's own
+   invocation context — read Amendment 3 in full before picking one.
+
+## What Wave 1 and Wave 2 already built — use it, do not rebuild it
+
+All of this is merged on `main`; read the actual files, not this summary, before writing config.
+
+- **`SourceDeclarationValidator.validate(json:qualifiedId:hostAPI:)`** (S1,
+  `MangaCarta/Models/SourceDeclarationValidator.swift`) turns a JSON declaration plus an
+  already-minted `QualifiedSourceID` into a `SourceDeclaration` or a `SourceDeclarationError`. It
+  also exposes `validateUpdate(from:to:)`, which enforces that `qualifiedId` and `localId` never
+  change across an update — the identity invariant S7's brief calls "the trap." You will write the
+  JSON declarations WeebCentral needs to pass this validator; you do not touch the validator itself.
+- **`SourceDeclaration`** (`MangaCarta/Models/SourceDeclaration.swift`) is the validated Swift
+  record: `qualifiedId`, `localId`, `name`, `engine`, `configuration: JSONValue`,
+  `adult`, `capabilities: SourceCapabilities`, `languages`, `network`, `presentation`, `hostAPI`,
+  `selectedHostAPIVersion`. `configuration` is opaque `JSONValue` — the engine's private
+  vocabulary — which is exactly the mechanism criterion 1 needs: three declarations, one engine,
+  distinguished only by what is inside `configuration`.
+- **`ExtensionDomainValidator`** (S2, `MangaCarta/Models/ExtensionDomainSchemas.swift`) validates
+  what an invocation returns: `validateListingPage`, `validateUpdatePage`, `validateDetail`,
+  `validateChapters`, `validatePages`, each returning an `ExtensionValidatedResult` or
+  `ExtensionValidatedPage` carrying `ExtensionValidationWarning`s. It is constructed with
+  `assetOrigins` from the declaration's `network.assetOrigins` — do not invent a second place to
+  declare which CDN a cover may come from. Read ADR-0024 (below) before writing any cover-URL test.
+- **`ExtensionRuntime`** (S4, `MangaCarta/Services/ExtensionRuntime.swift`) is the thing that
+  actually runs your bundle: one `JSContext` per `invoke(_:request:cancellation:)` call, built from
+  a `bundleScript` string, a `SourceDeclaration`, and an array of `ExtensionHostCapability`
+  (S5's brokers). Your engine script registers itself with the runtime's global `registerEngine(name,
+  engine)` function — `engine` is an object with an `invoke` function, and `declaration.engine` is
+  the name the runtime looks up. `invoke` receives `(operation, request, context)` where `context =
+  { source: { id, configuration, languages }, host, signal }`, exactly the shape in the spec's
+  §1.1. **The host, not your script, stamps `source.id`** — you never construct or read structure
+  out of it, per the "Source id" trap below.
+- **`ExtensionJSBridge`** (S4, `MangaCarta/Services/ExtensionJSBridge.swift`) is what converts your
+  script's return value and rejects the eight forbidden JSON-incompatible kinds *before* any
+  Foundation conversion. You do not call this directly — `ExtensionRuntime` does — but its
+  existence is why your engine script must return plain JSON-shaped objects: no `undefined`
+  properties, no functions on the result, no `Date`, nothing cyclic.
+- **`ExtensionHostErrorCode`, `ExtensionSchemaError`, `ExtensionValidationWarning`** (S2) are the
+  taxonomy your engine's rejected envelopes must use. Read the `ok`/`error`/`value` envelope shape
+  in `ExtensionRuntime.envelope(_:bridge:invocationID:)` — your engine returns `{ ok: true, value:
+  ... }` or `{ ok: false, error: { code, message, retryAfterSeconds?, details? } }`, and `code`
+  must be one of `ExtensionHostErrorCode`'s cases or the runtime rejects the whole envelope as
+  `invalidResponse`.
+- **ADR-0024** (`docs/adr/0024-a-bad-cover-costs-the-cover-not-the-feed.md`) changed cover-URL
+  handling *while S5 was mid-implementation*: a policy-invalid (not merely malformed) optional
+  cover URL now drops the field with a `policy_invalid_url` warning and keeps the item, rather than
+  rejecting the whole operation. Every other URL kind — pages, `webURL`, request URLs — still
+  rejects on policy violation. Write your WeebCentral cover-handling test against this rule, not
+  against the literal §10 text, which this ADR amends the reading of.
+
+## What you are building
+
+Port `MangaCarta/Models/WeebCentralSource.swift` — today a compiled Swift `MangaSource` conformer —
+to run as a **configuration-backed Extension** on `ExtensionRuntime`, and prove criterion 1 by
+writing **at least three differently configured Sources against the same engine**, not just one
+WeebCentral-shaped Source.
+
+Read the existing file in full before starting. It is small (about 270 lines) and everything in it
+is now a spec for what your ported behavior must equal:
+
+- Five operations: `search`, `popular`, `newTitles`, `latestUpdates`, `mangaDetail` → `detail`,
+  `chapters`, `pageURLs` → `pages`, and `webURL`. Map the Swift method names onto the spec's
+  Entry-points table (§3) exactly — `mangaDetail` becomes the `detail` operation, `pageURLs`
+  becomes `pages`, and so on.
+- **`chapterNumber(fromTitle:)`** — the last numeric token in a chapter's title string becomes its
+  display number, with `"?"` for titles that carry none (e.g. "Oneshot"). This is domain logic,
+  not scraping, and it has no equivalent in the Host API's wire types — it has to live in your
+  engine script or in `Chapter`-adapter code your engine's output feeds.
+- **`WCSeriesItem`, `WCDetail`, `WCChapterItem`, `WCUpdateItem`** are the DTOs the current JS
+  extraction returns. Your engine's `invoke` results must satisfy `ExtensionDomainValidator`'s
+  schemas instead — read §2 of the spec for what `Listing`, `Update`, `Detail`, `Chapter`, `Page`
+  require, and do not assume the current DTOs already match; they predate the Host API design.
+- **The five JS extraction scripts** (`seriesListScript`, `detailScript`, `chaptersScript`,
+  `pagesScript`, `latestUpdatesScript`) are, per `CLAUDE.md`, **the volatile part when the site
+  redesigns** — they are raw DOM-scraping strings tied to WeebCentral's current markup (`article.
+  flex.gap-4`, `.whitespace-pre-wrap`, `time[datetime]`, and so on). Porting them means moving this
+  same DOM logic into your engine's bundle script, run through `host.browser.extract` instead of
+  today's `SourceContext.webView.extract`. **They do not call `JSON.stringify` any more** — S5's
+  brief states plainly that the Host API's browser capability structured-clones its return value
+  and "today's `WebViewService` convention" of a final `JSON.stringify` is "deliberately dropped."
+  Update the scripts' final expression accordingly, or your extraction result will arrive as a
+  string the domain validator rejects instead of the object it expects.
+- **`chapterId`/`mangaId` extraction via `seg(href, name)`** is WeebCentral's own URL-segment
+  convention, unrelated to `QualifiedSourceID`. Do not conflate the two: `seg` produces the
+  *listing* id inside WeebCentral's URL space; the Source's own identity is a separate,
+  host-minted `QualifiedSourceID` you never construct (see below).
+
+## The Source id — the trap in this slice too
+
+Same trap S1's brief names, seen from the other side. Your engine receives `context.source.id` as
+an opaque string and must pass it through unexamined — never parse it, never reconstruct it, never
+assume its shape. `ExtensionDomainValidator`/`ExtensionRuntime` stamp every `Listing` with the
+invoked Source's id on the host side (criterion 4, S2's slice); your engine script must never try
+to do this itself or override it by returning its own `sourceId` field — if it does, S2's
+adversarial test already proves the host's stamp wins, so an engine attempting it only wastes
+effort, but do not write an engine that relies on that field being honored.
+
+## The engine/configuration proof — criterion 1
+
+*"One theme engine serves at least three differently configured Sources without code duplication."*
+
+Write **one** engine (call it whatever the bundle names, e.g. `"weebcentral"` or a more generic
+theme name if you decide the DOM structure generalizes beyond one site — that is your call, but
+name it honestly for what it actually generalizes to). Then write **three `SourceDeclaration`
+JSON fixtures** that select that engine with different `configuration` payloads — at minimum a
+different base URL and a different set of DOM selectors or path templates, whatever your engine
+actually parameterizes. Test that all three:
+
+- validate and register through `SourceDeclarationValidator` independently;
+- invoke through `ExtensionRuntime` independently, with no shared mutable state (the runtime
+  already gives you this for free — a fresh `JSContext` per invocation — but your test must
+  demonstrate it, not assume it);
+- produce different results appropriate to their own configuration, proving the engine is generic
+  rather than hardcoded to WeebCentral's URLs.
+
+If you cannot find three genuinely different real-world configurations of this engine (WeebCentral
+itself only gives you one live site), a synthetic second and third configuration against
+fixture/mock HTML is acceptable — the criterion is about the *engine's* genericity, not about
+having three live WeebCentral-family sites in production. Say in your PR body which of the three
+are live and which are fixtures, and why.
+
+## The equivalence proof — criterion 12
+
+*"The compiled WeebCentral Source can be replaced by a configuration-backed Extension with
+equivalent browse/detail/chapter/page behavior, modulo intentional validation improvements."*
+
+"Modulo intentional validation improvements" is doing real work in that sentence — it means you are
+not required to reproduce a bug. If the compiled source silently drops a malformed cover and your
+ported engine now surfaces `policy_invalid_url` per ADR-0024, that is an improvement to call out in
+the PR body, not a regression to explain away. But anything that isn't a deliberate, documented
+improvement must match: the same chapters in the same order for the same title, the same page URLs,
+the same `chapterNumber` display values.
+
+Write comparison tests that exercise both the compiled `WeebCentralSource` and your ported engine
+against the same captured HTML fixtures (do not depend on live network for a merge-blocking test —
+`CLAUDE.md`'s flaky-live-network lesson applies here as much as anywhere) and assert the outputs
+match field-for-field, modulo the improvements you documented.
+
+## Scope boundary
+
+You port WeebCentral's behavior onto the runtime and prove criteria 1 and 12. You do **not**
+build the installer or repository format (Phase 4), change `SourceDeclarationValidator`,
+`ExtensionDomainValidator`, `ExtensionRuntime`, or any S5 host capability's public API — if one of
+those needs a change to make your port possible, say so in the PR body and propose the change
+rather than making it unilaterally in a slice that isn't reviewed for it. You do not remove or
+change the compiled `WeebCentralSource` or `WebViewService` — per Amendment 3, `WebViewService`
+"is not changed by this amendment" and "keeps its shared store for the compiled `WeebCentralSource`
+until that Source is ported" — and "ported" here means your Extension exists and is proven
+equivalent, not that the compiled source is deleted or that the app is switched over to it. Cutting
+the app over to the ported Extension in place of the compiled Source is a follow-up decision for
+whoever owns the registry, not part of this slice.
+
+---
+
+# S7 — Identity lifecycle
+
+*(Prepend the shared preamble verbatim.)*
+
+**Acceptance criterion you own: 10.**
+**Model: Sonnet or Codex. Depends on: S1 (merged). Dispatchable now — does not wait on Wave 2 or 3.**
+
+## What you are building
+
+*"Disable/uninstall/reinstall preserves and reconnects Listings and pins for the same qualified
+Source id."* Spec §11 ("Identity lifecycle") owns the rules; read it in full, not just the excerpt
+below.
+
+An update may change `name`, `engine`, `configuration`, and `capabilities`, but never repository
+identity or `localId`. Disablement and uninstall unregister the Source but must **preserve**
+Listings, pins, and bounded Source storage — calls simply fail as unavailable, and existing
+fallback behavior may choose another registered Source. Reinstalling the *same* repository identity
+plus the *same* `localId` must **reconnect** the stored references; an unrelated repository cannot
+claim them by coincidentally reusing a `localId` string.
+
+## What S1 already built — use it, do not rebuild it
+
+Read `MangaCarta/Models/SourceDeclaration.swift` and `MangaCarta/Models/SourceDeclarationValidator.swift`
+in full before writing anything. Concretely:
+
+- **`QualifiedSourceID`** is `struct QualifiedSourceID: Hashable, Sendable { let rawValue: String
+  }`. It is opaque by convention, not by type — the type itself is a bare string wrapper, so the
+  discipline of never parsing or constructing one is enforced by review and by your tests, not by
+  the compiler. **The installer mints this value; S1 explicitly did not build the installer** ("The
+  installer itself is Phase 4. Do not build it.") and neither do you. Your tests take
+  already-minted `QualifiedSourceID` values as fixtures, exactly the way S1's own validator tests
+  do.
+- **`SourceDeclaration.localId`** is the immutable, installer-supplied identity within one
+  repository; **`SourceDeclaration.qualifiedId`** is what the installer derives by combining
+  repository identity with `localId`. Neither field is derived by anything in this file, and
+  neither should be derived by anything you write.
+- **`SourceDeclarationValidator.validateUpdate(from previous: SourceDeclaration, to next:
+  SourceDeclaration) -> SourceDeclarationError?`** already exists and already enforces the exact
+  rule this slice is named for, at the *declaration* level: it returns `.qualifiedIdentityChanged`
+  if `qualifiedId` differs and `.localIDChanged(from:to:)` if `localId` differs, and `nil` when the
+  update is allowed. **This is not your slice to reimplement.** What it does not cover — and what
+  criterion 10 actually asks for — is the *registry/persistence* behavior across disable, uninstall,
+  and reinstall: whether Listings and pins keyed by a `QualifiedSourceID` survive those lifecycle
+  transitions and reconnect correctly. That is new code you write, consuming `validateUpdate` where
+  an update is involved rather than duplicating its logic.
+
+## The trap S1's brief names, and why it matters here specifically
+
+S1's brief calls out: *"The installer owns repository identity and mints an opaque,
+repository-qualified Source id ... Extension code receives that id and may never construct or
+parse it, and neither may the UI. The same `localId` in a different repository must not collide."*
+
+For this slice that trap becomes concrete: your reconnection logic must key exclusively on
+`QualifiedSourceID` equality (`Hashable`/`Equatable`, already derived on the type) and must **never**
+fall back to comparing `localId` strings alone to decide whether two installations are "the same
+Source." Two different repositories can legally share a `localId`; only the installer-minted
+`qualifiedId` says whether they're the same Source. Write the adversarial test explicitly: two
+declarations with the same `localId` but different (fixture) `QualifiedSourceID`s must never be
+treated as reconnecting to each other's Listings or pins.
+
+## What already exists in the app that you must not silently duplicate or break
+
+`MangaCarta/Services/SourceRegistry.swift` and `MangaCarta/Services/SourcePreferenceStore.swift`
+are today's compiled-Source registry and per-Work source pin, keyed by plain `String` source ids
+(`MangaDexSource.sourceID`, `WeebCentralSource.sourceID`) — not by `QualifiedSourceID`, because no
+installed-Extension Source exists yet on `main`. Read both files before deciding your data model.
+You are not required to migrate these to `QualifiedSourceID` or to make installed Extensions and
+compiled Sources share one registry — that is a larger integration decision for whoever wires the
+installer in Phase 4, and is out of scope here per "Scope boundary" below. What you must not do is
+build a second, parallel notion of "pin" or "Listing ownership" that silently disagrees with
+`SourcePreferenceStore`'s existing per-Work choice semantics (documented in its own header comment:
+a Work id maps to a pinned `ListingKey`, and the pin "outranks both the ranking and the primary
+source"). If your lifecycle model needs a `ListingKey`-shaped reference, reuse that type rather than
+inventing a second one.
+
+## Traps
+
+- **Reinstall is not "the same JSON declaration comes back."** A Source can be reinstalled with a
+  different `name`, `engine`, `configuration`, or `capabilities` — `validateUpdate` allows all of
+  those to change — and reconnection must still succeed as long as `qualifiedId` (and therefore
+  `localId`, since the validator also pins that) is unchanged. Test reconnection with a
+  deliberately *different* declaration body, not just a byte-identical resubmission.
+- **Disablement is not uninstall.** Both "unregister the Source but preserve Listings, pins, and
+  bounded Source storage," but the spec treats them as distinct lifecycle states with the same
+  preservation guarantee, not one collapsed state. Model them as what they are, even if your first
+  version's transition logic is the same for both — a future slice may need to tell them apart.
+- **"Preserves" includes bounded Source storage**, which is S5's `host.storage` capability
+  (criterion 6's storage half, not merged as of this writing — see S6's brief for the current
+  state). You are not implementing storage itself; you are asserting the *lifecycle contract*
+  that storage keyed by a `QualifiedSourceID` is untouched by disable/uninstall/reinstall. If S5
+  is not yet merged when you start, write this part of your test against a fake/mock conforming to
+  whatever seam S5 exposes for storage — do not block your whole slice on S5's merge, since your
+  declared dependency is S1 only.
+- **A missing or unrecognized `adult` classification still prevents registration** (§12, enforced
+  by S1) — do not let a reconnection path bypass that by skipping `SourceDeclarationValidator`
+  entirely. Reconnection revalidates the incoming declaration; it does not trust a cached one
+  blindly.
+- Section §11 leaves stable identity **across URL moves, forks, and signing-key rotation**
+  explicitly open (evidence gate 3, §16) — that is a repository-format problem, not yours. Your
+  slice's contract is scoped to identity that is already stable (an unchanged qualified id); do not
+  attempt to solve gate 3, and say so if you find yourself tempted to.
+
+## Scope boundary
+
+You build and test the lifecycle contract: given a `QualifiedSourceID`, disable it, uninstall it,
+reinstall it (same id, possibly different declaration body), and prove Listings/pins/storage
+references keyed by that id survive and reconnect, while an unrelated Source sharing only a
+`localId` never does. You do **not** build the installer, the repository format, or package
+signing (Phase 4); you do not migrate `SourceRegistry` or `SourcePreferenceStore` off their current
+`String`-keyed model; you do not implement `host.storage` (S5) or port WeebCentral (S6). If your
+lifecycle model needs a capability none of those provide yet, model the seam and say so in the PR
+body rather than building the missing piece yourself.
