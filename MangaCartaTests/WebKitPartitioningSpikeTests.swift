@@ -122,6 +122,21 @@ func spikeRemoveDataStore(_ identifier: UUID) async {
     }
 }
 
+/// True once `identifier` appears in the on-disk listing, waiting up to `timeout` for it.
+///
+/// Not a sleep dressed up: the listing is **eventually consistent with a store's first
+/// use** (see `testIdentifiedStoreIsRegisteredOnDiskOnceItIsUsed`), so the honest
+/// assertion is "this becomes true", and a store that never registers still fails.
+@MainActor
+func spikeAwaitRegistration(of identifier: UUID, timeout: Duration = .seconds(3)) async -> Bool {
+    let deadline = ContinuousClock.now + timeout
+    repeat {
+        if await spikeDataStoreIdentifiers().contains(identifier) { return true }
+        try? await Task.sleep(for: .milliseconds(100))
+    } while ContinuousClock.now < deadline
+    return false
+}
+
 @MainActor
 func spikeDataStoreIdentifiers() async -> [UUID] {
     await withCheckedContinuation { continuation in
@@ -211,18 +226,29 @@ final class WebKitPartitioningSpikeTests: XCTestCase {
     /// hands back the *same object* for an identifier already live in this process
     /// (measured: `second === first`), so a same-process "close and reopen" reads the
     /// live session, not the disk, and would pass even for a store that persists nothing.
-    /// What a single process can honestly assert is that the store is registered on disk
-    /// under its identifier; `WebKitRelaunchSpikeTests` supplies the rest.
-    func testIdentifiedStoreIsRegisteredOnDiskUnderItsIdentifier() async {
+    /// What a single process can honestly assert is that the store reaches disk at all;
+    /// `WebKitRelaunchSpikeTests` supplies the rest.
+    ///
+    /// **Constructing the store is not enough to put it on disk.** The object is created
+    /// eagerly and its directory lazily, on first use — so `fetchAllDataStoreIdentifiers`
+    /// does not list a store that has only been constructed. On an idle machine the
+    /// directory usually lands before the next call and the distinction is invisible;
+    /// inside the full bundle it does not, and an earlier version of this test failed
+    /// there while passing alone. Instrumented, it read `false, n=2` and then `true, n=3`
+    /// 250 ms later. Awaiting one operation on the store — the same warm-up the amendment
+    /// requires before reading a cookie jar — closed it in three consecutive full-bundle
+    /// runs, because that round-trip is what materialises the session.
+    func testIdentifiedStoreIsRegisteredOnDiskOnceItIsUsed() async {
         let identifier = spikeStoreIdentifier(for: sourceA)
         let store = spikeDataStore(.identified, for: sourceA)
         retained = [store]
         XCTAssertTrue(store.isPersistent)
         XCTAssertEqual(store.identifier, identifier)
 
-        let identifiers = await spikeDataStoreIdentifiers()
-        XCTAssertTrue(identifiers.contains(identifier),
-                      "the store was not registered on disk under its identifier")
+        await spikeWarmUp(store)
+
+        let registered = await spikeAwaitRegistration(of: identifier)
+        XCTAssertTrue(registered, "the store never reached disk under its identifier")
 
         XCTAssertTrue(WKWebsiteDataStore(forIdentifier: identifier) === store,
                       "WebKit stopped vending the identical live object; a same-process "
@@ -306,6 +332,9 @@ final class WebKitRelaunchSpikeTests: XCTestCase {
     func testClearanceSurvivesProcessRelaunchAndStaysIsolated() async throws {
         try XCTSkipUnless(phase == "verify", "driven by scripts/webkit-partitioning-spike.sh")
         let identifier = spikeStoreIdentifier(for: Self.relaunchSourceId)
+        // No wait needed here, unlike the in-process test above: this store's directory was
+        // written by the seeding launch, so it is pre-existing disk state, not a store being
+        // materialised right now. Step 1 of the script depends on this failing immediately.
         let registered = await spikeDataStoreIdentifiers()
         XCTAssertTrue(registered.contains(identifier), "the store is not on disk at all")
 

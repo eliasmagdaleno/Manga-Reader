@@ -286,6 +286,16 @@ What the API did:
   immediately, as did any prior `fetchDataRecords`. There is no error and no partial state — just
   an empty jar. This cost this spike an hour and a wrong preliminary conclusion, and it is exactly
   the shape of bug that would ship as "Cloudflare keeps re-challenging me".
+- **A store is not on disk until it is first used, and the listing is eventually consistent
+  with that.** Constructing `WKWebsiteDataStore(forIdentifier:)` creates the object eagerly and
+  its directory lazily, so `fetchAllDataStoreIdentifiers` does not list a store that has only
+  been constructed. On an idle machine the directory lands before the next call and the
+  distinction is invisible — which is how a test asserting it passed alone and failed inside the
+  full test bundle, reading `false` with two identifiers listed and then `true` with three
+  250 ms later. Awaiting one operation on the store (the same warm-up above) closed it in three
+  consecutive full-bundle runs, because that round-trip is what materialises the session. This is
+  related to the web-view rule above but not the same: a use materialises the *store*, while
+  durable *cookies* additionally needed a `WKWebView`.
 - **A navigation is not affected.** A page load issued immediately after opening the store *did*
   carry the restored cookie (`document.cookie` saw it). So the race is confined to the inspection
   API. The practical rule for the runtime is therefore narrow: drive the browser and let WebKit
@@ -319,8 +329,11 @@ takes a `SPIKE_DESTINATION` override so the experiment can be re-run against a n
 ### Consequences
 
 - S5's `host.browser.extract` builds on a per-Source store, not on `WebViewService`'s shared one.
-  Two host rules come with it: construct the `WKWebView` for a Source's store before relying on its
-  state, and never treat an immediate cookie-jar read as authoritative.
+  Three host rules come with it: construct the `WKWebView` for a Source's store before relying on
+  its state; never treat an immediate cookie-jar read as authoritative; and never conclude a Source
+  has no store from `fetchAllDataStoreIdentifiers` before that store has been used — an installer
+  or data-removal screen that enumerates stores at launch is reading a listing that has not caught
+  up yet, and would show a reader nothing.
 - **`WebViewService` is not changed by this amendment.** It keeps its shared store for the compiled
   `WeebCentralSource` until that Source is ported (criterion 12), at which point the shared store's
   last user goes away. Until then the app deliberately holds both mechanisms.
