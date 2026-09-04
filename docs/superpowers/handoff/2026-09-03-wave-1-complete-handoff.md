@@ -1,9 +1,9 @@
 # Handoff — Phase 3 Wave 1 is done; Wave 2 is next
 
-Date: 2026-09-03 (evening)
+Date: 2026-09-03 (evening), revised 2026-09-04 when Wave 1 closed and Wave 2 was dispatched
 Repository: `/Users/eliasmagdaleno/Manga-Reader` (directory unchanged; GitHub is
 `eliasmagdaleno/MangaCarta`)
-Branch: `docs/handoff-2026-09-03-wave-1-done`, off `main` at `dfcecbf`.
+Branch: `docs/handoff-wave-1-closed`, off `main` at `3f281c1`.
 
 **This is the live handoff, and it is the whole of what is outstanding.** Writing a new one means
 `git mv`-ing this into `archive/` first and carrying forward whatever below is still true
@@ -31,7 +31,7 @@ acceptance criteria are the definition of done**, and each is owned by exactly o
 |---|---|---|---|
 | S2 — domain wire schemas + adapters | 3, 4 | #137 | merged `2d1cacc` |
 | S1 — manifest & declaration validation | 2, 9 | #139 | merged `dfcecbf` |
-| S3 — WebKit isolation spike | 6 (cookies), 8 | #140 | **open, see below** |
+| S3 — WebKit isolation spike | 6 (cookies), 8 | #140 | merged `3f281c1` |
 
 **Criteria still unowned by merged code: 1, 5, 7, 10, 11, 12** — Waves 2 and 3.
 
@@ -42,7 +42,9 @@ S3's deliverable was a decision, not a feature, and it landed as **ADR-0003 Amen
 persistence across relaunch. The spec's fallback — nonpersistent stores, clearance lost every
 launch — **is not taken**, so readers do not re-solve Cloudflare challenges on every cold start.
 
-Two host rules came out of the prototype and **S5 must carry both**:
+**Three** host rules came out of the prototype and **S5 must carry all three**. They are three
+faces of one behaviour: an identified store materialises lazily, so nearly everything about it is
+true only *eventually*.
 
 - **A store no `WKWebView` was ever constructed against never becomes durable.** Writing through
   `WKHTTPCookieStore` and holding the store alive was not enough.
@@ -50,6 +52,10 @@ Two host rules came out of the prototype and **S5 must carry both**:
   an **empty jar with no error**. Never gate behavior on an immediate jar read — drive the browser
   and let WebKit apply cookies. Losing that race looks exactly like *"Cloudflare keeps
   re-challenging me"*, and it already produced one wrong preliminary conclusion inside the spike.
+- **A constructed store is not yet on disk; `fetchAllDataStoreIdentifiers` will not list it.**
+  The object is created eagerly and its directory lazily, on *first use*. So **an installer or
+  data-removal screen that enumerates stores at launch reads a listing that has not caught up, and
+  would show a reader nothing.** Await one operation on a store before expecting it to appear.
 
 The store identifier is a **name-based (v5) UUID over a fixed namespace and the qualified Source
 id**. The namespace constant is permanent — changing it orphans every reader's clearance.
@@ -60,30 +66,56 @@ until then.
 
 ## What is owed
 
-### 1. PR #140 is open and one test is failing — the immediate next action
+### 1. Wave 2 is dispatched and running — supervise it
 
-Merged: #137 and #139. **#140 is not merged.** Two things happened to it:
+**Wave 1 is complete.** #137, #139 and #140 are all merged; `main` is at `3f281c1` and the unit
+bundle is green at 889 tests.
 
-- It conflicted with #139 in `project.pbxproj`. **Already rebased and resolved** (keep-both; the
-  two sides were pure additions to the group children and the Sources phase). The branch is
-  `215239f` on top of `dfcecbf`. Do not redo this.
-- After the rebase, `WebKitPartitioningSpikeTests.testIdentifiedStoreIsRegisteredOnDiskUnderItsIdentifier`
-  **fails in the full bundle** — 889 tests, 883 passed, 1 failed, 5 skipped — and **passes in
-  isolation**, all six of that suite green under
-  `-only-testing:MangaCartaTests/WebKitPartitioningSpikeTests`.
+**Wave 2 was dispatched 2026-09-04 as Run `run_f1c064acb57c`**, coordinator handle
+`term_15c0eb64-b03c-4606-add4-e337286e7ea7`. **Record that handle** — after a runtime restart every
+orchestration command needs it. Both worktrees are off `main` at `3f281c1` with `Secrets.xcconfig`
+copied in, and both workers were confirmed *actually running* by their terminal preview, not merely
+by `state: ready`:
 
-So it is order- or timing-dependent, and S1's tests joining the bundle is what exposed it. **This
-is the slice's own finding biting its own test suite** — asynchronous store materialization. It has
-been sent back to the S3 worker with instructions to diagnose rather than paper over with a sleep,
-and to push to the same branch; #140 stays open. **Verify the full bundle from the result bundle
-before merging**, not the log tail.
+| Slice | Criteria | Worktree | Agent | Dispatch |
+|---|---|---|---|---|
+| S4 — JSC runtime core + bridge | 7 | `phase3-s4-jsc-runtime` | Claude Opus high | `ctx_229a97888248` |
+| S5 — host capabilities | 5, 6 (storage), 11 | `phase3-s5-host-capabilities` | Codex `gpt-5.6-sol` high | `ctx_296bc5d9671d` |
 
-The deeper point worth not losing: a test that passes alone and fails in a full run was invisible
-to the worker, because the worker ran its suite when it was the only new suite in the bundle.
+**What is owed here is supervision, not dispatch.** Concretely, and in this order when a slice
+reports done:
 
-### 2. Dispatch Wave 2 — S4 and S5
+1. `git -C <worktree> status` and the terminal preview — **the dispatch status lies**, and both
+   Wave 1 stalls looked `live`.
+2. Rebase onto `main` and expect a `project.pbxproj` conflict if the peer landed first; the
+   resolution is **keep-both**.
+3. Re-run the **full** `MangaCartaTests` bundle after that rebase and read the totals from the
+   result bundle. A worker's own green run does not survive the next merge — that is exactly how
+   #140 got through.
+4. Only then merge, and check the PR body names a test per acceptance criterion it claims.
 
-Nothing blocks it once #140 lands. S4 depends on S2 (merged); S5 depends thinly on S4.
+Their briefs are in the plan (`docs/superpowers/plans/2026-09-03-phase-3-jsc-runtime.md`), written
+against what Wave 1 actually landed. **PRs #142 and #143 may still have been in flight** when this
+was written — #142 is this correction, #143 is the Wave 2 briefs.
+
+#140 took two extra rounds after it was first reported done, and both are worth carrying:
+
+- It conflicted with #139 in `project.pbxproj`, because two slices adding test files touch the same
+  group children and Sources phase. Resolution is **keep-both** — every hunk is a pure addition.
+- After that rebase, one of its own tests failed **in the full bundle while passing in isolation**.
+  Not flakiness: constructing an identified store creates its directory lazily, so the on-disk
+  listing had not caught up under bundle load. The fix awaits one operation on the store and
+  asserts through a **bounded wait that names the eventual consistency** rather than hiding it; the
+  test still fails when pointed at a store that never registers. That is where the third host rule
+  above came from.
+
+The deeper point, which will recur in every wave: **a worker's green run is not evidence that its
+tests survive the next merge.** #140's suite was the only new suite in the bundle when its worker
+ran it. Re-run after every rebase, from the result bundle.
+
+### 2. What the two Wave 2 slices are building
+
+Both are running (item 1). This is what they were told, and what to check their PRs against.
 
 - **S4 — JSC runtime core + invocation bridge** (criterion 7). **Opus high earns its place here.**
   S2 left it a hard requirement: Foundation conversion **erases `undefined` and Symbol properties
@@ -91,7 +123,7 @@ Nothing blocks it once #140 lands. S4 depends on S2 (merged); S5 depends thinly 
   reject on raw `JSValue` kinds *before* conversion. The Foundation-level validator catches the
   native analogues, but that is not a substitute.
 - **S5 — host capabilities: http, storage, log** (criteria 5, 6 storage, 11). Build
-  `host.browser.extract` on a **per-Source** store per Amendment 3, carrying the two rules above —
+  `host.browser.extract` on a **per-Source** store per Amendment 3, carrying all three rules above —
   **not** on `WebViewService`'s shared store.
 
 **Run one on Claude and one on Codex.** This is not a preference; see "Dispatch mechanics".
@@ -283,12 +315,13 @@ Re-verify any that becomes load-bearing rather than trusting this list.
 
 ## Repository state
 
-- `main` at `dfcecbf` (#139 merged). PRs #136–#139 all merged today; **#140 open** (see item 1).
+- `main` at `3f281c1` (#140 merged). PRs #136–#141 are all merged; **Wave 1 is complete**.
 - `gh issue list`: **#90** (VoiceOver, ready-for-human) and **#134** (UI suites failing).
-- Unit suite `MangaCartaTests`: **889 tests, green on `main`.** Both UI bundles: **failing,
+- Unit suite `MangaCartaTests`: **889 tests, 884 passed, 0 failed, 5 skipped on `main`.** Both UI bundles: **failing,
   pre-existing (#134)**. SwiftLint clean.
-- Orca worktrees under `~/orca/workspaces/Manga-Reader/`: `phase3-s1-manifest` (merged, removable)
-  and `phase3-s3-webkit-spike` (**active — #140's fix is happening there**). The four merged ones
-  were removed today, along with sixteen stale local branches.
+- Orca worktrees under `~/orca/workspaces/Manga-Reader/`: `phase3-s4-jsc-runtime` and
+  `phase3-s5-host-capabilities` are **live Wave 2 work**; `phase3-s1-manifest` and
+  `phase3-s3-webkit-spike` are **fully merged and removable**. Four others were removed on
+  2026-09-03 along with sixteen stale local branches.
 - `docs/superpowers/handoff/` holds this file and `archive/` (75 archived handoffs plus its
   README). Two `.md` files at this level means someone skipped the rule.
