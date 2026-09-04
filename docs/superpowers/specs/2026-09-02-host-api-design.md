@@ -79,9 +79,14 @@ logical record:
       "latestUpdates": { "title": "Recently Updated", "badge": "new" }
     },
     "imagePrefetchConcurrency": 4
-  }
+  },
+  "hostAPI": { "minimum": "1.0", "maximumExclusive": "2.0" }
 }
 ```
+
+> **Amendment 1 (2026-09-04, contract gap 1).** `hostAPI` was absent from this example while
+> Section 7 required it, and unknown keys outside `configuration` fail installation — so the
+> example above was not itself a valid declaration. It is now shown.
 
 Unknown keys are ignored only inside `configuration`, which belongs to the engine. Unknown keys in
 the Host API-owned declaration fail installation so a misspelling cannot silently disable policy.
@@ -121,6 +126,16 @@ fields, wrong types, invalid enum cases, and policy-invalid URLs reject the whol
 a collection rule below explicitly permits item-level omission.
 
 The host, not Extension code, stamps every returned Listing with the invoked Source id.
+
+> **Amendment 2 (2026-09-04, contract gap 3).** **Every validated operation result carries
+> warnings, not only paged ones.** Sections 2.3 and 2.4 instruct `detail` and `chapters` to emit
+> warnings — invalid tags dropped, an invalid date made absent — but only `Page<T>` had a
+> `warnings` slot, which left acceptance criterion 3 untestable for three of the five result
+> types. The host-side shape is a value paired with its warnings for every operation
+> (`ExtensionValidatedResult<Value>`), and the paged shape keeps items, cursor, exhausted and
+> warnings together (`ExtensionValidatedPage<Item>`). Warnings are host-side observations about
+> an Extension's output; they are not a wire field an Extension sends, and they never change
+> whether an operation succeeded.
 
 ## 2. Domain wire schemas
 
@@ -398,7 +413,17 @@ The Source declaration contains a required range such as:
 ```
 
 The host selects the highest installed version in the intersection. Major versions may remove or
-change behavior; minor versions are additive. An Extension may also declare optional named Host API
+change behavior; minor versions are additive.
+
+> **Amendment 3 (2026-09-04, contract gap 2).** The version *grammar* was never stated — patch
+> components, comparison, and invalid strings were all undefined. It is exactly
+> `MAJOR "." MINOR`: two components, ASCII decimal digits only, each nonempty, no leading zero
+> unless the component is exactly `0`. Comparison is `(major, minor)` lexicographic. A third
+> component is **refused, not truncated**, because this section only ever assigns meaning to two
+> — accepting `1.0.3` would mean inventing comparison semantics the contract does not have. Any
+> string outside the grammar fails installation rather than being guessed at, and a range whose
+> `minimum` is not strictly below its `maximumExclusive` is refused at construction, since it can
+> intersect nothing. Implemented in `HostAPIVersion` / `HostAPIVersionRange`. An Extension may also declare optional named Host API
 features with minimum versions. Missing required features prevent registration with an actionable
 compatibility error; missing optional features are absent from `context.host` and the engine must
 use its declared fallback. The host never invokes an older Extension under guessed semantics.
@@ -455,6 +480,15 @@ declared browser origin and is revalidated immediately before opening. Malformed
 URLs drop that field with a warning; policy-invalid URLs and all invalid page or browser URLs reject
 the operation. This distinction keeps cosmetic damage recoverable without silently weakening the
 reader or navigation boundary.
+
+> **Amendment 4 (2026-09-04, contract gap 4).** The sentence above is superseded for the optional
+> cover field alone. A **policy-invalid optional cover URL now also drops the field with a
+> warning** and keeps the item, carrying the distinct warning code `policy_invalid_url`. As
+> written, one `http://` cover rejected the whole operation and erased an otherwise usable feed,
+> defeating Section 2.1's partial-success rule; the host never loads the rejected URL under either
+> reading, so nothing is weakened by keeping the rest of the feed. **Unchanged:** every page URL,
+> every browser `webURL`, and every network request URL still reject the operation. See
+> [ADR-0024](../../adr/0024-a-bad-cover-costs-the-cover-not-the-feed.md).
 
 ## 11. Identity lifecycle
 

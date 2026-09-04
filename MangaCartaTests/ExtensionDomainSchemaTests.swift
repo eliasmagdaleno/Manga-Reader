@@ -103,13 +103,18 @@ final class ExtensionDomainSchemaTests: XCTestCase {
         }
     }
 
-    func testMalformedCoverWarnsButPolicyInvalidCoverRejectsOperation() throws {
+    func testMalformedCoverWarnsAndDropsTheField() throws {
         let malformed = try validator.validateListingPage(exhaustedPage(items: [[
             "id": "manga-1", "title": "A Title", "coverURL": "not an absolute URL"
         ]]))
         XCTAssertNil(malformed.items.first?.coverURL)
         XCTAssertEqual(malformed.warnings.map(\.code), [.malformedURL])
+    }
 
+    /// ADR-0024: a cover is cosmetic on both readings, so a policy-invalid cover drops the
+    /// field rather than erasing the feed it arrived in. The rejected URL is never loaded
+    /// either way, so no boundary weakens.
+    func testPolicyInvalidCoverWarnsAndKeepsTheItem() throws {
         let policyInvalidCovers = [
             "http://cdn.example.test/cover.jpg",
             "https://evil.example/cover.jpg",
@@ -120,10 +125,21 @@ final class ExtensionDomainSchemaTests: XCTestCase {
             "custom://cdn.example.test/cover.jpg"
         ]
         for cover in policyInvalidCovers {
-            assertInvalidResponse(cover) {
-                _ = try validator.validateListingPage(exhaustedPage(items: [[
-                    "id": "manga-1", "title": "A Title", "coverURL": cover
-                ]]))
+            let result = try validator.validateListingPage(exhaustedPage(items: [[
+                "id": "manga-1", "title": "A Title", "coverURL": cover
+            ]]))
+            XCTAssertEqual(result.items.count, 1, cover)
+            XCTAssertNil(result.items.first?.coverURL, cover)
+            XCTAssertEqual(result.warnings.map(\.code), [.policyInvalidURL], cover)
+        }
+    }
+
+    /// The relaxation above is scoped to the optional cover field alone. One bad cover must
+    /// not cost the feed, but one bad page URL still costs the operation.
+    func testPolicyInvalidPageURLStillRejectsTheOperation() {
+        for url in ["http://cdn.example.test/page-001.jpg", "javascript:alert(1)"] {
+            assertInvalidResponse(url) {
+                _ = try validator.validatePages([["url": url]])
             }
         }
     }
