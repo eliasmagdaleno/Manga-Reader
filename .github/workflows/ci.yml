@@ -74,7 +74,8 @@ jobs:
 
       # 5. Build the app and run ONLY the unit test target. The live UI tests hit
       #    the real MyAnimeList/MangaDex APIs (~1-3 min each, rate-limited), which
-      #    would make CI slow and flaky — they stay a local/manual gate.
+      #    would make CI slow and flaky — they stay a local/manual gate. The
+      #    *hermetic* UI tests do run here, in the job below.
       #    -parallel-testing-enabled NO avoids spawning cloned simulators.
       - name: Build & run unit tests
         run: |
@@ -83,3 +84,51 @@ jobs:
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
             -parallel-testing-enabled NO \
             test -only-testing:MangaCartaTests
+
+  # The half of the UI target that does not touch the network (#134).
+  #
+  # WHY THIS JOB EXISTS: both UI bundles rotted for two weeks without turning
+  # anything red, because CI ran neither. The cause was an accessibility label
+  # change no test could notice — exactly what a UI test is for. A suite that
+  # cannot run in CI and is not run locally either is not coverage, it is the
+  # appearance of it.
+  #
+  # WHAT IS IN SCOPE: the suites listed below launch with `-uitest-updates-state`,
+  # which swaps in a deterministic fixture registry and isolated storage. They make
+  # no network request, so they are as deterministic as the unit tests and belong in
+  # the must-be-green set.
+  #
+  # WHAT IS DELIBERATELY NOT: everything in `MangaCartaUITests.swift`. Those drive
+  # the real reader against live MangaDex/MyAnimeList, and live catalogs move under
+  # them — #134's second cause was a title WeebCentral simply stopped carrying. They
+  # are a local, run-by-name gate; see that file's header.
+  #
+  # ADDING A SUITE HERE IS A CLAIM that it makes no network request. If a suite in
+  # this list starts failing intermittently, that claim is what to re-check first.
+  ui-tests:
+    name: Hermetic UI tests
+    runs-on: macos-15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v5
+
+      - name: Create placeholder Secrets.xcconfig
+        run: echo "MAL_CLIENT_ID = ci-placeholder" > Secrets.xcconfig
+
+      - name: Choose a simulator
+        id: sim
+        run: |
+          name=$(xcrun simctl list devices available \
+                 | grep -oE 'iPhone [0-9]+[A-Za-z ]*' | head -1 | xargs)
+          echo "Chosen simulator: $name"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Run the hermetic UI suites
+        run: |
+          xcodebuild \
+            -scheme MangaCarta \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
+            -parallel-testing-enabled NO \
+            test \
+            -only-testing:MangaCartaUITests/UpdatesUITests \
+            -only-testing:MangaCartaUITests/SourcePreferenceUITests
