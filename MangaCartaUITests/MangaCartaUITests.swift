@@ -7,6 +7,31 @@
 
 import XCTest
 
+// MARK: - The live set — deliberately NOT in the must-be-green set (#134)
+//
+// Every test in this file drives the real reader against live MangaDex, MyAnimeList or
+// AniList. They are a **local, run-by-name gate**: run them with `-only-testing:` when you
+// touch the path they cover, not as a whole-target sweep and not as a merge condition.
+//
+// WHY THEY ARE NOT A MERGE CONDITION. #134 found the two ways they go red, and only one of
+// them is a defect:
+//
+//  1. A real regression — an accessibility label changed and no query followed it. That is
+//     what these tests are for, and it went unnoticed for two weeks.
+//  2. The catalog moved. WeebCentral stopped carrying chapters for a title one leg had named,
+//     and the leg failed for a reason that has nothing to do with this app. Nothing in the
+//     repository could have noticed, and no amount of care prevents the next one.
+//
+// A gate that cannot tell those apart teaches people to ignore it. So the answer is not to
+// run these in CI: it is to **not name live data** wherever the test does not measure it —
+// see `displaceUsingAnyLibraryTitle` for the shape — and to keep the hermetic suites, which
+// *are* a merge condition, carrying the regression coverage. Those are `UpdatesUITests` and
+// `SourcePreferenceUITests`; they launch on a fixture registry with isolated storage, make no
+// network request, and run on every PR (`.github/workflows/ci.yml`, the `ui-tests` job).
+//
+// Moving a test out of this file into the hermetic set is a claim that it makes no network
+// request. Moving one in is a claim that it cannot be written without live data.
+
 final class MangaCartaUITests: XCTestCase {
 
     override func setUpWithError() throws {
@@ -687,36 +712,26 @@ final class MangaCartaUITests: XCTestCase {
     /// prepend a **new** entry still carrying `mal 2`; the plist check is on the entry's UUID being
     /// new, since a silent in-place update would preserve the value while proving nothing.
     ///
-    /// Reads Junjou Romantica first purely to displace Berserk from the top of history — an
-    /// undisplaced resume matches on manga *and* chapter and updates in place, which would preserve
-    /// `mal 2` while proving nothing. It is a MangaDex title, so unlike the deleted leg B it carries
-    /// no refusal TTL and does not expire. The displacer's own entry is not the subject of any
-    /// assertion.
+    /// Reads *something other than Berserk* first, purely to displace Berserk from the top of
+    /// history — an undisplaced resume matches on manga *and* chapter and updates in place, which
+    /// would preserve `mal 2` while proving nothing. The displacer's own entry is not the subject
+    /// of any assertion.
     ///
-    /// **A displacer needs readable chapters, which is not the same as existing.** The first
-    /// candidate here was Wind Breaker: search found it and the detail page opened correctly, but
-    /// that entry reads `0 AVAILABLE / No chapters yet.` in English, so there was nothing to open
-    /// and nothing was displaced. Junjou Romantica was checked against `/chapter` with
-    /// `translatedLanguage[]=en` before being used (134), as were both titles its search returns.
+    /// **The displacer is whatever the seeded library provides, deliberately not a named title.**
+    /// It used to be Junjou Romantica, searched for by name. That rotted (#134, cause 2):
+    /// WeebCentral stopped carrying chapters for it, the detail page came up with `0 AVAILABLE`,
+    /// nothing was displaced, and the leg failed for a reason that had nothing to do with what it
+    /// measures. Repointing at another title only resets the clock until the next licensor pulls
+    /// one. So `displaceUsingAnyLibraryTitle` walks the library grid instead and takes the first
+    /// card that actually yields a readable chapter — the same requirement as before (**a
+    /// displacer needs readable chapters, which is not the same as existing**), asserted against
+    /// the fixture rather than against a name.
     func testADR0018Decision1ResumeFromHistoryKeepsTheId() throws {
         let app = XCUIApplication()
         app.launch()
 
         // --- displacement, not the measurement ---
-        app.buttons["Search"].tap()
-        let field = app.searchFields.firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 10), "the search field should be present")
-        field.tap()
-        field.typeText("Junjou Romantica\n")
-
-        let displacer = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS[c] %@", "Junjou")
-        ).element(boundBy: 0)
-        XCTAssertTrue(displacer.waitForExistence(timeout: 25),
-                      "search should return Junjou Romantica, leg C's displacer")
-        attach(app, name: "legC-00-displacer-search")
-        displacer.tap()
-        readFirstChapter(app, label: "legC-displacer")
+        displaceUsingAnyLibraryTitle(app, excluding: "Berserk", label: "legC-displacer")
 
         // --- the measurement ---
         // Relaunch rather than re-activate: `readFirstChapter` leaves the app backgrounded *in the
@@ -752,6 +767,67 @@ final class MangaCartaUITests: XCTestCase {
             return NSPredicate(format: "label BEGINSWITH %@", "Chapter ")
         }
         return NSPredicate(format: "label BEGINSWITH %@", "Chapter \(number),")
+    }
+
+    /// Reads a chapter from **whatever the seeded library provides**, so that history's newest
+    /// entry is no longer `excluding`'s. This is displacement only — nothing here is asserted
+    /// about the title that ends up being used.
+    ///
+    /// Walks the library grid in order and takes the first card that opens a detail page with a
+    /// chapter row on it, skipping any card whose title contains `excluding` and any card whose
+    /// source currently carries no chapters. That skip is the whole point: a title can be alive,
+    /// searchable and openable and still read `0 AVAILABLE` because its source dropped it (#134,
+    /// cause 2), and a displacer that does not displace fails the measurement downstream for a
+    /// reason that has nothing to do with ADR-0018.
+    ///
+    /// Fails only when *no* library title anywhere yields a chapter — which is a real finding
+    /// about the app or the fixture, not catalog rot.
+    private func displaceUsingAnyLibraryTitle(_ app: XCUIApplication,
+                                              excluding: String,
+                                              label: String) {
+        app.tabBars.buttons["Library"].tap()
+        let cards = app.buttons.matching(identifier: "libraryCoverCard")
+        XCTAssertTrue(cards.firstMatch.waitForExistence(timeout: 20),
+                      "the seeded library should hold at least one title — hierarchy:\n"
+                      + "\(app.debugDescription)")
+        attach(app, name: "\(label)-00-library")
+
+        var skipped: [String] = []
+        for index in 0..<cards.count {
+            let card = cards.element(boundBy: index)
+            guard card.exists else { continue }
+            let title = card.label
+            if title.range(of: excluding, options: .caseInsensitive) != nil {
+                skipped.append("\(title) [the subject]")
+                continue
+            }
+
+            card.tap()
+            let chapter = app.buttons.matching(Self.chapterRow()).element(boundBy: 0)
+            // Shorter than `readFirstChapter`'s 45s: this is a poll over candidates, and a
+            // title with no chapters costs the full wait before the next one is tried.
+            if chapter.waitForExistence(timeout: 25) {
+                attach(app, name: "\(label)-01-detail")
+                chapter.tap()
+                turnPagesAndBackground(app, label: label)
+                return
+            }
+            skipped.append("\(title) [no chapters]")
+            popToRoot(app)
+        }
+
+        XCTFail("no library title yielded a readable chapter, so nothing displaced "
+                + "\(excluding) from the top of history; tried: \(skipped)")
+    }
+
+    /// Pops an open detail page back to the tab's root.
+    private func popToRoot(_ app: XCUIApplication) {
+        let back = app.navigationBars.buttons.element(boundBy: 0)
+        if back.exists && back.isHittable {
+            back.tap()
+            _ = app.buttons.matching(identifier: "libraryCoverCard")
+                .firstMatch.waitForExistence(timeout: 15)
+        }
     }
 
     /// Opens the first chapter row on a detail page and reads far enough to commit.

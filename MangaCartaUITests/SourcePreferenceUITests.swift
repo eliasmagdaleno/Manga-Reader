@@ -47,15 +47,17 @@ final class SourcePreferenceUITests: XCTestCase {
                       "Settings should offer a browse source")
         heading.scrollToVisible(in: app)
 
-        let mangaDex = app.buttons["browseSource.MangaDex"]
-        XCTAssertTrue(mangaDex.exists,
-                      "the browse-source list should be reachable by a namespaced identifier")
-        mangaDex.tap()
-        XCTAssertTrue(mangaDex.isSelected,
+        let row = Self.firstRow(in: app, namespace: "browseSource")
+        XCTAssertTrue(row.exists,
+                      "the browse-source list should be reachable by a namespaced identifier "
+                      + "— hierarchy:\n\(app.debugDescription)")
+        let name = String(row.identifier.dropFirst("browseSource.".count))
+        row.tap()
+        XCTAssertTrue(row.isSelected,
                       "the active browse source should report itself selected to assistive tech")
 
         // The two lists must stay distinguishable: same name, different question.
-        XCTAssertFalse(app.buttons["preferredSource.MangaDex"].isSelected,
+        XCTAssertFalse(app.buttons["preferredSource.\(name)"].isSelected,
                        "choosing a browse source must not move the fulfillment preference")
         attach(app, name: "05-browse-source-active")
     }
@@ -71,11 +73,13 @@ final class SourcePreferenceUITests: XCTestCase {
         XCTAssertTrue(heading.waitForExistence(timeout: 10))
         heading.scrollToVisible(in: app)
 
-        let mangaDex = app.buttons["preferredSource.MangaDex"]
-        XCTAssertTrue(mangaDex.exists, "the preferred-source list should offer MangaDex")
-        mangaDex.tap()
+        let row = Self.firstRow(in: app, namespace: "preferredSource", excluding: "No preference")
+        XCTAssertTrue(row.exists,
+                      "the preferred-source list should offer at least one registered source "
+                      + "— hierarchy:\n\(app.debugDescription)")
+        row.tap()
 
-        XCTAssertTrue(mangaDex.isSelected,
+        XCTAssertTrue(row.isSelected,
                       "the chosen source should report itself selected to assistive tech")
         XCTAssertFalse(app.buttons["preferredSource.No preference"].isSelected,
                        "choosing a source should clear the automatic selection")
@@ -149,6 +153,30 @@ final class SourcePreferenceUITests: XCTestCase {
         XCTAssertEqual(rows.filter(\.isSelected).count, 1,
                        "exactly one menu row should report itself selected")
         attach(app, name: "06-picker-menu-selection")
+    }
+
+    /// The first row of one of Settings' two source lists, **whichever source the registry
+    /// happens to hold**.
+    ///
+    /// Both of these tests used to name MangaDex. That was true of the production registry and
+    /// never of the fixture these tests launch with, which registers `Update Fixture` alone —
+    /// it only passed while `SettingsView` still reached for `SourceRegistry.shared` behind the
+    /// injected registry's back. Removing that singleton (#130/#131) made Settings honest and
+    /// left these two asserting on a source that is not there (#134). Matching by namespace
+    /// asks the same question of whatever is registered, so neither a new source nor a renamed
+    /// one breaks it again.
+    private static func firstRow(in app: XCUIApplication,
+                                 namespace: String,
+                                 excluding: String? = nil) -> XCUIElement {
+        var format = "identifier BEGINSWITH %@"
+        var arguments: [Any] = ["\(namespace)."]
+        if let excluding {
+            format += " AND identifier != %@"
+            arguments.append("\(namespace).\(excluding)")
+        }
+        return app.buttons
+            .matching(NSPredicate(format: format, argumentArray: arguments))
+            .element(boundBy: 0)
     }
 
     private func launch(state: String = "not-checked") -> XCUIApplication {
