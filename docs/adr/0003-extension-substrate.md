@@ -194,3 +194,139 @@ repository-format design and remains open until that evidence exists.
   define review/signing metadata. That work is deliberately sequenced after the Host API contract.
 - Version 1 omits credentials and arbitrary cache files. Adding either later requires a new
   optional Host API capability rather than widening storage or network authority implicitly.
+
+## Amendment 3 — per-Source browser state is a `WKWebsiteDataStore(forIdentifier:)`, and background invocations never present UI (2026-09-03)
+
+Amendment 2 and the [Phase 2 Host API design](../superpowers/specs/2026-09-02-host-api-design.md)
+both stand unchanged. This amendment closes **evidence gate 2** — the design's second deliberately
+open gate, "the WebKit mechanism that provides both persistent clearance and strong per-Source
+isolation on iOS 17.5" — and fills the one contract gap the prototype had to resolve to answer it.
+
+### Context
+
+Section 9 of the design requires two things that pull against each other. Cookies and website data
+must be **partitioned by qualified Source id and origin**, so that two configured Sources on the
+same site cannot read each other's state. And Cloudflare clearance must **survive relaunch**, or
+the reader re-solves a challenge every time they open the app.
+
+The shipped `WebViewService` sits on one side of that tension deliberately: one shared
+`WKWebsiteDataStore.default()` plus a pinned User-Agent, chosen precisely so `cf_clearance` lives
+across launches. That is real persistence bought with zero isolation. The design named the fallback
+in advance — "separate nonpersistent stores plus explicit loss of cross-launch clearance, never a
+shared global store" — because it could not say whether the deployment target offered anything
+better.
+
+It does.
+
+### Decision
+
+**Each Source gets its own persistent `WKWebsiteDataStore(forIdentifier:)`.** The fallback is not
+taken, and the shared default store is rejected for Extension-backed Sources.
+
+- The identifier is a **name-based (version 5) UUID over a fixed host namespace and the qualified
+  Source id**. The same Source resolves to the same store on every launch with no mapping to
+  persist and no migration to write, and distinct Sources cannot collide by accident. Version 5
+  also forces a nonzero version nibble, which sidesteps `dataStoreForIdentifier:`'s documented
+  "throws exception if identifier is 0". **The namespace is permanent**: changing it orphans every
+  reader's clearance at once.
+- **The store must be attached to a `WKWebView`.** A `WKWebsiteDataStore` held on its own, with no
+  web view ever constructed against it, does not become durable — see the evidence below.
+- **A freshly opened store's cookie jar must be warmed up before it is read.** Its on-disk cookies
+  load asynchronously, and `getAllCookies` issued before that finishes returns an empty jar with no
+  error. Any host code that decides "this Source has no clearance" from an immediate read is
+  reading a race, not a fact.
+
+**Section 4.2's `interaction` parameter has exactly two cases: `allowForeground` (the default the
+design already shows) and `never`.** The design's signature named only the default while §9 and
+acceptance criterion 8 both require a mode that presents nothing; the enum was missing from the
+contract, and this is the slice with the evidence to settle it.
+
+The two cases are an **author** request, not a statement about app state — an engine cannot know
+whether the app is foregrounded, and §9 makes the no-UI rule a property of the invocation. So the
+effective policy is the **intersection** of the author's request and the host's own invocation
+context: a sheet may be presented only when the author passed `allowForeground` *and* the host is
+running foreground. `never` exists for speculative or bulk work an author does not want
+interrupting the reader even in the foreground. Every other combination returns
+`interaction_required`, which stays distinct from `interaction_declined`,
+`interaction_timed_out`, and `cancelled`.
+
+### Evidence
+
+Prototype: `MangaCartaTests/WebKitPartitioningSpikeTests.swift` (isolation, identity, and the
+relaunch phases), `MangaCartaTests/BrowserInteractionSpikeTests.swift` (criterion 8), and
+`scripts/webkit-partitioning-spike.sh`, which drives the relaunch experiment as three separate
+`xcodebuild test` runs — three separate app processes.
+
+Measured on **iOS 17.5 (21F79)**, the runtime the design's gate names, on an iPhone 15 Pro
+simulator, built with Xcode 26.6 against a 17.5 deployment target; every result below was also
+reproduced on iOS 26.5 (23F77).
+
+What the API did:
+
+- `dataStoreForIdentifier:`, `removeDataStoreForIdentifier:` and `fetchAllDataStoreIdentifiers:`
+  are declared `API_AVAILABLE(ios(17.0))` in the WebKit headers — checked in the SDK rather than
+  taken from a documentation summary — so they are available on the 17.5 deployment target.
+- **Isolation holds.** A `cf_clearance` cookie written into Source A's store is invisible from
+  Source B's, both by `getAllCookies` and by `fetchDataRecords`, for two Sources on one origin —
+  within a launch and across one. The same two Sources on `.default()` see each other completely,
+  which is what the shipped service does today and is recorded as its own test so the reason for
+  changing it does not become folklore.
+- **Persistence holds.** Clearance written under one launch is recovered under the next, and the
+  neighbouring Source still sees nothing.
+- **`WKWebsiteDataStore(forIdentifier:)` vends the identical live object** for an identifier
+  already open in the process. A same-process "close and reopen" therefore reads the live session,
+  not the disk, and would pass even for a store that persists nothing. This is why the durability
+  proof is a two-launch script and not a unit test.
+- **A store no `WKWebView` was ever built against does not persist its cookies.** Writing through
+  `WKHTTPCookieStore` and holding the store alive for six seconds still lost the cookie at process
+  exit; constructing a web view against the store — with or without a navigation — made it durable.
+- **The first read of a freshly opened store's cookie jar loses the race.** Immediately after
+  opening, `getAllCookies` returned an empty jar twice in a row and then returned the cookie on a
+  third read three seconds later; a three-second wait before the first read returned it
+  immediately, as did any prior `fetchDataRecords`. There is no error and no partial state — just
+  an empty jar. This cost this spike an hour and a wrong preliminary conclusion, and it is exactly
+  the shape of bug that would ship as "Cloudflare keeps re-challenging me".
+- **A navigation is not affected.** A page load issued immediately after opening the store *did*
+  carry the restored cookie (`document.cookie` saw it). So the race is confined to the inspection
+  API. The practical rule for the runtime is therefore narrow: drive the browser and let WebKit
+  apply cookies; never gate behavior on an immediate jar read.
+- Two cheaper ways to deliver a `cf-mitigated: challenge` header to the navigation-response
+  delegate do **not** work, recorded so nobody retries them: a `WKURLSchemeHandler` response
+  arrives downgraded to a bare `NSURLResponse` with every header stripped, and
+  `loadSimulatedRequest` does not run the response-policy step at all. The criterion 8 prototype
+  therefore serves the header from a loopback socket.
+
+Reconsiderable if a future iOS changes any of the above; `scripts/webkit-partitioning-spike.sh`
+takes a `SPIKE_DESTINATION` override so the experiment can be re-run against a new runtime.
+
+### Alternatives rejected
+
+- **One shared `.default()` store** — today's behavior. Rejected: it is measurably zero isolation
+  between Sources, and §9 forbids it outright.
+- **The design's named fallback: separate nonpersistent stores.** Rejected because it is no longer
+  necessary. It would have been honest, and worth stating what it would have cost the reader: every
+  Cloudflare challenge re-solved on every launch, for every protected Source, forever. That is a
+  real product cost, and not paying it is the point of running this spike in Wave 1.
+- **Persisting a Source-id-to-UUID mapping** instead of deriving the UUID. Rejected: it adds a file
+  that can be lost or corrupted, and losing it loses every reader's clearance — the derivation has
+  the same failure mode only if the namespace constant changes, which is a code change under
+  review.
+- **An `interaction` case per app state** (`background`, `foreground`, …). Rejected: an Extension
+  cannot know the app's state, and letting an author assert it would let a Source talk its way into
+  a sheet during a background refresh. The host supplies the context; the author supplies only a
+  ceiling.
+
+### Consequences
+
+- S5's `host.browser.extract` builds on a per-Source store, not on `WebViewService`'s shared one.
+  Two host rules come with it: construct the `WKWebView` for a Source's store before relying on its
+  state, and never treat an immediate cookie-jar read as authoritative.
+- **`WebViewService` is not changed by this amendment.** It keeps its shared store for the compiled
+  `WeebCentralSource` until that Source is ported (criterion 12), at which point the shared store's
+  last user goes away. Until then the app deliberately holds both mechanisms.
+- Clearance is now per Source. Two configured Sources on one site each solve their own challenge,
+  which is more challenges than today for that specific case — the price of the isolation §9
+  requires, and far cheaper than the fallback's per-launch cost.
+- An explicit reader data-removal action maps onto `removeDataStoreForIdentifier:` per Source,
+  which is a cleaner story than pruning one shared jar by domain.
+- The UA stays host-owned and pinned, per §9. Nothing here changes that.
