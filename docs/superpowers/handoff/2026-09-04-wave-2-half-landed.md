@@ -67,17 +67,33 @@ Run `run_f1c064acb57c`, coordinator handle `term_15c0eb64-b03c-4606-add4-e337286
 `ctx_296bc5d9671d`. **Record that handle** — after a runtime restart every orchestration command
 needs it.
 
-**Check `HostJSONValueConverter.swift` when it reports.** It may be the second `JSONValue`
-conversion path S5 was explicitly told not to write, or it may be the legitimate adapter direction.
-Not judged — the file was written before the correction below was read, so look rather than assume.
+**`HostJSONValueConverter.swift` was checked 2026-09-04 (16:00) and is fine — keep it.** It is
+the legitimate adapter direction, not the second `JSONValue` conversion path S5 was told not to
+write. The two halves compose with no overlap:
+
+| | signature | owner |
+|---|---|---|
+| `ExtensionJSBridge.jsonValue(from:)` | `JSValue` → Foundation `Any` | S4, merged in #144 |
+| `HostJSONValueConverter.convert(_:)` | Foundation `Any` → `JSONValue` | S5 |
+
+The file says so itself in its header — *"S4 owns the raw JSValue bridge; this converter
+deliberately starts at Foundation."*
 
 Two things were decided for S5 mid-flight and sent as orchestration messages. **Both are now
 recorded in #145's PR body**, because a decision that lives only in a message queue is not
 recorded:
 
-- **`JSONValue` lives on `main`** at `MangaCarta/Models/JSONValue.swift`, landed by S1/S2. S4
-  extends it with `init?(converting:)`. S5 consumes it and declares no second copy. (An earlier
-  message wrongly told S5 that S4 owned it and to read S4's worktree; that was corrected.)
+- **`JSONValue` lives on `main`** at `MangaCarta/Models/JSONValue.swift`, landed by S1/S2. S5
+  consumes it and declares no second copy. (An earlier message wrongly told S5 that S4 owned it and
+  to read S4's worktree; that was corrected.)
+
+  **Correction, 2026-09-04:** this used to say "S4 extends it with `init?(converting:)`." **It does
+  not.** `JSONValue.swift` on `main` has no such initialiser — S4 shipped `jsonValue(from:)` on
+  `ExtensionJSBridge` instead, returning Foundation rather than `JSONValue`. The claim was written
+  from the dispatch message rather than from merged code, which is the same mistake as reading a
+  strict-grammar rule out of a PR body instead of out of `HostAPIVersion` (gap 2 below). It matters
+  because it was the only reason to suspect S5's converter of being a duplicate: there is nothing
+  for it to duplicate.
 - **The cover-URL policy changed under S5 while it was writing `URLPolicy`** — see ADR-0024 below.
 
 ### 2. Supervision protocol, unchanged and still load-bearing
