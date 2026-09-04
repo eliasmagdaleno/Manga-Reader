@@ -210,9 +210,14 @@ final class SourceLifecycleRegistryTests: XCTestCase {
     }
 
     @MainActor
-    func testReinstallRejectsAChangedQualifiedIdentityEvenWithSameLocalId() throws {
-        // This exercises validateUpdate's own rule from the lifecycle-registry side:
-        // reinstall must revalidate, not just trust the cached declaration.
+    /// Renamed in review: this does **not** prove a rejection, and the old name
+    /// (`testReinstallRejectsAChangedQualifiedIdentityEvenWithSameLocalId`) claimed it did.
+    /// A declaration carrying a different `qualifiedId` lands under a different dictionary
+    /// key, so it is accepted as a *fresh registration* and `validateUpdate` is never
+    /// consulted. What is actually worth asserting — and what this does assert — is that the
+    /// original entry is left alone. Mutation-checked: deleting the `validateUpdate` call
+    /// from `reinstall` does not fail this test, which is how the misnomer was found.
+    func testReinstallUnderADifferentQualifiedIdLeavesTheOriginalEntryAlone() throws {
         let originalId = QualifiedSourceID(rawValue: "repoA:site-1")
         let registry = SourceLifecycleRegistry()
         try registry.register(try declaration(qualifiedId: originalId, localId: "site-1"))
@@ -348,7 +353,20 @@ final class SourceLifecycleRegistryTests: XCTestCase {
     // MARK: - Reconnection revalidates; it never bypasses adult-classification enforcement
 
     @MainActor
-    func testReinstallGoesThroughTheValidatorAndRejectsAMissingAdultClassification() throws {
+    /// Renamed in review: the old name
+    /// (`testReinstallGoesThroughTheValidatorAndRejectsAMissingAdultClassification`) claimed
+    /// a property of `reinstall` that `reinstall` does not have — it never calls
+    /// `SourceDeclarationValidator.validate`, and this test never passes the bad declaration
+    /// to the registry at all. It exercises the validator directly.
+    ///
+    /// That gap is narrower than it looks, and deliberately left as is: `SourceDeclaration
+    /// .adult` is non-optional, so a declaration missing its classification cannot exist as a
+    /// typed value. The only way in is the JSON path asserted below, which rejects it. What is
+    /// *not* enforced is that a caller validated the declaration at all — `SourceDeclaration`
+    /// has only the internal memberwise initialiser, so a hand-built one bypasses the
+    /// validator. Closing that would mean `reinstall` taking raw JSON; out of scope here, and
+    /// noted rather than silently assumed.
+    func testADeclarationMissingItsAdultClassificationIsRejectedByTheValidator() throws {
         let id = QualifiedSourceID(rawValue: "repoA:site-1")
         let registry = SourceLifecycleRegistry()
         try registry.register(try declaration(qualifiedId: id, localId: "site-1"))
