@@ -1,6 +1,6 @@
 # Handoff — Phase 3 Wave 1 is done; Wave 2 is next
 
-Date: 2026-09-03 (evening), revised 2026-09-04 when Wave 1 closed
+Date: 2026-09-03 (evening), revised 2026-09-04 when Wave 1 closed and Wave 2 was dispatched
 Repository: `/Users/eliasmagdaleno/Manga-Reader` (directory unchanged; GitHub is
 `eliasmagdaleno/MangaCarta`)
 Branch: `docs/handoff-wave-1-closed`, off `main` at `3f281c1`.
@@ -66,10 +66,37 @@ until then.
 
 ## What is owed
 
-### 1. Dispatch Wave 2 — S4 and S5, the immediate next action
+### 1. Wave 2 is dispatched and running — supervise it
 
 **Wave 1 is complete.** #137, #139 and #140 are all merged; `main` is at `3f281c1` and the unit
 bundle is green at 889 tests.
+
+**Wave 2 was dispatched 2026-09-04 as Run `run_f1c064acb57c`**, coordinator handle
+`term_15c0eb64-b03c-4606-add4-e337286e7ea7`. **Record that handle** — after a runtime restart every
+orchestration command needs it. Both worktrees are off `main` at `3f281c1` with `Secrets.xcconfig`
+copied in, and both workers were confirmed *actually running* by their terminal preview, not merely
+by `state: ready`:
+
+| Slice | Criteria | Worktree | Agent | Dispatch |
+|---|---|---|---|---|
+| S4 — JSC runtime core + bridge | 7 | `phase3-s4-jsc-runtime` | Claude Opus high | `ctx_229a97888248` |
+| S5 — host capabilities | 5, 6 (storage), 11 | `phase3-s5-host-capabilities` | Codex `gpt-5.6-sol` high | `ctx_296bc5d9671d` |
+
+**What is owed here is supervision, not dispatch.** Concretely, and in this order when a slice
+reports done:
+
+1. `git -C <worktree> status` and the terminal preview — **the dispatch status lies**, and both
+   Wave 1 stalls looked `live`.
+2. Rebase onto `main` and expect a `project.pbxproj` conflict if the peer landed first; the
+   resolution is **keep-both**.
+3. Re-run the **full** `MangaCartaTests` bundle after that rebase and read the totals from the
+   result bundle. A worker's own green run does not survive the next merge — that is exactly how
+   #140 got through.
+4. Only then merge, and check the PR body names a test per acceptance criterion it claims.
+
+Their briefs are in the plan (`docs/superpowers/plans/2026-09-03-phase-3-jsc-runtime.md`), written
+against what Wave 1 actually landed. **PRs #142 and #143 may still have been in flight** when this
+was written — #142 is this correction, #143 is the Wave 2 briefs.
 
 #140 took two extra rounds after it was first reported done, and both are worth carrying:
 
@@ -86,9 +113,9 @@ The deeper point, which will recur in every wave: **a worker's green run is not 
 tests survive the next merge.** #140's suite was the only new suite in the bundle when its worker
 ran it. Re-run after every rebase, from the result bundle.
 
-### 2. The two Wave 2 slices
+### 2. What the two Wave 2 slices are building
 
-Nothing blocks either one. S4 depends on S2 (merged); S5 depends thinly on S4.
+Both are running (item 1). This is what they were told, and what to check their PRs against.
 
 - **S4 — JSC runtime core + invocation bridge** (criterion 7). **Opus high earns its place here.**
   S2 left it a hard requirement: Foundation conversion **erases `undefined` and Symbol properties
@@ -292,8 +319,9 @@ Re-verify any that becomes load-bearing rather than trusting this list.
 - `gh issue list`: **#90** (VoiceOver, ready-for-human) and **#134** (UI suites failing).
 - Unit suite `MangaCartaTests`: **889 tests, 884 passed, 0 failed, 5 skipped on `main`.** Both UI bundles: **failing,
   pre-existing (#134)**. SwiftLint clean.
-- Orca worktrees under `~/orca/workspaces/Manga-Reader/`: `phase3-s1-manifest` and
-  `phase3-s3-webkit-spike`, **both now fully merged and removable**. Four others were removed on
+- Orca worktrees under `~/orca/workspaces/Manga-Reader/`: `phase3-s4-jsc-runtime` and
+  `phase3-s5-host-capabilities` are **live Wave 2 work**; `phase3-s1-manifest` and
+  `phase3-s3-webkit-spike` are **fully merged and removable**. Four others were removed on
   2026-09-03 along with sixteen stale local branches.
 - `docs/superpowers/handoff/` holds this file and `archive/` (75 archived handoffs plus its
   README). Two `.md` files at this level means someone skipped the rule.
