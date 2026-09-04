@@ -75,6 +75,7 @@
 		DFF2BC11BF304A968E8FEE01 /* AniListPoolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846EC8488D4E46DAB7E152EC /* AniListPoolTests.swift */; };
 		E1572D139FB0F9AFA8CFAF18 /* UpdateSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B295C51CE6541D787C8F0D1 /* UpdateSchedulerTests.swift */; };
 		E3368D389F8E31C4E2C0F9A0 /* ExtensionJSBridgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD0D41CDB5858D85E249DB5 /* ExtensionJSBridgeTests.swift */; };
+		E5799CADD97F67D52AAEAF1C /* SourceLifecycleRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 157ECE58A8A05C891EC65688 /* SourceLifecycleRegistryTests.swift */; };
 		E7CBBD1428324559AFC66FAD /* BrowserInteractionSpikeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCEA6025BCD90B3F70131F41 /* BrowserInteractionSpikeTests.swift */; };
 		F1EDF70D02166B598E8C64BB /* AppCompositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72871A40D70AAE0566E9CE31 /* AppCompositionTests.swift */; };
 		F2CB6BCB819D4DAA455C6FE0 /* SimulatorSeedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FA3A806F48EF86136C94C85 /* SimulatorSeedTests.swift */; };
@@ -89,14 +90,14 @@
 			containerPortal = ADE549192C0A9CCA007AE172 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = ADE549202C0A9CCA007AE172;
-			remoteInfo = "MangaCarta";
+			remoteInfo = MangaCarta;
 		};
 		ADE5493C2C0A9CCD007AE172 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = ADE549192C0A9CCA007AE172 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = ADE549202C0A9CCA007AE172;
-			remoteInfo = "MangaCarta";
+			remoteInfo = MangaCarta;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -105,6 +106,7 @@
 		0E374EDB3E7A43043E5E425E /* ManifestValidationCodeFreeTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = ManifestValidationCodeFreeTests.swift; path = ManifestValidationCodeFreeTests.swift; sourceTree = "<group>"; };
 		0FA3A806F48EF86136C94C85 /* SimulatorSeedTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SimulatorSeedTests.swift; sourceTree = "<group>"; };
 		15424202EDA73FD92FCF14A8 /* MALAccountSettingsView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = MALAccountSettingsView.swift; path = MALAccountSettingsView.swift; sourceTree = "<group>"; };
+		157ECE58A8A05C891EC65688 /* SourceLifecycleRegistryTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = SourceLifecycleRegistryTests.swift; path = SourceLifecycleRegistryTests.swift; sourceTree = "<group>"; };
 		25BBABC580DD506283C995BE /* ReadingPositionTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ReadingPositionTests.swift; sourceTree = "<group>"; };
 		28F0E06D7EC96A13D6FC582B /* MALAccountPresentationTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; lastKnownFileType = sourcecode.swift; name = MALAccountPresentationTests.swift; path = MALAccountPresentationTests.swift; sourceTree = "<group>"; };
 		3230EFD03B407AE9AF0906F2 /* MetadataUpgradeQueueTests.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = MetadataUpgradeQueueTests.swift; sourceTree = "<group>"; };
@@ -150,14 +152,14 @@
 		ADCA7E102EC7000100CF2434 /* CategoryGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CategoryGridView.swift; sourceTree = "<group>"; };
 		ADDACC8B2EC6AC2D0026FBAE /* MangaDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MangaDetailView.swift; sourceTree = "<group>"; };
 		ADDACC9A2EC6AC2D0026FBAE /* ReaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderView.swift; sourceTree = "<group>"; };
-		ADE549212C0A9CCA007AE172 /* MangaCarta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MangaCarta.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ADE549212C0A9CCA007AE172 /* MangaCarta.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MangaCarta.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADE549242C0A9CCA007AE172 /* MangaCartaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MangaCartaApp.swift; sourceTree = "<group>"; };
 		ADE549262C0A9CCA007AE172 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		ADE549282C0A9CCC007AE172 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ADE5492B2C0A9CCC007AE172 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		ADE549312C0A9CCD007AE172 /* MangaCartaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MangaCartaTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ADE549312C0A9CCD007AE172 /* MangaCartaTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MangaCartaTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADE549352C0A9CCD007AE172 /* MangaCartaTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MangaCartaTests.swift; sourceTree = "<group>"; };
-		ADE5493B2C0A9CCD007AE172 /* MangaCartaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MangaCartaUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		ADE5493B2C0A9CCD007AE172 /* MangaCartaUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MangaCartaUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		ADE5493F2C0A9CCD007AE172 /* MangaCartaUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MangaCartaUITests.swift; sourceTree = "<group>"; };
 		ADE549412C0A9CCD007AE172 /* MangaCartaUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MangaCartaUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		ADEF83CD2E8F323700CF2434 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
@@ -271,7 +273,7 @@
 				ADE5492A2C0A9CCC007AE172 /* Preview Content */,
 				059A06C836FA253905E57939 /* PrivacyInfo.xcprivacy */,
 			);
-			path = "MangaCarta";
+			path = MangaCarta;
 			sourceTree = "<group>";
 		};
 		ADE5492A2C0A9CCC007AE172 /* Preview Content */ = {
@@ -340,8 +342,9 @@
 				DFD0D41CDB5858D85E249DB5 /* ExtensionJSBridgeTests.swift */,
 				6B57E209F969929C978BDC9F /* ExtensionRuntimeTests.swift */,
 				CD39C55F6082921DFE723308 /* ExtensionCancellationTests.swift */,
+				157ECE58A8A05C891EC65688 /* SourceLifecycleRegistryTests.swift */,
 			);
-			path = "MangaCartaTests";
+			path = MangaCartaTests;
 			sourceTree = "<group>";
 		};
 		ADE5493E2C0A9CCD007AE172 /* MangaCartaUITests */ = {
@@ -352,7 +355,7 @@
 				988991C0F003C55F34001352 /* UpdatesUITests.swift */,
 				8402F36EE8C2A9E6D5BE0E7E /* SourcePreferenceUITests.swift */,
 			);
-			path = "MangaCartaUITests";
+			path = MangaCartaUITests;
 			sourceTree = "<group>";
 		};
 		ADEF83D52E8F375100CF2434 /* Views */ = {
@@ -393,8 +396,8 @@
 				ADEF83D62E96ED2E00CF2434 /* Services */,
 				ADEF83D82E96ED5800CF2434 /* Models */,
 			);
-			name = "MangaCarta";
-			productName = "MangaCarta";
+			name = MangaCarta;
+			productName = MangaCarta;
 			productReference = ADE549212C0A9CCA007AE172 /* MangaCarta.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -411,8 +414,8 @@
 			dependencies = (
 				ADE549332C0A9CCD007AE172 /* PBXTargetDependency */,
 			);
-			name = "MangaCartaTests";
-			productName = "MangaCartaTests";
+			name = MangaCartaTests;
+			productName = MangaCartaTests;
 			productReference = ADE549312C0A9CCD007AE172 /* MangaCartaTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -429,8 +432,8 @@
 			dependencies = (
 				ADE5493D2C0A9CCD007AE172 /* PBXTargetDependency */,
 			);
-			name = "MangaCartaUITests";
-			productName = "MangaCartaUITests";
+			name = MangaCartaUITests;
+			productName = MangaCartaUITests;
 			productReference = ADE5493B2C0A9CCD007AE172 /* MangaCartaUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
@@ -583,6 +586,7 @@
 				E3368D389F8E31C4E2C0F9A0 /* ExtensionJSBridgeTests.swift in Sources */,
 				03DE6B2D9A7FC66B70A3FFA8 /* ExtensionRuntimeTests.swift in Sources */,
 				F5187CABAE1CAC753A00B58E /* ExtensionCancellationTests.swift in Sources */,
+				E5799CADD97F67D52AAEAF1C /* SourceLifecycleRegistryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -746,7 +750,7 @@
 				DEVELOPMENT_TEAM = V2BG9SHQYS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "MangaCarta/Info.plist";
+				INFOPLIST_FILE = MangaCarta/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -777,7 +781,7 @@
 				DEVELOPMENT_TEAM = V2BG9SHQYS;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "MangaCarta/Info.plist";
+				INFOPLIST_FILE = MangaCarta/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -844,7 +848,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = "MangaCarta";
+				TEST_TARGET_NAME = MangaCarta;
 			};
 			name = Debug;
 		};
@@ -860,7 +864,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = "MangaCarta";
+				TEST_TARGET_NAME = MangaCarta;
 			};
 			name = Release;
 		};
