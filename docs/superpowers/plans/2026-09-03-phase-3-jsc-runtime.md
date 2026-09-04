@@ -384,3 +384,167 @@ The whole reason this gate is open is that the documentation did not settle it.
 Prototype and decide. You are **not** building the production `host.browser.extract` — that is S5,
 and it will consume your decision. Keep the prototype small enough to throw away; the ADR amendment
 is the artifact that lasts. If the prototype is worth keeping as a test, say so.
+
+---
+
+# S4 — JavaScriptCore runtime core and the invocation bridge
+
+*(Prepend the shared preamble verbatim.)*
+
+**Acceptance criterion you own: 7.**
+**Model: Opus high — this is one of the two slices that earns it. Depends on: S2 (merged).
+Runs in Wave 2, alongside S5, on a different provider from S5.**
+
+## What you are building
+
+The thing that actually runs an Extension. A `JSContext` per invocation, the message contract from
+spec **§1.1**, and the cancellation semantics of **§5**. Wave 1 built the pure-Swift validation
+that sits on both sides of you; you are the part that touches JavaScriptCore at last.
+
+Spec sections that own your rules: **§1.1 (configuration-first Sources)**, **§1.3 (envelope and
+value rules)**, **§5 (scheduling, budgets, cancellation)**, and **§7 (versions and feature
+negotiation)** for what `context.host` contains.
+
+## What Wave 1 already built — use it, do not rebuild it
+
+All of this is on `main`. Read it before you design anything.
+
+- **`SourceDeclarationValidator`** (S1) — validates a declaration and tells you which capabilities
+  a Source declared. `HostAPIVersion` / `HostAPIVersionRange` / `HostAPISupport` do version
+  negotiation. `JSONValue` is the JSON model both slices already share.
+- **`ExtensionDomainValidator`** and the `Extension*` wire types (S2) — validate what comes *back*.
+  You do not re-validate domain shapes; you hand raw values to that validator.
+- **`ExtensionHostErrorCode`**, `ExtensionSchemaError`, `ExtensionValidationWarning` (S2) — the
+  shared taxonomy. **Reuse it.** If you need a case it lacks, add the case rather than forking the
+  type, and say so in your PR body.
+
+## The hard requirement S2 left you, in its own words
+
+> The invocation bridge must inspect raw `JSValue` kinds **before** Foundation conversion:
+> conversion can erase `undefined`/Symbol properties and collapse functions or typed arrays into
+> indistinguishable objects. The Foundation-level validator rejects the native analogues, but S4
+> must make pre-conversion rejection a hard boundary.
+
+This is the single most important sentence in your brief. §1.3 says `undefined`, functions,
+symbols, cyclic objects, non-finite numbers, dates, typed arrays and host objects are all invalid.
+By the time a value is an `NSDictionary` you can no longer tell some of those apart from valid
+data — so a `JSValue`-kind check after conversion is not a check at all. Test the adversarial
+cases directly: an object with an `undefined`-valued property, a function-valued property, a
+`Symbol` key, a cycle, `NaN`/`Infinity`, a `Date`, and a `TypedArray`.
+
+## Criterion 7 — the one you own
+
+*"Cancellation prevents every late callback from changing invocation state."*
+
+Per §5: once cancelled, no new host-capability call is accepted, queued calls are removed, active
+`URLSession` work is cancelled, and eventual JavaScript or WebKit callbacks are **discarded**. The
+runtime waits a short grace period and then destroys an uncooperative context. Extensions cannot
+create timers or detached work that outlive the invocation.
+
+"Discarded" is the testable word. Build the adversarial case: an Extension whose callback fires
+*after* cancellation must not be able to mutate any invocation state, resolve a result, or emit a
+warning. A test that merely shows cancellation returns promptly does not demonstrate this.
+
+## Traps
+
+- **CI is Swift 6.0; local is 6.2.** A JSC bridge is exactly where `@concurrent`,
+  `nonisolated(nonsending)`, `Task.immediate` and isolated conformances are most tempting. All are
+  **unavailable**. This is called out in the preamble because it will bite you specifically.
+- **`JSContext` is not `Sendable`** and JavaScriptCore is not thread-safe across contexts. Decide
+  the isolation story deliberately and write it down; do not let it emerge.
+- Configuration is **deep-frozen** before invocation (§1.1), and an engine cannot enumerate other
+  Sources' configuration or invoke another Source.
+- The host, not Extension code, stamps every returned Listing with the invoked Source id (§1.3) —
+  S2 enforces this, and your bridge must not hand it a way around.
+
+## Scope boundary
+
+You build the context, the message contract, and cancellation. You do **not** implement
+`host.http`, `host.storage`, `host.log` or `host.browser` — that is S5, running beside you. Agree
+the shape of `context.host` with S5 early and keep it thin; where you disagree, **the spec
+decides**. You do not port WeebCentral (S6) or build the installer (Phase 4).
+
+---
+
+# S5 — Host capabilities: http, storage, log, and the browser
+
+*(Prepend the shared preamble verbatim.)*
+
+**Acceptance criteria you own: 5, 6 (storage half), and 11.**
+**Model: Sonnet or Codex. Depends on: S4, thinly. Runs in Wave 2, alongside S4, on a different
+provider from S4.**
+
+## What you are building
+
+The capability brokers an Extension is handed: bounded HTTP, per-Source storage, redacted logging,
+and the production browser extraction that S3's spike proved out.
+
+Spec sections that own your rules: **§4 (host capabilities)** for all four, **§9 (browser identity
+and interaction)**, **§10 (URL policy)**, and **§5** for budgets.
+
+## Build the browser capability on a per-Source store — this is settled, and it is not obvious
+
+**ADR-0003 Amendment 3** closed evidence gate 2: `WKWebsiteDataStore(forIdentifier:)` on iOS 17.5
+gives **both** per-Source isolation and persistence across relaunch. Read the amendment first.
+
+- Build `host.browser.extract` on a **per-Source identified store**, **not** on
+  `WebViewService`'s shared `.default()` store.
+- **`WebViewService` stays unchanged.** It keeps its shared store for the compiled
+  `WeebCentralSource` until that Source is ported in S6, so the app deliberately holds both
+  mechanisms for now. Do not "unify" them.
+- The store identifier is a **name-based (v5) UUID over a fixed namespace and the qualified Source
+  id**. **The namespace constant is permanent** — changing it orphans every reader's Cloudflare
+  clearance.
+
+### Three rules from the spike, which are one behaviour seen three ways
+
+An identified store **materialises lazily**, so nearly everything about it is true only
+*eventually*. Each of these cost the spike real time:
+
+1. **A store no `WKWebView` was ever constructed against never becomes durable.** Writing through
+   `WKHTTPCookieStore` and holding the store alive is not enough.
+2. **A freshly opened store's cookie jar loads asynchronously** — the first `getAllCookies` returns
+   an **empty jar with no error**. Never gate behavior on an immediate jar read; drive the browser
+   and let WebKit apply cookies. Losing this race looks exactly like *"Cloudflare keeps
+   re-challenging me"*.
+3. **A constructed store is not yet on disk**, and `fetchAllDataStoreIdentifiers` will not list it
+   until first use. **A data-removal or installer screen that enumerates stores at launch would
+   show a reader nothing.** Await one operation before expecting a store to appear.
+
+## Your three criteria
+
+- **5 — "HTTP and browser redirects cannot escape declared HTTPS origins."** Per §10: absolute
+  HTTPS only; every redirect hop revalidated; loopback, link-local, multicast and private addresses
+  rejected **after DNS resolution** to prevent rebinding. S2 flagged that origin membership at the
+  schema layer is **not** a substitute for these runtime checks — they are yours.
+- **6 (storage half) — "two configured Sources cannot read each other's storage."** §4.3: storage
+  is namespaced by *qualified* Source id, survives updates and disablement, is retained on ordinary
+  uninstall, and is erased only by explicit user action. No credentials, no filesystem paths.
+- **11 — "logs redact all prohibited reader and request data."** §4.4 is specific: URLs reduce to
+  origin plus redacted path shape; queries, bodies, cookies, headers, storage values, search text,
+  Listing titles, chapter ids and reader identifiers are rejected or redacted. Test that a log call
+  *carrying* those is redacted, not merely that a clean call passes.
+
+## Traps
+
+- **§4.1 header policy:** reject `Host`, `Cookie`, `Authorization`, `Proxy-Authorization` and
+  `User-Agent`; strip hop-by-hop headers. Cookies live in a host-owned jar partitioned by Source
+  and origin. **The host does not automatically retry** — expose parsed `Retry-After` instead, so
+  a POST is never silently duplicated.
+- **§4.2:** browser extraction is **globally single-flight in v1**, the UA is host-owned, and the
+  script's return value is structured-cloned. **Authors do not call `JSON.stringify`** — that is
+  today's `WebViewService` convention and the Host API deliberately drops it.
+- **§9 / criterion 8, already built by S3:** a background invocation returns `interaction_required`
+  and **never** presents a sheet. Amendment 3 settled the `interaction` enum as `allowForeground`
+  and `never`, and made the effective policy the **intersection** of the author's request and the
+  host's invocation context — an engine cannot know whether the app is foregrounded, and must not
+  be able to talk its way into a sheet during a background refresh.
+- Exact numeric budgets are **evidence gate 1 and still open** (§5, §16). Choose conservative
+  tunables, keep them in one place, and **say plainly in your PR that they are unmeasured** rather
+  than presenting them as settled.
+
+## Scope boundary
+
+You build the capability brokers. You do **not** build the JSC context or cancellation machinery
+(S4, running beside you), port WeebCentral (S6), or build the installer (Phase 4). Agree
+`context.host`'s shape with S4 early; where you disagree, **the spec decides**.
