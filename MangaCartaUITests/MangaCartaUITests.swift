@@ -225,8 +225,7 @@ final class MangaCartaUITests: XCTestCase {
 
         // Find chapter 124. The list is long, so scroll toward it rather than assuming it is
         // on screen.
-        let chapter = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "CH·124"))
-            .firstMatch
+        let chapter = app.buttons.matching(Self.chapterRow(number: "124")).firstMatch
         var found = false
         for _ in 0..<40 where !found {
             if chapter.exists { found = true; break }
@@ -738,11 +737,28 @@ final class MangaCartaUITests: XCTestCase {
         turnPagesAndBackground(app, label: "legC")
     }
 
+    /// Matches a chapter row by what it *says*, not by what it draws.
+    ///
+    /// The row draws the stamp "CH·124", but #103 made the whole row one accessibility
+    /// element labelled from `ChapterRowPresentation` — "Chapter 124, Title, September 1
+    /// 2026, Unread" — because a middle dot is not a word VoiceOver can announce. XCUITest
+    /// matches the label, so every query here must speak the sentence, not read the stamp.
+    /// Three call sites drifted onto "CH·" for two weeks (#134); they go through here now.
+    ///
+    /// Passing a `number` anchors to the head of the sentence, and the trailing comma is
+    /// what keeps chapter 12 from matching chapter 124.
+    private static func chapterRow(number: String? = nil) -> NSPredicate {
+        guard let number else {
+            return NSPredicate(format: "label BEGINSWITH %@", "Chapter ")
+        }
+        return NSPredicate(format: "label BEGINSWITH %@", "Chapter \(number),")
+    }
+
     /// Opens the first chapter row on a detail page and reads far enough to commit.
     private func readFirstChapter(_ app: XCUIApplication, label: String) {
-        let chapter = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "CH·"))
-            .element(boundBy: 0)
-        XCTAssertTrue(chapter.waitForExistence(timeout: 45), "the detail page should list a chapter")
+        let chapter = app.buttons.matching(Self.chapterRow()).element(boundBy: 0)
+        XCTAssertTrue(chapter.waitForExistence(timeout: 45),
+                      "the detail page should list a chapter — hierarchy:\n\(app.debugDescription)")
         attach(app, name: "\(label)-02-detail")
         chapter.tap()
 
@@ -1314,7 +1330,7 @@ extension MangaCartaUITests {
     /// second source's detail page is a variable none of these checks are about — the same
     /// inherited-source trap that produced Issue #81.
     private static let manualCheckTitle = "Chainsaw Man"
-    private static let manualCheckChapterStamp = "CH·97"
+    private static let manualCheckChapterNumber = "97"
 
     /// Opens `manualCheckTitle` from the library, reads its first chapter to the last page,
     /// and returns the page count. Factored out because five checks above differ only in what
@@ -1361,9 +1377,10 @@ extension MangaCartaUITests {
         // Chapters 230–232 are listed but currently have no pages on MangaDex. Pin this
         // exercise to a chapter whose at-home payload is known to contain readable pages
         // instead of taking whichever metadata row is newest.
-        // CONTAINS rather than BEGINSWITH: a resume marker or unread badge can precede it.
+        // The row's read state and resume marker live in its accessibility *value*, not its
+        // label, so anchoring to the head of the label is safe.
         let chapter = app.buttons.matching(
-            NSPredicate(format: "label CONTAINS %@", Self.manualCheckChapterStamp)
+            Self.chapterRow(number: Self.manualCheckChapterNumber)
         )
             .firstMatch
         _ = chapter.waitForExistence(timeout: 25)   // chapters arrive over the network
@@ -1372,7 +1389,7 @@ extension MangaCartaUITests {
             usleep(800_000)
         }
         XCTAssertTrue(chapter.waitForExistence(timeout: 20),
-                      "the title should list \(Self.manualCheckChapterStamp) — hierarchy:\n\(app.debugDescription)")
+                      "the title should list chapter \(Self.manualCheckChapterNumber) — hierarchy:\n\(app.debugDescription)")
 
         // Completion notifications are edge-triggered: HistoryStore emits only when a
         // chapter moves from incomplete to complete. Reset through the real UI so this
