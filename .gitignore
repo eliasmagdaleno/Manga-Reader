@@ -3,6 +3,12 @@ Secrets.xcconfig
 .agy_code_review.md
 .agy_review_running
 
+# Where Claude Code puts an agent's isolated worktree. A nested checkout of this same
+# repository, so a careless `git add -A` from the root would otherwise stage the whole
+# thing. Sibling of `.worktrees/` above, which is the same idea under a different tool's
+# spelling.
+.claude/worktrees/
+
 # macOS / Xcode per-user noise. `xcuserdata` holds window and breakpoint state that
 # changes whenever the project is merely open, so it shows up as an untracked file
 # in every session and never carries anything worth committing.
