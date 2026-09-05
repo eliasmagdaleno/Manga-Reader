@@ -18,14 +18,87 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Decides whether this change can touch the build at all.
+  #
+  # WHY THIS IS NOT `paths-ignore`. `Build & unit tests` and `SwiftLint` are
+  # REQUIRED status checks on `main`. A workflow filtered with `paths-ignore`
+  # does not run on a docs-only PR, so those checks never report — and a
+  # required check that never reports leaves the PR blocked forever, with
+  # `gh pr merge --auto` waiting on it indefinitely. The jobs must still RUN
+  # and still REPORT; what they can skip is the expensive work inside them.
+  #
+  # So every job below always runs, and guards its costly steps on this
+  # output. A docs-only PR gets three green checks in about fifteen seconds
+  # instead of twenty minutes of simulator time.
+  #
+  # If you add a required check, add it as a job that always runs.
+  changes:
+    name: Detect code changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v5
+        with:
+          # Full history: the diff below needs the merge base, and a shallow
+          # clone does not have it.
+          fetch-depth: 0
+
+      # Compares against the PR's base, or against the previous commit for a
+      # push to `main`. Anything outside `docs/` and top-level Markdown counts
+      # as code — deliberately conservative, because the cost of being wrong
+      # in that direction is a slow CI run, and the cost of being wrong in the
+      # other direction is an untested merge.
+      - name: Decide whether anything outside docs changed
+        id: filter
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="origin/${{ github.base_ref }}"
+            git fetch --no-tags --depth=0 origin "${{ github.base_ref }}" || true
+            range="$(git merge-base "$base" HEAD)...HEAD"
+          else
+            before="${{ github.event.before }}"
+            # A new branch, or a force-push whose old head is gone: assume code.
+            if [ -z "$before" ] || [ "$before" = "0000000000000000000000000000000000000000" ] \
+               || ! git cat-file -e "$before^{commit}" 2>/dev/null; then
+              echo "code=true" >> "$GITHUB_OUTPUT"
+              echo "No usable diff base; treating as a code change."
+              exit 0
+            fi
+            range="$before...HEAD"
+          fi
+
+          changed="$(git diff --name-only "$range")"
+          echo "Changed files:"
+          echo "$changed"
+
+          # Keep only paths that are NOT documentation.
+          code="$(echo "$changed" | grep -vE '^docs/|^[^/]+\.md$' || true)"
+
+          if [ -z "$changed" ]; then
+            # An empty diff (e.g. a re-run) is not evidence of a docs-only
+            # change, so pay for the build rather than guess.
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "Empty diff; treating as a code change."
+          elif [ -z "$code" ]; then
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "Documentation only — the heavy steps will be skipped."
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "Code changed:"
+            echo "$code"
+          fi
   # Static analysis / style. Runs in parallel with the tests as its own check,
   # so you can see at a glance whether it was code or style that failed.
   lint:
     name: SwiftLint
-    runs-on: macos-15
+    runs-on: ${{ needs.changes.outputs.code == 'true' && 'macos-15' || 'ubuntu-latest' }}
+    needs: changes
     steps:
       - name: Check out the code
         uses: actions/checkout@v5
+        if: needs.changes.outputs.code == 'true'
 
       # SwiftLint is preinstalled on the macOS runner image; fall back to brew
       # if a future image drops it. `.swiftlint.yml` at the repo root is the
@@ -33,20 +106,30 @@ jobs:
       # an inline annotation on the PR. Exit is non-zero only on error-severity
       # violations, so warnings inform without blocking the merge.
       - name: Run SwiftLint
+        if: needs.changes.outputs.code == 'true'
         run: |
           swiftlint version || brew install swiftlint
           swiftlint lint --reporter github-actions-logging
 
+      - name: Documentation only — nothing to lint
+        if: needs.changes.outputs.code != 'true'
+        run: echo "No Swift changed; SwiftLint skipped."
+
   unit-tests:
     name: Build & unit tests
+    needs: changes
     # Pinned image: macos-15 ships Xcode 16 (matches this project's file format,
     # objectVersion 70) and iOS 18 simulators (deployment target is 17.5).
     # Pinning — vs `macos-latest` — means the toolchain only changes when we
     # choose to bump it, not silently when GitHub moves `latest`.
-    runs-on: macos-15
+    #
+    # A docs-only change drops to Linux: macOS minutes bill at roughly ten times
+    # the rate, and the only step left to run is an `echo`.
+    runs-on: ${{ needs.changes.outputs.code == 'true' && 'macos-15' || 'ubuntu-latest' }}
     steps:
       # 1. Copy the repository onto the runner.
       - name: Check out the code
+        if: needs.changes.outputs.code == 'true'
         uses: actions/checkout@v5
 
       # 2. Recreate the gitignored Secrets.xcconfig. It defines MAL_CLIENT_ID and
@@ -55,16 +138,19 @@ jobs:
       #    compiles fine. If a job ever needs the real key, store it as a repo
       #    secret and use: echo "MAL_CLIENT_ID = ${{ secrets.MAL_CLIENT_ID }}".
       - name: Create placeholder Secrets.xcconfig
+        if: needs.changes.outputs.code == 'true'
         run: echo "MAL_CLIENT_ID = ci-placeholder" > Secrets.xcconfig
 
       # 3. Record the toolchain in the log — invaluable when something builds
       #    locally but breaks only on CI.
       - name: Show Xcode version
+        if: needs.changes.outputs.code == 'true'
         run: xcodebuild -version
 
       # 4. Pick whichever numbered iPhone simulator this runner image actually
       #    ships, rather than hardcoding a device that may not exist here.
       - name: Choose a simulator
+        if: needs.changes.outputs.code == 'true'
         id: sim
         run: |
           name=$(xcrun simctl list devices available \
@@ -78,12 +164,17 @@ jobs:
       #    *hermetic* UI tests do run here, in the job below.
       #    -parallel-testing-enabled NO avoids spawning cloned simulators.
       - name: Build & run unit tests
+        if: needs.changes.outputs.code == 'true'
         run: |
           xcodebuild \
             -scheme MangaCarta \
             -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.name }}" \
             -parallel-testing-enabled NO \
             test -only-testing:MangaCartaTests
+
+      - name: Documentation only — nothing to build
+        if: needs.changes.outputs.code != 'true'
+        run: echo "No code changed; the build and unit tests were skipped."
 
   # The half of the UI target that does not touch the network (#134).
   #
@@ -107,15 +198,19 @@ jobs:
   # this list starts failing intermittently, that claim is what to re-check first.
   ui-tests:
     name: Hermetic UI tests
-    runs-on: macos-15
+    runs-on: ${{ needs.changes.outputs.code == 'true' && 'macos-15' || 'ubuntu-latest' }}
+    needs: changes
     steps:
       - name: Check out the code
+        if: needs.changes.outputs.code == 'true'
         uses: actions/checkout@v5
 
       - name: Create placeholder Secrets.xcconfig
+        if: needs.changes.outputs.code == 'true'
         run: echo "MAL_CLIENT_ID = ci-placeholder" > Secrets.xcconfig
 
       - name: Choose a simulator
+        if: needs.changes.outputs.code == 'true'
         id: sim
         run: |
           name=$(xcrun simctl list devices available \
@@ -124,6 +219,7 @@ jobs:
           echo "name=$name" >> "$GITHUB_OUTPUT"
 
       - name: Run the hermetic UI suites
+        if: needs.changes.outputs.code == 'true'
         run: |
           xcodebuild \
             -scheme MangaCarta \
@@ -132,3 +228,7 @@ jobs:
             test \
             -only-testing:MangaCartaUITests/UpdatesUITests \
             -only-testing:MangaCartaUITests/SourcePreferenceUITests
+
+      - name: Documentation only — nothing to test
+        if: needs.changes.outputs.code != 'true'
+        run: echo "No code changed; the build and hermetic UI suites were skipped."
